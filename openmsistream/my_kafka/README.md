@@ -46,9 +46,9 @@ and following the prompts (the defaults are sensible). If, for any reason, the `
 
 `ProvisionNode --script-path [path_to_simple_provision_script]`
 
-(But OpenMSIPython should be able to do this on its own in most installation contexts.)
+(But OpenMSIStream should be able to do this on its own in most installation contexts.)
 
-Some applications of OpenMSIPython will need to use a different or unique script for provisioning nodes; in those cases you can download the script and provide the path to it as an argument to the `ProvisionNode` command as shown above.
+Some applications of OpenMSIStream will need to use a different or unique script for provisioning nodes; in those cases you can download the script and provide the path to it as an argument to the `ProvisionNode` command as shown above.
 
 For any other issues with provisioning please refer to KafkaCrypto's documentation.
 
@@ -56,7 +56,7 @@ For any other issues with provisioning please refer to KafkaCrypto's documentati
 
 Successfully running the `ProvisionNode` command will create a new subdirectory in the [`config_files` directory](./config_files) with a name corresponding to the node ID, containing a `my-node-id.config file`, a `my-node-id.crypto` file, and a `my-node-id.seed` file. KafkaCrypto needs the `my-node-id.config` file to setup producers and consumers, and that file is not secret. The `my-node-id.crypto` and `my-node-id.seed` files, however, should never be saved or transmitted plaintext (files with this pattern [are in the `.gitignore`](../../.gitignore) so if everything is running in the expected way this won't be an issue). An example of one of these created directories can be found [here](./config_files/testing_node) with all files intact because they're used for testing.
 
-To point OpenMSIPython to the config file that's created, one of two options must be added to the config file passed as discussed in the documentation [here](../data_file_io) (for example). Both options list a single new parameter under a heading called `[kafkacrypto]`. 
+To point OpenMSIStream to the config file that's created, one of two options must be added to the config file passed as discussed in the documentation [here](../data_file_io) (for example). Both options list a single new parameter under a heading called `[kafkacrypto]`. 
 
 The first option is to add just the node id, like `node_id = my-node-id`, which works if a directory called `my-node-id` exists in the location expected from running the `ProvisionNode` command. 
 

@@ -4,7 +4,7 @@
 
 ### Preparing the environment (note for Windows)
 
-Issues with loading `.dll` files manifest differently when running `OpenMSIPython` code as Windows Services because Services run in `%WinDir%\System32` and don't read the same `PATH` locations as running interactively. Some workarounds are built into `OpenMSIPython` to mitigate these problems, but if you run into trouble with missing `.dll` files they can typically be resolved by copying those files into the `%WinDir%\System32` directory.
+Issues with loading `.dll` files manifest differently when running `OpenMSIStream` code as Windows Services because Services run in `%WinDir%\System32` and don't read the same `PATH` locations as running interactively. Some workarounds are built into `OpenMSIStream` to mitigate these problems, but if you run into trouble with missing `.dll` files they can typically be resolved by copying those files into the `%WinDir%\System32` directory.
 
 ### Setup and installation
 
@@ -32,7 +32,7 @@ After installing a Service/Daemon, you can use the `ManageService [name_for_serv
 
 ### Debugging problems
 
-If something goes wrong while the program is running as a Service/daemon, a file called `[service_name]_ERROR_LOG.txt` should be created in the directory that you ran the installation command from. That file should contain a traceback for the error that killed the Service. If that file doesn't exist, then there was likely an issue with installing the Service in the first place, and not with the `OpenMSIPython` code that was run.
+If something goes wrong while the program is running as a Service/daemon, a file called `[service_name]_ERROR_LOG.txt` should be created in the directory that you ran the installation command from. That file should contain a traceback for the error that killed the Service. If that file doesn't exist, then there was likely an issue with installing the Service in the first place, and not with the `OpenMSIStream` code that was run.
 
 ### Output in the "working directory"
 

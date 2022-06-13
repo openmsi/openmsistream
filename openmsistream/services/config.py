@@ -12,7 +12,7 @@ class ServicesConstants :
         #make the Service dictionaries to use
         self.service_dicts = []
         for script in pkg_resources.iter_entry_points('console_scripts') :
-            if script.dist.key == 'openmsipython' :
+            if script.dist.key == 'openmsistream' :
                 if script.name in ('InstallService','ManageService','ProvisionNode') :
                     continue
                 scriptstr = str(script)

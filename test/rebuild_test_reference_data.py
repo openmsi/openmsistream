@@ -108,7 +108,7 @@ def rebuild_test_services_executable() :
                                     argslist=TEST_SERVICE_EXECUTABLE_ARGSLIST)
     manager._write_executable_file()
     #move it to the new test data folder
-    exec_fp = pathlib.Path(__file__).parent.parent/'openmsipython'/'services'/'working_dir'
+    exec_fp = pathlib.Path(__file__).parent.parent/'openmsistream'/'services'/'working_dir'
     exec_fp = exec_fp/f'{TEST_SERVICE_NAME}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}'
     exec_fp.replace(NEW_TEST_DATA_DIR/exec_fp.name)
     compare_and_check_old_and_new_files(exec_fp.name)

@@ -12,7 +12,7 @@ LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 
 class TestCreateMyKafkaObjects(unittest.TestCase) :
     """
-    Class for testing that objects in openmsipython.my_kafka can 
+    Class for testing that objects in openmsistream.my_kafka can 
     be instantiated using default configs
     """
 
@@ -32,7 +32,7 @@ class TestCreateMyKafkaObjects(unittest.TestCase) :
         myconsumer.close()
     
     def test_create_my_consumer_encrypted(self) :
-        myconsumer = MyConsumer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        myconsumer = MyConsumer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
         self.assertTrue(myconsumer is not None)
         myconsumer.close()
 
@@ -44,7 +44,7 @@ class TestCreateMyKafkaObjects(unittest.TestCase) :
         cg.close()
     
     def test_create_consumer_group_encrypted(self) :
-        cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+        cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_ID='test_create_consumer_group_encrypted',
                            n_consumers=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS)
         self.assertTrue(cg is not None)

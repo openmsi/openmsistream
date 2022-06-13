@@ -11,10 +11,10 @@ class TestRoutineConstants :
     def TEST_TOPIC_NAMES(self) :
         return {
             'test_data_file_directories':'test_data_file_directories',
-            'test_data_file_directories_encrypted':'test_encrypted',
+            'test_data_file_directories_encrypted':'test_oms_encrypted',
             'test_data_file_stream_processor':'test_data_file_stream_processor',
             'test_osn':'osn_test',
-            'test_serialization':'test_encrypted',
+            'test_serialization':'test_oms_encrypted',
         }
     @property
     def TEST_ENDPOINT_URL(self) :  # the endpoint_url for osn connection

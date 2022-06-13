@@ -96,7 +96,7 @@ class MyKafkaConfigFileParser(ConfigFileParser) :
         1) The regular config file has a "kafkacrypto" section with a "config_file" parameter that is the 
         path to the KafkaCrypo config file
         2) The regular config file has a "kafkacrypto" section with a "node_id" parameter corresponding to 
-        a named subdirectory in openmsipython/my_kafka/config_files that was created when the node was provisioned
+        a named subdirectory in openmsistream/my_kafka/config_files that was created when the node was provisioned
         """
         if 'kafkacrypto' in self.available_group_names :
             kc_configs = self.get_config_dict_for_groups('kafkacrypto')

@@ -1,3 +1,3 @@
-This directory exists to serve as the placeholder location when using openmsipython code as Windows Services.
+This directory exists to serve as the placeholder location when using openmsistream code as Windows Services.
 
 On a user's system this directory will contain the logging file for what's been done with different Services, as well as the python executables, environment variable, and command files for code that's been installed as a Service, and a [NSSM](https://nssm.cc/) executable (on Windows only).

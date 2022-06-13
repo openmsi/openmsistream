@@ -63,7 +63,7 @@ conda create -n openmsi python=3.7
 conda activate openmsi
 ```
 
-*In principle* `OpenMSIPython` code is transparent to the difference between Python 3.7 and 3.9, but it is recommended to use newer Windows systems that can support Python 3.9
+*In principle* `OpenMSIStream` code is transparent to the difference between Python 3.7 and 3.9, but it is recommended to use newer Windows systems that can support Python 3.9
 
 ###### Issues with DLL Files:
 

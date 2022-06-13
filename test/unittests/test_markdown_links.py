@@ -98,7 +98,7 @@ class TestMarkdownLinks(unittest.TestCase):
           try:
             dest = link.get("href")
             if dest.startswith("https://"):
-              if re.match(r"https://(?:www\.)?github\.com/openmsi/openmsipython?/(?:blob|tree)", dest.lower()):
+              if re.match(r"https://(?:www\.)?github\.com/openmsi/openmsistream?/(?:blob|tree)", dest.lower()):
                 raise LinkError(f"Link to {dest}, use a relative link instead")
               continue
             destpath, anchor = re.match("([^#]*)(?:#(.*))?", dest).groups()

@@ -8,7 +8,7 @@ class TestConsoleScripts(unittest.TestCase):
         Make sure console scripts defined in setup.py exist and that their imports work
         """
         for script in pkg_resources.iter_entry_points('console_scripts') :
-            if script.dist.key == 'openmsipython' :
+            if script.dist.key == 'openmsistream' :
                 with self.subTest(script=script.name):
                     try:
                         subprocess.check_output([script.name, '--help'],stderr=subprocess.STDOUT)

@@ -29,7 +29,7 @@ class TestServiceUtilities(unittest.TestCase) :
         Make sure an executable file is written to the expected location with the expected format
         """
         #the test below does create a file but that file should be ignored in the repo
-        test_exec_fp = pathlib.Path(__file__).parent.parent.parent/'openmsipython'/'services'/'working_dir'
+        test_exec_fp = pathlib.Path(__file__).parent.parent.parent/'openmsistream'/'services'/'working_dir'
         test_exec_fp = test_exec_fp/f'{TEST_SERVICE_NAME}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}'
         manager = LinuxServiceManager(TEST_SERVICE_NAME,
                                       service_class_name=TEST_SERVICE_CLASS_NAME,
