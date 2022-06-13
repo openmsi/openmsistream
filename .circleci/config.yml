@@ -1,0 +1,79 @@
+version: 2.1
+
+################# ORB #################
+orbs:
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: circleci/python@2.0.3
+
+################# WORKFLOWS #################
+workflows:
+  build_and_test:
+    # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
+    jobs:
+      - build-and-code-check
+      - run-tests:
+          requires:
+            - build-and-code-check
+      - check-repo:
+          requires:
+            - run-tests
+
+################# JOBS #################
+jobs:
+  # Build the repo and check the code using pyflakes 
+  build-and-code-check:
+    docker:
+      - image: containers.repo.sciserver.org/openmsistream:1.0
+        auth:
+          username: $IDIESDOCKER_USERNAME
+          password: $IDIESDOCKER_PASSWORD
+    steps:
+      - checkout
+      - python/install-packages:
+          pkg-manager: pip
+          args: .[all]
+      - run:
+          name: code check
+          command: cd ~/project; python -m pyflakes .; cd -
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  # Run unittests 
+  run-tests:
+    docker:
+      - image: containers.repo.sciserver.org/openmsistream:1.0
+        auth:
+          username: $IDIESDOCKER_USERNAME
+          password: $IDIESDOCKER_PASSWORD
+    parallelism: 12
+    resource_class: large
+    steps:
+      - attach_workspace:
+          at: .
+      - python/install-packages:
+          pkg-manager: pip
+          args: .[all]
+      - run:
+          name: run tests
+          command: |
+            cd test/unittests
+            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
+            python -m unittest $TESTCLASSES -v
+      - persist_to_workspace:
+          root: .
+          paths:
+              - .
+  # Make sure that the repository is clean after all tests have been run
+  check-repo:
+    docker:
+      - image: containers.repo.sciserver.org/openmsistream:1.0
+        auth:
+          username: $IDIESDOCKER_USERNAME
+          password: $IDIESDOCKER_PASSWORD
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: check repo
+          command: cd ~/project; sh test/test_repo_status.sh
