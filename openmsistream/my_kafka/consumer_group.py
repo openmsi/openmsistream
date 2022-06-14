@@ -1,8 +1,9 @@
 #imports
 import uuid
+from ..shared.logging import LogOwner
 from .my_consumer import MyConsumer
 
-class ConsumerGroup :
+class ConsumerGroup(LogOwner) :
     """
     Class for working with a group of consumers
     """
@@ -11,7 +12,7 @@ class ConsumerGroup :
     def topic_name(self) :
         return self.__topic_name
 
-    def __init__(self,config_path,topic_name,*,consumer_group_ID=str(uuid.uuid1()),**other_kwargs) :
+    def __init__(self,config_path,topic_name,*args,consumer_group_ID=str(uuid.uuid1()),**kwargs) :
         """
         arguments:
         config_path = path to the config file that should be used to define the consumer group
@@ -20,9 +21,11 @@ class ConsumerGroup :
         keyword arguments:
         consumer_group_ID = ID to use for all consumers in the group (a new & unique ID is created by default)
         """
+        super().__init__(*args,**kwargs)
         self.__topic_name = topic_name
         self.__c_args, self.__c_kwargs = MyConsumer.get_consumer_args_kwargs(config_path,
-                                                                             group_id=consumer_group_ID,**other_kwargs)
+                                                                             group_id=consumer_group_ID,
+                                                                             logger=self.logger)
 
     def get_new_subscribed_consumer(self) :
         """

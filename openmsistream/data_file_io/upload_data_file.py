@@ -4,7 +4,7 @@ from threading import Thread
 from queue import Queue
 from hashlib import sha512
 from ..shared.runnable import Runnable
-from ..my_kafka.my_producer import MyProducer
+from ..my_kafka.producer_group import ProducerGroup
 from .config import RUN_OPT_CONST
 from .data_file_chunk import DataFileChunk
 from .data_file import DataFile
@@ -196,10 +196,11 @@ class UploadDataFile(DataFile,Runnable) :
         for ti in range(n_threads) :
             upload_queue.put(None)
         #produce all the messages in the queue using multiple threads
+        producer_group = ProducerGroup(config_path,logger=self.logger)
         producers = []
         upload_threads = []
         for ti in range(n_threads) :
-            producers.append(MyProducer.from_file(config_path,logger=self.logger))
+            producers.append(producer_group.get_new_producer())
             t = Thread(target=producers[-1].produce_from_queue, args=(upload_queue,topic_name))
             t.start()
             upload_threads.append(t)
@@ -210,6 +211,7 @@ class UploadDataFile(DataFile,Runnable) :
         for producer in producers :
             producer.flush(timeout=-1) #don't leave the function until all messages have been sent/received
             producer.close()
+        producer_group.close()
         self.logger.info('Done!')
 
     #################### PRIVATE HELPER FUNCTIONS ####################

@@ -91,18 +91,22 @@ class Logger :
             msg = f'ERROR: {msg}'
         self._logger_obj.error(msg,*args,**kwargs)
         if exc_obj is not None :
-            try :
-                raise exc_obj
-            except Exception :
-                exc_to_log = 'ERROR: Exception: ['
-                for line in (traceback.format_exc()).split('\n') :
-                    exc_to_log+=f'{line},'
-                exc_to_log+=']'
-                self._logger_obj.error(exc_to_log)
-                if reraise :
-                    raise exc_obj
+            self.log_exception_as_error(exc_obj,*args,reraise=reraise,**kwargs)
         if exception_type is not None : 
             raise exception_type(msg)
+
+    #log the traceback of a given Exception as an error and optionally reraise it
+    def log_exception_as_error(self,exc,*args,reraise=True,**kwargs) :
+        try :
+            raise exc
+        except Exception :
+            exc_to_log = 'ERROR: Exception: ['
+            for line in (traceback.format_exc()).split('\n') :
+                exc_to_log+=f'{line},'
+            exc_to_log+=']'
+            self._logger_obj.error(exc_to_log,*args,**kwargs)
+            if reraise :
+                raise exc
 
 class LogOwner :
     """

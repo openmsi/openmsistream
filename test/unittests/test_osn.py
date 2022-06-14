@@ -1,13 +1,13 @@
 # imports
 import os
 import unittest, pathlib, time, logging, shutil, hashlib
+from openmsistream.shared.my_thread import MyThread
 from openmsistream.osn.osn_stream_processor import OSNStreamProcessor
 from openmsistream.osn.s3_data_transfer import S3DataTransfer
 from openmsistream.shared.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory
 from config import TEST_CONST
-from utilities import MyThread
 
 # constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0], logging.ERROR)
@@ -24,13 +24,14 @@ class TestOSN(unittest.TestCase):
     # called by the test method below
     def run_data_file_upload_directory(self):
         # make the directory to watch
-        dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_OSN, update_secs=UPDATE_SECS, logger=LOGGER)
+        dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_OSN,TEST_CONST.TEST_CONFIG_FILE_PATH_OSN,
+                                       update_secs=UPDATE_SECS,logger=LOGGER)
         # print(TEST_CONST.TEST_WATCHED_DIR_PATH_OSN)
         # osn_path = TEST_CONST.TEST_WATCHED_DIR_PATH_OSN.replace('\\', '/')
         # print(osn_path)
         # start upload_files_as_added in a separate thread so we can time it out
         upload_thread = MyThread(target=dfud.upload_files_as_added,
-                                 args=(TEST_CONST.TEST_CONFIG_FILE_PATH_OSN, TOPIC_NAME),
+                                 args=(TOPIC_NAME,),
                                  kwargs={'n_threads': RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                          'chunk_size': RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
                                          'max_queue_size': RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
@@ -197,7 +198,7 @@ class TestOSN(unittest.TestCase):
         osn_config = {'endpoint_url': endpoint_url, 'access_key_id': aws_access_key_id,
                       'secret_key_id': aws_secret_access_key,
                       'region': region_name, 'bucket_name': bucket_name}
-        s3d = S3DataTransfer(osn_config)
+        s3d = S3DataTransfer(osn_config,logger=LOGGER)
         for subdir, dirs, files in os.walk(TEST_CONST.TEST_WATCHED_DIR_PATH_OSN):
             for file in files:
                 local_path = str(os.path.join(subdir, file))

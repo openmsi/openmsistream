@@ -6,10 +6,9 @@
 # import logging
 
 from botocore.exceptions import ClientError
-from ..shared.logging import LogOwner
 from .osn_service import OSNService
 
-class S3DataTransfer(OSNService, LogOwner) :
+class S3DataTransfer(OSNService) :
 
     def __init__(self, osn_config, *args, **kwargs):
         super().__init__(osn_config,*args,**kwargs)

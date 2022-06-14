@@ -6,6 +6,7 @@ from abc import ABC, abstractmethod
 from ..utilities.misc import add_user_input
 from .config import UTIL_CONST
 from .logging import LogOwner
+from .my_thread import MyThread
 
 class ControlledProcess(LogOwner,ABC) :
     """
@@ -147,36 +148,39 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         """
         super().run()
         #correct the arguments for each thread
-        if args_per_thread==[] or (not type(args_per_thread)==list) :
-            args_per_thread = [args_per_thread]
-        if not len(args_per_thread)==self.__n_threads :
-            if not len(args_per_thread)==1 :
+        self.__args_per_thread = args_per_thread
+        if self.__args_per_thread==[] or (not type(self.__args_per_thread)==list) :
+            self.__args_per_thread = [self.__args_per_thread]
+        if not len(self.__args_per_thread)==self.__n_threads :
+            if not len(self.__args_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
-                errmsg+= f'{len(args_per_thread)} entries, but was set up to use {self.__n_threads} threads!'
+                errmsg+= f'{len(self.__args_per_thread)} entries, but was set up to use {self.__n_threads} threads!'
                 self.logger.error(errmsg,ValueError)
             else :
-                args_per_thread = self.__n_threads*args_per_thread
+                self.__args_per_thread = self.__n_threads*self.__args_per_thread
         #correct the keyword arguments for each thread
-        if not type(kwargs_per_thread)==list :
-            kwargs_per_thread = [kwargs_per_thread]
-        if not len(kwargs_per_thread)==self.__n_threads :
-            if not len(kwargs_per_thread)==1 :
+        self.__kwargs_per_thread = kwargs_per_thread
+        if not type(self.__kwargs_per_thread)==list :
+            self.__kwargs_per_thread = [self.__kwargs_per_thread]
+        if not len(self.__kwargs_per_thread)==self.__n_threads :
+            if not len(self.__kwargs_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
-                errmsg+= f'{len(kwargs_per_thread)} entries, but was set up to use {self.__n_threads} threads!'
+                errmsg+= f'{len(self.__kwargs_per_thread)} entries, but was set up to use {self.__n_threads} threads!'
                 self.logger.error(errmsg,ValueError)
             else :
-                kwargs_per_thread = self.__n_threads*kwargs_per_thread
+                self.__kwargs_per_thread = self.__n_threads*self.__kwargs_per_thread
         #create and start the independent threads
         self.__threads = []
         for i in range(self.__n_threads) :
-            self.__threads.append(Thread(target=self._run_worker,
-                                         args=(self.__lock,*args_per_thread[i]),
-                                         kwargs={**kwargs_per_thread[i]}))
+            self.__threads.append(MyThread(target=self._run_worker,
+                                           args=(self.__lock,*self.__args_per_thread[i]),
+                                           kwargs=self.__kwargs_per_thread[i]))
             self.__threads[-1].start()
         #loop while the process is alive, checking the control command queue and printing the "still alive" character
         while self.alive :
             self._print_still_alive()
             self._check_control_command_queue()
+            self.__restart_crashed_threads()
 
     def _on_shutdown(self) :
         """
@@ -196,3 +200,27 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         Not implemented in the base class
         """
         pass
+
+    def __restart_crashed_threads(self) :
+        """
+        Log Exceptions thrown by any of the threads and restart them
+        """
+        for ti,thread in enumerate(self.__threads) :
+            if thread.caught_exception is not None :
+                #log the error
+                warnmsg = 'WARNING: a thread raised an Exception, which will be logged as an error below but not '
+                warnmsg = 'reraised. The thread that raised the error will be restarted.'
+                self.logger.warning(warnmsg)
+                self.logger.log_exception_as_error(thread.caught_exception,reraise=False)
+                #try to join the thread 
+                try :
+                    thread.join()
+                except :
+                    pass
+                finally :
+                    self.__threads[ti] = None
+                #restart the thread
+                self.__threads[ti] = MyThread(target=self._run_worker,
+                                              args=(self.__lock,*self.__args_per_thread[ti]),
+                                              kwargs=self.__kwargs_per_thread[ti])
+                self.__threads[ti].start()

@@ -1,13 +1,13 @@
 #imports
 import unittest, pathlib, time, logging, shutil, filecmp
 from openmsistream.shared.logging import Logger
+from openmsistream.shared.my_thread import MyThread
 from openmsistream.shared.dataclass_table import DataclassTable
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.producer_file_registry import RegistryLineInProgress, RegistryLineCompleted
 from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory
 from openmsistream.data_file_io.data_file_download_directory import DataFileDownloadDirectory
 from config import TEST_CONST
-from utilities import MyThread
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
@@ -28,10 +28,12 @@ class TestDataFileDirectories(unittest.TestCase) :
         #make the directory to reconstruct files into
         TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED.mkdir()
         #start up the DataFileUploadDirectory
-        dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED,update_secs=UPDATE_SECS,logger=LOGGER)
+        dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED,
+                                       TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,
+                                       update_secs=UPDATE_SECS,logger=LOGGER)
         #start upload_files_as_added in a separate thread so we can time it out
         upload_thread = MyThread(target=dfud.upload_files_as_added,
-                                 args=(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,TOPIC_NAME),
+                                 args=(TOPIC_NAME,),
                                  kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                          'chunk_size':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
                                          'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,

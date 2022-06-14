@@ -1,11 +1,11 @@
 #imports
 import unittest, time, pathlib, logging
 from openmsistream.shared.logging import Logger
+from openmsistream.shared.my_thread import MyThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from config import TEST_CONST
-from utilities import MyThread
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
@@ -45,8 +45,8 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         upload_datafile = UploadDataFile(TEST_CONST.TEST_DATA_FILE_2_PATH,
                                          rootdir=TEST_CONST.TEST_DATA_DIR_PATH,logger=LOGGER)
         upload_datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME,
-                                        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                        chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+                                          n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+                                          chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
         #Use a stream processor to read its data back into memory
         dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH,
                                                  TOPIC_NAME,

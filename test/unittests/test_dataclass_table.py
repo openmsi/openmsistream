@@ -37,6 +37,10 @@ class TestDataclassTable(unittest.TestCase) :
         e2_addr = hex(id(e2))
         e3_addr = hex(id(e3))
         testing_location = pathlib.Path(__file__).parent.parent / 'test_dataclass_table'
+        #make sure the directory and table don't already exist
+        self.assertFalse(testing_location.is_dir())
+        self.assertFalse((testing_location/'test_table.csv').is_file())
+        #make the directory to work in
         if not testing_location.is_dir() :
             testing_location.mkdir()
         #create the empty table

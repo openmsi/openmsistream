@@ -1,17 +1,27 @@
 #imports
 from threading import Thread
 
-#A small utility class to reraise any exceptions thrown in a child thread when join() is called
 class MyThread(Thread) :
+    """
+    A small utility class to keep track of any exceptions thrown in a child thread
+    and raise them at some point
+    """
+
+    @property
+    def caught_exception(self) :
+        return self.__exc
+
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
-        self.exc = None
+        self.__exc = None
+    
     def run(self,*args,**kwargs) :
         try :
             super().run(*args,**kwargs)
         except Exception as e :
-            self.exc = e
+            self.__exc = e
+    
     def join(self,*args,**kwargs) :
         super().join(*args,**kwargs)
-        if self.exc is not None :
-            raise self.exc
+        if self.__exc is not None :
+            raise self.__exc

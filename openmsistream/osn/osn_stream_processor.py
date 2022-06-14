@@ -12,7 +12,7 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
         self.__osn_config = parser.osn_configs
         self.__osn_config['bucket_name'] = bucket_name
         self.bucket_name = bucket_name
-        self.s3d = S3DataTransfer(self.__osn_config)
+        self.s3d = S3DataTransfer(self.__osn_config,logger=self.logger)
 
     def make_stream(self):
         _, _, _ = self.process_files_as_read()

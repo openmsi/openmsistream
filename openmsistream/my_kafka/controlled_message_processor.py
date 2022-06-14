@@ -81,6 +81,10 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         #shut down the Consumer that was created once the process isn't alive anymore
         consumer.close()
 
+    def _on_shutdown(self):
+        super()._on_shutdown()
+        self.close()
+
     @abstractmethod
     def _process_message(self,lock,msg,*args,**kwargs) :
         """

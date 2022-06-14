@@ -5,7 +5,7 @@ site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-in
 
 setupkwargs = dict(
     name='openmsistream',
-    version='0.9.0.0',
+    version='0.9.1.0',
     packages=setuptools.find_packages(include=['openmsistream*']),
     include_package_data=True,
     entry_points = {

@@ -34,14 +34,15 @@ class MyProducer(LogOwner) :
         # poll the producer at least every 5 calls to produce
         self.__poll_counter = 0
 
-    @classmethod
-    def from_file(cls,config_file_path,logger=None,**kwargs) :
+    @staticmethod
+    def get_producer_args_kwargs(config_file_path,logger=None,**kwargs) :
         """
         config_file_path = path to the config file to use in defining this producer
 
         any keyword arguments will be added to the final producer configs (with underscores replaced with dots)
         """
         parser = MyKafkaConfigFileParser(config_file_path,logger=logger)
+        ret_kwargs = {}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
         all_configs = add_kwargs_to_configs(all_configs,**kwargs)
@@ -61,10 +62,18 @@ class MyProducer(LogOwner) :
                 valser = kc.value_serializer
             all_configs['key_serializer']=keyser
             all_configs['value_serializer']=valser
-            return cls(KafkaProducer,all_configs,kafkacrypto=kc,logger=logger)
+            ret_args = [KafkaProducer,all_configs]
+            ret_kwargs['kafkacrypto']=kc
         #otherwise use a SerializingProducer
         else :
-            return cls(SerializingProducer,all_configs,logger=logger)
+            ret_args = [SerializingProducer,all_configs]
+        ret_kwargs['logger'] = logger
+        return ret_args, ret_kwargs
+
+    @classmethod
+    def from_file(cls,*args,**kwargs) :
+        args_to_use, kwargs_to_use = MyProducer.get_producer_args_kwargs(*args,**kwargs)
+        return cls(*args_to_use,**kwargs_to_use)
 
     def produce_from_queue(self,queue,topic_name,callback=None,print_every=1000,timeout=60,retry_sleep=5) :
         """

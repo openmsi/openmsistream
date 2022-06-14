@@ -8,7 +8,7 @@ from .download_data_file import DownloadDataFileToDisk
 from .data_file_directory import DataFileDirectory
 from .data_file_chunk_processor import DataFileChunkProcessor
 
-class DataFileDownloadDirectory(DataFileChunkProcessor,DataFileDirectory,Runnable) :
+class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnable) :
     """
     Class representing a directory into which files are being reconstructed
     """
