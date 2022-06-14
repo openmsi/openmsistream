@@ -23,7 +23,7 @@ jobs:
   # Build the repo and check the code using pyflakes 
   build-and-code-check:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.1
+      - image: containers.repo.sciserver.org/openmsistream:1.2
         auth:
           username: $IDIESDOCKER_USERNAME
           password: $IDIESDOCKER_PASSWORD
@@ -42,7 +42,7 @@ jobs:
   # Run unittests 
   run-tests:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.1
+      - image: containers.repo.sciserver.org/openmsistream:1.2
         auth:
           username: $IDIESDOCKER_USERNAME
           password: $IDIESDOCKER_PASSWORD
@@ -67,7 +67,7 @@ jobs:
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.1
+      - image: containers.repo.sciserver.org/openmsistream:1.2
         auth:
           username: $IDIESDOCKER_USERNAME
           password: $IDIESDOCKER_PASSWORD
