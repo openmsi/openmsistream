@@ -34,13 +34,12 @@ Here is an outline of the installation steps that are detailed below:
 1. Install miniconda3 (if not already installed)
 2. Create and use a conda virtual environment dedicated to openmsistream
 3. Install libsodium in that dedicated environment
-4. Install git (if not already installed)
-5. (Optional: Install librdkafka manually if using a Mac)
-4. Install OpenMSIStream in the dedicated environment
-5. Write environment variables (usually the best choice, but optional)
-6. Provision the KafkaCrypto node that should be used (if encryption is required)
-7. Write a config file to use
-8. Install and start the Service (Windows) or Daemon (Linux) (Usual for production use, but optional when experimenting with OpenMSIStream)
+4. (Optional: Install librdkafka manually if using a Mac)
+5. Install OpenMSIStream in the dedicated environment
+6. Write environment variables (usually the best choice, but optional)
+7. Provision the KafkaCrypto node that should be used (if encryption is required)
+8. Write a config file to use
+9. Install and start the Service (Windows) or Daemon (Linux) (Usual for production use, but optional when experimenting with OpenMSIStream)
 
 **NOTE:** Please read the entire installation section below before proceeding.  There are specific differences between instructions for Windows, Linux, Intel-MacOS, and M1-MacOS. 
 
@@ -91,17 +90,7 @@ No matter the operating system, you'll need to use the second command to "activa
 
 `conda install -c anaconda libsodium`
 
-#### 4. Install git if necessary
-
-If your system does not have git installed, you can do so with conda.  If you need to check to see if git is installed use:
-
-`git --version`
-
-If it is not present then install it with 
-
-`conda install -c anaconda git`
-
-#### 5. Install librdkafka for Macs (this step not required on Windows)
+#### 4. Install librdkafka for Macs (this step not required on Windows)
 
 MacOS is not officially supported for `OpenMSIStream`, but works reliably at this time. If you would like to work with MacOS you will, however, need to install `librdkafka` using the package manager homebrew. The process is different on Intel-Chip Macs than on newer Apple-Silicon, M1 Mac.  
 
@@ -133,30 +122,9 @@ brew install librdkafka
  
     `brew install librdkafka`
 
-#### 6. Clone and Install OpenMSIStream from this Repo
+#### 5. Install OpenMSIStream
 
-**Clone** this `openmsistream` github repo and change directory to openmsistream:
- 
-```
-git clone https://github.com/openmsi/openmsistream.git
-cd openmsistream/
-```
-
-##### N.B Extra Steps for M1 Macs:
-
-*On M1 Macs you need to define system paths to allow your system find the GCC compilers used while building things. You may need to edit these steps because they refer to the specific version number of librdkafka library (1.8.2 as of this writing). If the version of librdkafka your installed in step 7 is not 1.8.2, then edit these commands to refer to the actual version installed.*
- 
-```
-CPATH=/opt/homebrew/Cellar/librdkafka/1.8.2/include pip install confluent-kafka
-C_INCLUDE_PATH=/opt/homebrew/Cellar/librdkafka/1.8.2/include LIBRARY_PATH=/opt/homebrew/Cellar/librdkafka/1.8.2/lib pip install confluent_kafka
-```
-
-#### 7. **Install** openmsistream:
- 
-```
-pip install .
-cd ..
-```
+`pip install openmsistream`
 
 If you'd like to be able to make changes to the `openmsistream` code without reinstalling, you can include the `--editable` flag in the `pip install` command. If you'd like to run the automatic code tests, you can install the optional dependencies needed with `pip install .[all]` with or without the `--editable` flag.
 
@@ -174,7 +142,7 @@ python
 
 and if that line runs without any problems then the package was installed correctly.
 
-#### 8. Environment variables (for Confluent Cloud or S3 Object Stores)
+#### 6. Environment variables (for Confluent Cloud or S3 Object Stores)
 
 Interacting with the Kafka broker on Confluent Cloud, including running code tests as described [here](./test), requires that some environment variables are set on your system. If you're installing any software to run as a Windows Service or Linux Daemon (as described [here](./openmsistream/services)) then you'll be prompted to enter these variables' values, but you may find it more convenient to set them once and save them as environment variables. 
 
@@ -190,15 +158,15 @@ You can also set them as "User" or "Process" environment variables on Windows if
 
 Secret keys for connecting to S3 object stores should similarly be stored as environment variables and referenced in config files, rather than hard-coded. For running tests, the S3 object store environment variable names are `ACCESS_SECRET_KEY_ID`, `BUCKET_NAME`, `ENDPOINT_URL`, `REGION`, and `SECRET_KEY_ID`.
 
-#### 9. Provision KafkaCrypto Node (optional)
+#### 7. Provision KafkaCrypto Node (optional)
 
 The [readme file here](./openmsistream/my_kafka) explains how to enable message-layer encryption through [KafkaCrypto](https://github.com/tmcqueen-materials/kafkacrypto).
 
-#### 10. Write Config File
+#### 8. Write Config File
 
 The [readme file here](./openmsistream/my_kafka) also explains options for configuration files used to define which kafka cluster(s) the programs interact with and how data are produced to/consumed from topics within them.
 
-#### 11. Install and Start Service or Daemon (optional)
+#### 9. Install and Start Service or Daemon (optional)
 
 The [readme file here](./openmsistream/services) explains options and installation of OpenMSIStream programs continually as Windows Services or Linux Daemons.  
 
