@@ -9,6 +9,8 @@
  <div align="center"><sup>4</sup>Dept. of Applied Mathematics and Statistics, The Johns Hopkins University, Baltimore, MD, USA</div>
  <br>
 
+  ![PyPI](https://img.shields.io/pypi/v/openmsistream)
+
 ## Introduction
 
 Applications for laboratory, analysis, and computational materials data streaming using [Apache Kafka](https://kafka.apache.org/)
