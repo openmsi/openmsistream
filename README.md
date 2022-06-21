@@ -1,5 +1,5 @@
 # <div align="center"> Open MSI Stream </div>
-#### <div align="center">***v0.9.1.3***</div>
+#### <div align="center">***v0.9.1.4***</div>
 
 #### <div align="center">Maggie Eminizer<sup>2</sup>, Amir Sharifzadeh<sup>2</sup>, Sam Tabrisky<sup>3</sup>, Alakarthika Ulaganathan<sup>4</sup>, David Elbert<sup>1</sup></div>
 
@@ -231,18 +231,3 @@ and then adding the location of the CA file it installed to the `[broker]` secti
 >>> import certifi
 >>> certifi.where()
 ```
-
-## To-do list
-
-The following items are currently planned to be implemented ASAP:
-
-1. New applications for asynchronous and repeatable stream filtering and processing (i.e. to facilitate decentralized/asynchronous lab data analysis)
-1. Allowing watching directories where large files are in the process of being created/saved instead of just directories where fully-created files are being added
-1. Implementing other data types and serialization schemas, likely using Avro
-1. Create pypi and conda installations. Pypi method using twine here: https://github.com/bast/pypi-howto. Putting on conda-forge is a heavier lift. Need to decide if it's worth it; probably not for such an immature package.
-1. Re-implement PDV plots from a submodule
-
-## Questions that will arise later (in FAQs?)
-
-1. What happens if we send very large files to topics to be consumed to an object store? (Might not be able to transfer GB of data at once?)
-1. How robust is the object store we're using (automatic backups, etc.)
