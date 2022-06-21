@@ -3,17 +3,12 @@ import setuptools, site
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
-with open('README.md', 'r') as readme :
-  long_description = readme.read()
-
 setupkwargs = dict(
     name='openmsistream',
     packages=setuptools.find_packages(include=['openmsistream*']),
     include_package_data=True,
     version='0.9.1.1',
     description='Python applications for materials data streaming using Apache Kafka. Developed for Open MSI (NSF DMREF award #1921959)',
-    long_description=long_description,
-    long_description_content_type="text/markdown",
     author='Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert',
     author_email='margaret.eminizer@gmail.com',
     url='https://github.com/openmsi/openmsistream',
