@@ -3,18 +3,22 @@ import setuptools, site
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
+with open('README.md', 'r') as readme :
+  long_description = readme.read()
+
 setupkwargs = dict(
     name='openmsistream',
     packages=setuptools.find_packages(include=['openmsistream*']),
     include_package_data=True,
-    version='0.9.1.0',
+    version='0.9.1.1',
     description='''Applications for laboratory, analysis, and computational materials data streaming using Apache Kafka.
                    Developed for Open MSI (NSF DMREF award #1921959)''',
+    long_description=long_description,
+    long_description_content_type="text/markdown",
     author='Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert',
     author_email='margaret.eminizer@gmail.com',
     url='https://github.com/openmsi/openmsistream',
     download_url='https://github.com/openmsi/openmsistream/archive/refs/tags/v0.9.1.0.tar.gz',
-    keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
     entry_points = {
         'console_scripts' : ['UploadDataFile=openmsistream.data_file_io.upload_data_file:main',
                              'DataFileUploadDirectory=openmsistream.data_file_io.data_file_upload_directory:main',
@@ -40,6 +44,12 @@ setupkwargs = dict(
                                'pyflakes>=2.2.0',
                                ],
                         },
+    keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
+    classifiers=[
+        'Programming Language :: Python :: 3',
+        'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
+        'Operating System :: OS Independent',
+    ],
 )
 
 setupkwargs["extras_require"]["all"] = sum(setupkwargs["extras_require"].values(), [])
