@@ -47,11 +47,14 @@ class TestRoutineConstants :
     def PROD_CONFIG_FILE_PATH(self) : # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
         return (UTIL_CONST.CONFIG_FILE_DIR / f'prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
     @property
-    def FAKE_PROD_CONFIG_FILE_PATH(self) : # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
-        return (self.TEST_DATA_DIR_PATH / f'fake_prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+    def TEST_DIR_PATH(self) :
+        return pathlib.Path(__file__).parent.parent
     @property
     def TEST_DATA_DIR_PATH(self) : #path to the test data directory
-        return pathlib.Path(__file__).parent.parent / 'data'
+        return self.TEST_DIR_PATH / 'data'
+    @property
+    def FAKE_PROD_CONFIG_FILE_PATH(self) : # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
+        return (self.TEST_DATA_DIR_PATH / f'fake_prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def TEST_DATA_FILE_ROOT_DIR_NAME(self) : #path to the test data directory
         return 'test_file_root_dir'
@@ -75,21 +78,21 @@ class TestRoutineConstants :
         return self.TEST_DATA_DIR_PATH / self.TEST_DATA_FILE_2_NAME
     @property
     def TEST_WATCHED_DIR_PATH(self) : #path to the "watched" directory to use in testing DataFileDirectory etc.
-        return pathlib.Path(__file__).parent.parent / 'test_watched_dir'
+        return self.TEST_DIR_PATH / 'test_watched_dir'
     @property
     def TEST_WATCHED_DIR_PATH_ENCRYPTED(self) : #same as above except for the encrypted tests
-        return pathlib.Path(__file__).parent.parent / 'test_watched_dir_encrypted'
+        return self.TEST_DIR_PATH / 'test_watched_dir_encrypted'
     @property
     def TEST_WATCHED_DIR_PATH_OSN(self) : #same as above except for the tests that interact with the object store
-        return pathlib.Path(__file__).parent.parent / 'test_watched_dir_osn'
+        return self.TEST_DIR_PATH / 'test_watched_dir_osn'
     @property
     def TEST_DIR_SERVICES_TEST(self) : # scrap directory to use for services tests
-        return pathlib.Path(__file__).parent.parent / 'test_dir_services'
+        return self.TEST_DIR_PATH / 'test_dir_services'
     @property
     def TEST_RECO_DIR_PATH(self) : # Path to the directory where consumed files should be reconstructed
-        return pathlib.Path(__file__).parent.parent / 'test_reco'
+        return self.TEST_DIR_PATH / 'test_reco'
     @property
     def TEST_RECO_DIR_PATH_ENCRYPTED(self) : # same as above except for encrypted tests
-        return pathlib.Path(__file__).parent.parent / 'test_reco_encrypted'
+        return self.TEST_DIR_PATH / 'test_reco_encrypted'
     
 TEST_CONST=TestRoutineConstants()

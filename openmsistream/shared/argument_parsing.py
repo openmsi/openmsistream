@@ -129,9 +129,6 @@ class MyArgumentParser(ArgumentParser) :
         'consumer_group_ID':
             ['optional',{'default':str(uuid.uuid1()),
                          'help':'ID to use for all consumers in the group'}],
-        'pdv_plot_type':
-            ['optional',{'choices':['spall','velocity'],'default':'spall',
-                         'help':'Type of analysis to perform ("spall" or "velocity")'}],
         'optional_output_dir':
             ['optional',{'type':create_dir,
                          'help':'Optional path to directory to put output in'}],
@@ -153,9 +150,6 @@ class MyArgumentParser(ArgumentParser) :
         'remove_nssm':
             ['optional',{'action':'store_true',
                          'help':'Add this flag to also remove the NSSM executable when removing a Service'}],
-        'gemd_json_dir':
-            ['positional',{'type':existing_dir,
-                           'help':'Directory containing all of the GEMD JSON dump files that should be uploaded'}]
     }
 
     #################### OVERLOADED FUNCTIONS ####################
