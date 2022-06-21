@@ -9,7 +9,7 @@
  <div align="center"><sup>4</sup>Dept. of Applied Mathematics and Statistics, The Johns Hopkins University, Baltimore, MD, USA</div>
  <br>
 
-  ![PyPI](https://img.shields.io/pypi/v/openmsistream)
+  ![PyPI](https://img.shields.io/pypi/v/openmsistream) ![GitHub](https://img.shields.io/github/license/openmsi/openmsistream) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/openmsistream) ![GitHub Release Date](https://img.shields.io/github/release-date/openmsi/openmsistream) ![GitHub last commit](https://img.shields.io/github/last-commit/openmsi/openmsistream) ![CircleCI](https://img.shields.io/circleci/build/github/openmsi/openmsistream/main)
 
 ## Introduction
 
