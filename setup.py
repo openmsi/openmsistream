@@ -5,9 +5,16 @@ site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-in
 
 setupkwargs = dict(
     name='openmsistream',
-    version='0.9.1.0',
     packages=setuptools.find_packages(include=['openmsistream*']),
     include_package_data=True,
+    version='0.9.1.0',
+    description='''Applications for laboratory, analysis, and computational materials data streaming using Apache Kafka.
+                   Developed for Open MSI (NSF DMREF award #1921959)''',
+    author='Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert',
+    author_email='margaret.eminizer@gmail.com',
+    url='https://github.com/openmsi/openmsistream',
+    download_url='https://github.com/openmsi/openmsistream/archive/refs/tags/v0.9.1.0.tar.gz',
+    keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
     entry_points = {
         'console_scripts' : ['UploadDataFile=openmsistream.data_file_io.upload_data_file:main',
                              'DataFileUploadDirectory=openmsistream.data_file_io.data_file_upload_directory:main',
