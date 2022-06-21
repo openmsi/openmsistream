@@ -11,8 +11,7 @@ setupkwargs = dict(
     packages=setuptools.find_packages(include=['openmsistream*']),
     include_package_data=True,
     version='0.9.1.1',
-    description='''Applications for laboratory, analysis, and computational materials data streaming using Apache Kafka.
-                   Developed for Open MSI (NSF DMREF award #1921959)''',
+    description='Python applications for materials data streaming using Apache Kafka. Developed for Open MSI (NSF DMREF award #1921959)',
     long_description=long_description,
     long_description_content_type="text/markdown",
     author='Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert',
