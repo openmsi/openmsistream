@@ -15,7 +15,7 @@
 
 Applications for laboratory, analysis, and computational materials data streaming using [Apache Kafka](https://kafka.apache.org/)
 
-Available on GitHub at https://github.com/openmsi/openmsistream
+Available on PyPI at https://pypi.org/project/openmsistream and GitHub at https://github.com/openmsi/openmsistream 
 
 Developed for Open MSI (NSF DMREF award #1921959)
 
