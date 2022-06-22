@@ -19,6 +19,8 @@
 !/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.config
 !/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.seed
 !/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.crypto
+# Sphinx documentation build directory
+/docs/build/*
 
 # Misc. other stuff I don't like
 __pycache__/
