@@ -3,8 +3,6 @@
    You can adapt this file completely to your liking, but it should at least
    contain the root `toctree` directive.
 
-
-
 =========================================
 OpenMSIStream 
 =========================================
@@ -38,6 +36,11 @@ The contact author for the project can be reached at margaret.eminizer@gmail.com
 
    introduction
    getting_started
+   main_programs
+   services
+   encryption
+   troubleshooting
+   developer_info
 
 ==================
 Indices and tables
