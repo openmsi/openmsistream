@@ -25,7 +25,7 @@ class DataFile(LogOwner) :
         """
         filepath = path to the file
         """
-        self.__filepath = filepath.resolve()
+        self.__filepath = filepath
         self.__filename = self.__filepath.name
         kwargs = populated_kwargs(kwargs,{'logger_file':self.__filepath.parent})
         super().__init__(*args,**kwargs)

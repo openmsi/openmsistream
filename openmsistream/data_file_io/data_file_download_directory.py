@@ -133,11 +133,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             msg+=f' and the following {len(complete_filenames)} file'
             msg+=' was' if len(complete_filenames)==1 else 's were'
             msg+=' successfully reconstructed'
+            for fn in complete_filenames :
+                msg+=f'\n\t{fn}'
         else :
             msg+=f' and {n_processed} messages were successfully processed'
         msg+=f' from {run_start} to {run_stop}'
-        for fn in complete_filenames :
-            msg+=f'\n\t{fn}'
         reconstructor_directory.logger.info(msg)
 
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################

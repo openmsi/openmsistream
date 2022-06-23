@@ -209,7 +209,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if thread.caught_exception is not None :
                 #log the error
                 warnmsg = 'WARNING: a thread raised an Exception, which will be logged as an error below but not '
-                warnmsg = 'reraised. The thread that raised the error will be restarted.'
+                warnmsg+= 'reraised. The thread that raised the error will be restarted.'
                 self.logger.warning(warnmsg)
                 self.logger.log_exception_as_error(thread.caught_exception,reraise=False)
                 #try to join the thread 
