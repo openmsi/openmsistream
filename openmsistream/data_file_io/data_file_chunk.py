@@ -41,7 +41,11 @@ class DataFileChunk(Producible) :
     @property
     def subdir_str(self) :
         if self.__rootdir is None :
-            return self.__filepath.parent.as_posix()
+            parentdir_as_posix = self.__filepath.parent.as_posix()
+            if parentdir_as_posix=='.' :
+                return None
+            else :
+                return parentdir_as_posix
         relpath = self.__filepath.parent.relative_to(self.__rootdir)
         if relpath==pathlib.Path() :
             return ''

@@ -28,7 +28,10 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
         if self.s3d.compare_consumer_datafile_with_osn_object_stream(self.topic_name, self.bucket_name, datafile):
             file_name = str(datafile.filename)
             sub_dir = datafile.subdir_str
-            object_key = sub_dir + '/' + file_name
+            object_key = self.topic_name 
+            if sub_dir is not None :
+                object_key+= '/' + sub_dir 
+            object_key+= '/' + file_name
             self.logger.info(object_key + ' matched with consumer datafile')
             # self.s3d.delete_object_from_osn(self.bucket_name, object_key)
         return None
