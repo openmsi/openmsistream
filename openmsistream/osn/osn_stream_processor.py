@@ -15,11 +15,10 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
         self.s3d = S3DataTransfer(self.__osn_config,logger=self.logger)
 
     def make_stream(self):
-        _, _, _ = self.process_files_as_read()
-        return self.n_msgs_read
+        return self.process_files_as_read()
 
     def stream_processor_run(self) :
-        n_read, n_processed = self.make_stream()
+        self.make_stream()
 
     def close_session_client(self) :
         self.s3d.close_session()
@@ -39,10 +38,10 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
         args = [*superargs, 'bucket_name',
-                'update_seconds', 'logger_file', 'config', 'topic_name']
+                'update_seconds', 'logger_file', 'config', 'topic_name', 'consumer_group_ID']
         kwargs = {**superkwargs,
                   'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS, 
-                  'consumer_group_ID': 'osn_data_consumer'}
+                  }
         return args, kwargs
 
     @classmethod
@@ -57,17 +56,20 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
                               consumer_group_ID=args.consumer_group_ID,
                               logger_file=args.logger_file)
         # cls.bucket_name = args.bucket_name
-        msg = f'Listening to the {args.topic_name} topic to find Lecroy data files and create '
+        msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         osn_stream_proc.logger.info(msg)
-        n_read, n_processed = osn_stream_proc.make_stream()
+        n_read,n_processed,complete_filenames = osn_stream_proc.make_stream()
         osn_stream_proc.close()
-        # shut down when that function returns
-        msg = ''
-        if args.output_dir is not None:
-            msg += f'writing to {args.output_dir} '
-        msg += 'shut down'
-        osn_stream_proc.logger.info(msg)
         msg = f'{n_read} total messages were consumed'
+        if len(complete_filenames)>0 :
+            msg+=f', {n_processed} messages were successfully processed,'
+            msg+=f' and the following {len(complete_filenames)} file'
+            msg+=' was' if len(complete_filenames)==1 else 's were'
+            msg+=f' successfully transferred to the {args.bucket_name} bucket'
+            for fn in complete_filenames :
+                msg+=f'\n\t{fn}'
+        else :
+            msg+=f' and {n_processed} messages were successfully processed'
         osn_stream_proc.logger.info(msg)
 
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
