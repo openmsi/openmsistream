@@ -23,11 +23,12 @@ class DataFileChunk(Producible) :
     @rootdir.setter
     def rootdir(self,rd) : #also resets the overall filepath (used in consuming messages for files in subdirectories)
         self.__rootdir=rd
-        try :
-            self.__filepath = self.__filepath.relative_to(self.__rootdir)
-        except ValueError :
-            pass
-        self.__filepath = self.__rootdir / self.__filepath
+        if rd is not None :
+            try :
+                self.__filepath = self.__filepath.relative_to(self.__rootdir)
+            except ValueError :
+                pass
+            self.__filepath = self.__rootdir / self.__filepath
     
     @property
     def data(self) :

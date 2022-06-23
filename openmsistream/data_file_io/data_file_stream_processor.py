@@ -1,5 +1,5 @@
 #imports
-import pathlib, traceback
+import traceback
 from abc import ABC, abstractmethod
 from kafkacrypto.message import KafkaCryptoMessage
 from ..shared.logging import LogOwner
@@ -68,7 +68,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
         return False
 
     def _process_message(self,lock,msg):
-        retval = super()._process_message(lock, msg, (pathlib.Path()).resolve(), self.logger)
+        retval = super()._process_message(lock, msg, None, self.logger)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
@@ -82,7 +82,10 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
             dfc = msg.value #from KafkaCrypto
         #if the file has had all of its messages read successfully, send it to the processing function
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
+            if dfc.rootdir is not None :
+                short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
+            else :
+                short_filepath = self.files_in_progress_by_path[dfc.filepath].filepath
             msg = f'Processing {short_filepath}...'
             self.logger.info(msg)
             processing_retval = self._process_downloaded_data_file(self.files_in_progress_by_path[dfc.filepath],lock)
