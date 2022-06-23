@@ -1,4 +1,5 @@
 #imports
+import uuid
 from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
 from ..shared.logging import LogOwner
@@ -47,6 +48,9 @@ class MyConsumer(LogOwner) :
         all_configs = {**parser.broker_configs,**parser.consumer_configs}
         all_configs = add_kwargs_to_configs(all_configs,**kwargs)
         #all_configs['debug']='broker,topic,msg'
+        #if the group.id has been set as "create_new" generate a new group ID
+        if 'group.id' in all_configs.keys() and all_configs['group.id'].lower()=='create_new' :
+            all_configs['group.id']=str(uuid.uuid1())
         #if there are configs for KafkaCrypto, use a KafkaConsumer
         if parser.kc_config_file_str is not None :
             if logger is not None :

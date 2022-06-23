@@ -1,5 +1,5 @@
 #imports
-import pathlib, math, uuid, re
+import pathlib, math, re
 from argparse import ArgumentParser
 from ..data_file_io.config import RUN_OPT_CONST
 from .config import UTIL_CONST
@@ -127,7 +127,7 @@ class MyArgumentParser(ArgumentParser) :
                                    added to the directory after this code starts running (by default 
                                    only files added after startup will be uploaded)'''}],
         'consumer_group_ID':
-            ['optional',{'default':str(uuid.uuid1()),
+            ['optional',{'default':'create_new',
                          'help':'ID to use for all consumers in the group'}],
         'optional_output_dir':
             ['optional',{'type':create_dir,

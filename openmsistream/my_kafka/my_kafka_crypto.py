@@ -29,7 +29,7 @@ class MyKafkaCrypto :
         """
         producer_configs = server_configs.copy()
         consumer_configs = server_configs.copy()
-        #figure out a consumer group ID to use
+        #figure out a consumer group ID to use (KafkaCrypto Consumers need one)
         if 'group.id' not in consumer_configs.keys() :
             consumer_configs['group.id'] = str(uuid.uuid1())
         with cd(pathlib.Path(config_file).parent) :

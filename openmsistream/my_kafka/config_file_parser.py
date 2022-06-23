@@ -1,5 +1,5 @@
 #imports
-import pathlib, uuid
+import pathlib
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
 from confluent_kafka.serialization import DoubleDeserializer, IntegerDeserializer, StringDeserializer
 from ..shared.config import UTIL_CONST
@@ -44,9 +44,6 @@ class MyKafkaConfigFileParser(ConfigFileParser) :
     def consumer_configs(self) :
         if self.__consumer_configs is None :
             ccs = self._get_config_dict('consumer')
-            #if the group.id has been set as "new" generate a new group ID
-            if 'group.id' in ccs.keys() and ccs['group.id'].lower()=='create_new' :
-                ccs['group.id']=str(uuid.uuid1())
             #if the auto.offset.reset was given as "none" then remove it from the ccs
             if 'auto.offset.reset' in ccs.keys() and ccs['auto.offset.reset']=='none' :
                 del ccs['auto.offset.reset']
