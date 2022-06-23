@@ -1,5 +1,4 @@
 #imports
-import uuid
 from ..shared.logging import LogOwner
 from .my_consumer import MyConsumer
 
@@ -12,7 +11,7 @@ class ConsumerGroup(LogOwner) :
     def topic_name(self) :
         return self.__topic_name
 
-    def __init__(self,config_path,topic_name,*args,consumer_group_ID=str(uuid.uuid1()),**kwargs) :
+    def __init__(self,config_path,topic_name,*args,consumer_group_ID='create_new',**kwargs) :
         """
         arguments:
         config_path = path to the config file that should be used to define the consumer group

@@ -90,7 +90,10 @@ class OSNService(LogOwner) :
             return False
         file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
-        object_key = topic_name + '/' + sub_dir + '/' + file_name
+        object_key = topic_name 
+        if sub_dir is not None :
+            object_key+= '/' + sub_dir 
+        object_key+= '/' + file_name
         s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
         object_content = s3_response_object['Body'].read()
         if object_content == None:
