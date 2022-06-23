@@ -24,7 +24,6 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
         self.s3d.close_session()
 
     def _process_downloaded_data_file(self, datafile, lock):
-        self.logger.debug('in _process_downloaded_data_file...')
         self.s3d.transfer_object_stream(self.topic_name, datafile)
         if self.s3d.compare_consumer_datafile_with_osn_object_stream(self.topic_name, self.bucket_name, datafile):
             file_name = str(datafile.filename)
