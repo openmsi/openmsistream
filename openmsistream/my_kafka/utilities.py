@@ -1,13 +1,20 @@
 #imports
 from collections import namedtuple
 
-def add_kwargs_to_configs(configs,**kwargs) :
+def add_kwargs_to_configs(configs,logger,**kwargs) :
     """
     Add any kwargs with underscores replaced with dots to a given config dictionary
     """
     new_configs = configs.copy()
     for argname,arg in kwargs.items() :
-        new_configs[argname.replace('_','.')]=arg
+        config_name = argname.replace('_','.')
+        if config_name in new_configs.keys() and new_configs[config_name]!=arg :
+            if logger is not None :
+                warnmsg = f'WARNING: a new value for the "{config_name}" config has been supplied by a keyword argument '
+                warnmsg+= f'that will overwrite a previously-set value. The value will be set to {arg} instead of '
+                warnmsg+= f'{new_configs[config_name]}.'
+                logger.warning(warnmsg)
+        new_configs[config_name]=arg
     return new_configs
 
 #a very small class (and instance thereof) to hold a logger object to use in the default producer callback 
