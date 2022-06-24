@@ -49,7 +49,7 @@ setupkwargs = dict(
                                'pyflakes>=2.2.0',
                                ],
                       'docs': ['sphinx>=5.0.2',
-                               'sphinx-rtd-theme-1.0.0',
+                               'sphinx_rtd_theme>=1.0.0',
                                 ],
                         },
     keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
