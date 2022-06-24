@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.1.6'
+version = '0.9.1.7'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -51,10 +51,13 @@ setupkwargs = dict(
                       'docs': ['sphinx>=5.0.2',
                                'sphinx_rtd_theme>=1.0.0',
                                 ],
+                      'dev': ['twine',
+                                ],
                         },
     keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
     classifiers=[
-        'Programming Language :: Python :: 3',
+        'Programming Language :: Python :: 3.7',
+        'Programming Language :: Python :: 3.9',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
         'Operating System :: OS Independent',
     ],
