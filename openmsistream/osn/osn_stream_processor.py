@@ -74,6 +74,13 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
             msg+=f' and {n_processed} messages were successfully processed'
         osn_stream_proc.logger.info(msg)
 
+    def _on_check(self) :
+        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
+        msg+= f'{len(self.completely_processed_filepaths)} files transferred so far'
+        self.logger.debug(msg)
+        if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
+            self.logger.debug(self.progress_msg)
+
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
 
 def main(args=None):

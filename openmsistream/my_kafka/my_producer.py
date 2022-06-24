@@ -45,7 +45,7 @@ class MyProducer(LogOwner) :
         ret_kwargs = {}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
-        all_configs = add_kwargs_to_configs(all_configs,**kwargs)
+        all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
         #all_configs['debug']='broker,topic,msg'
         #if there are configs for KafkaCrypto, use a KafkaProducer
         if parser.kc_config_file_str is not None :

@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.1.5'
+version = '0.9.1.6'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -48,6 +48,9 @@ setupkwargs = dict(
                                'marko[toc]',
                                'pyflakes>=2.2.0',
                                ],
+                      'docs': ['sphinx>=5.0.2',
+                               'sphinx_rtd_theme>=1.0.0',
+                                ],
                         },
     keywords=['data_streaming','stream_processing','apache_kafka','materials','data_science'],
     classifiers=[

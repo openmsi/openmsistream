@@ -1,5 +1,5 @@
 # <div align="center"> Open MSI Stream </div>
-#### <div align="center">***v0.9.1.5***</div>
+#### <div align="center">***v0.9.1.6***</div>
 
 #### <div align="center">Maggie Eminizer<sup>2</sup>, Amir Sharifzadeh<sup>2</sup>, Sam Tabrisky<sup>3</sup>, Alakarthika Ulaganathan<sup>4</sup>, David Elbert<sup>1</sup></div>
 
@@ -15,7 +15,7 @@
 
 Applications for laboratory, analysis, and computational materials data streaming using [Apache Kafka](https://kafka.apache.org/)
 
-Available on GitHub at https://github.com/openmsi/openmsistream
+Available on PyPI at https://pypi.org/project/openmsistream and GitHub at https://github.com/openmsi/openmsistream 
 
 Developed for Open MSI (NSF DMREF award #1921959)
 

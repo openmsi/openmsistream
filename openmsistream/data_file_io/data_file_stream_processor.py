@@ -126,7 +126,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{len(self.completely_processed_filepaths)} files completely reconstructed so far'
+        msg+= f'{len(self.completely_processed_filepaths)} files completely processed so far'
         self.logger.debug(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
