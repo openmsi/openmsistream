@@ -1,18 +1,18 @@
 from ..running.runnable import Runnable
 from ..data_file_io.config import RUN_OPT_CONST
 from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
-from .config_file_parser import OSNConfigFileParser
+from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
 
-class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
+class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
 
     def __init__(self, bucket_name, config_path, topic_name, **otherkwargs) :
         super().__init__(config_path, topic_name, **otherkwargs)
-        parser = OSNConfigFileParser(config_path,logger=self.logger)
-        self.__osn_config = parser.osn_configs
-        self.__osn_config['bucket_name'] = bucket_name
+        parser = S3ConfigFileParser(config_path,logger=self.logger)
+        self.__s3_config = parser.s3_configs
+        self.__s3_config['bucket_name'] = bucket_name
         self.bucket_name = bucket_name
-        self.s3d = S3DataTransfer(self.__osn_config,logger=self.logger)
+        self.s3d = S3DataTransfer(self.__s3_config,logger=self.logger)
 
     def make_stream(self):
         return self.process_files_as_read()
@@ -51,17 +51,17 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
         # make the argument parser
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
-        osn_stream_proc = cls(args.bucket_name,
-                              args.config, args.topic_name,
-                              n_threads=args.n_threads,
-                              update_secs=args.update_seconds,
-                              consumer_group_ID=args.consumer_group_ID,
-                              logger_file=args.logger_file)
+        s3_stream_proc = cls(args.bucket_name,
+                             args.config, args.topic_name,
+                             n_threads=args.n_threads,
+                             update_secs=args.update_seconds,
+                             consumer_group_ID=args.consumer_group_ID,
+                             logger_file=args.logger_file)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
-        osn_stream_proc.logger.info(msg)
-        n_read,n_processed,complete_filenames = osn_stream_proc.make_stream()
-        osn_stream_proc.close()
+        s3_stream_proc.logger.info(msg)
+        n_read,n_processed,complete_filenames = s3_stream_proc.make_stream()
+        s3_stream_proc.close()
         msg = f'{n_read} total messages were consumed'
         if len(complete_filenames)>0 :
             msg+=f', {n_processed} messages were successfully processed,'
@@ -72,7 +72,7 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
                 msg+=f'\n\t{fn}'
         else :
             msg+=f' and {n_processed} messages were successfully processed'
-        osn_stream_proc.logger.info(msg)
+        s3_stream_proc.logger.info(msg)
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
@@ -84,7 +84,7 @@ class OSNStreamProcessor(DataFileStreamProcessor, Runnable) :
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
 
 def main(args=None):
-    OSNStreamProcessor.run_from_command_line(args)
+    S3TransferStreamProcessor.run_from_command_line(args)
 
 if __name__ == '__main__':
     main()

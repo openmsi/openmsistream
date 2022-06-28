@@ -31,7 +31,7 @@ setupkwargs = dict(
                              'InstallService=openmsistream.services.install_service:main',
                              'ManageService=openmsistream.services.manage_service:main',
                              'ProvisionNode=openmsistream.utilities.provision_wrapper:main',
-                             'OSNStreamProcessor=openmsistream.osn.osn_stream_processor:main',
+                             'S3TransferStreamProcessor=openmsistream.s3_buckets.s3_transfer_stream_processor:main',
                             ],
     },
     python_requires='>=3.7,<3.10',
