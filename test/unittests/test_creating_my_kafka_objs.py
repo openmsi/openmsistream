@@ -2,10 +2,10 @@
 import unittest, pathlib, logging
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.my_kafka.my_producer import MyProducer
-from openmsistream.my_kafka.my_consumer import MyConsumer
-from openmsistream.my_kafka.producer_group import ProducerGroup
-from openmsistream.my_kafka.consumer_group import ConsumerGroup
+from openmsistream.kafka_wrapper.openmsistream_producer import MyProducer
+from openmsistream.kafka_wrapper.openmsistream_consumer import MyConsumer
+from openmsistream.kafka_wrapper.producer_group import ProducerGroup
+from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST
 
 #constants

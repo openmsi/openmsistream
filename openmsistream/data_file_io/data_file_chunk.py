@@ -2,7 +2,7 @@
 import pathlib
 from hashlib import sha512
 from ..utilities.logging import Logger
-from ..my_kafka.producible import Producible
+from ..kafka_wrapper.producible import Producible
 
 class DataFileChunk(Producible) :
     """

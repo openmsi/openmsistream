@@ -2,8 +2,8 @@
 import unittest
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
 from confluent_kafka.serialization import DoubleDeserializer, IntegerDeserializer, StringDeserializer
-from openmsistream.my_kafka.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
-from openmsistream.my_kafka.config_file_parser import MyKafkaConfigFileParser
+from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
+from openmsistream.kafka_wrapper.config_file_parser import MyKafkaConfigFileParser
 
 class TestMyKafkaConfigFileParser(unittest.TestCase) :
     """

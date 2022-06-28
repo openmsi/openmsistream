@@ -4,7 +4,7 @@ from threading import Thread
 from queue import Queue
 from hashlib import sha512
 from ..running.runnable import Runnable
-from ..my_kafka.producer_group import ProducerGroup
+from ..kafka_wrapper.producer_group import ProducerGroup
 from .config import RUN_OPT_CONST
 from .data_file_chunk import DataFileChunk
 from .data_file import DataFile

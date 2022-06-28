@@ -1,6 +1,6 @@
 #imports
 from ..utilities.logging import LogOwner
-from .my_consumer import MyConsumer
+from .openmsistream_consumer import MyConsumer
 
 class ConsumerGroup(LogOwner) :
     """

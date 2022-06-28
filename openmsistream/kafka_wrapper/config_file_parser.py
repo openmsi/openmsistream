@@ -2,11 +2,11 @@
 import pathlib
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
 from confluent_kafka.serialization import DoubleDeserializer, IntegerDeserializer, StringDeserializer
-from ..utilities.config import UTIL_CONST
 from ..utilities.config_file_parser import ConfigFileParser
+from ..running.config import RUN_CONST
 from .serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 
-class MyKafkaConfigFileParser(ConfigFileParser) :
+class KafkaConfigFileParser(ConfigFileParser) :
     """
     A class to parse Kafka configurations from files
     """
@@ -38,7 +38,7 @@ class MyKafkaConfigFileParser(ConfigFileParser) :
     def producer_configs(self) :
         if self.__producer_configs is None :
             pcs = self._get_config_dict('producer')
-            self.__producer_configs = MyKafkaConfigFileParser.get_replaced_configs(pcs,'serialization')
+            self.__producer_configs = KafkaConfigFileParser.get_replaced_configs(pcs,'serialization')
         return self.__convert_floats(self.__producer_configs)
     @property
     def consumer_configs(self) :
@@ -47,7 +47,7 @@ class MyKafkaConfigFileParser(ConfigFileParser) :
             #if the auto.offset.reset was given as "none" then remove it from the ccs
             if 'auto.offset.reset' in ccs.keys() and ccs['auto.offset.reset']=='none' :
                 del ccs['auto.offset.reset']
-            self.__consumer_configs = MyKafkaConfigFileParser.get_replaced_configs(ccs,'deserialization')
+            self.__consumer_configs = KafkaConfigFileParser.get_replaced_configs(ccs,'deserialization')
         return self.__convert_floats(self.__consumer_configs)
 
     #################### PUBLIC FUNCTIONS ####################
@@ -68,9 +68,9 @@ class MyKafkaConfigFileParser(ConfigFileParser) :
         replacement_type = a string indicating the type of replacement that should be performed
         """
         if replacement_type=='serialization' :
-            classes = MyKafkaConfigFileParser.SERIALIZERS
+            classes = KafkaConfigFileParser.SERIALIZERS
         elif replacement_type=='deserialization' :
-            classes = MyKafkaConfigFileParser.DESERIALIZERS
+            classes = KafkaConfigFileParser.DESERIALIZERS
         else :
             raise ValueError(f'ERROR: unrecognized replacement_type "{replacement_type}" in get_replaced_configs!')
         for cfg_name,cfg_value in configs.items() :

@@ -5,7 +5,7 @@ from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.data_file_chunk import DataFileChunk
-from openmsistream.my_kafka.my_producer import MyProducer
+from openmsistream.kafka_wrapper.openmsistream_producer import MyProducer
 from config import TEST_CONST
 
 #constants

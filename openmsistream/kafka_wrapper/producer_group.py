@@ -1,6 +1,6 @@
 #imports
 from ..utilities.logging import LogOwner
-from .my_producer import MyProducer
+from .openmsistream_producer import MyProducer
 
 class ProducerGroup(LogOwner) :
     """
