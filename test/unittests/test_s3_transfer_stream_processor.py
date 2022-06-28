@@ -27,9 +27,6 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
         dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER,
                                        TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
-        # print(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)
-        # osn_path = TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER.replace('\\', '/')
-        # print(osn_path)
         # start upload_files_as_added in a separate thread so we can time it out
         upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
                                                 args=(TOPIC_NAME,),
@@ -85,7 +82,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             TOPIC_NAME,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
-            consumer_group_ID='test_osn',
+            consumer_group_ID='test_s3_transfer',
             logger=LOGGER,
         )
         s3tsp_thread = ExceptionTrackingThread(target=s3tsp.make_stream)
@@ -106,7 +103,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             # wait for the uploading thread to complete
             s3tsp_thread.join(timeout=TIMEOUT_SECS)
             if s3tsp_thread.is_alive():
-                errmsg = 'ERROR: transfer osn thread in S3TransferStreamProcessor '
+                errmsg = 'ERROR: s3 transfer thread in S3TransferStreamProcessor '
                 errmsg += f'timed out after {TIMEOUT_SECS} seconds!'
                 raise TimeoutError(errmsg)
         except Exception as e:
@@ -118,7 +115,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                     s3tsp.shutdown()
                     s3tsp_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if s3tsp_thread.is_alive():
-                        errmsg = 'ERROR: transfer osn thread in S3TransferStreamProcessor timed out after '
+                        errmsg = 'ERROR: s3 transfer thread in S3TransferStreamProcessor timed out after '
                         errmsg += f'{JOIN_TIMEOUT_SECS} seconds!'
                         raise TimeoutError(errmsg)
                 except Exception as e:
@@ -134,7 +131,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             TOPIC_NAME,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
-            consumer_group_ID='test_osn',
+            consumer_group_ID='test_s3_transfer',
             logger=LOGGER,
         )
         validate_thread = ExceptionTrackingThread(target=self.validate_s3_transfer_with_producer)
@@ -196,10 +193,10 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
         aws_secret_access_key = TEST_CONST.TEST_SECRET_KEY_ID
         region_name = TEST_CONST.TEST_REGION
         bucket_name = TEST_CONST.TEST_BUCKET_NAME
-        osn_config = {'endpoint_url': endpoint_url, 'access_key_id': aws_access_key_id,
-                      'secret_key_id': aws_secret_access_key,
-                      'region': region_name, 'bucket_name': bucket_name}
-        s3d = S3DataTransfer(osn_config,logger=LOGGER)
+        s3_config = {'endpoint_url': endpoint_url, 'access_key_id': aws_access_key_id,
+                     'secret_key_id': aws_secret_access_key,
+                     'region': region_name, 'bucket_name': bucket_name}
+        s3d = S3DataTransfer(s3_config,logger=LOGGER)
         for subdir, dirs, files in os.walk(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER):
             for file in files:
                 local_path = str(os.path.join(subdir, file))
@@ -214,18 +211,18 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                 local_path = str(os.path.join(subdir, file)).replace('\\', '/')
                 object_key = TOPIC_NAME + '/' + local_path[len(str(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)) + 1:]
 
-                if not (s3d.compare_producer_datafile_with_osn_object_stream(TEST_CONST.TEST_BUCKET_NAME, object_key,
+                if not (s3d.compare_producer_datafile_with_s3_object_stream(TEST_CONST.TEST_BUCKET_NAME, object_key,
                                                                          hashed_datafile_stream)):
                     LOGGER.info('did not match for producer')
                     raise Exception('Failed to match s3 object with the original producer data')
-                s3d.delete_object_from_osn(bucket_name, object_key)
+                s3d.delete_object_from_bucket(bucket_name, object_key)
         shutil.rmtree(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)
         if TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER.is_dir() :
             shutil.rmtree(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)
         s3d.close_session()
         LOGGER.info('All test cases passed')
 
-    def test_upload_and_transfer_into_osn_kafka(self):
+    def test_upload_and_transfer_into_s3_bucket_kafka(self):
         self.run_data_file_upload_directory()
         self.run_s3_tranfer_data()
         self.validate_s3_data_transfer()

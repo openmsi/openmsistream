@@ -4,8 +4,8 @@ from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
 from ..utilities.logging import LogOwner
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
-from .config_file_parser import MyKafkaConfigFileParser
-from .openmsistream_kafka_crypto import MyKafkaCrypto
+from .config_file_parser import KafkaConfigFileParser
+from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundDeserializer
 
 class OpenMSIStreamConsumer(LogOwner) :
@@ -44,7 +44,7 @@ class OpenMSIStreamConsumer(LogOwner) :
 
         Used to quickly instantiate more than one identical OpenMSIStreamConsumer for a ConsumerGroup
         """
-        parser = MyKafkaConfigFileParser(config_file_path,logger=logger)
+        parser = KafkaConfigFileParser(config_file_path,logger=logger)
         ret_kwargs = {}
         #get the broker and consumer configurations
         all_configs = {**parser.broker_configs,**parser.consumer_configs}
@@ -57,7 +57,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         if parser.kc_config_file_str is not None :
             if logger is not None :
                 logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
-            kc = MyKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.deserializer' in all_configs.keys() :
                 keydes = CompoundDeserializer(kc.key_deserializer,all_configs.pop('key.deserializer'))
             else :

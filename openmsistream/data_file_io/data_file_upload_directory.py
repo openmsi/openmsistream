@@ -3,10 +3,9 @@ import pathlib, datetime, time
 from threading import Lock
 from queue import Queue
 from ..utilities.misc import populated_kwargs
-from ..utilities.config import UTIL_CONST
-from ..utilities.exception_tracking_thread import MyThread
+from ..utilities.exception_tracking_thread import ExceptionTrackingThread
 from ..running.runnable import Runnable
-from ..running.controlled_process import ControlledProcessSingleThread
+from ..running.controlled_process_single_thread import ControlledProcessSingleThread
 from ..kafka_wrapper.producer_group import ProducerGroup
 from .config import RUN_OPT_CONST
 from .producer_file_registry import ProducerFileRegistry
@@ -51,7 +50,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,upload_regex=UTIL_CONST.DEFAULT_UPLOAD_REGEX,datafile_type=UploadDataFile,**kwargs) :
+    def __init__(self,*args,upload_regex=RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,datafile_type=UploadDataFile,**kwargs) :
         """
         upload_regex = only files matching this regular expression will be uploaded
         datafile_type = the type of data file that recognized files should be uploaded as 
@@ -113,9 +112,9 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.__upload_threads = []
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
-            t = MyThread(target=self.__producers[-1].produce_from_queue,
-                       args=(self.__upload_queue,self.__topic_name),
-                       kwargs={'callback': self.producer_callback},
+            t = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue,
+                                        args=(self.__upload_queue,self.__topic_name),
+                                        kwargs={'callback': self.producer_callback},
                     )
             t.start()
             self.__upload_threads.append(t)
@@ -337,9 +336,9 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     self.__producers[ti] = None
                 #recreate the producer and restart the thread
                 self.__producers[ti] = self.get_new_producer()
-                t = MyThread(target=self.__producers[ti].produce_from_queue,
-                             args=(self.__upload_queue,self.__topic_name),
-                             kwargs={'callback': self.producer_callback},
+                t = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue,
+                                            args=(self.__upload_queue,self.__topic_name),
+                                            kwargs={'callback': self.producer_callback},
                             )
                 t.start()
                 self.__upload_threads[ti] = t

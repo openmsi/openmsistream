@@ -4,8 +4,8 @@ from queue import Queue, Empty
 from threading import Thread
 from abc import ABC, abstractmethod
 from ..utilities.misc import add_user_input
-from ..utilities.config import UTIL_CONST
 from ..utilities.logging import LogOwner
+from .config import RUN_CONST
 
 class ControlledProcess(LogOwner,ABC) :
     """
@@ -23,7 +23,7 @@ class ControlledProcess(LogOwner,ABC) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,update_secs=UTIL_CONST.DEFAULT_UPDATE_SECONDS,**other_kwargs) :
+    def __init__(self,*args,update_secs=RUN_CONST.DEFAULT_UPDATE_SECONDS,**other_kwargs) :
         """
         update_secs = number of seconds to wait between printing a progress character to the console 
                       to indicate the program is alive

@@ -1,7 +1,7 @@
 #imports
 import unittest, pathlib, shutil, os
-from openmsistream.utilities.config import UTIL_CONST
-from openmsistream.running.argument_parsing import MyArgumentParser, existing_file, existing_dir, create_dir
+from openmsistream.running.config import RUN_CONST
+from openmsistream.running.argument_parsing import OpenMSIStreamArgumentParser, existing_file, existing_dir, create_dir
 from openmsistream.running.argument_parsing import config_path, int_power_of_two, positive_int
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
@@ -11,9 +11,9 @@ class TestArgumentParsing(unittest.TestCase) :
     Class for testing functions in utilities/argument_parsing.py
     """
 
-    #test MyArgumentParser by just adding a bunch of arguments
+    #test OpenMSIStreamArgumentParser by just adding a bunch of arguments
     def test_my_argument_parser(self) :
-        parser = MyArgumentParser()
+        parser = OpenMSIStreamArgumentParser()
         parser.add_arguments('filepath','output_dir','upload_dir','config','topic_name','queue_max_size',
                              'upload_existing','consumer_group_ID','optional_output_dir',
                              n_threads=5,chunk_size=128,update_seconds=60)
@@ -27,7 +27,7 @@ class TestArgumentParsing(unittest.TestCase) :
         self.assertTrue((pathlib.Path() / 'TEST_OUTPUT').is_dir())
         shutil.rmtree(pathlib.Path() / 'TEST_OUTPUT')
         with self.assertRaises(ValueError) :
-            parser = MyArgumentParser()
+            parser = OpenMSIStreamArgumentParser()
             parser.add_arguments('never_name_a_command_line_arg_this')
 
     #test the existing_file argument parser callback
@@ -95,17 +95,17 @@ class TestArgumentParsing(unittest.TestCase) :
 
     #test the config_path argument parser callback
     def test_config_path(self) :
-        default_config_file_path = UTIL_CONST.CONFIG_FILE_DIR 
-        default_config_file_path = default_config_file_path / f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{UTIL_CONST.CONFIG_FILE_EXT}'
+        default_config_file_path = RUN_CONST.CONFIG_FILE_DIR 
+        default_config_file_path = default_config_file_path / f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
         default_config_file_path = default_config_file_path.resolve()
         self.assertEqual(config_path(RUN_OPT_CONST.DEFAULT_CONFIG_FILE),default_config_file_path)
         self.assertEqual(config_path(str(default_config_file_path)),default_config_file_path)
-        prod_config_file_path = (UTIL_CONST.CONFIG_FILE_DIR / f'prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        prod_config_file_path = (RUN_CONST.CONFIG_FILE_DIR / f'prod{RUN_CONST.CONFIG_FILE_EXT}').resolve()
         self.assertEqual(config_path('prod'),prod_config_file_path)
         self.assertEqual(config_path(str(prod_config_file_path)),prod_config_file_path)
         does_not_exist_config_file_name = 'never_make_a_file_called_this.fake_file_ext'
         self.assertFalse((pathlib.Path() / does_not_exist_config_file_name).is_file())
-        self.assertFalse((UTIL_CONST.CONFIG_FILE_DIR / does_not_exist_config_file_name).is_file())
+        self.assertFalse((RUN_CONST.CONFIG_FILE_DIR / does_not_exist_config_file_name).is_file())
         with self.assertRaises(ValueError) :
             _ = config_path(does_not_exist_config_file_name)
         with self.assertRaises(TypeError) :

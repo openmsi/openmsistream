@@ -9,7 +9,7 @@ class RunConstants :
 
     @property
     def CONFIG_FILE_DIR(self) :
-        return pathlib.Path(__file__).parent.parent / 'my_kafka' / 'config_files'
+        return pathlib.Path(__file__).parent.parent / 'kafka_wrapper' / 'config_files'
 
     @property
     def DEFAULT_N_THREADS(self) :

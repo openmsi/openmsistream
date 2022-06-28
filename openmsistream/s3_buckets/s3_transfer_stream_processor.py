@@ -25,7 +25,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
 
     def _process_downloaded_data_file(self, datafile, lock):
         self.s3d.transfer_object_stream(self.topic_name, datafile)
-        if self.s3d.compare_consumer_datafile_with_osn_object_stream(self.topic_name, self.bucket_name, datafile):
+        if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.topic_name, self.bucket_name, datafile):
             file_name = str(datafile.filename)
             sub_dir = datafile.subdir_str
             object_key = self.topic_name 

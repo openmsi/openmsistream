@@ -107,7 +107,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
             #option 2 above
             elif 'node_id' in kc_configs.keys() :
                 node_id = kc_configs['node_id']
-                dirpath = UTIL_CONST.CONFIG_FILE_DIR / node_id
+                dirpath = RUN_CONST.CONFIG_FILE_DIR / node_id
                 filepath = dirpath / f'{node_id}.config'
                 if (not dirpath.is_dir()) or (not filepath.is_file()) :
                     errmsg = f'ERROR: no KafkaCrypto config file found in the default location ({filepath}) '

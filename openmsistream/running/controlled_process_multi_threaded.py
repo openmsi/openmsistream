@@ -2,7 +2,7 @@
 from threading import Lock
 from abc import ABC, abstractmethod
 from ..utilities.exception_tracking_thread import ExceptionTrackingThread
-from .config import UTIL_CONST
+from .config import RUN_CONST
 from .controlled_process import ControlledProcess
 
 class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
@@ -14,7 +14,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
     def n_threads(self):
         return self.__n_threads
 
-    def __init__(self,*args,n_threads=UTIL_CONST.DEFAULT_N_THREADS,**kwargs) :
+    def __init__(self,*args,n_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
         """
         n_threads = number of threads to use
         """

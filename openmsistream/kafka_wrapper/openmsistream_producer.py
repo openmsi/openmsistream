@@ -5,8 +5,8 @@ from kafkacrypto import KafkaProducer
 from ..utilities.logging import LogOwner
 from .producible import Producible
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
-from .config_file_parser import MyKafkaConfigFileParser
-from .openmsistream_kafka_crypto import MyKafkaCrypto
+from .config_file_parser import KafkaConfigFileParser
+from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundSerializer
 
 class OpenMSIStreamProducer(LogOwner) :
@@ -42,7 +42,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
         any keyword arguments will be added to the final producer configs (with underscores replaced with dots)
         """
-        parser = MyKafkaConfigFileParser(config_file_path,logger=logger)
+        parser = KafkaConfigFileParser(config_file_path,logger=logger)
         ret_kwargs = {}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
@@ -52,7 +52,7 @@ class OpenMSIStreamProducer(LogOwner) :
         if parser.kc_config_file_str is not None :
             if logger is not None :
                 logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-            kc = MyKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.serializer' in all_configs.keys() :
                 keyser = CompoundSerializer(all_configs.pop('key.serializer'),kc.key_serializer)
             else :

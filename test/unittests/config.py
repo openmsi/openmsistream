@@ -13,7 +13,7 @@ class TestRoutineConstants :
             'test_data_file_directories':'test_data_file_directories',
             'test_data_file_directories_encrypted':'test_oms_encrypted',
             'test_data_file_stream_processor':'test_data_file_stream_processor',
-            'test_osn':'osn_test',
+            'test_s3_transfer_stream_processor':'osn_test',
             'test_serialization':'test_oms_encrypted',
         }
     @property

@@ -1,6 +1,6 @@
 #imports
 from abc import ABC, abstractmethod
-from .argument_parsing import MyArgumentParser
+from .argument_parsing import OpenMSIStreamArgumentParser
 from .has_argument_parser import HasArgumentParser
 
 class Runnable(HasArgumentParser,ABC) :
@@ -8,7 +8,7 @@ class Runnable(HasArgumentParser,ABC) :
     Class for any child classes that can be run on their own from the command line
     """
 
-    ARGUMENT_PARSER_TYPE = MyArgumentParser
+    ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
 
     @classmethod
     @abstractmethod

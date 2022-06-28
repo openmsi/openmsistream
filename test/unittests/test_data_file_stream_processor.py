@@ -1,7 +1,7 @@
 #imports
 import unittest, time, pathlib, logging
 from openmsistream.utilities.logging import Logger
-from openmsistream.utilities.exception_tracking_thread import MyThread
+from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.data_file_stream_processor import DataFileStreamProcessor
@@ -54,7 +54,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  consumer_group_ID='test_data_file_stream_processor',
                                                  logger=LOGGER,
                                                 )
-        stream_thread = MyThread(target=dfsp.process_files_as_read)
+        stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
         stream_thread.start()
         try :
             self.assertFalse(dfsp.checked)
