@@ -1,7 +1,7 @@
 #imports
 import unittest, pathlib, logging
 from confluent_kafka.error import SerializationError
-from openmsistream.shared.logging import Logger
+from openmsistream.utilities.logging import Logger
 from openmsistream.my_kafka.config_file_parser import MyKafkaConfigFileParser
 from openmsistream.my_kafka.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 from openmsistream.my_kafka.serialization import CompoundSerializer, CompoundDeserializer

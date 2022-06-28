@@ -1,5 +1,5 @@
 #imports
-from ..shared.config_file_parser import ConfigFileParser
+from ..utilities.config_file_parser import ConfigFileParser
 
 class OSNConfigFileParser(ConfigFileParser) :
     """

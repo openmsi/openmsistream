@@ -1,8 +1,8 @@
 #imports
 import unittest, pathlib, time, logging, shutil, filecmp
-from openmsistream.shared.logging import Logger
-from openmsistream.shared.my_thread import MyThread
-from openmsistream.shared.dataclass_table import DataclassTable
+from openmsistream.utilities.logging import Logger
+from openmsistream.utilities.exception_tracking_thread import MyThread
+from openmsistream.utilities.dataclass_table import DataclassTable
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.producer_file_registry import RegistryLineInProgress, RegistryLineCompleted
 from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory

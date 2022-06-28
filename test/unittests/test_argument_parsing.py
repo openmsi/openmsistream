@@ -1,8 +1,8 @@
 #imports
 import unittest, pathlib, shutil, os
-from openmsistream.shared.config import UTIL_CONST
-from openmsistream.shared.argument_parsing import MyArgumentParser, existing_file, existing_dir, create_dir
-from openmsistream.shared.argument_parsing import config_path, int_power_of_two, positive_int
+from openmsistream.utilities.config import UTIL_CONST
+from openmsistream.running.argument_parsing import MyArgumentParser, existing_file, existing_dir, create_dir
+from openmsistream.running.argument_parsing import config_path, int_power_of_two, positive_int
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
 

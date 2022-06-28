@@ -86,7 +86,6 @@ class DataclassTable(LogOwner) :
     def __del__(self) :
         self.dump_to_file(reraise_exc=False)
 
-
     def add_entries(self,new_entries) :
         """
         Add a new set of entries to the table

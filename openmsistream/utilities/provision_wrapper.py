@@ -1,8 +1,8 @@
 #imports
 import pathlib, shutil, logging, urllib.request, kafkacrypto
 from argparse import ArgumentParser
-from ..shared.logging import Logger
-from ..shared.config_file_parser import ConfigFileParser
+from .logging import Logger
+from .config_file_parser import ConfigFileParser
 from .misc import cd
 
 #constants

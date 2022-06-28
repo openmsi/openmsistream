@@ -1,7 +1,7 @@
 #imports
 import unittest, platform, shutil, pathlib, logging, time
 from subprocess import check_output
-from openmsistream.shared.logging import Logger
+from openmsistream.utilities.logging import Logger
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from openmsistream.services.windows_service_manager import WindowsServiceManager

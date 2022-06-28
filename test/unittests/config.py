@@ -1,6 +1,6 @@
 #imports
 import os, pathlib
-from openmsistream.shared.config import UTIL_CONST
+from openmsistream.utilities.config import UTIL_CONST
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 
 class TestRoutineConstants :

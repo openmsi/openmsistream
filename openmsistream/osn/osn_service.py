@@ -5,7 +5,7 @@
 # Johns Hopkins University http://www.jhu.edu/
 import hashlib
 import boto3
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 
 class OSNService(LogOwner) :
 

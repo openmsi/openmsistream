@@ -1,4 +1,5 @@
-#constants for data file upload/download/handling
+#imports
+import re
 
 class DataFileHandlingConstants :
     @property
@@ -32,6 +33,10 @@ class RunOptionConstants :
     @property
     def N_DEFAULT_DOWNLOAD_THREADS(self) :
         return 2      # default number of threads to use when downloading chunks of a file
+    @property
+    def DEFAULT_UPLOAD_REGEX(self) :
+        #matches everything except something starting with a '.' or ending in '.log'
+        return re.compile(r'^((?!(\.|.*.log))).*$') 
     @property
     def DEFAULT_CHUNK_SIZE(self) :
         return 16384  # default size in bytes of each file upload chunk

@@ -2,7 +2,7 @@
 import pathlib, math, re
 from argparse import ArgumentParser
 from ..data_file_io.config import RUN_OPT_CONST
-from .config import UTIL_CONST
+from ..utilities.config import UTIL_CONST
 
 #################### MISC. FUNCTIONS ####################
 
@@ -77,7 +77,7 @@ def positive_int(argval) :
 
 #################### MYARGUMENTPARSER CLASS ####################
 
-class MyArgumentParser(ArgumentParser) :
+class OpenMSIStreamArgumentParser(ArgumentParser) :
     """
     Class to make it easier to get an ArgumentParser with some commonly-used arguments in it
     """

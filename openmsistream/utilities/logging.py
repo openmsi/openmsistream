@@ -1,7 +1,7 @@
 #imports
 import pathlib, logging, traceback
 
-class MyFormatter(logging.Formatter) :
+class OpenMSIStreamFormatter(logging.Formatter) :
     """
     Very small extension of the usual logging.Formatter to allow modification of format based on message content
     """
@@ -27,7 +27,7 @@ class Logger :
 
     @property
     def formatter(self):
-        return MyFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
+        return OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
     def __init__(self,logger_name=None,streamlevel=logging.DEBUG,logger_filepath=None,filelevel=logging.INFO) :
         """

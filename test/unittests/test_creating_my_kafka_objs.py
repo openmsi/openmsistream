@@ -1,6 +1,6 @@
 #imports
 import unittest, pathlib, logging
-from openmsistream.shared.logging import Logger
+from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.my_kafka.my_producer import MyProducer
 from openmsistream.my_kafka.my_consumer import MyConsumer

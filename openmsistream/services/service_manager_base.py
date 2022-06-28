@@ -2,10 +2,10 @@
 import sys, pathlib, textwrap
 from abc import abstractmethod
 from subprocess import CalledProcessError
-from ..shared.argument_parsing import MyArgumentParser
-from ..shared.config_file_parser import ConfigFileParser
-from ..shared.logging import LogOwner
-from ..shared.has_argument_parser import HasArgumentParser
+from ..running.argument_parsing import MyArgumentParser
+from ..utilities.config_file_parser import ConfigFileParser
+from ..utilities.logging import LogOwner
+from ..running.has_argument_parser import HasArgumentParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var
 

@@ -2,7 +2,7 @@
 import traceback
 from abc import ABC, abstractmethod
 from kafkacrypto.message import KafkaCryptoMessage
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 from .config import DATA_FILE_HANDLING_CONST
 from .utilities import get_encrypted_message_timestamp_string
 from .download_data_file import DownloadDataFileToMemory

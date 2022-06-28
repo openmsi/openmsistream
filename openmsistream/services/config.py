@@ -1,7 +1,7 @@
 #imports
 import pathlib, importlib, pkg_resources
 from inspect import isclass
-from ..shared.logging import Logger
+from ..utilities.logging import Logger
 
 class ServicesConstants :
     """

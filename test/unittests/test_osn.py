@@ -1,10 +1,10 @@
 # imports
 import os
 import unittest, pathlib, time, logging, shutil, hashlib
-from openmsistream.shared.my_thread import MyThread
+from openmsistream.utilities.exception_tracking_thread import MyThread
 from openmsistream.osn.osn_stream_processor import OSNStreamProcessor
 from openmsistream.osn.s3_data_transfer import S3DataTransfer
-from openmsistream.shared.logging import Logger
+from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory
 from config import TEST_CONST

@@ -2,8 +2,8 @@
 import time
 from confluent_kafka import SerializingProducer
 from kafkacrypto import KafkaProducer
-from ..shared.logging import LogOwner
-from ..shared.producible import Producible
+from ..utilities.logging import LogOwner
+from .producible import Producible
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
 from .config_file_parser import MyKafkaConfigFileParser
 from .my_kafka_crypto import MyKafkaCrypto

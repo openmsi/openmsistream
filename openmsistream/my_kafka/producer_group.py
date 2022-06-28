@@ -1,5 +1,5 @@
 #imports
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 from .my_producer import MyProducer
 
 class ProducerGroup(LogOwner) :

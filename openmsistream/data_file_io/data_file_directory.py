@@ -1,5 +1,5 @@
 #imports
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 from ..utilities.misc import populated_kwargs
 
 class DataFileDirectory(LogOwner) :

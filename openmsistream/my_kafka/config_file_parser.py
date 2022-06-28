@@ -2,8 +2,8 @@
 import pathlib
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
 from confluent_kafka.serialization import DoubleDeserializer, IntegerDeserializer, StringDeserializer
-from ..shared.config import UTIL_CONST
-from ..shared.config_file_parser import ConfigFileParser
+from ..utilities.config import UTIL_CONST
+from ..utilities.config_file_parser import ConfigFileParser
 from .serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 
 class MyKafkaConfigFileParser(ConfigFileParser) :
