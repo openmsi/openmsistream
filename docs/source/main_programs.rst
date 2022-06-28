@@ -15,7 +15,7 @@ The main functional programs provided in OpenMSIStream are accessible through sp
    main_programs/upload_data_file
    main_programs/data_file_upload_directory
    main_programs/data_file_download_directory
-   main_programs/osn_stream_processor
+   main_programs/s3_transfer_stream_processor
 
 Installing programs as Services or daemons
 ------------------------------------------

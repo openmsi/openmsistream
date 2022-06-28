@@ -10,8 +10,8 @@ from .s3_service import S3Service
 
 class S3DataTransfer(S3Service) :
 
-    def __init__(self, osn_config, *args, **kwargs):
-        super().__init__(osn_config,*args,**kwargs)
+    def __init__(self, s3_config, *args, **kwargs):
+        super().__init__(s3_config,*args,**kwargs)
 
     def transfer_object_stream(self, topic_name,datafile):
         file_name = str(datafile.filename)

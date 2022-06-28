@@ -8,8 +8,6 @@ UNITTEST_DIR_PATH = (pathlib.Path(__file__).parent / 'unittests').resolve()
 TEST_REPO_STATUS_SCRIPT_PATH = (pathlib.Path(__file__).parent / 'test_repo_status.sh').resolve()
 CWD = pathlib.Path().resolve()
 
-# TODO: osn test case
-
 def main(args=None) :
     #make the argument parser
     parser = ArgumentParser()

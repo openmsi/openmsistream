@@ -45,7 +45,7 @@ class S3Service(LogOwner) :
 
     def delete_object_from_bucket(self, bucket_name, object_key):
         try:
-            # make sure object exits before deleting the object from osn
+            # make sure object exits before deleting the object from the bucket
             s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
             if s3_response_object == None:
                 msg = 'The object ' + object_key + ' does not exist in this bucket: ' + bucket_name

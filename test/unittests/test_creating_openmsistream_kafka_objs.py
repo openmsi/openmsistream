@@ -13,7 +13,7 @@ LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 
 class TestCreateOpenMSIStreamKafkaObjects(unittest.TestCase) :
     """
-    Class for testing that objects in openmsistream.my_kafka can 
+    Class for testing that objects in openmsistream.kafka_wrapper can 
     be instantiated using default configs
     """
 

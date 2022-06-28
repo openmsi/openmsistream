@@ -33,7 +33,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
                 object_key+= '/' + sub_dir 
             object_key+= '/' + file_name
             self.logger.info(object_key + ' matched with consumer datafile')
-            # self.s3d.delete_object_from_osn(self.bucket_name, object_key)
+            # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
         return None
 
     @classmethod

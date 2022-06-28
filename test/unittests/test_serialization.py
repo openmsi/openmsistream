@@ -17,7 +17,7 @@ TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py'
 
 class TestSerialization(unittest.TestCase) :
     """
-    Class for testing classes in openmsistream.my_kafka.serialization
+    Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
 
     def setUp(self) :

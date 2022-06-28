@@ -95,9 +95,8 @@ class TestArgumentParsing(unittest.TestCase) :
 
     #test the config_path argument parser callback
     def test_config_path(self) :
-        default_config_file_path = RUN_CONST.CONFIG_FILE_DIR 
-        default_config_file_path = default_config_file_path / f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
-        default_config_file_path = default_config_file_path.resolve()
+        cfg_file_name = f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
+        default_config_file_path = (RUN_CONST.CONFIG_FILE_DIR / cfg_file_name).resolve()
         self.assertEqual(config_path(RUN_OPT_CONST.DEFAULT_CONFIG_FILE),default_config_file_path)
         self.assertEqual(config_path(str(default_config_file_path)),default_config_file_path)
         prod_config_file_path = (RUN_CONST.CONFIG_FILE_DIR / f'prod{RUN_CONST.CONFIG_FILE_EXT}').resolve()

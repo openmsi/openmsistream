@@ -62,7 +62,8 @@ class KafkaConfigFileParser(ConfigFileParser) :
     @staticmethod
     def get_replaced_configs(configs,replacement_type) :
         """
-        Returns a configuration dictionary with (de)serialization parameters replaced by instances of corresponding classes
+        Returns a configuration dictionary with (de)serialization parameters replaced 
+        by instances of corresponding classes
 
         configs = the configurations dictionary to alter and return
         replacement_type = a string indicating the type of replacement that should be performed
@@ -93,7 +94,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
         1) The regular config file has a "kafkacrypto" section with a "config_file" parameter that is the 
         path to the KafkaCrypo config file
         2) The regular config file has a "kafkacrypto" section with a "node_id" parameter corresponding to 
-        a named subdirectory in openmsistream/my_kafka/config_files that was created when the node was provisioned
+        a named subdirectory in openmsistream/kafka_wrapper/config_files that was created when the node was provisioned
         """
         if 'kafkacrypto' in self.available_group_names :
             kc_configs = self.get_config_dict_for_groups('kafkacrypto')
@@ -101,7 +102,8 @@ class KafkaConfigFileParser(ConfigFileParser) :
             if 'config_file' in kc_configs.keys() :
                 path_as_str = (kc_configs['config_file']).lstrip('file#')
                 if not pathlib.Path(path_as_str).is_file() :
-                    errmsg = f'ERROR: KafkaCrypto config file {path_as_str} (from config file {self.filepath}) not found!'
+                    errmsg = f'ERROR: KafkaCrypto config file {path_as_str} '
+                    errmsg+= f'(from config file {self.filepath}) not found!'
                     self.logger.error(errmsg,FileNotFoundError)
                 return path_as_str
             #option 2 above

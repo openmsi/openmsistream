@@ -1,2 +1,2 @@
-recursive-include openmsistream/my_kafka/config_files *
+recursive-include openmsistream/kafka_wrapper/config_files *
 recursive-include openmsipython/services/working_dir *

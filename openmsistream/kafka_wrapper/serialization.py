@@ -1,9 +1,9 @@
 #imports
 import msgpack, pathlib, inspect, time
 from hashlib import sha512
-from kafkacrypto.message import KafkaCryptoMessage, KafkaCryptoMessageError
 from confluent_kafka.error import SerializationError
 from confluent_kafka.serialization import Serializer, Deserializer
+from kafkacrypto.message import KafkaCryptoMessage, KafkaCryptoMessageError
 from ..data_file_io.data_file_chunk import DataFileChunk
 
 ####################### COMPOUND (DE)SERIALIZERS FOR STACKING MULTIPLE STEPS #######################
