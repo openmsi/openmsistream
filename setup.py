@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.1.7'
+version = '0.9.1.8'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -31,7 +31,7 @@ setupkwargs = dict(
                              'InstallService=openmsistream.services.install_service:main',
                              'ManageService=openmsistream.services.manage_service:main',
                              'ProvisionNode=openmsistream.utilities.provision_wrapper:main',
-                             'OSNStreamProcessor=openmsistream.osn.osn_stream_processor:main',
+                             'S3TransferStreamProcessor=openmsistream.s3_buckets.s3_transfer_stream_processor:main',
                             ],
     },
     python_requires='>=3.7,<3.10',

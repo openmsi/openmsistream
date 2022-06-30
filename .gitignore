@@ -3,22 +3,22 @@
 /openmsistream/services/working_dir/Services.log
 /openmsistream/services/working_dir/nssm.exe
 /openmsistream/services/working_dir/*_service_executable.py
-# *.config, *.seed, and *.crypto files (other than the testing files) in openmsistream/my_kafka/config_files/[some_node_name]
-/openmsistream/my_kafka/config_files/*.config
-/openmsistream/my_kafka/config_files/*/*.config
-/openmsistream/my_kafka/config_files/*/*.seed
-/openmsistream/my_kafka/config_files/*/*.crypto
-!/openmsistream/my_kafka/config_files/test.config
-!/openmsistream/my_kafka/config_files/test_encrypted.config
-!/openmsistream/my_kafka/config_files/test_encrypted_2.config
-!/openmsistream/my_kafka/config_files/test_osn.config
-!/openmsistream/my_kafka/config_files/prod.config
-!/openmsistream/my_kafka/config_files/testing_node/testing_node.config
-!/openmsistream/my_kafka/config_files/testing_node/testing_node.seed
-!/openmsistream/my_kafka/config_files/testing_node/testing_node.crypto
-!/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.config
-!/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.seed
-!/openmsistream/my_kafka/config_files/testing_node_2/testing_node_2.crypto
+# *.config, *.seed, and *.crypto files (other than the testing files) in openmsistream/kafka_wrapper/config_files/[some_node_name]
+/openmsistream/kafka_wrapper/config_files/*.config
+/openmsistream/kafka_wrapper/config_files/*/*.config
+/openmsistream/kafka_wrapper/config_files/*/*.seed
+/openmsistream/kafka_wrapper/config_files/*/*.crypto
+!/openmsistream/kafka_wrapper/config_files/test.config
+!/openmsistream/kafka_wrapper/config_files/test_encrypted.config
+!/openmsistream/kafka_wrapper/config_files/test_encrypted_2.config
+!/openmsistream/kafka_wrapper/config_files/test_osn.config
+!/openmsistream/kafka_wrapper/config_files/prod.config
+!/openmsistream/kafka_wrapper/config_files/testing_node/testing_node.config
+!/openmsistream/kafka_wrapper/config_files/testing_node/testing_node.seed
+!/openmsistream/kafka_wrapper/config_files/testing_node/testing_node.crypto
+!/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.config
+!/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.seed
+!/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.crypto
 # Sphinx documentation build directory
 /docs/build/*
 

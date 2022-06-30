@@ -1,7 +1,8 @@
 #imports
 import unittest, time
-from openmsistream.shared.my_thread import MyThread
-from openmsistream.shared.controlled_process import ControlledProcessSingleThread, ControlledProcessMultiThreaded
+from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
+from openmsistream.running.controlled_process_single_thread import ControlledProcessSingleThread
+from openmsistream.running.controlled_process_multi_threaded import ControlledProcessMultiThreaded
 
 #some constants
 TIMEOUT_SECS = 10
@@ -60,7 +61,7 @@ class TestControlledProcess(unittest.TestCase) :
     def test_controlled_process_single_thread(self) :
         cpst = ControlledProcessSingleThreadForTesting(update_secs=5)
         self.assertEqual(cpst.counter,0)
-        run_thread = MyThread(target=cpst.run)
+        run_thread = ExceptionTrackingThread(target=cpst.run)
         run_thread.start()
         try :
             self.assertFalse(cpst.checked)
@@ -97,7 +98,7 @@ class TestControlledProcess(unittest.TestCase) :
     def test_controlled_process_multi_threaded(self) :
         cpmt = ControlledProcessMultiThreadedForTesting(n_threads=N_THREADS,update_secs=5)
         self.assertEqual(cpmt.counter,0)
-        run_thread = MyThread(target=cpmt.run)
+        run_thread = ExceptionTrackingThread(target=cpmt.run)
         run_thread.start()
         try :
             self.assertFalse(cpmt.checked)

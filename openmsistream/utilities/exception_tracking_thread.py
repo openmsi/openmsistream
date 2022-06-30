@@ -1,7 +1,7 @@
 #imports
 from threading import Thread
 
-class MyThread(Thread) :
+class ExceptionTrackingThread(Thread) :
     """
     A small utility class to keep track of any exceptions thrown in a child thread
     and raise them at some point

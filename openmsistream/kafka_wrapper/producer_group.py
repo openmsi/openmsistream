@@ -1,6 +1,6 @@
 #imports
-from ..shared.logging import LogOwner
-from .my_producer import MyProducer
+from ..utilities.logging import LogOwner
+from .openmsistream_producer import OpenMSIStreamProducer
 
 class ProducerGroup(LogOwner) :
     """
@@ -12,7 +12,7 @@ class ProducerGroup(LogOwner) :
         config_path = path to the config file that should be used to define the producer group
         """
         super().__init__(*args,**kwargs)
-        self.__p_args, self.__p_kwargs = MyProducer.get_producer_args_kwargs(config_path,logger=self.logger)
+        self.__p_args, self.__p_kwargs = OpenMSIStreamProducer.get_producer_args_kwargs(config_path,logger=self.logger)
 
     def get_new_producer(self) :
         """
@@ -22,7 +22,7 @@ class ProducerGroup(LogOwner) :
 
         This function just creates the Producer; closing it etc. must be handled by whatever calls this function.
         """
-        producer = MyProducer(*self.__p_args,**self.__p_kwargs)
+        producer = OpenMSIStreamProducer(*self.__p_args,**self.__p_kwargs)
         return producer
 
     def close(self) :

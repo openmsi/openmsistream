@@ -2,7 +2,7 @@
 from abc import ABC, abstractmethod
 from threading import Lock
 from kafkacrypto.message import KafkaCryptoMessage
-from ..my_kafka.controlled_message_processor import ControlledMessageProcessor
+from ..kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
 from .config import DATA_FILE_HANDLING_CONST
 from .data_file_chunk import DataFileChunk
 from .download_data_file import DownloadDataFile

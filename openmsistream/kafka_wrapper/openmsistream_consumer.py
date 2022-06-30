@@ -2,13 +2,13 @@
 import uuid
 from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
-from .config_file_parser import MyKafkaConfigFileParser
-from .my_kafka_crypto import MyKafkaCrypto
+from .config_file_parser import KafkaConfigFileParser
+from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundDeserializer
 
-class MyConsumer(LogOwner) :
+class OpenMSIStreamConsumer(LogOwner) :
     """
     Convenience class for working with a Consumer of some type
     """
@@ -28,21 +28,23 @@ class MyConsumer(LogOwner) :
         elif consumer_type==DeserializingConsumer :
             self.__consumer = consumer_type(configs)
         else :
-            self.logger.error(f'ERROR: Unrecognized consumer type {consumer_type} for MyConsumer!',ValueError)
+            errmsg=f'ERROR: Unrecognized consumer type {consumer_type} for OpenMSIStreamConsumer!'
+            self.logger.error(errmsg,ValueError)
         self.configs = configs
 
     @staticmethod
     def get_consumer_args_kwargs(config_file_path,logger=None,**kwargs) :
         """
-        Return the arguments and keyword arguments that should be used to create a MyConsumer based on the configs
+        Return the arguments and keyword arguments that should be used to create 
+        a OpenMSIStreamConsumer based on the configs
 
         config_file_path = path to the config file to use in defining this consumer
 
         any keyword arguments will be added to the final consumer configs (with underscores replaced with dots)
 
-        Used to quickly instantiate more than one identical MyConsumer for a ConsumerGroup
+        Used to quickly instantiate more than one identical OpenMSIStreamConsumer for a ConsumerGroup
         """
-        parser = MyKafkaConfigFileParser(config_file_path,logger=logger)
+        parser = KafkaConfigFileParser(config_file_path,logger=logger)
         ret_kwargs = {}
         #get the broker and consumer configurations
         all_configs = {**parser.broker_configs,**parser.consumer_configs}
@@ -55,7 +57,7 @@ class MyConsumer(LogOwner) :
         if parser.kc_config_file_str is not None :
             if logger is not None :
                 logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
-            kc = MyKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.deserializer' in all_configs.keys() :
                 keydes = CompoundDeserializer(kc.key_deserializer,all_configs.pop('key.deserializer'))
             else :
@@ -76,7 +78,7 @@ class MyConsumer(LogOwner) :
 
     @classmethod
     def from_file(cls,*args,**kwargs) :
-        args_to_use, kwargs_to_use = MyConsumer.get_consumer_args_kwargs(*args,**kwargs)
+        args_to_use, kwargs_to_use = OpenMSIStreamConsumer.get_consumer_args_kwargs(*args,**kwargs)
         return cls(*args_to_use,**kwargs_to_use)
 
     def get_next_message(self,*poll_args,**poll_kwargs) :
@@ -107,15 +109,16 @@ class MyConsumer(LogOwner) :
             try :
                 consumed_msg = self.__consumer.poll(*poll_args,**poll_kwargs)
             except Exception as e :
-                warnmsg = 'WARNING: encountered an error in a call to consumer.poll() and this message will be skipped. '
-                warnmsg+= f'Exception: {e}'
+                warnmsg = 'WARNING: encountered an error in a call to consumer.poll() '
+                warnmsg+= f'and this message will be skipped. Exception: {e}'
                 self.logger.warning(warnmsg)
                 #raise e
                 return None
             if consumed_msg is not None and consumed_msg!={} :
                 if consumed_msg.error() is not None or consumed_msg.value() is None :
                     warnmsg = f'WARNING: unexpected consumed message, consumed_msg = {consumed_msg}'
-                    warnmsg+= f', consumed_msg.error() = {consumed_msg.error()}, consumed_msg.value() = {consumed_msg.value()}'
+                    warnmsg+= f', consumed_msg.error() = {consumed_msg.error()}, '
+                    warnmsg+= f'consumed_msg.value() = {consumed_msg.value()}'
                     self.logger.warning(warnmsg)
                 return consumed_msg
             else :

@@ -1,8 +1,8 @@
 #imports
 import os, unittest, logging, configparser, string, pathlib
 from random import choices
-from openmsistream.shared.logging import Logger
-from openmsistream.shared.config_file_parser import ConfigFileParser
+from openmsistream.utilities.logging import Logger
+from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
 
 #constants

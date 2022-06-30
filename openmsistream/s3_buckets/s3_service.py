@@ -5,50 +5,50 @@
 # Johns Hopkins University http://www.jhu.edu/
 import hashlib
 import boto3
-from ..shared.logging import LogOwner
+from ..utilities.logging import LogOwner
 
-class OSNService(LogOwner) :
+class S3Service(LogOwner) :
 
-    def __init__(self, osn_config, *args, **kwargs):
+    def __init__(self, s3_config, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.session = boto3.session.Session()
 
-        self.bucket_name = osn_config['bucket_name']
-        endpoint_url = str(osn_config['endpoint_url'])
+        self.bucket_name = s3_config['bucket_name']
+        endpoint_url = str(s3_config['endpoint_url'])
 
         if not endpoint_url.startswith('https://'):
             endpoint_url = 'https://' + endpoint_url
         self.s3_client = self.session.client(
             service_name='s3',
-            aws_access_key_id=osn_config['access_key_id'],
-            aws_secret_access_key=osn_config['secret_key_id'],
-            region_name=osn_config['region'],
+            aws_access_key_id=s3_config['access_key_id'],
+            aws_secret_access_key=s3_config['secret_key_id'],
+            region_name=s3_config['region'],
             endpoint_url= endpoint_url
         )
-        self.region = osn_config['region']
+        self.region = s3_config['region']
         self.grant_read = 'uri="http://acs.amazonaws.com/groups/global/AllUsers"'
 
-    # def set_upload_config(self, osn_config):
+    # def set_upload_config(self, s3_config):
     #
-    #     self.bucket_name = osn_config['bucket_name']
+    #     self.bucket_name = s3_config['bucket_name']
     #     self.grant_read = 'uri="http://acs.amazonaws.com/groups/global/AllUsers"'
 
     def get_object_stream_by_object_key(self, bucket_name, object_key):
         s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
         return s3_response_object['Body'].read()
 
-    def get_object_stream_by_osn_datafile(self, topic_name, bucket_name, datafile):
+    def get_object_stream_by_datafile(self, topic_name, bucket_name, datafile):
         file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
         object_key = topic_name + '/' + sub_dir + '/' + file_name
         return self.get_object_stream_by_object_key(bucket_name, object_key)
 
-    def delete_object_from_osn(self, bucket_name, object_key):
+    def delete_object_from_bucket(self, bucket_name, object_key):
         try:
-            # make sure object exits before deleting the object from osn
+            # make sure object exits before deleting the object from the bucket
             s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
             if s3_response_object == None:
-                msg = 'The object ' + object_key + ' not exists in this bucket: ' + bucket_name
+                msg = 'The object ' + object_key + ' does not exist in this bucket: ' + bucket_name
                 self.logger.error(msg)
                 return
         except Exception:
@@ -73,7 +73,7 @@ class OSNService(LogOwner) :
                 return object_key
         return None
 
-    def compare_producer_datafile_with_osn_object_stream(self, bucket_name, object_key, hashed_datafile_stream):
+    def compare_producer_datafile_with_s3_object_stream(self, bucket_name, object_key, hashed_datafile_stream):
         if hashed_datafile_stream == None:
             return False
         s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
@@ -85,7 +85,7 @@ class OSNService(LogOwner) :
         hhh = format(md5.hexdigest())
         return str(hhh) == hashed_datafile_stream
 
-    def compare_consumer_datafile_with_osn_object_stream(self, topic_name, bucket_name, datafile):
+    def compare_consumer_datafile_with_s3_object_stream(self, topic_name, bucket_name, datafile):
         if datafile == None:
             return False
         file_name = str(datafile.filename)

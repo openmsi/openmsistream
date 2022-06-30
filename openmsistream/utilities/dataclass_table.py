@@ -86,7 +86,6 @@ class DataclassTable(LogOwner) :
     def __del__(self) :
         self.dump_to_file(reraise_exc=False)
 
-
     def add_entries(self,new_entries) :
         """
         Add a new set of entries to the table
@@ -229,7 +228,8 @@ class DataclassTable(LogOwner) :
             dkey = hex(id(obj))
             self.__entry_objs[dkey] = obj
             self.__entry_lines[dkey] = line
-        self.logger.info(f'Found {len(self.__entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}')
+        msg = f'Found {len(self.__entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
+        self.logger.info(msg)
     
     def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
         """

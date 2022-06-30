@@ -1,6 +1,6 @@
 #imports
 import os, pathlib
-from openmsistream.shared.config import UTIL_CONST
+from openmsistream.running.config import RUN_CONST
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 
 class TestRoutineConstants :
@@ -13,39 +13,39 @@ class TestRoutineConstants :
             'test_data_file_directories':'test_data_file_directories',
             'test_data_file_directories_encrypted':'test_oms_encrypted',
             'test_data_file_stream_processor':'test_data_file_stream_processor',
-            'test_osn':'osn_test',
+            'test_s3_transfer_stream_processor':'osn_test',
             'test_serialization':'test_oms_encrypted',
         }
     @property
-    def TEST_ENDPOINT_URL(self) :  # the endpoint_url for osn connection
+    def TEST_ENDPOINT_URL(self) :  # the endpoint_url for s3 bucket connection
         return os.environ['ENDPOINT_URL']
     @property
-    def TEST_BUCKET_NAME(self) :  # the bucket name to upload data to OSN (S3Client)
+    def TEST_BUCKET_NAME(self) :  # the bucket name to upload data to (S3Client)
         return os.environ['BUCKET_NAME']
     @property
-    def TEST_ASSCESS_KEY_ID(self) :  # the access_key_id for OSN Authentication
+    def TEST_ASSCESS_KEY_ID(self) :  # the access_key_id for s3 Authentication
         return os.environ['ACCESS_SECRET_KEY_ID']
     @property
-    def TEST_SECRET_KEY_ID(self) :  # the secret_key_id for OSN Authentication
+    def TEST_SECRET_KEY_ID(self) :  # the secret_key_id for s3 Authentication
         return os.environ['SECRET_KEY_ID']
     @property
-    def TEST_REGION(self) :  # the region for osn
+    def TEST_REGION(self) :  # the region for the testing s3 bucket
         return os.environ['REGION']
     @property
     def TEST_CONFIG_FILE_PATH(self) : # The path to the Kafka config file to use
-        return (UTIL_CONST.CONFIG_FILE_DIR / f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        return (RUN_CONST.CONFIG_FILE_DIR / f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def TEST_CONFIG_FILE_PATH_ENCRYPTED(self) : # Same as above except it includes a node_id to test encryption
-        return (UTIL_CONST.CONFIG_FILE_DIR / f'test_encrypted{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        return (RUN_CONST.CONFIG_FILE_DIR / f'test_encrypted{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def TEST_CONFIG_FILE_PATH_ENCRYPTED_2(self) : # Same as above except it includes a node_id to test encryption
-        return (UTIL_CONST.CONFIG_FILE_DIR / f'test_encrypted_2{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        return (RUN_CONST.CONFIG_FILE_DIR / f'test_encrypted_2{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
-    def TEST_CONFIG_FILE_PATH_OSN(self) : # Same as above except it includes OSN configs
-        return (UTIL_CONST.CONFIG_FILE_DIR / f'test_osn{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+    def TEST_CONFIG_FILE_PATH_S3_TRANSFER(self) : # Same as above except it includes S3 transfer configs
+        return (RUN_CONST.CONFIG_FILE_DIR / f'test_s3_transfer{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def PROD_CONFIG_FILE_PATH(self) : # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
-        return (UTIL_CONST.CONFIG_FILE_DIR / f'prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        return (RUN_CONST.CONFIG_FILE_DIR / f'prod{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def TEST_DIR_PATH(self) :
         return pathlib.Path(__file__).parent.parent
@@ -54,7 +54,7 @@ class TestRoutineConstants :
         return self.TEST_DIR_PATH / 'data'
     @property
     def FAKE_PROD_CONFIG_FILE_PATH(self) : # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
-        return (self.TEST_DATA_DIR_PATH / f'fake_prod{UTIL_CONST.CONFIG_FILE_EXT}').resolve()
+        return (self.TEST_DATA_DIR_PATH / f'fake_prod{RUN_CONST.CONFIG_FILE_EXT}').resolve()
     @property
     def TEST_DATA_FILE_ROOT_DIR_NAME(self) : #path to the test data directory
         return 'test_file_root_dir'
@@ -83,8 +83,8 @@ class TestRoutineConstants :
     def TEST_WATCHED_DIR_PATH_ENCRYPTED(self) : #same as above except for the encrypted tests
         return self.TEST_DIR_PATH / 'test_watched_dir_encrypted'
     @property
-    def TEST_WATCHED_DIR_PATH_OSN(self) : #same as above except for the tests that interact with the object store
-        return self.TEST_DIR_PATH / 'test_watched_dir_osn'
+    def TEST_WATCHED_DIR_PATH_S3_TRANSFER(self) : #same as above except for the tests that interact with the object store
+        return self.TEST_DIR_PATH / 'test_watched_dir_s3_transfer'
     @property
     def TEST_DIR_SERVICES_TEST(self) : # scrap directory to use for services tests
         return self.TEST_DIR_PATH / 'test_dir_services'

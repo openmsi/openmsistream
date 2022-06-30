@@ -12,7 +12,7 @@ If any parameter's ``value`` begins with the "``$``" character, the configuratio
 
     [Environment]::SetEnvironmentVariable("NAME","VALUE",[EnvironmentVariableTarget]::Machine)
 
-You can find a simple example configuration file `in the OpenMSIStream code here <https://github.com/openmsi/openmsistream/blob/main/openmsistream/my_kafka/config_files/test.config>`_. That file shows how to connect to the Confluent Cloud broker used for testing, with the username and password for the cluster referenced as environment variables.
+You can find a simple example configuration file `in the OpenMSIStream code here <https://github.com/openmsi/openmsistream/blob/main/openmsistream/kafka_wrapper/config_files/test.config>`_. That file shows how to connect to the Confluent Cloud broker used for testing, with the username and password for the cluster referenced as environment variables.
 
 "``[broker]``" section
 ^^^^^^^^^^^^^^^^^^^^^^

@@ -1,11 +1,11 @@
 #imports
 import unittest, pathlib, logging
 from confluent_kafka.error import SerializationError
-from openmsistream.shared.logging import Logger
-from openmsistream.my_kafka.config_file_parser import MyKafkaConfigFileParser
-from openmsistream.my_kafka.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
-from openmsistream.my_kafka.serialization import CompoundSerializer, CompoundDeserializer
-from openmsistream.my_kafka.my_kafka_crypto import MyKafkaCrypto
+from openmsistream.utilities.logging import Logger
+from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
+from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
+from openmsistream.kafka_wrapper.serialization import CompoundSerializer, CompoundDeserializer
+from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from openmsistream.data_file_io.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.data_file_chunk import DataFileChunk
 from openmsistream.data_file_io.config import RUN_OPT_CONST
@@ -17,7 +17,7 @@ TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py'
 
 class TestSerialization(unittest.TestCase) :
     """
-    Class for testing classes in openmsistream.my_kafka.serialization
+    Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
 
     def setUp(self) :
@@ -67,10 +67,10 @@ class TestSerialization(unittest.TestCase) :
             self.assertEqual(self.test_dl_chunk_objects[chunk_i],dfcds(self.test_chunk_binaries[chunk_i]))
 
     def test_encrypted_compound_serdes_kafka(self) :
-        parser1 = MyKafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
-        kc1 = MyKafkaCrypto(parser1.broker_configs,parser1.kc_config_file_str)
-        parser2 = MyKafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
-        kc2 = MyKafkaCrypto(parser2.broker_configs,parser2.kc_config_file_str)
+        parser1 = KafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        kc1 = OpenMSIStreamKafkaCrypto(parser1.broker_configs,parser1.kc_config_file_str)
+        parser2 = KafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
+        kc2 = OpenMSIStreamKafkaCrypto(parser2.broker_configs,parser2.kc_config_file_str)
         dfcs = DataFileChunkSerializer()
         dfcds = DataFileChunkDeserializer()
         comp_ser = CompoundSerializer(dfcs,kc1.value_serializer)

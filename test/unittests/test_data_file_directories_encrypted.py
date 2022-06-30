@@ -1,8 +1,8 @@
 #imports
 import unittest, pathlib, time, logging, shutil, filecmp
-from openmsistream.shared.logging import Logger
-from openmsistream.shared.my_thread import MyThread
-from openmsistream.shared.dataclass_table import DataclassTable
+from openmsistream.utilities.logging import Logger
+from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
+from openmsistream.utilities.dataclass_table import DataclassTable
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.producer_file_registry import RegistryLineInProgress, RegistryLineCompleted
 from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory
@@ -32,12 +32,12 @@ class TestDataFileDirectories(unittest.TestCase) :
                                        TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         #start upload_files_as_added in a separate thread so we can time it out
-        upload_thread = MyThread(target=dfud.upload_files_as_added,
-                                 args=(TOPIC_NAME,),
-                                 kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                         'chunk_size':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
-                                         'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
-                                         'upload_existing':True}
+        upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
+                                                args=(TOPIC_NAME,),
+                                                kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+                                                        'chunk_size':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+                                                        'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
+                                                        'upload_existing':True}
                                 )
         upload_thread.start()
         #wait a second, copy the test file into the watched directory, and wait another second
@@ -56,7 +56,7 @@ class TestDataFileDirectories(unittest.TestCase) :
                                          logger=LOGGER,
                                          )
         #start reconstruct in a separate thread so we can time it out
-        download_thread = MyThread(target=dfdd.reconstruct)
+        download_thread = ExceptionTrackingThread(target=dfdd.reconstruct)
         download_thread.start()
         try :
             #put the "check" command into the input queues a couple times to test them

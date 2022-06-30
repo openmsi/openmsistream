@@ -2,14 +2,14 @@
 import time
 from confluent_kafka import SerializingProducer
 from kafkacrypto import KafkaProducer
-from ..shared.logging import LogOwner
-from ..shared.producible import Producible
+from ..utilities.logging import LogOwner
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
-from .config_file_parser import MyKafkaConfigFileParser
-from .my_kafka_crypto import MyKafkaCrypto
+from .producible import Producible
+from .config_file_parser import KafkaConfigFileParser
+from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundSerializer
 
-class MyProducer(LogOwner) :
+class OpenMSIStreamProducer(LogOwner) :
     """
     Convenience class for working with a Producer of some type
     """
@@ -30,7 +30,8 @@ class MyProducer(LogOwner) :
         elif producer_type==SerializingProducer :
             self.__producer = producer_type(configs)
         else :
-            self.logger.error(f'ERROR: Unrecognized producer type {producer_type} for MyProducer!',ValueError)
+            errmsg=f'ERROR: Unrecognized producer type {producer_type} for OpenMSIStreamProducer!'
+            self.logger.error(errmsg,ValueError)
         # poll the producer at least every 5 calls to produce
         self.__poll_counter = 0
 
@@ -41,7 +42,7 @@ class MyProducer(LogOwner) :
 
         any keyword arguments will be added to the final producer configs (with underscores replaced with dots)
         """
-        parser = MyKafkaConfigFileParser(config_file_path,logger=logger)
+        parser = KafkaConfigFileParser(config_file_path,logger=logger)
         ret_kwargs = {}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
@@ -51,7 +52,7 @@ class MyProducer(LogOwner) :
         if parser.kc_config_file_str is not None :
             if logger is not None :
                 logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-            kc = MyKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.serializer' in all_configs.keys() :
                 keyser = CompoundSerializer(all_configs.pop('key.serializer'),kc.key_serializer)
             else :
@@ -72,7 +73,7 @@ class MyProducer(LogOwner) :
 
     @classmethod
     def from_file(cls,*args,**kwargs) :
-        args_to_use, kwargs_to_use = MyProducer.get_producer_args_kwargs(*args,**kwargs)
+        args_to_use, kwargs_to_use = OpenMSIStreamProducer.get_producer_args_kwargs(*args,**kwargs)
         return cls(*args_to_use,**kwargs_to_use)
 
     def produce_from_queue(self,queue,topic_name,callback=None,print_every=1000,timeout=60,retry_sleep=5) :

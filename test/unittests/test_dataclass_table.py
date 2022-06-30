@@ -2,8 +2,8 @@
 import unittest, pathlib, datetime, logging, shutil
 from typing import List, Set, Tuple
 from dataclasses import dataclass, fields
-from openmsistream.shared.logging import Logger
-from openmsistream.shared.dataclass_table import DataclassTable
+from openmsistream.utilities.logging import Logger
+from openmsistream.utilities.dataclass_table import DataclassTable
 
 #some constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)

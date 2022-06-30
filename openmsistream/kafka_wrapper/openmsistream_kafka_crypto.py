@@ -3,7 +3,7 @@ import pathlib, uuid
 from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
 from ..utilities.misc import cd
 
-class MyKafkaCrypto :
+class OpenMSIStreamKafkaCrypto :
     """
     A class to own and work with the Producers, Consumers, and other objects needed
     by KafkaCrypto to handle encrypting/decrypting messages and exchanging keys

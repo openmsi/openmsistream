@@ -1,7 +1,7 @@
 #imports
 import unittest, platform, shutil, pathlib, logging, time
 from subprocess import check_output
-from openmsistream.shared.logging import Logger
+from openmsistream.utilities.logging import Logger
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from openmsistream.services.windows_service_manager import WindowsServiceManager
@@ -26,9 +26,9 @@ class TestServices(unittest.TestCase) :
                 'DataFileUploadDirectory':[TEST_CONST.TEST_DIR_SERVICES_TEST,],
                 'DataFileDownloadDirectory':[TEST_CONST.TEST_DIR_SERVICES_TEST,],
                 'OSNStreamProcessor':['phy210127-bucket01',
-                                      '--logger_file',TEST_CONST.TEST_DIR_SERVICES_TEST/'test_osn_stream_processor.log',
+                                      '--logger_file',TEST_CONST.TEST_DIR_SERVICES_TEST,
                                       '--config',TEST_CONST.TEST_CONFIG_FILE_PATH_OSN,
-                                      '--topic_name',TEST_CONST.TEST_TOPIC_NAMES['test_osn'],
+                                      '--topic_name',TEST_CONST.TEST_TOPIC_NAMES['test_s3_transfer_stream_processor'],
                                       '--consumer_group_id','create_new'],
             }
 

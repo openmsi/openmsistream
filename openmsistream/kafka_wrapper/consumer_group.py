@@ -1,6 +1,6 @@
 #imports
-from ..shared.logging import LogOwner
-from .my_consumer import MyConsumer
+from ..utilities.logging import LogOwner
+from .openmsistream_consumer import OpenMSIStreamConsumer
 
 class ConsumerGroup(LogOwner) :
     """
@@ -22,9 +22,9 @@ class ConsumerGroup(LogOwner) :
         """
         super().__init__(*args,**kwargs)
         self.__topic_name = topic_name
-        self.__c_args, self.__c_kwargs = MyConsumer.get_consumer_args_kwargs(config_path,
-                                                                             group_id=consumer_group_ID,
-                                                                             logger=self.logger)
+        self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(config_path,
+                                                                                        group_id=consumer_group_ID,
+                                                                                        logger=self.logger)
 
     def get_new_subscribed_consumer(self) :
         """
@@ -33,7 +33,7 @@ class ConsumerGroup(LogOwner) :
         This function just creates and subscribes the Consumer. Polling it, closing 
         it, and everything else must be handled by whatever calls this function.
         """
-        consumer = MyConsumer(*self.__c_args,**self.__c_kwargs)
+        consumer = OpenMSIStreamConsumer(*self.__c_args,**self.__c_kwargs)
         consumer.subscribe([self.__topic_name])
         return consumer
 

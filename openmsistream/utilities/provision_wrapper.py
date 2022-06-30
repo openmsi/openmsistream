@@ -1,8 +1,9 @@
 #imports
 import pathlib, shutil, logging, urllib.request, kafkacrypto
 from argparse import ArgumentParser
-from ..shared.logging import Logger
-from ..shared.config_file_parser import ConfigFileParser
+from ..running.config import RUN_CONST
+from .logging import Logger
+from .config_file_parser import ConfigFileParser
 from .misc import cd
 
 #constants
@@ -11,7 +12,7 @@ KC_PATH = kafkacrypto.__path__
 SP_NAME = 'simple-provision.py'
 OP_NAME = 'online-provision.py'
 GITHUB_URL = f'https://raw.githubusercontent.com/tmcqueen-materials/kafkacrypto/master/tools/{SP_NAME}'
-TEMP_DIR_PATH = pathlib.Path(__file__).parent.parent/'my_kafka'/'config_files'/'temp_kafkacrypto_dir'
+TEMP_DIR_PATH = RUN_CONST.CONFIG_FILE_DIR/'temp_kafkacrypto_dir'
 
 def main() :
     #command line arguments
@@ -88,7 +89,8 @@ def main() :
             if node_id is None :
                 node_id = this_node_id
             elif node_id!=this_node_id :
-                LOGGER.error(f'ERROR: found a file called {filename} that conflicts with node_id {node_id}!',RuntimeError)
+                errmsg = f'ERROR: found a file called {filename} that conflicts with node_id {node_id}!'
+                LOGGER.error(errmsg,RuntimeError)
         cfp = ConfigFileParser(new_files['.config'],logger=LOGGER)
         default_dict = cfp.get_config_dict_for_groups('DEFAULT')
         if 'node_id' not in default_dict.keys() :

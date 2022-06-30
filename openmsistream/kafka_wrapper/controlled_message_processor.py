@@ -1,7 +1,7 @@
 #imports
 import time, traceback
 from abc import ABC, abstractmethod
-from ..shared.controlled_process import ControlledProcessMultiThreaded
+from ..running.controlled_process_multi_threaded import ControlledProcessMultiThreaded
 from .consumer_group import ConsumerGroup
 
 class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,ABC) :

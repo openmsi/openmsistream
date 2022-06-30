@@ -2,7 +2,7 @@
 import pathlib, math, re
 from argparse import ArgumentParser
 from ..data_file_io.config import RUN_OPT_CONST
-from .config import UTIL_CONST
+from .config import RUN_CONST
 
 #################### MISC. FUNCTIONS ####################
 
@@ -36,12 +36,12 @@ def create_dir(argstring) :
 #convert a string or path argument into a config file path (raise an exception if the file can't be found)
 def config_path(configarg) :
     if isinstance(configarg,str) and '.' not in configarg :
-        configarg+=UTIL_CONST.CONFIG_FILE_EXT
+        configarg+=RUN_CONST.CONFIG_FILE_EXT
     configpath = pathlib.Path(configarg)
     if configpath.is_file() :
         return configpath.resolve()
-    if (UTIL_CONST.CONFIG_FILE_DIR/configpath).is_file() :
-        return (UTIL_CONST.CONFIG_FILE_DIR/configpath).resolve()
+    if (RUN_CONST.CONFIG_FILE_DIR/configpath).is_file() :
+        return (RUN_CONST.CONFIG_FILE_DIR/configpath).resolve()
     raise ValueError(f'ERROR: config argument {configarg} is not a recognized config file!')
 
 #detects if the bucket name contains invalid characters
@@ -77,7 +77,7 @@ def positive_int(argval) :
 
 #################### MYARGUMENTPARSER CLASS ####################
 
-class MyArgumentParser(ArgumentParser) :
+class OpenMSIStreamArgumentParser(ArgumentParser) :
     """
     Class to make it easier to get an ArgumentParser with some commonly-used arguments in it
     """
@@ -95,7 +95,7 @@ class MyArgumentParser(ArgumentParser) :
                                        Name should only contain valid characters'''}],
         'config':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_CONFIG_FILE,'type':config_path,
-                         'help':f'''Name of config file to use in {UTIL_CONST.CONFIG_FILE_DIR.resolve()}, 
+                         'help':f'''Name of config file to use in {RUN_CONST.CONFIG_FILE_DIR.resolve()}, 
                                     or path to a file in a different location'''}],
         'topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
@@ -104,10 +104,10 @@ class MyArgumentParser(ArgumentParser) :
             ['optional', {'default': pathlib.Path(), 'type': pathlib.Path,
                           'help': '''Path to the log file (or directory to hold the auto-named logfile)'''}],        
         'n_threads':
-            ['optional',{'default':UTIL_CONST.DEFAULT_N_THREADS,'type':positive_int,
+            ['optional',{'default':RUN_CONST.DEFAULT_N_THREADS,'type':positive_int,
                          'help':'Maximum number of threads to use'}],
         'upload_regex':
-            ['optional',{'default':UTIL_CONST.DEFAULT_UPLOAD_REGEX,'type':re.compile,
+            ['optional',{'default':RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,'type':re.compile,
                          'help':'Only files matching this regular expression will be uploaded'}],
         'chunk_size':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,'type':int_power_of_two,
@@ -118,7 +118,7 @@ class MyArgumentParser(ArgumentParser) :
                          'help':'''Maximum number of items to allow in the upload queue at a time. 
                                  Use to limit RAM usage or throttle production rate if necessary.'''}],
         'update_seconds':
-            ['optional',{'default':UTIL_CONST.DEFAULT_UPDATE_SECONDS,'type':int,
+            ['optional',{'default':RUN_CONST.DEFAULT_UPDATE_SECONDS,'type':int,
                          'help':'''Number of seconds between printing a "." to the console 
                                    to indicate the program is alive'''}],
         'upload_existing':
@@ -163,7 +163,7 @@ class MyArgumentParser(ArgumentParser) :
 
     def add_subparsers(self,*args,**kwargs) :
         """
-        Overloaded from base class; MyArgumentParser actually owns its subparsers
+        Overloaded from base class; OpenMSIStreamArgumentParser actually owns its subparsers
         """
         if self.__subparsers_action_obj is not None or self.__subparsers!={} :
             raise RuntimeError('ERROR: add_subparsers called for an argument parser that already has subparsers!')
