@@ -37,11 +37,13 @@ if os.name=='nt' :
 from .data_file_io.upload_data_file import UploadDataFile
 from .data_file_io.data_file_upload_directory import DataFileUploadDirectory
 from .data_file_io.data_file_download_directory import DataFileDownloadDirectory
+from .data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
 
 __all__ = [
     'UploadDataFile',
     'DataFileUploadDirectory',
     'DataFileDownloadDirectory',
+    'DataFileStreamProcessor',
     'S3TransferStreamProcessor',
 ]
