@@ -1,0 +1,5 @@
+=======================
+DataFileUploadDirectory
+=======================
+
+.. autoclass:: openmsistream.DataFileUploadDirectory

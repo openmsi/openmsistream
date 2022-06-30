@@ -2,7 +2,7 @@
 Mac OS (Apple M1 chip) installation
 ===================================
 
-OpenMSIStream is not officially supported on Mac OS, but its interactive programs work reliably at this time.
+OpenMSIStream is not designed to run in Mac OS environments, but its programs work reliably on Mac at this time.
 
 .. include:: create_conda_39.rst
 

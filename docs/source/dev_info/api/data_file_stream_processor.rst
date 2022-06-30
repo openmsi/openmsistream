@@ -1,0 +1,5 @@
+=======================
+DataFileStreamProcessor
+=======================
+
+.. autoclass:: openmsistream.DataFileStreamProcessor

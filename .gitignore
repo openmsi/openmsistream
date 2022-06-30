@@ -11,7 +11,7 @@
 !/openmsistream/kafka_wrapper/config_files/test.config
 !/openmsistream/kafka_wrapper/config_files/test_encrypted.config
 !/openmsistream/kafka_wrapper/config_files/test_encrypted_2.config
-!/openmsistream/kafka_wrapper/config_files/test_osn.config
+!/openmsistream/kafka_wrapper/config_files/test_s3_transfer.config
 !/openmsistream/kafka_wrapper/config_files/prod.config
 !/openmsistream/kafka_wrapper/config_files/testing_node/testing_node.config
 !/openmsistream/kafka_wrapper/config_files/testing_node/testing_node.seed

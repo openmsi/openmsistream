@@ -14,8 +14,13 @@ class Runnable(HasArgumentParser,ABC) :
     @abstractmethod
     def get_command_line_arguments(cls) :
         """
-        child classes should implement this function to return a list of argument names 
-        and a dictionary of argument names/default values to add to the argument parser
+        Get the list of argument names and the dictionary of argument names/default values to add to the argument parser
+
+        :return: args, a list of argument names recognized by the argument parser
+        :rtype: List[str]
+        :return: kwargs, a dictionary of default argument values keyed by argument names 
+            recognized by the argument parser
+        :rtype: Dict
         """
         return [],{}
 
