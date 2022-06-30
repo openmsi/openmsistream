@@ -62,8 +62,6 @@ class UploadDataFile(DataFile,Runnable) :
         :type n_threads: int, optional
         :param chunk_size: The size of the file chunk in each message in bytes
         :type chunk_size: int, optional
-
-        :return: None
         """
         startup_msg = f"Uploading entire file {self.filepath} to {topic_name} in {chunk_size} byte chunks "
         startup_msg+=f"using {n_threads} threads...."
@@ -102,8 +100,6 @@ class UploadDataFile(DataFile,Runnable) :
         :type chunks_to_add: None or List[int], optional
         :param chunk_size: The size of the file chunk in each message in bytes
         :type chunk_size: int, optional
-
-        :return: None
         """
         if self.__chunk_infos is None :
             try :
@@ -145,8 +141,6 @@ class UploadDataFile(DataFile,Runnable) :
         :param queue_full_timeout: amount of time to wait before returning if the queue is full 
             and new messages can't be added
         :type queue_full_timeout: float, optional
-
-        :return: None
         """
         if self.__fully_enqueued :
             warnmsg = f'WARNING: enqueue_chunks_for_upload called for fully enqueued file {self.filepath}, '
@@ -246,7 +240,7 @@ class UploadDataFile(DataFile,Runnable) :
     @classmethod
     def run_from_command_line(cls,args=None) :
         """
-        Run the upload data file directly from the command line
+        Run an :class:`~UploadDataFile` directly from the command line
 
         Calls :func:`~upload_whole_file` on an :class:`~.UploadDataFile` defined by command line (or given) arguments
 
