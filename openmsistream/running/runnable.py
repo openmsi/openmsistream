@@ -5,7 +5,8 @@ from .has_argument_parser import HasArgumentParser
 
 class Runnable(HasArgumentParser,ABC) :
     """
-    Class for any child classes that can be run on their own from the command line
+    Abstract base class for any child classes that want to define some behavior 
+    for running from the command line (i.e. as a module)
     """
 
     ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
@@ -14,15 +15,29 @@ class Runnable(HasArgumentParser,ABC) :
     @abstractmethod
     def get_command_line_arguments(cls) :
         """
-        child classes should implement this function to return a list of argument names 
-        and a dictionary of argument names/default values to add to the argument parser
+        Get the list of argument names and the dictionary of argument names/default values to add to the argument parser
+
+        :return: args, a list of argument names recognized by the argument parser
+        :rtype: List[str]
+        :return: kwargs, a dictionary of default argument values keyed by argument names 
+            recognized by the argument parser
+        :rtype: Dict
         """
         return [],{}
 
     @classmethod
     def get_argument_parser(cls,*args,**kwargs) :
         """
-        Return the argument parser used to run the code
+        Get the argument parser used to run the code
+
+        :param args: Any arguments to this method are names of arguments recognized 
+            by Argument parsers of the :attr:`~Runnable.ARGUMENT_PARSER_TYPE` type
+        :type args: list
+        :param kwargs: Any keyword arguments to this method define custom default values for their given arguments, 
+            whose names must be recognized by Argument parsers of the :attr:`~Runnable.ARGUMENT_PARSER_TYPE` type
+        :type kwargs: dict
+
+        :return: An argument parser of the :attr:`~Runnable.ARGUMENT_PARSER_TYPE` type to use for the object
         """
         parser = cls.ARGUMENT_PARSER_TYPE(*args,**kwargs)
         cl_args, cl_kwargs = cls.get_command_line_arguments()
@@ -33,6 +48,9 @@ class Runnable(HasArgumentParser,ABC) :
     @abstractmethod
     def run_from_command_line(cls,args=None) :
         """
-        child classes should implement this function to do whatever it is they do when they run from the command line
+        Child classes should implement this function to do whatever it is they do when they run from the command line
+
+        :param args: the list of arguments to send to the parser instead of getting them from sys.argv
+        :type args: list
         """
         pass 

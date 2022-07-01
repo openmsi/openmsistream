@@ -22,7 +22,17 @@ class OpenMSIStreamFormatter(logging.Formatter) :
 
 class Logger :
     """
-    Class for a general logger. Logs messages and raises exceptions
+    Class for a general logger in OpenMSIStream format.
+
+    :param logger_name: The name for the logger to use (automatically inferred from the running module if not given)
+    :type logger_name: str, optional
+    :param streamlevel: The level at/above which messages should be logged to the stream/console
+    :type streamlevel: logging level int, optional
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+        logger file should be created
+    :type logger_filepath: :class:`pathlib.Path`, optional
+    :param filelevel: The level at/above which messages should be written to the logfile
+    :type filelevel: logging level int, optional
     """
 
     @property
@@ -46,21 +56,45 @@ class Logger :
         if logger_filepath is not None :
             self.add_file_handler(logger_filepath)
 
-    #set the level of the underlying logger
     def set_level(self,level) :
+        """
+        Set the level of the entire underlying logger
+
+        :param level: The level to set
+        :type level: logging level int
+        """
         self._logger_obj.setLevel(level)
-    #set the level of the streamhandler
+
     def set_stream_level(self,level) :
+        """
+        Set the level of the underlying logger's streamhandler
+
+        :param level: The level to set
+        :type level: logging level int
+        """
         self._streamhandler.setLevel(level)
-    #set the level of the filehandler
+
     def set_file_level(self,level) :
+        """
+        Set the level of the underlying logger's filehandler
+
+        :param level: The level to set
+        :type level: logging level int
+        """
         if self._filehandler is None :
             errmsg = f'ERROR: Logger {self._name} does not have a filehandler set but set_file_level was called!'
             raise RuntimeError(errmsg)
         self._filehandler.setLevel(level)
 
-    #add a filehandler to the logger
     def add_file_handler(self,filepath,level=logging.INFO) :
+        """
+        Add an additional :class:`logging.FileHandler` to the logger
+
+        :param filepath: The path to the new logger file
+        :type filepath: :class:`pathlib.Path`
+        :param level: The level to set
+        :type level: logging level int
+        """
         if not isinstance(filepath,pathlib.PurePath) :
             self.error(f'ERROR: {filepath} is a {type(filepath)} object, not a Path object!',TypeError)
         if not filepath.is_file() :
@@ -75,18 +109,51 @@ class Logger :
     #methods for logging different levels of messages
 
     def debug(self,msg,*args,**kwargs) :
+        """
+        Log a message at DEBUG level. Additional args/kwargs are sent to the underlying logger object's debug call.
+
+        :param msg: the message to log
+        :type msg: str
+        """
         self._logger_obj.debug(msg,*args,**kwargs)
     
     def info(self,msg,*args,**kwargs) :
+        """
+        Log a message at INFO level. Additional args/kwargs are sent to the underlying logger object's info call.
+
+        :param msg: the message to log
+        :type msg: str
+        """
         self._logger_obj.info(msg,*args,**kwargs)
     
     def warning(self,msg,*args,**kwargs) :
+        """
+        Log a message at WARNING level. Additional args/kwargs are sent to the underlying logger object's warning call.
+
+        :param msg: the message to log (will have "WARNING: " prepended if it doesn't start with it)
+        :type msg: str
+        """
         if not msg.startswith('WARNING:') :
             msg = f'WARNING: {msg}'
         self._logger_obj.warning(msg,*args,**kwargs)
 
     #log an error message and optionally raise an exception with the same message, or raise a different exception
     def error(self,msg,exception_type=None,exc_obj=None,reraise=True,*args,**kwargs) :
+        """
+        Log a message at ERROR level. Optionally raise an exception of a given type with the same message. 
+        Optionally log the traceback of a given Exception at ERROR level, reraising it afterward if desired.
+        
+        Additional args/kwargs are sent to the underlying logger object's error call.
+
+        :param msg: the message to log
+        :type msg: str
+        :param exception_type: The type of Exception to raise with the same message as `msg`
+        :type exception_type: :class:`BaseException`, optional
+        :param exc_obj: An Exception object whose traceback should be logged at error level
+        :type exc_obj: :class:`BaseException`, optional
+        :param reraise: if True, the given `exc_obj` will be reraised after it's logged.
+        :type reraise: bool
+        """
         if not msg.startswith('ERROR:') :
             msg = f'ERROR: {msg}'
         self._logger_obj.error(msg,*args,**kwargs)
@@ -95,8 +162,17 @@ class Logger :
         if exception_type is not None : 
             raise exception_type(msg)
 
-    #log the traceback of a given Exception as an error and optionally reraise it
     def log_exception_as_error(self,exc,*args,reraise=True,**kwargs) :
+        """
+        Log the traceback of a given Exception as an error and optionally reraise it
+
+        Additional args/kwargs are sent to the underlying logger object's error call.
+
+        :param exc: An Exception object whose traceback should be logged at error level
+        :type exc: :class:`BaseException`, optional
+        :param reraise: if True, the given `exc` will be reraised after it's logged.
+        :type reraise: bool
+        """
         try :
             raise exc
         except Exception :
@@ -111,10 +187,26 @@ class Logger :
 class LogOwner :
     """
     Any subclasses extending this one will have access to a Logger defined by the first class in the MRO to extend it
+
+    :param logger: a :class:`openmsistream.utilities.Logger` object that this class should have access to. If this
+        parameter is given it will override any of the others provided.
+    :type logger: :class:`openmsistream.utilities.Logger`, optional
+    :param logger_name: The name for the logger to use (automatically inferred from the running module if not given)
+    :type logger_name: str, optional
+    :param streamlevel: The level at/above which messages should be logged to the stream/console
+    :type streamlevel: logging level int, optional
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+        logger file should be created
+    :type logger_filepath: :class:`pathlib.Path`, optional
+    :param filelevel: The level at/above which messages should be written to the logfile
+    :type filelevel: logging level int, optional
     """
 
     @property
     def logger(self) :
+        """
+        The logger object that the class can use
+        """
         return self.__logger
 
     @logger.setter

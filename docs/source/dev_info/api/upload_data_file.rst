@@ -1,0 +1,5 @@
+==============
+UploadDataFile
+==============
+
+.. autoclass:: openmsistream.UploadDataFile

@@ -12,179 +12,56 @@ from .data_file import DataFile
 class UploadDataFile(DataFile,Runnable) :
     """
     Class to represent a data file whose messages will be uploaded to a topic
+
+    Used as part of a :class:`~.DataFileUploadDirectory`, but can also be run standalone 
+    to upload a single file.
+
+    :param filepath: The path to the file on disk
+    :type filepath: :class:`pathlib.Path`
+    :param to_upload: True (default) if the file should be uploaded. Used to set the existing files as 
+        "already uploaded" when running a :class:`~.DataFileUploadDirectory`.
+    :type to_upload: bool, optional
+    :param rootdir: path to the "root" directory that this file is in. Anything in the path beyond it 
+        will be added to the DataFileChunk so that it will be reconstructed inside a subdirectory
+    :type rootdir: None or :class:`pathlib.Path`, optional
+    :param filename_append: a string that should be appended to the end of the filename stem to distinguish the file 
+        that's produced from its original file on disk
+    :type filename_append: None or str, optional
     """
-
-    #################### PROPERTIES ####################
-
-    @property
-    def select_bytes(self) :
-        return []   # in child classes this can be a list of tuples of (start_byte,stop_byte) 
-                    # in the file that will be the only ranges of bytes added when creating the list of chunks
-    @property
-    def rootdir(self) :
-        return self.__rootdir
-    @property
-    def chunks_to_upload(self) :
-        return self.__chunks_to_upload
-    @property
-    def to_upload(self):
-        return self.__to_upload #whether or not this file will be considered when uploading some group of data files
-    @to_upload.setter
-    def to_upload(self,tu) :
-        if tu and (not self.__to_upload) :
-            self.logger.debug(f'Setting {self.filepath} to be uploaded')
-        elif (not tu) and self.__to_upload :
-            self.logger.debug(f'Setting {self.filepath} to NOT be uploaded')
-        self.__to_upload = tu
-    @property
-    def fully_produced(self) : #whether or not this file has had all of its chunks successfully sent to the broker
-        return self.__fully_produced
-    @fully_produced.setter
-    def fully_produced(self,fp) :
-        self.__fully_produced = fp
-    @property
-    def fully_enqueued(self) : #whether or not this file has had all of its chunks added to an upload queue somewhere
-        return self.__fully_enqueued
-    @property
-    def waiting_to_upload(self) : #whether or not this file is waiting for its upload to begin
-        if (not self.__to_upload) or self.__fully_enqueued :
-            return False
-        if len(self.__chunks_to_upload)>0 :
-            return False
-        return True
-    @property
-    def upload_in_progress(self) : #whether this file is in the process of being enqueued to be uploaded
-        if (not self.__to_upload) or self.__fully_enqueued :
-            return False
-        if len(self.__chunks_to_upload)==0 :
-            return False
-        return True
-    @property
-    def upload_status_msg(self) : #a message stating the file's name and status w.r.t. being enqueued to be uploaded 
-        if self.__rootdir is None :
-            msg = f'{self.filepath} '
-        else :
-            msg = f'{self.filepath.relative_to(self.__rootdir)} '
-        if not self.__to_upload :
-            msg+='(will not be uploaded)'
-        elif self.__fully_produced :
-            msg+=f'({self.__n_total_chunks} message'
-            if self.__n_total_chunks!=1 :
-                msg+='s'
-            msg+=' fully produced to broker)'
-        elif self.__fully_enqueued :
-            msg+=f'({self.__n_total_chunks} message'
-            if self.__n_total_chunks!=1 :
-                msg+='s'
-            msg+=' fully enqueued)'
-        elif self.upload_in_progress :
-            msg+=f'(in progress with {self.__n_total_chunks-len(self.__chunks_to_upload)}'
-            msg+=f'/{self.__n_total_chunks} messages enqueued)'
-        elif self.waiting_to_upload :
-            msg+=f'({self.__n_total_chunks} messages waiting to be enqueued)'
-        else :
-            msg+='(status unknown)'
-        return msg
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,to_upload=True,rootdir=None,filename_append='',**kwargs) :
+    def __init__(self,filepath,to_upload=True,rootdir=None,filename_append=None,**kwargs) :
         """
-        to_upload       = if False, the file will be ignored for purposes of uploading to a topic (default is True)
-        rootdir         = path to the "root" directory that this file is in; anything in the path beyond it 
-                          will be added to the DataFileChunk so that it will be reconstructed inside a subdirectory
-        filename_append = a string that should be appended to the end of the filename stem to distinguish the file 
-                          that's produced from its original file on disk
+        Constructor method
         """
-        super().__init__(*args,**kwargs)
+        super().__init__(filepath,**kwargs)
         self.__to_upload = to_upload
         if rootdir is None :
             self.__rootdir = self.filepath.parent
         else :
             self.__rootdir = rootdir
-        self.__filename_append = filename_append
+        self.__filename_append = filename_append if filename_append is not None else ''
         self.__fully_enqueued = False
         self.__fully_produced = False
         self.__chunks_to_upload = []
         self.__n_total_chunks = 0
         self.__chunk_infos = None
 
-    def add_chunks_to_upload(self,chunks_to_add=None,chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE) :
-        """
-        Add chunks from this file to the list of chunks to upload, possibly with some selection
-
-        chunks_to_add = a list of chunk indices to add to the list to be uploaded
-                        (Default=None adds all chunks)
-        """
-        if self.__chunk_infos is None :
-            try :
-                self._build_list_of_file_chunks(chunk_size)
-            except Exception :
-                self.logger.info(traceback.format_exc())
-                fp = self.filepath.relative_to(self.__rootdir) if self.__rootdir is not None else self.filepath
-                errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
-                errmsg+= 'Check log lines above for details on what went wrong. File will not be uploaded.'
-                self.logger.error(errmsg)
-                self.__to_upload = False
-                return
-        #add the chunks to the final list as DataFileChunk objects
-        for ic,c in enumerate(self.__chunk_infos,start=1) :
-            if chunks_to_add is None or ic in chunks_to_add :
-                self.__chunks_to_upload.append(DataFileChunk(self.filepath,self.filename,self.__file_hash,
-                                                            c[0],c[1],c[2],c[3],ic,self.__n_total_chunks,
-                                                            rootdir=self.__rootdir,
-                                                            filename_append=self.__filename_append))
-        if len(self.__chunks_to_upload)>0 and self.__fully_enqueued :
-            self.__fully_enqueued = False
-
-    def enqueue_chunks_for_upload(self,queue,n_threads=None,chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
-                                   queue_full_timeout=0.001) :
-        """
-        Add chunks of this file to a given upload queue. 
-        If the file runs out of chunks it will be marked as fully enqueued.
-        If the given queue is full this function will do absolutely nothing and will just return.
-
-        Possible keyword arguments:
-        n_threads          = the number of threads running during uploading; at most 5*this number of chunks will be 
-                             added per call to this function if this argument isn't given, every chunk will be added
-        chunk_size         = the size of each file chunk in bytes 
-                             (used to create the list of file chunks if it doesn't already exist)
-                             the default value will be used if this argument isn't given
-        queue_full_timeout = amount of time to wait if the queue is full and new messages can't be added
-        """
-        if self.__fully_enqueued :
-            warnmsg = f'WARNING: enqueue_chunks_for_upload called for fully enqueued file {self.filepath}, '
-            warnmsg+= 'nothing else will be added.'
-            self.logger.warning(warnmsg)
-            return
-        if queue.full() :
-            time.sleep(queue_full_timeout)
-            return
-        if len(self.__chunks_to_upload)==0 :
-            self.add_chunks_to_upload(chunk_size=chunk_size)
-        if n_threads is not None :
-            n_chunks_to_add = 5*n_threads
-        else :
-            n_chunks_to_add = len(self.__chunks_to_upload)
-        ic = 0
-        while len(self.__chunks_to_upload)>0 and ic<n_chunks_to_add :
-            while queue.full() :
-                time.sleep(queue_full_timeout)
-            queue.put(self.__chunks_to_upload.pop(0))
-            ic+=1
-        if len(self.__chunks_to_upload)==0 :
-            self.__fully_enqueued = True
-    
     def upload_whole_file(self,config_path,topic_name,
                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                           chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE) :
         """
         Chunk and upload an entire file on disk to a broker's topic.
 
-        config_path = path to the config file to use in defining the producer
-        topic_name  = name of the topic to produce messages to
-        n_threads   = the number of threads to run at once during uploading
-        chunk_size  = the size of each file chunk in bytes
+        :param config_path: Path to the config file to use in defining the Broker connection and Producers
+        :type config_path: :class:`pathlib.Path`
+        :param topic_name: Name of the topic to which the file's messages should be produced
+        :type topic_name: str
+        :param n_threads: The number of threads/Producers to run at once during uploading
+        :type n_threads: int, optional
+        :param chunk_size: The size of the file chunk in each message in bytes
+        :type chunk_size: int, optional
         """
         startup_msg = f"Uploading entire file {self.filepath} to {topic_name} in {chunk_size} byte chunks "
         startup_msg+=f"using {n_threads} threads...."
@@ -213,6 +90,80 @@ class UploadDataFile(DataFile,Runnable) :
             producer.close()
         producer_group.close()
         self.logger.info('Done!')
+
+    def add_chunks_to_upload(self,chunks_to_add=None,chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE) :
+        """
+        Add chunks from this file to the internal list of chunks to upload, 
+        possibly with some selection defined by :attr:`~select_bytes`
+
+        :param chunks_to_add: a list of chunk indices to add to the list to be uploaded (Default=None adds all chunks)
+        :type chunks_to_add: None or List[int], optional
+        :param chunk_size: The size of the file chunk in each message in bytes
+        :type chunk_size: int, optional
+        """
+        if self.__chunk_infos is None :
+            try :
+                self._build_list_of_file_chunks(chunk_size)
+            except Exception :
+                self.logger.info(traceback.format_exc())
+                fp = self.filepath.relative_to(self.__rootdir) if self.__rootdir is not None else self.filepath
+                errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
+                errmsg+= 'Check log lines above for details on what went wrong. File will not be uploaded.'
+                self.logger.error(errmsg)
+                self.__to_upload = False
+                return
+        #add the chunks to the final list as DataFileChunk objects
+        for ic,c in enumerate(self.__chunk_infos,start=1) :
+            if chunks_to_add is None or ic in chunks_to_add :
+                self.__chunks_to_upload.append(DataFileChunk(self.filepath,self.filename,self.__file_hash,
+                                                            c[0],c[1],c[2],c[3],ic,self.__n_total_chunks,
+                                                            rootdir=self.__rootdir,
+                                                            filename_append=self.__filename_append))
+        if len(self.__chunks_to_upload)>0 and self.__fully_enqueued :
+            self.__fully_enqueued = False
+
+    def enqueue_chunks_for_upload(self,queue,n_threads=None,chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+                                   queue_full_timeout=0.001) :
+        """
+        Add some chunks of this file from the internal list to a given upload queue 
+        (the internal list will be created if :func:`~add_chunks_to_upload` hasn't already been called). 
+        
+        When the entire internal list of file chunks has been added to the queue, 
+        the file will be marked as fully enqueued.
+        
+        If the given queue is full, this function will wait a bit and then return.
+
+        :param queue: the Queue to which chunks should be added
+        :type queue: :class:`queue.Queue` 
+        :param n_threads: the number of threads running during uploading; at most 5*this number of chunks will be 
+            added per call to this method. If this argument isn't given, every chunk in the internal list will be added.
+        :type n_threads: None or int, optional
+        :param queue_full_timeout: amount of time to wait before returning if the queue is full 
+            and new messages can't be added
+        :type queue_full_timeout: float, optional
+        """
+        if self.__fully_enqueued :
+            warnmsg = f'WARNING: enqueue_chunks_for_upload called for fully enqueued file {self.filepath}, '
+            warnmsg+= 'nothing else will be added.'
+            self.logger.warning(warnmsg)
+            return
+        if queue.full() :
+            time.sleep(queue_full_timeout)
+            return
+        if len(self.__chunks_to_upload)==0 :
+            self.add_chunks_to_upload(chunk_size=chunk_size)
+        if n_threads is not None :
+            n_chunks_to_add = 5*n_threads
+        else :
+            n_chunks_to_add = len(self.__chunks_to_upload)
+        ic = 0
+        while len(self.__chunks_to_upload)>0 and ic<n_chunks_to_add :
+            while queue.full() :
+                time.sleep(queue_full_timeout)
+            queue.put(self.__chunks_to_upload.pop(0))
+            ic+=1
+        if len(self.__chunks_to_upload)==0 :
+            self.__fully_enqueued = True
 
     #################### PRIVATE HELPER FUNCTIONS ####################
     
@@ -289,7 +240,12 @@ class UploadDataFile(DataFile,Runnable) :
     @classmethod
     def run_from_command_line(cls,args=None) :
         """
-        Run the upload data file directly from the command line
+        Run an :class:`~UploadDataFile` directly from the command line
+
+        Calls :func:`~upload_whole_file` on an :class:`~.UploadDataFile` defined by command line (or given) arguments
+
+        :param args: the list of arguments to send to the parser instead of getting them from sys.argv
+        :type args: List
         """
         #make the argument parser
         parser = cls.get_argument_parser()
@@ -302,6 +258,94 @@ class UploadDataFile(DataFile,Runnable) :
                                       chunk_size=args.chunk_size)
         upload_file.logger.info(f'Done uploading {args.filepath}')
 
+    #################### PROPERTIES ####################
+
+    @property
+    def select_bytes(self) :
+        """
+        In child classes, this property can be a list of tuples of (start_byte,stop_byte) in the file 
+        that will be the only ranges of bytes added when creating the list of chunks. 
+        The empty list in the base class will cause all bytes of the file to be uploaded.
+        """
+        return []
+    @property
+    def rootdir(self) :
+        return self.__rootdir
+    @property
+    def chunks_to_upload(self) :
+        return self.__chunks_to_upload
+    @property
+    def to_upload(self):
+        return self.__to_upload #whether or not this file will be considered when uploading some group of data files
+    @to_upload.setter
+    def to_upload(self,tu) :
+        if tu and (not self.__to_upload) :
+            self.logger.debug(f'Setting {self.filepath} to be uploaded')
+        elif (not tu) and self.__to_upload :
+            self.logger.debug(f'Setting {self.filepath} to NOT be uploaded')
+        self.__to_upload = tu
+    @property
+    def fully_produced(self) : 
+        """
+        True if this file has had all of its chunks successfully sent to the broker 
+        (only used when run as part of a :class:`~.DataFileUploadDirectory`)
+        """
+        return self.__fully_produced
+    @fully_produced.setter
+    def fully_produced(self,fp) :
+        self.__fully_produced = fp
+    @property
+    def fully_enqueued(self) : 
+        """
+        True if this file has had all of its chunks added to an upload queue
+        """
+        return self.__fully_enqueued
+    @property
+    def waiting_to_upload(self) : 
+        """
+        True if this file is waiting for its upload to begin
+        """
+        if (not self.__to_upload) or self.__fully_enqueued :
+            return False
+        if len(self.__chunks_to_upload)>0 :
+            return False
+        return True
+    @property
+    def upload_in_progress(self) : 
+        """
+        True if this file is in the process of being enqueued to be uploaded
+        """
+        if (not self.__to_upload) or self.__fully_enqueued :
+            return False
+        if len(self.__chunks_to_upload)==0 :
+            return False
+        return True
+    @property
+    def upload_status_msg(self) : #a message stating the file's name and status w.r.t. being enqueued to be uploaded 
+        if self.__rootdir is None :
+            msg = f'{self.filepath} '
+        else :
+            msg = f'{self.filepath.relative_to(self.__rootdir)} '
+        if not self.__to_upload :
+            msg+='(will not be uploaded)'
+        elif self.__fully_produced :
+            msg+=f'({self.__n_total_chunks} message'
+            if self.__n_total_chunks!=1 :
+                msg+='s'
+            msg+=' fully produced to broker)'
+        elif self.__fully_enqueued :
+            msg+=f'({self.__n_total_chunks} message'
+            if self.__n_total_chunks!=1 :
+                msg+='s'
+            msg+=' fully enqueued)'
+        elif self.upload_in_progress :
+            msg+=f'(in progress with {self.__n_total_chunks-len(self.__chunks_to_upload)}'
+            msg+=f'/{self.__n_total_chunks} messages enqueued)'
+        elif self.waiting_to_upload :
+            msg+=f'({self.__n_total_chunks} messages waiting to be enqueued)'
+        else :
+            msg+='(status unknown)'
+        return msg
 
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
 

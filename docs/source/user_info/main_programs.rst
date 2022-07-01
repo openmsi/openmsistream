@@ -2,7 +2,7 @@
 Using Main Programs
 =========================================
 
-.. include:: misc/config_files.rst
+.. include:: config_files.rst
 
 Details on programs
 -------------------

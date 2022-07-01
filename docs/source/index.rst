@@ -32,15 +32,26 @@ The contact author for the project can be reached at margaret.eminizer@gmail.com
 
 .. toctree::
    :maxdepth: 2
-   :caption: Documentation:
+   :caption: Installing OpenMSIStream:
 
-   introduction
-   getting_started
-   main_programs
-   services
-   encryption
-   troubleshooting
-   developer_info
+   installation/introduction
+   installation/getting_started
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Working with OpenMSIStream:
+
+   user_info/main_programs
+   user_info/services
+   user_info/encryption
+   user_info/troubleshooting
+
+.. toctree::
+   :maxdepth: 2
+   :caption: API reference/dev info:
+
+   dev_info/api_reference
+   dev_info/ci_testing
 
 ==================
 Indices and tables
