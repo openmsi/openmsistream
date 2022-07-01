@@ -12,11 +12,6 @@ On the pages linked below we document the details of some of the main Python cla
    api/data_file_upload_directory.rst
    api/data_file_download_directory.rst
    api/s3_transfer_stream_processor.rst
-
-.. toctree::
-   :maxdepth: 1
-   :caption: Other useful classes to extend
-
    api/data_file_stream_processor
 
 .. toctree::
@@ -24,9 +19,10 @@ On the pages linked below we document the details of some of the main Python cla
    :caption: Selected base classes
 
    api/runnable
+   api/log_owner
 
 .. toctree::
    :maxdepth: 1
-   :caption: Utility classes
+   :caption: Selected utility classes
 
    api/logger

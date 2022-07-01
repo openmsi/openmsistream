@@ -16,6 +16,8 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     :type dirpath: :class:`pathlib.Path`
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
+    :param topic_name: Name of the topic to which the Consumers should be subscribed
+    :type topic_name: str
     :param datafile_type: the type of data file that recognized files should be reconstructed as 
         (must be a subclass of :class:`~DownloadDataFileToDisk`)
     :type datafile_type: :class:`~DownloadDataFileToDisk`, optional
@@ -131,7 +133,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
-        :type args: List
+        :type args: list
         """
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)

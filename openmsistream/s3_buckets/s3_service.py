@@ -28,20 +28,9 @@ class S3Service(LogOwner) :
         self.region = s3_config['region']
         self.grant_read = 'uri="http://acs.amazonaws.com/groups/global/AllUsers"'
 
-    # def set_upload_config(self, s3_config):
-    #
-    #     self.bucket_name = s3_config['bucket_name']
-    #     self.grant_read = 'uri="http://acs.amazonaws.com/groups/global/AllUsers"'
-
     def get_object_stream_by_object_key(self, bucket_name, object_key):
         s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
         return s3_response_object['Body'].read()
-
-    def get_object_stream_by_datafile(self, topic_name, bucket_name, datafile):
-        file_name = str(datafile.filename)
-        sub_dir = datafile.subdir_str
-        object_key = topic_name + '/' + sub_dir + '/' + file_name
-        return self.get_object_stream_by_object_key(bucket_name, object_key)
 
     def delete_object_from_bucket(self, bucket_name, object_key):
         try:
@@ -85,15 +74,9 @@ class S3Service(LogOwner) :
         hhh = format(md5.hexdigest())
         return str(hhh) == hashed_datafile_stream
 
-    def compare_consumer_datafile_with_s3_object_stream(self, topic_name, bucket_name, datafile):
+    def compare_consumer_datafile_with_s3_object_stream(self, bucket_name, object_key, datafile):
         if datafile == None:
             return False
-        file_name = str(datafile.filename)
-        sub_dir = datafile.subdir_str
-        object_key = topic_name 
-        if sub_dir is not None :
-            object_key+= '/' + sub_dir 
-        object_key+= '/' + file_name
         s3_response_object = self.s3_client.get_object(Bucket=bucket_name, Key=object_key)
         object_content = s3_response_object['Body'].read()
         if object_content == None:
@@ -110,6 +93,3 @@ class S3Service(LogOwner) :
         for obj in objects['Contents']:
             object_names.append(obj['Key'])
         return object_names
-
-    def close_session(self):
-        pass

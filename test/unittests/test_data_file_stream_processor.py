@@ -28,6 +28,12 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
             self.completed_filenames_bytestrings.append((datafile.filename,datafile.bytestring))
         return None
 
+    def _failed_processing_callback(self,datafile,lock) :
+        raise RuntimeError('ERROR: _failed_processing_callback invoked in test!')
+
+    def _mismatched_hash_callback(self,datafile,lock) :
+        raise RuntimeError('ERROR: _mismatched_hash_callback invoked in test!')
+
     def _on_check(self) :
         self.checked = True
         super()._on_check()

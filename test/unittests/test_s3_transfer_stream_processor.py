@@ -109,7 +109,6 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
         except Exception as e:
             raise e
         finally:
-            s3tsp.close_session_client()
             if s3tsp_thread.is_alive():
                 try:
                     s3tsp.shutdown()
@@ -219,7 +218,6 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
         shutil.rmtree(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)
         if TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER.is_dir() :
             shutil.rmtree(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)
-        s3d.close_session()
         LOGGER.info('All test cases passed')
 
     def test_upload_and_transfer_into_s3_bucket_kafka(self):

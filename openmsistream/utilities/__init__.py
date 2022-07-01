@@ -1,5 +1,6 @@
-from .logging import Logger
+from .logging import Logger, LogOwner
 
 __all__ = [
-    'Logger'
+    'Logger',
+    'LogOwner',
 ]

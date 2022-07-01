@@ -1,5 +1,5 @@
-=======================
+=========================
 DataFileDownloadDirectory
-=======================
+=========================
 
 .. autoclass:: openmsistream.DataFileDownloadDirectory
