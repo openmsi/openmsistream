@@ -10,6 +10,8 @@ On the pages linked below we document the details of some of the main Python cla
 
    api/upload_data_file.rst
    api/data_file_upload_directory.rst
+   api/data_file_download_directory.rst
+   api/s3_transfer_stream_processor.rst
 
 .. toctree::
    :maxdepth: 1

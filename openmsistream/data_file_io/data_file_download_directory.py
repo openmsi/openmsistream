@@ -10,17 +10,27 @@ from .data_file_chunk_processor import DataFileChunkProcessor
 
 class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnable) :
     """
-    Class representing a directory into which files are being reconstructed
+    Class representing a directory into which files are being reconstructed.
+
+    :param dirpath: Path to the directory where reconstructed files should be saved 
+    :type dirpath: :class:`pathlib.Path`
+    :param config_path: Path to the config file to use in defining the Broker connection and Consumers
+    :type config_path: :class:`pathlib.Path`
+    :param datafile_type: the type of data file that recognized files should be reconstructed as 
+        (must be a subclass of :class:`~DownloadDataFileToDisk`)
+    :type datafile_type: :class:`~DownloadDataFileToDisk`, optional
+
+    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToDisk`
     """
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,datafile_type=DownloadDataFileToDisk,**kwargs) :
+    def __init__(self,dirpath,config_path,topic_name,datafile_type=DownloadDataFileToDisk,**kwargs) :
         """
         datafile_type = the type of datafile that the consumed messages should be assumed to represent
         In this class datafile_type should be something that extends DownloadDataFileToDisk
         """    
-        super().__init__(*args,datafile_type=datafile_type,**kwargs)
+        super().__init__(dirpath,config_path,topic_name,datafile_type=datafile_type,**kwargs)
         if not issubclass(self.datafile_type,DownloadDataFileToDisk) :
             errmsg = 'ERROR: DataFileDownloadDirectory requires a datafile_type that is a subclass of '
             errmsg+= f'DownloadDataFileToDisk but {self.datafile_type} was given!'
@@ -30,8 +40,14 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     def reconstruct(self) :
         """
         Consumes messages and writes their data to disk using several parallel threads to reconstruct the files 
-        to which they correspond. Runs until the user inputs a command to shut it down. Returns the total number 
-        of messages consumed, as well as the number of files whose reconstruction was completed during the run. 
+        to which they correspond. Runs until the user inputs a command to shut it down. 
+        
+        :return: the total number of messages consumed
+        :rtype: int
+        :return: the total number of message processed (written to disk)
+        :rtype: int
+        :return: the number of files whose reconstruction was completed during the run 
+        :rtype: int
         """
         msg = f'Will reconstruct files from messages in the {self.topic_name} topic using {self.n_threads} '
         msg+= f'thread{"s" if self.n_threads!=1 else ""}'
@@ -109,7 +125,13 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     @classmethod
     def run_from_command_line(cls,args=None) :
         """
-        Run the download directory right from the command line
+        Run a :class:`~DataFileDownloadDirectory` directly from the command line
+
+        Calls :func:`~reconstruct` on a :class:`~DataFileDownloadDirectory` defined by 
+        command line (or given) arguments
+
+        :param args: the list of arguments to send to the parser instead of getting them from sys.argv
+        :type args: List
         """
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)

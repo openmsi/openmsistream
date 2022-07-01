@@ -24,7 +24,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
     :param upload_regex: only files matching this regular expression will be uploaded
     :type upload_regex: :func:`re.compile`, optional
     :param datafile_type: the type of data file that recognized files should be uploaded as 
-        (must be a subclass of UploadDataFile)
+        (must be a subclass of :class:`~UploadDataFile`)
     :type datafile_type: :class:`~UploadDataFile`, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~UploadDataFile`
