@@ -44,7 +44,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         Constructor method
         """
         #create a subdirectory for the logs
-        self.__logs_subdir = args[0]/self.LOG_SUBDIR_NAME
+        self.__logs_subdir = dirpath/self.LOG_SUBDIR_NAME
         if not self.__logs_subdir.is_dir() :
             self.__logs_subdir.mkdir(parents=True)
         #put the log file in the subdirectory
