@@ -1,4 +1,5 @@
-from ..running.runnable import Runnable
+#imports
+from ..running import Runnable
 from ..data_file_io.config import RUN_OPT_CONST
 from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser

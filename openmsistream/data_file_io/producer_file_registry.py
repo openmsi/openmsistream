@@ -2,8 +2,7 @@
 import pathlib, datetime
 from typing import Set
 from dataclasses import dataclass
-from ..utilities.dataclass_table import DataclassTable
-from ..utilities.logging import LogOwner
+from ..utilities import DataclassTable, LogOwner
 
 @dataclass
 class RegistryLineInProgress :

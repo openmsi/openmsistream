@@ -2,9 +2,9 @@
 import sys, pathlib, textwrap
 from abc import abstractmethod
 from subprocess import CalledProcessError
-from ..utilities.logging import LogOwner
+from ..utilities import LogOwner
 from ..utilities.config_file_parser import ConfigFileParser
-from ..running.argument_parsing import OpenMSIStreamArgumentParser
+from ..running import OpenMSIStreamArgumentParser
 from ..running.has_argument_parser import HasArgumentParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var

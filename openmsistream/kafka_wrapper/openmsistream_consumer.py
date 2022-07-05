@@ -2,7 +2,7 @@
 import uuid
 from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
-from ..utilities.logging import LogOwner
+from ..utilities import LogOwner
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
 from .config_file_parser import KafkaConfigFileParser
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
