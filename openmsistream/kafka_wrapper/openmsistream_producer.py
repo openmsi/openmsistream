@@ -59,7 +59,8 @@ class OpenMSIStreamProducer(LogOwner) :
 
         :param config_file_path: Path to the config file to use in defining Producers
         :type config_file_path: :class:`pathlib.Path`
-        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the :class:`~OpenMSIStreamProducer` objects
+        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
+            :class:`~OpenMSIStreamProducer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
         :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers, 
             with underscores in their names replaced by dots
