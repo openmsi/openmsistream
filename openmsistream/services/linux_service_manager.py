@@ -6,7 +6,18 @@ from .service_manager_base import ServiceManagerBase
 
 class LinuxServiceManager(ServiceManagerBase) :
     """
-    Class for working with Linux Services/daemons
+    Base class for working with Linux daemons
+
+    :param service_name: The name of the daemon as installed
+    :type service_name: str
+    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
+        as a daemon. Only needed to initially install the daemon.
+    :type service_class_name: :class:`~Runnable`, optional
+    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
+        Only needed to initially install the daemon.
+    :type argslist: list, optional
+    :param interactive: if True, a few more messages/prompts will come up telling a user what to do
+    :type interactive: bool, optional
     """
 
     @property
@@ -31,6 +42,9 @@ class LinuxServiceManager(ServiceManagerBase) :
         self.daemon_filepath = SERVICE_CONST.DAEMON_SERVICE_DIR/self.daemon_working_dir_filepath.name
 
     def install_service(self) :
+        """
+        Install the daemon
+        """
         super().install_service()
         #make sure systemd is running
         self.__check_systemd_installed()
@@ -42,6 +56,9 @@ class LinuxServiceManager(ServiceManagerBase) :
         self.logger.info(f'Done installing {self.service_name}')
 
     def start_service(self) :
+        """
+        Start the daemon
+        """
         self.logger.info(f'Starting {self.service_name}...')
         self.__check_systemd_installed()
         run_cmd_in_subprocess(['sudo','systemctl','daemon-reload'],logger=self.logger)
@@ -49,17 +66,34 @@ class LinuxServiceManager(ServiceManagerBase) :
         self.logger.info(f'Done starting {self.service_name}')
 
     def service_status(self) :
+        """
+        Print the status of the daemon
+        """
         self.__check_systemd_installed()
         result = run_cmd_in_subprocess(['sudo','systemctl','status',f'{self.service_name}.service'],logger=self.logger)
         self.logger.info(f'{self.service_name} status: {result.decode()}')
 
     def stop_service(self) :
+        """
+        Stop the daemon
+        """
         self.logger.info(f'Stopping {self.service_name}...')
         self.__check_systemd_installed()
         run_cmd_in_subprocess(['sudo','systemctl','stop',f'{self.service_name}.service'],logger=self.logger)
         self.logger.info(f'Done stopping {self.service_name}')
 
     def remove_service(self,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
+        """
+        Remove the daemon.
+
+        :param remove_env_vars: if True, any environment variables needed by the daemon will be removed. 
+        :type remove_env_vars: bool, optional.
+        :param remove_install_args: if True, the file listing the arguments used to install the daemon 
+            (to make it easier to re-install) will be removed.
+        :type remove_install_args: bool, optional
+        :param remove_nssm: Not used for Linux daemons.
+        :type remove_nssm: bool, optional
+        """
         self.logger.info(f'Removing {self.service_name}...')
         self.__check_systemd_installed()
         run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
