@@ -4,9 +4,11 @@ API reference
 
 On the pages linked below we document the details of some of the main Python classes provided by OpenMSIStream. Users may find this reference helpful in extending OpenMSIStream classes for customized applications.
 
+Top-level classes
+-----------------
+
 .. toctree::
    :maxdepth: 1
-   :caption: Top-level classes
 
    api/upload_data_file.rst
    api/data_file_upload_directory.rst
@@ -14,9 +16,11 @@ On the pages linked below we document the details of some of the main Python cla
    api/s3_transfer_stream_processor.rst
    api/data_file_stream_processor
 
+Kafka wrapper
+-------------
+
 .. toctree::
    :maxdepth: 1
-   :caption: Kafka wrapper
 
    api/openmsistream_producer
    api/openmsistream_consumer
@@ -24,16 +28,20 @@ On the pages linked below we document the details of some of the main Python cla
    api/consumer_group
    api/openmsistream_kafka_crypto
 
+Services/daemons
+----------------
+
 .. toctree::
    :maxdepth: 1
-   :caption: Services/daemons
 
    api/windows_service_manager
    api/linux_service_manager
 
+Selected base + utility classes
+-------------------------------
+
 .. toctree::
    :maxdepth: 1
-   :caption: Selected base + utility classes
 
    api/runnable
    api/log_owner
