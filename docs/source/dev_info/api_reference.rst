@@ -16,13 +16,27 @@ On the pages linked below we document the details of some of the main Python cla
 
 .. toctree::
    :maxdepth: 1
-   :caption: Selected base classes
+   :caption: Kafka wrapper
 
-   api/runnable
-   api/log_owner
+   api/openmsistream_producer
+   api/openmsistream_consumer
+   api/producer_group
+   api/consumer_group
+   api/openmsistream_kafka_crypto
 
 .. toctree::
    :maxdepth: 1
-   :caption: Selected utility classes
+   :caption: Services/daemons
 
+   api/windows_service_manager
+   api/linux_service_manager
+
+.. toctree::
+   :maxdepth: 1
+   :caption: Selected base + utility classes
+
+   api/runnable
+   api/log_owner
    api/logger
+   api/openmsistream_argument_parser
+   api/dataclass_table
