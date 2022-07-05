@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.2.0'
+version = '0.9.2.1'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 

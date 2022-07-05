@@ -2,7 +2,7 @@
 import uuid
 from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
-from ..utilities.logging import LogOwner
+from ..utilities import LogOwner
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
 from .config_file_parser import KafkaConfigFileParser
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
@@ -10,13 +10,27 @@ from .serialization import CompoundDeserializer
 
 class OpenMSIStreamConsumer(LogOwner) :
     """
-    Convenience class for working with a Consumer of some type
+    Wrapper for working with a Consumer of some type
+
+    :param consumer_type: The type of underlying Consumer that should be used
+    :type consumer_type: :class:`confluent_kafka.DeserializingConsumer` or :class:`kafkacrypto.KafkaConsumer`
+    :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Consumer
+    :type configs: dict
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Consumer. 
+        Only needed if `consumer_type` is :class:`kafkacrypto.KafkaConsumer`.
+    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+    :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumer, 
+        with underscores in their names replaced by dots
+    :type kwargs: dict
+
+    :raises ValueError: if `consumer_type` is not :class:`confluent_kafka.DeserializingConsumer` 
+        or :class:`kafkacrypto.KafkaConsumer`
+    :raises ValueError: if `consumer_type` is :class:`kafkacrypto.KafkaConsumer` and `kafkacrypto` is None
     """
 
     def __init__(self,consumer_type,configs,kafkacrypto=None,**kwargs) :
         """
-        consumer_type = the type of Consumer underlying this object
-        configs = a dictionary of configurations to pass to the consumer to create it
+        Constructor method
         """
         super().__init__(**kwargs)
         if consumer_type==KafkaConsumer :
@@ -35,14 +49,25 @@ class OpenMSIStreamConsumer(LogOwner) :
     @staticmethod
     def get_consumer_args_kwargs(config_file_path,logger=None,**kwargs) :
         """
-        Return the arguments and keyword arguments that should be used to create 
-        a OpenMSIStreamConsumer based on the configs
+        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
+        :class:`~OpenMSIStreamConsumer` objects based on the given config file. 
+        Used to share a single :class:`~OpenMSIStreamKafkaCrypto` instance across several Consumers.
 
-        config_file_path = path to the config file to use in defining this consumer
+        :param config_file_path: Path to the config file to use in defining Consumers
+        :type config_file_path: :class:`pathlib.Path`
+        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
+            :class:`~OpenMSIStreamConsumer` objects
+        :type logger: :class:`openmsistream.utilities.Logger`
+        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumers, 
+            with underscores in their names replaced by dots
+        :type kwargs: dict
 
-        any keyword arguments will be added to the final consumer configs (with underscores replaced with dots)
-
-        Used to quickly instantiate more than one identical OpenMSIStreamConsumer for a ConsumerGroup
+        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamConsumer` objects 
+            based on the config file and arguments to this method
+        :rtype: list
+        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamConsumer` objects 
+            based on the config file and arguments to this method
+        :rtype: dict
         """
         parser = KafkaConfigFileParser(config_file_path,logger=logger)
         ret_kwargs = {}
@@ -78,17 +103,31 @@ class OpenMSIStreamConsumer(LogOwner) :
 
     @classmethod
     def from_file(cls,*args,**kwargs) :
+        """
+        Wrapper around :func:`~OpenMSIStreamConsumer.get_consumer_args_kwargs` and the :class:`~OpenMSIStreamConsumer` 
+        constructor to return a single :class:`~OpenMSIStreamConsumer` from a given config file/arguments. 
+        Arguments are the same as :func:`~OpenMSIStreamConsumer.get_consumer_args_kwargs`
+
+        :returns: An :class:`~OpenMSIStreamConsumer` object based on the given config file/arguments
+        :rtype: :class:`~OpenMSIStreamConsumer`
+        """
         args_to_use, kwargs_to_use = OpenMSIStreamConsumer.get_consumer_args_kwargs(*args,**kwargs)
         return cls(*args_to_use,**kwargs_to_use)
 
     def get_next_message(self,*poll_args,**poll_kwargs) :
         """
-        Call "poll" for this consumer and return any successfully consumed message's value
-        otherwise log a warning if there's an error while calling poll
+        Call poll() for the underlying consumer and return any successfully consumed message's value.
+        Log a warning if there's an error while calling poll().
 
-        For the case of encrypted messages, this may return a Message object with 
-        KafkaCryptoMessages for its key and/or value if the message fails 
-        to be decrypted within a certain amount of time
+        For the case of encrypted messages, this may return a :class:`kafkacrypto.Message` object with 
+        :class:`kafkacrypto.KafkaCryptoMessages` for its key and/or value if the message fails to be 
+        decrypted within a certain amount of time
+
+        All arguments/keyword arguments are passed through to the underlying Consumer's poll() function.
+
+        :return: a single consumed :class:`confluent_kafka.Message` object, an undecrypted 
+            :class:`kafkacrypto.Message` object, or None
+        :rtype: :class:`confluent_kafka.Message`, :class:`kafkacrypto.Message`, or None
         """ 
         #There's one version for the result of a KafkaConsumer.poll() call
         if isinstance(self.__consumer,KafkaConsumer) :
@@ -125,9 +164,26 @@ class OpenMSIStreamConsumer(LogOwner) :
                 return None
 
     def subscribe(self,*args,**kwargs) :
-        self.__consumer.subscribe(*args,**kwargs)
+        """
+        A wrapper around the underlying Consumer's subscribe() method
+        """
+        return self.__consumer.subscribe(*args,**kwargs)
 
     def commit(self,message=None,offsets=None,asynchronous=True) :
+        """
+        A wrapper around the underlying Consumer's commit() method. 
+        Exactly one of `message` and `offsets` must be given.
+
+        :param message: The message whose offset should be committed
+        :type message: :class:`confluent_kafka.Message` or :class:`kafkacrypto.Message`, optional
+        :param offsets: The list of topic+partitions+offsets to commit
+        :type offsets: list(:class:`confluent_kafka.TopicPartition`), optional
+        :param asynchronous: If True, the Consumer.commit call will return immediately and run asynchronously 
+            instead of blocking
+        :type asynchronous: bool
+
+        :raises ValueError: if `message` and `offsets` are both given
+        """
         if (message is not None) and (not isinstance(message,Message)) :
             try :
                 offset_dict = {KCCommitOffsetDictKey(message.topic,message.partition):KCCommitOffset(message.offset)}
@@ -146,9 +202,12 @@ class OpenMSIStreamConsumer(LogOwner) :
             return self.__consumer.commit(message=message,asynchronous=asynchronous)
         else :
             errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
-            self.logger.error(errmsg)
+            self.logger.error(errmsg,ValueError)
     
     def close(self,*args,**kwargs) :
+        """
+        Combined wrapper around the underlying Consumer's close() method and :func:`kafkacrypto.KafkaCrypto.close`. 
+        """
         self.__consumer.close(*args,**kwargs)
         try :
             if self.__kafkacrypto :

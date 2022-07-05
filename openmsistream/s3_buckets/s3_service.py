@@ -5,7 +5,7 @@
 # Johns Hopkins University http://www.jhu.edu/
 import hashlib
 import boto3
-from ..utilities.logging import LogOwner
+from ..utilities import LogOwner
 
 class S3Service(LogOwner) :
 

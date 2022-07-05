@@ -2,9 +2,9 @@
 import sys, pathlib, textwrap
 from abc import abstractmethod
 from subprocess import CalledProcessError
-from ..utilities.logging import LogOwner
+from ..utilities import LogOwner
 from ..utilities.config_file_parser import ConfigFileParser
-from ..running.argument_parsing import OpenMSIStreamArgumentParser
+from ..running import OpenMSIStreamArgumentParser
 from ..running.has_argument_parser import HasArgumentParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var
@@ -12,52 +12,23 @@ from .utilities import set_env_vars, remove_env_var
 class ServiceManagerBase(LogOwner,HasArgumentParser) :
     """
     Base class for working with Services in general
+
+    :param service_name: The name of the Service/daemon as installed
+    :type service_name: str
+    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
+        as a Service/daemon. Only needed to initially install the Service/daemon.
+    :type service_class_name: :class:`~Runnable`, optional
+    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
+        Only needed to initially install the Service/daemon.
+    :type argslist: list, optional
+    :param interactive: if True, a few more messages/prompts will come up telling a user what to do
+    :type interactive: bool, optional
     """
-
-    #################### CLASS METHODS ####################
-    
-    @classmethod
-    def get_argument_parser(cls,install_or_manage) :
-        parser = OpenMSIStreamArgumentParser()
-        if install_or_manage=='install' :
-            #subparsers from the classes that could be run
-            subp_desc = 'The name of a runnable class to install as a service must be given as the first argument. '
-            subp_desc = 'Adding one of these class names to the command line along with "-h" will show additional help.'
-            parser.add_subparsers(description=subp_desc,required=True,dest='service_class_name')
-            for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
-                parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
-        elif install_or_manage=='manage' :
-            parser.add_arguments('service_name','run_mode','remove_env_vars','remove_install_args','remove_nssm')
-        else :
-            errmsg =  'ERROR: must call get_argument_parser with either "install" or "manage", '
-            errmsg+= f'not "{install_or_manage}"!'
-            raise ValueError(errmsg)
-        return parser
-
-    #################### PROPERTIES ####################
-
-    @property
-    def env_var_names(self) :
-        """
-        Names of the environment variables used by the service
-        """
-        #get the names of environment variables from the command line and config file
-        if self.argslist is not None and self.service_dict is not None :
-            for arg in self.argslist :
-                if arg.startswith('$') :
-                    yield arg
-            p = self.service_dict['class'].get_argument_parser()
-            argsdests = [action.dest for action in p._actions]
-            if 'config' in argsdests :
-                pargs = p.parse_args(args=self.argslist)
-                cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
-                for evn in cfp.env_var_names :
-                    yield evn
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,service_name,*args,service_class_name=None,argslist=None,interactive=None,**kwargs) :
-        super().__init__(*args,**kwargs)
+    def __init__(self,service_name,*,service_class_name=None,argslist=None,interactive=None,**kwargs) :
+        super().__init__(**kwargs)
         self.service_name = service_name
         self.service_class_name = service_class_name
         self.__set_service_dict_from_class_name()
@@ -98,7 +69,18 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
     def run_manage_command(self,run_mode,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
         """
-        Run one of the functions below according to the action given
+        Run one of the other functions according to the action given
+
+        :param run_mode: The string identifying the action(s) that should be taken
+        :type run_mode: str
+        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed. 
+            Only used when removing the Service/daemon.
+        :type remove_env_vars: bool, optional.
+        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon 
+            (to make it easier to re-install) will be removed. Only used when removing the Service/daemon.
+        :type remove_install_args: bool, optional
+        :param remove_nssm: if True, the NSSM executable will be removed. Only used when removing the Service/daemon.
+        :type remove_nssm: bool, optional
         """
         if run_mode in ['start'] :
             self.start_service()
@@ -141,8 +123,14 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
     def remove_service(self,remove_env_vars=False,remove_install_args=False) :
         """
-        remove the Service
-        child classes should call this after doing whatever they need to do to possibly remove environment variables
+        Remove the Service. Child classes should call this after doing whatever they need to do to 
+        optionally remove environment variables.
+
+        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed. 
+        :type remove_env_vars: bool, optional.
+        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon 
+            (to make it easier to re-install) will be removed.
+        :type remove_install_args: bool, optional
         """
         #remove the executable file
         if self.exec_fp.is_file() :
@@ -269,3 +257,56 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             self.service_dict = service_dict[0]
         else :
             self.service_dict = None
+
+    #################### CLASS METHODS ####################
+    
+    @classmethod
+    def get_argument_parser(cls,install_or_manage) :
+        """
+        Return the command line argument parser that should be used
+
+        :param install_or_manage: Whether the parser used should accept commands for "install"-ing 
+            or "manage"-ing the Service/daemon
+        :type install_or_manage: str
+
+        :return: the :class:`~OpenMSIStreamArgumentParser` object that should be used
+        :rtype: :class:`~OpenMSIStreamArgumentParser`
+
+        :raises ValueError: if `install_or_manage` is neither "install" nor "manage"
+        """
+        parser = OpenMSIStreamArgumentParser()
+        if install_or_manage=='install' :
+            #subparsers from the classes that could be run
+            subp_desc = 'The name of a runnable class to install as a service must be given as the first argument. '
+            subp_desc = 'Adding one of these class names to the command line along with "-h" will show additional help.'
+            parser.add_subparsers(description=subp_desc,required=True,dest='service_class_name')
+            for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
+                parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
+        elif install_or_manage=='manage' :
+            parser.add_arguments('service_name','run_mode','remove_env_vars','remove_install_args','remove_nssm')
+        else :
+            errmsg =  'ERROR: must call get_argument_parser with either "install" or "manage", '
+            errmsg+= f'not "{install_or_manage}"!'
+            raise ValueError(errmsg)
+        return parser
+
+    #################### PROPERTIES ####################
+
+    @property
+    def env_var_names(self) :
+        """
+        Names of the environment variables used by the service 
+        (any environment variables in the command line arguments or config file)
+        """
+        #get the names of environment variables from the command line and config file
+        if self.argslist is not None and self.service_dict is not None :
+            for arg in self.argslist :
+                if arg.startswith('$') :
+                    yield arg
+            p = self.service_dict['class'].get_argument_parser()
+            argsdests = [action.dest for action in p._actions]
+            if 'config' in argsdests :
+                pargs = p.parse_args(args=self.argslist)
+                cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
+                for evn in cfp.env_var_names :
+                    yield evn

@@ -79,7 +79,14 @@ def positive_int(argval) :
 
 class OpenMSIStreamArgumentParser(ArgumentParser) :
     """
-    Class to make it easier to get an ArgumentParser with some commonly-used arguments in it
+    Class to make it easier to get an ArgumentParser with some commonly-used arguments in it.
+
+    All constructor arguments get passed to the underlying :class:`argparse.ArgumentParser` object.
+
+    Arguments for the parser are defined in the :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS` class variable, 
+    which is a dictionary. The keys are names of arguments, and the values are lists. The first entry in each list
+    is a string reading "positional" or "optional" depending on the type of argument, and the second entry is a 
+    dictionary of keyword arguments to send to :func:`argparse.ArgumentParser.add_argument`.
     """
 
     ARGUMENTS = {
@@ -184,8 +191,17 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
     def add_arguments(self,*args,**kwargs) :
         """
         Add a group of common arguments to the parser
-        args = names of arguments that should be added just as listed in ARGUMENTS above
-        kwargs = dictionary whose keys are argument names like in args and whose values are default argument values
+
+        :param args: Names of arguments that should be added exactly as they're listed in 
+            :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS`
+        :type args: list
+        :param kwargs: Dictionary whose keys are argument names like in `args` and whose values are new 
+            default argument values
+        :type kwargs: dict
+
+        :raises ValueError: if the name of an argument isn't recognized in 
+            :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS`, or if the type of a new default argument is different 
+            than the type of its original default argument
         """
         if len(args)<1 and len(kwargs)<1 :
             raise ValueError('ERROR: must specify at least one desired argument to create an argument parser!')
@@ -207,26 +223,21 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                 self.add_argument(argname_to_add,**kwargs_for_arg)
                 self.__argnames_added.append(argname_to_add)
 
-    def add_subparser(self,cmd,**kwargs) :
-        """
-        Add a subparser by calling add_parser using the subparser action object
-        Returns the subparser
-        Just a wrapper around the usual UI
-        """
-        if self.__subparsers_action_obj is None :
-            errmsg = 'ERROR: add_subparser_arguments_for_class called for an argument parser that '
-            errmsg+= 'has not added subparsers!'
-            raise RuntimeError(errmsg)
-        self.__subparsers[cmd] = self.__subparsers_action_obj.add_parser(cmd,**kwargs)
-        return self.__subparsers[cmd]
-
     def add_subparser_arguments_from_class(self,class_to_add,*,addl_args=None,addl_kwargs=None,**other_kwargs) :
         """
-        Create a new subparser and add arguments from the given class to it
-        class_to_add must inherit from Runnable to be able to get its arguments
-        addl_args/kwargs = a list and/or dictionary of additional arguments that should be added to every subparser 
-                                 (same format as args/kwargs for add_arguments above)
-        other_kwargs are passed to subparsers.add_parser
+        Create a new subparser and add arguments from the given class to it.
+        `class_to_add must` inherit from :class:`~Runnable` to be able to get its arguments.
+
+        :param addl_args: additional arguments that should be added to every subparser 
+            (same format as `args` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
+        :type addl_args: list
+        :param addl_kwargs: additional keyword arguments that should be added to every subparser 
+            (same format as `kwargs` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
+        :type addl_kwargs: dict
+        :param other_kwargs: passed to subparsers' add_parser() method
+        :type other_kwargs: dict
+
+        :raises ValueError: like in :func:`~OpenMSIStreamArgumentParser.add_arguments`
         """
         if self.__subparsers_action_obj is None :
             errmsg = 'ERROR: add_subparser_arguments_for_class called for an argument parser that '

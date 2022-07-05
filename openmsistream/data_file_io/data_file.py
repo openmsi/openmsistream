@@ -1,6 +1,6 @@
 #imports
+from ..utilities import LogOwner
 from ..utilities.misc import populated_kwargs
-from ..utilities.logging import LogOwner
 
 class DataFile(LogOwner) :
     """

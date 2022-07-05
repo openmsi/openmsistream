@@ -7,7 +7,18 @@ from .service_manager_base import ServiceManagerBase
 
 class WindowsServiceManager(ServiceManagerBase) :
     """
-    Class for working with Windows Services
+    Base class for working with Windows Services
+
+    :param service_name: The name of the Service as installed
+    :type service_name: str
+    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
+        as a Service. Only needed to initially install the Service.
+    :type service_class_name: :class:`~Runnable`, optional
+    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
+        Only needed to initially install the Service.
+    :type argslist: list, optional
+    :param interactive: if True, a few more messages/prompts will come up telling a user what to do
+    :type interactive: bool, optional
     """
 
     @property
@@ -27,6 +38,9 @@ class WindowsServiceManager(ServiceManagerBase) :
                     pass
 
     def install_service(self) :
+        """
+        Install the Service
+        """
         super().install_service()
         #if it doesn't exist there yet, copy the libsodium.dll file to C:\Windows\system32
         self.__copy_libsodium_dll_to_system32()
@@ -41,6 +55,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.logger.info(f'Done installing {self.service_name}')
 
     def start_service(self) :
+        """
+        Start the Service
+        """
         self.logger.info(f'Starting {self.service_name}...')
         #start the service using net
         cmd = f'net start {self.service_name}'
@@ -48,6 +65,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.logger.info(f'Done starting {self.service_name}')
 
     def service_status(self) :
+        """
+        Print the status of the Service
+        """
         #find or install NSSM in the current directory
         self.__find_install_NSSM()
         #get the service status
@@ -56,6 +76,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.logger.info(f'{self.service_name} status: {result.decode()}')
 
     def stop_service(self) :
+        """
+        Stop the Service
+        """
         self.logger.info(f'Stopping {self.service_name}...')
         #stop the service using net
         cmd = f'net stop {self.service_name}'
@@ -63,6 +86,17 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.logger.info(f'Done stopping {self.service_name}')
 
     def remove_service(self,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
+        """
+        Remove the Service
+
+        :param remove_env_vars: if True, any environment variables needed by the Service will be removed. 
+        :type remove_env_vars: bool, optional.
+        :param remove_install_args: if True, the file listing the arguments used to install the Service 
+            (to make it easier to re-install) will be removed.
+        :type remove_install_args: bool, optional
+        :param remove_nssm: if True, the NSSM executable will be removed.
+        :type remove_nssm: bool, optional
+        """
         self.logger.info(f'Removing {self.service_name}...')
         #find or install NSSM in the current directory
         self.__find_install_NSSM()

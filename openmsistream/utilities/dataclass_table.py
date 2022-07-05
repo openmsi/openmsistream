@@ -9,6 +9,12 @@ from .logging import LogOwner
 class DataclassTable(LogOwner) :
     """
     A class to work with an atomic csv file that's holding dataclass entries in a thread-safe way
+
+    :param dataclass_type: The :class:`dataclasses.dataclass` defining the entries in the table/csv file
+    :type dataclass_type: :class:`dataclasses.dataclass`
+    :param filepath: The path to the .csv file that should be created (or read from) on startup. 
+        The default is a file named after the dataclass type in the current directory.
+    :type filepath: :class:`pathlib.Path` or None, optional
     """
 
     #################### PROPERTIES AND CONSTANTS ####################
@@ -46,18 +52,19 @@ class DataclassTable(LogOwner) :
 
     @property
     def lock(self) :
+        """
+        A thread lock to use for ensuring only one thread is interacting with the :class:`~DataclassTable` at a time
+        """
         return DataclassTable.THREAD_LOCK
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,dataclass_type,*args,filepath=None,**kwargs) :
+    def __init__(self,dataclass_type,*,filepath=None,**kwargs) :
         """
-        dataclass_type = the dataclass that entries in this file will represent
-        filepath = the path to the csv file that should be created/read from
-                   (default is a file named after the dataclass type in the current directory)
+        Constructor method
         """
         #init the LogOwner
-        super().__init__(*args,**kwargs)
+        super().__init__(**kwargs)
         #figure out what type of objects the table/file will be describing
         self.__dataclass_type = dataclass_type
         if not is_dataclass(self.__dataclass_type) :
@@ -88,10 +95,12 @@ class DataclassTable(LogOwner) :
 
     def add_entries(self,new_entries) :
         """
-        Add a new set of entries to the table
-        Clears obj_addresses_by_key_attr cache
+        Add a new set of entries to the table.
 
-        new_entries = the new entry or entries to add to the table
+        :param new_entries: the new entry or entries to add to the table
+        :type new_entries: :class:`dataclasses.dataclass` or list(:class:`dataclasses.dataclass`)
+
+        :raises ValueError: if any of the objects in `new_entries` already exists in the table
         """
         if is_dataclass(new_entries) :
             new_entries = [new_entries]
@@ -109,9 +118,12 @@ class DataclassTable(LogOwner) :
     def remove_entries(self,entry_obj_addresses) :
         """
         Remove an entry or entries from the table
-        Clears obj_addresses_by_key_attr cache
 
-        entry_obj_addresses = a single value or container of entry addresses to remove from the table
+        :param entry_obj_addresses: a single value or container of entry addresses (object IDs in hex form) to remove 
+            from the table
+        :type entry_obj_addresses: hex(id(object)) or list(hex(id(object)))
+
+        :raises ValueError: if any of the hex addresses in `entry_obj_addresses` is not present in the table
         """
         if type(entry_obj_addresses)==str :
             entry_obj_addresses = [entry_obj_addresses]
@@ -127,12 +139,22 @@ class DataclassTable(LogOwner) :
 
     def get_entry_attrs(self,entry_obj_address,*args) :
         """
-        Return copies of all or some of the current attributes of an entry in the table
-        Use args to get a dictionary of desired attribute values returned 
-        (if only one arg is given the return value is just that single attribute)
-        Returning copies ensures the original objects cannot be modified
+        Return copies of all or some of the current attributes of an entry in the table. 
+        Returning copies ensures the original objects cannot be modified by accident.
+        
+        Use `args` to get a dictionary of desired attribute values returned.
+        If only one arg is given the return value is just that single attribute.
+        The default (no additional arguments) return a dictionary of all attributes for the entry
+        
+        :param entry_obj_address: the address in memory of the object to return copies of attributes for
+        :type entry_obj_address: hex(id(object))
+        :param args: Add other arguments that are names of attributes to get only those specific attributes of the entry
+        :type args: str, optional
 
-        entry_obj_address = the address in memory of the object to return copies of attributes for
+        :return: copies of some or all attributes for an entry in the table
+        :rtype: depends on arguments, or dict
+
+        :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
         if entry_obj_address not in self.__entry_objs.keys() :
             errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
@@ -156,8 +178,12 @@ class DataclassTable(LogOwner) :
         """
         Modify attributes of an entry that already exists in the table
 
-        entry_obj_address = The address in memory of the entry object to modify 
-        kwargs = A dictionary of attributes to set (keys are names, values are values for those named attrs)
+        :param entry_obj_address: The address in memory of the entry object to modify 
+        :type entry_obj_address: hex(id(object))
+        :param kwargs: Attributes to set (keys are names, values are values for those named attrs)
+        :type kwargs: dict
+
+        :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
         if entry_obj_address not in self.__entry_objs.keys() :
             errmsg = f'ERROR: address {entry_obj_address} sent to set_entry_attrs is not registered!'
@@ -176,14 +202,20 @@ class DataclassTable(LogOwner) :
         """
         Return a dictionary whose keys are the values of some given attribute for each object 
         and whose values are lists of the addresses in memory of the objects in the table
-        that have each value of the requested attribute
+        that have each value of the requested attribute.
         
         Useful to find objects in the table by attribute values so they can be efficiently updated 
-        without compromising the integrity of the objects in the table and their attributes
+        without compromising the integrity of the objects in the table and their attributes.
 
-        Up to five calls are cached so if nothing changes this happens a little faster
+        Up to five calls are cached so if nothing changes this happens a little faster.
+
+        :param key_attr_name: the name of the attribute whose values should be used as keys in the returned dictionary
+        :type key_attr_name: str
         
-        key_attr_name = the name of the attribute whose values should be used as keys in the returned dictionary
+        :return: A dictionary listing all objects in the table, keyed by their values of `key_attr_name`
+        :rtype: dict
+
+        :raises ValueError: if `key_attr_name` is not recognized as the name of an attribute for entries in the table
         """
         if key_attr_name not in self.__field_names :
             errmsg = f'ERROR: {key_attr_name} is not a name of a Field for {self.__dataclass_type} objects!'
@@ -199,8 +231,9 @@ class DataclassTable(LogOwner) :
 
     def dump_to_file(self,reraise_exc=True) :
         """
-        Dump the contents of the table to a csv file
-        Call this to force the file to update and reflect the current state of objects
+        Dump the contents of the table to a csv file.
+        Call this to force the file to update and reflect the current state of objects. 
+        Automatically called in several contexts.
         """
         with DataclassTable.THREAD_LOCK :
             self.__write_lines([self.csv_header_line,*self.__entry_lines.values()],reraise_exc=reraise_exc)
