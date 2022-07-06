@@ -1,14 +1,17 @@
 #imports
-import traceback
+import pathlib, traceback
 from abc import ABC, abstractmethod
 from kafkacrypto.message import KafkaCryptoMessage
+from ..utilities.misc import populated_kwargs
 from ..utilities import LogOwner
-from .config import DATA_FILE_HANDLING_CONST
+from ..running import Runnable
+from .config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
 from .utilities import get_encrypted_message_timestamp_string
 from .download_data_file import DownloadDataFileToMemory
 from .data_file_chunk_processor import DataFileChunkProcessor
+from .stream_processor_registry import StreamProcessorRegistry
 
-class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
+class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
     """
     A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s) 
     when entire files are available. This is a base class that cannot be instantiated on its own.
@@ -17,6 +20,8 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
+    :param output_dir: Path to the directory where the log and csv registry files should be kept
+    :type output_dir: :class:`pathlib.Path`, optional
     :param datafile_type: the type of data file that recognized files should be reconstructed as 
         (must be a subclass of :class:`~DownloadDataFileToMemory`)
     :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
@@ -26,11 +31,17 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,config_path,topic_name,datafile_type=DownloadDataFileToMemory,**kwargs) :
+    def __init__(self,config_path,topic_name,*,output_dir=None,datafile_type=DownloadDataFileToMemory,**kwargs) :
         """
         Constructor method
         """   
+        #make sure the directory for the output is set
+        self._output_dir = self._get_auto_output_dir if output_dir is None else output_dir
+        if not self._output_dir.is_dir() :
+            self._output_dir.mkdir(parents=True)
+        kwargs = populated_kwargs(kwargs,{'logger_file':self._output_dir})
         super().__init__(config_path,topic_name,datafile_type=datafile_type,**kwargs)
+        self.logger.info(f'Log files and output will be in {self._output_dir}')
         if not issubclass(datafile_type,DownloadDataFileToMemory) :
             errmsg = 'ERROR: DataFileStreamProcessor requires a datafile_type that is a subclass of '
             errmsg+= f'DownloadDataFileToMemory but {datafile_type} was given!'
@@ -49,10 +60,21 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
         :return: the paths of files successfully processed during the run 
         :rtype: List
         """
+        #startup message
         msg = f'Will process files from messages in the {self.topic_name} topic using {self.n_threads} '
         msg+= f'thread{"s" if self.n_threads>1 else ""}'
         self.logger.info(msg)
+        #set up the stream processor registry
+        self.__file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
+                                                       topic_name=self.topic_name,
+                                                       logger=self.logger)
+        #if there are files that failed to be processed, set the variables to re-read messages from those files
+        if self.__file_registry.rerun_file_key_regex is not None :
+            self.restart_at_beginning=True
+            self.message_key_regex=self.__file_registry.rerun_file_key_regex
+        #call the run loop
         self.run()
+        #return the results of the processing
         return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths
 
     #################### PRIVATE HELPER FUNCTIONS ####################
@@ -220,3 +242,18 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,ABC) :
         self.logger.debug(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
+
+    #################### CLASS METHODS ####################
+
+    @classmethod
+    def _get_auto_output_dir(cls) :
+        return pathlib.Path()/f'{cls.__name__}_LOGS'
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        args = ['config','topic_name','consumer_group_ID','update_seconds']
+        kwargs = {
+                'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+                'optional_output_dir': cls._get_auto_output_dir(),
+            }
+        return args, kwargs

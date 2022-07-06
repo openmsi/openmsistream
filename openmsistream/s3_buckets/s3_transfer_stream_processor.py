@@ -1,17 +1,18 @@
 #imports
-from ..running import Runnable
 from ..data_file_io.config import RUN_OPT_CONST
 from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
 
-class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
+class S3TransferStreamProcessor(DataFileStreamProcessor) :
     """
     A class to reconstruct data files read as messages from a topic, hold them in memory, 
     and transfer them to an S3 bucket when all of their messages have been received
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
     :type bucket_name: str
+    :param output_dir: Path to the directory where the log and csv registry files should be kept
+    :type output_dir: :class:`pathlib.Path`
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
@@ -63,19 +64,21 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
         :return: None if processing was successful, a caught Exception otherwise
         """
         object_key = self.__get_datafile_object_key(datafile)
-        try :
-            self.s3d.transfer_object_stream(object_key, datafile)
-        except Exception as e :
-            self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
-            return e
-        if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
-            self.logger.info(object_key + ' matched with consumer datafile')
-            # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
-        else :
-            warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
-            warnmsg+= 'the file originally read from disk!'
-            self.logger.warning(warnmsg)
+        self.logger.info(f'Would process object with key {object_key}')
         return None
+        #try :
+        #    self.s3d.transfer_object_stream(object_key, datafile)
+        #except Exception as e :
+        #    self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
+        #    return e
+        #if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
+        #    self.logger.info(object_key + ' matched with consumer datafile')
+        #    # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
+        #else :
+        #    warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
+        #    warnmsg+= 'the file originally read from disk!'
+        #    self.logger.warning(warnmsg)
+        #return None
 
     def __get_datafile_object_key(self,datafile) :
         file_name = str(datafile.filename)
@@ -89,11 +92,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, 'bucket_name',
-                'update_seconds', 'logger_file', 'config', 'topic_name', 'consumer_group_ID']
-        kwargs = {**superkwargs,
-                  'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS, 
-                  }
+        args = [*superargs, 'bucket_name']
+        kwargs = {**superkwargs,'config':'test_s3_transfer'}
         return args, kwargs
 
     @classmethod
@@ -112,10 +112,10 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
         args = parser.parse_args(args=args)
         s3_stream_proc = cls(args.bucket_name,
                              args.config, args.topic_name,
+                             output_dir=args.output_dir,
                              n_threads=args.n_threads,
                              update_secs=args.update_seconds,
-                             consumer_group_ID=args.consumer_group_ID,
-                             logger_file=args.logger_file)
+                             consumer_group_ID=args.consumer_group_ID)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)

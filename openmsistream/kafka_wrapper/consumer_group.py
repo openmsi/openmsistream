@@ -29,6 +29,29 @@ class ConsumerGroup(LogOwner) :
         consumer_group_ID = ID to use for all consumers in the group (a new & unique ID is created by default)
         """
         super().__init__(**kwargs)
+        
+        from confluent_kafka.admin import AdminClient
+        from .config_file_parser import KafkaConfigFileParser
+        cfp = KafkaConfigFileParser(config_path)
+        admin_client = AdminClient(cfp.broker_configs)
+        cluster_metadata = admin_client.list_topics(topic=topic_name)
+        n_partitions = len(cluster_metadata.topics[topic_name].partitions)
+        import kafka
+        kac_kwargs = {}
+        for k,v in cfp.broker_configs.items() :
+            if k in ('sasl.username','sasl.password') :
+                key = k.replace('.','_plain_')
+            else :
+                key = k.replace('.','_')
+            kac_kwargs[key]=v
+        kac = kafka.KafkaAdminClient(**kac_kwargs)
+        parts = [kafka.TopicPartition(topic_name,pi) for pi in range(n_partitions)]
+        tp_offsets=kac.list_consumer_group_offsets(group_id=consumer_group_ID,partitions=parts)
+        for tp,om in tp_offsets.items() :
+            print(f'{consumer_group_ID} GROUP OFFSET FOR {tp.topic} PARTITION {tp.partition} = {om.offset}')
+        
+        
+        
         self.__topic_name = topic_name
         self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(config_path,
                                                                                         group_id=consumer_group_ID,

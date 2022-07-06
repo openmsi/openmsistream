@@ -235,8 +235,11 @@ class DataclassTable(LogOwner) :
         Call this to force the file to update and reflect the current state of objects. 
         Automatically called in several contexts.
         """
+        lines_to_write = [self.csv_header_line]
+        if len(self.__entry_lines)>0 :
+            lines_to_write+=[self.__entry_lines.values()]
         with DataclassTable.THREAD_LOCK :
-            self.__write_lines([self.csv_header_line,*self.__entry_lines.values()],reraise_exc=reraise_exc)
+            self.__write_lines(lines_to_write,reraise_exc=reraise_exc)
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 

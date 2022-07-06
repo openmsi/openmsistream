@@ -162,7 +162,7 @@ class OpenMSIStreamConsumer(LogOwner) :
                 return consumed_msg
             else :
                 return None
-
+    
     def subscribe(self,*args,**kwargs) :
         """
         A wrapper around the underlying Consumer's subscribe() method
@@ -203,7 +203,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         else :
             errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
             self.logger.error(errmsg,ValueError)
-    
+
     def close(self,*args,**kwargs) :
         """
         Combined wrapper around the underlying Consumer's close() method and :func:`kafkacrypto.KafkaCrypto.close`. 

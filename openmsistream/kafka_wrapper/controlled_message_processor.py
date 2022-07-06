@@ -1,6 +1,7 @@
 #imports
 import time, traceback
 from abc import ABC, abstractmethod
+from confluent_kafka import TopicPartition, OFFSET_BEGINNING, OFFSET_STORED, OFFSET_END, OFFSET_INVALID
 from ..running.controlled_process_multi_threaded import ControlledProcessMultiThreaded
 from .consumer_group import ConsumerGroup
 
@@ -19,6 +20,9 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
+        self.restart_at_beginning = False #set to true to reset new consumers to the earliest offset in their topic+partition
+        self.message_key_regex = None #set to some regex to filter messages by their keys
+        self.reset_regex_after_catchup = True #reset the regex after the consumer has filtered through previous messages
         super().__init__(*args,**kwargs)
 
     def _run_worker(self,lock):
@@ -28,7 +32,9 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         """
         #create the Consumer for this thread
         if self.alive :
-            consumer = self.get_new_subscribed_consumer()
+            consumer = self.get_new_subscribed_consumer(self.restart_at_beginning,
+                                                        self.message_key_regex,
+                                                        self.reset_regex_after_catchup)
         if ('enable.auto.commit' not in consumer.configs.keys()) or (consumer.configs['enable.auto.commit'] is True) :
             warnmsg = 'WARNING: enable.auto.commit has not been set to False for a Consumer that will manually commit '
             warnmsg+= 'offsets. Missed or duplicate messages could result. You can set "enable.auto.commit"=False in '

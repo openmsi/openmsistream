@@ -1,5 +1,6 @@
 #imports
 from collections import namedtuple
+from confluent_kafka import OFFSET_BEGINNING
 
 def add_kwargs_to_configs(configs,logger,**kwargs) :
     """
@@ -37,7 +38,6 @@ def default_producer_callback(err,msg,logger=None,**other_kwargs) :
 
 def make_callback(func,*args,**kwargs) :
     return lambda err,msg : func(err,msg,*args,**kwargs)
-
 
 KCCommitOffsetDictKey = namedtuple('KCCommitOffsetDictKey',['topic','partition'])
 KCCommitOffset = namedtuple('KCCommitOffset',['offset'])
