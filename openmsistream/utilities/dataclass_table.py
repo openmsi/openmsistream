@@ -241,7 +241,7 @@ class DataclassTable(LogOwner) :
         """
         lines_to_write = [self.csv_header_line]
         if len(self.__entry_lines)>0 :
-            lines_to_write+=[self.__entry_lines.values()]
+            lines_to_write+=list(self.__entry_lines.values())
         with DataclassTable.THREAD_LOCK :
             self.__write_lines(lines_to_write,reraise_exc=reraise_exc)
 

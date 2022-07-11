@@ -276,7 +276,7 @@ class OpenMSIStreamConsumer(LogOwner) :
             self.logger.error(errmsg,TypeError)
         starting_offset = None
         for so in self.__starting_offsets :
-            if so.topic==msg_topic and so.partition==msg.partition :
+            if so.topic==msg_topic and so.partition==msg_partition :
                 starting_offset = so.offset
         if starting_offset is None :
             errmsg = 'ERROR: failed to check whether a message has been consumed before '

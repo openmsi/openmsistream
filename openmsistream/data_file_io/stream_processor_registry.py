@@ -5,10 +5,11 @@ from ..utilities import DataclassTable, LogOwner
 from .utilities import get_message_prepend
 
 @dataclass
-class RegistryLine :
+class StreamProcessorRegistryLine :
     filename : str #the name of the file
     rel_filepath : str #the (posix) path to the file, relative to its root directory
     status : str #the status of the file, either "in_progress", "success", "failed", or "mismatched_hash"
+    n_chunks : int #the total number of chunks in the file
     most_recent_message : datetime.datetime #timestamp of when the most recent chunk from the file was consumed
 
 class StreamProcessorRegistry(LogOwner) :
@@ -28,8 +29,9 @@ class StreamProcessorRegistry(LogOwner) :
         """
         existing_obj_addresses = self.__table.obj_addresses_by_key_attr('status')
         for status_str in (self.IN_PROGRESS,self.FAILED,self.MISMATCHED_HASH) :
-            for existing_obj_addr in existing_obj_addresses[status_str] :
-                yield self.__table.get_entry_attrs(existing_obj_addr,'rel_filepath')
+            if status_str in existing_obj_addresses.keys() :
+                for existing_obj_addr in existing_obj_addresses[status_str] :
+                    yield self.__table.get_entry_attrs(existing_obj_addr,'rel_filepath')
     
     @property
     def rerun_file_key_regex(self) :
@@ -67,7 +69,7 @@ class StreamProcessorRegistry(LogOwner) :
         """
         super().__init__(*args,**kwargs)
         csv_filepath = dirpath / f'files_consumed_from_{topic_name}.csv'
-        self.__table = DataclassTable(dataclass_type=RegistryLine,filepath=csv_filepath,logger=self.logger)
+        self.__table = DataclassTable(dataclass_type=StreamProcessorRegistryLine,filepath=csv_filepath,logger=self.logger)
 
     def register_file_in_progress(self,dfc) :
         """
@@ -97,7 +99,11 @@ class StreamProcessorRegistry(LogOwner) :
         filename, rel_filepath = self._get_name_and_rel_filepath_for_data_file_chunk(dfc)
         existing_entry_addr = self._get_address_for_rel_filepath(rel_filepath)
         if existing_entry_addr is None :
-            new_entry = RegistryLine(filename,rel_filepath,new_status,datetime.datetime.now())
+            new_entry = StreamProcessorRegistryLine(filename,
+                                                    rel_filepath,
+                                                    new_status,
+                                                    dfc.n_total_chunks,
+                                                    datetime.datetime.now())
             self.__table.add_entries(new_entry)
         else :
             self.__table.set_entry_attrs(existing_entry_addr,
@@ -110,7 +116,7 @@ class StreamProcessorRegistry(LogOwner) :
         return filename,rel_filepath
     
     def _get_address_for_rel_filepath(self,rel_filepath) :
-        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('rel_filepath')
+        existing_obj_addresses = self.__table.obj_addresses_by_key_attr('rel_filepath')
         if rel_filepath not in existing_obj_addresses.keys() :
             return None
         elif len(existing_obj_addresses[rel_filepath])!=1 :
@@ -118,4 +124,4 @@ class StreamProcessorRegistry(LogOwner) :
             errmsg+= f'{rel_filepath} in file at {self.__table.filepath}'
             self.logger.error(errmsg,ValueError)
         else :
-            return existing_obj_addresses[rel_filepath]
+            return existing_obj_addresses[rel_filepath][0]
