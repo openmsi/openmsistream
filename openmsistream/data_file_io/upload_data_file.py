@@ -1,5 +1,5 @@
 #imports
-import traceback, time
+import time
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
@@ -104,12 +104,11 @@ class UploadDataFile(DataFile,Runnable) :
         if self.__chunk_infos is None :
             try :
                 self._build_list_of_file_chunks(chunk_size)
-            except Exception :
-                self.logger.info(traceback.format_exc())
+            except Exception as e :
                 fp = self.filepath.relative_to(self.__rootdir) if self.__rootdir is not None else self.filepath
                 errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
-                errmsg+= 'Check log lines above for details on what went wrong. File will not be uploaded.'
-                self.logger.error(errmsg)
+                errmsg+= 'Check log lines below for details on what went wrong. File will not be uploaded.'
+                self.logger.error(errmsg,exc_obj=e,reraise=False)
                 self.__to_upload = False
                 return
         #add the chunks to the final list as DataFileChunk objects

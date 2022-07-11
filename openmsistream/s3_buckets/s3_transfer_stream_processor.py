@@ -1,5 +1,4 @@
 #imports
-from ..data_file_io.config import RUN_OPT_CONST
 from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
@@ -84,7 +83,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
         object_key = self.topic_name 
-        if sub_dir is not None :
+        if sub_dir!='' :
             object_key+= '/' + sub_dir 
         object_key+= '/' + file_name
         return object_key

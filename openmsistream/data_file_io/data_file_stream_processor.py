@@ -1,5 +1,5 @@
 #imports
-import pathlib, traceback
+import pathlib
 from abc import ABC, abstractmethod
 from kafkacrypto.message import KafkaCryptoMessage
 from ..utilities.misc import populated_kwargs
@@ -68,8 +68,12 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         self.__file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
                                                        topic_name=self.topic_name,
                                                        logger=self.logger)
-        #if there are files that failed to be processed, set the variables to re-read messages from those files
+        #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self.__file_registry.rerun_file_key_regex is not None :
+            msg = f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning of the topic to '
+            msg+= f're-read messages for {self.__file_registry.n_files_to_rerun} previously-failed '
+            msg+= f'file{"s" if self.__file_registry.n_files_to_rerun>1 else ""}'
+            self.logger.info(msg)
             self.restart_at_beginning=True
             self.message_key_regex=self.__file_registry.rerun_file_key_regex
         #call the run loop
@@ -121,18 +125,21 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         :return: True if processing the message was successful, False otherwise
         :rtype: bool
         """
-        retval = super()._process_message(lock, msg, None, self.logger)
+        retval = super()._process_message(lock, msg, self._output_dir, self.logger)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
             return self._undecryptable_message_callback(retval)
-        if retval==True :
-            return retval
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
         except :
             dfc = msg.value #from KafkaCrypto
+        #if the file is just in progress
+        if retval==True :
+            with lock : 
+                self.__file_registry.register_file_in_progress(dfc)
+            return retval
         #if the file has had all of its messages read successfully, send it to the processing function
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             if dfc.rootdir is not None :
@@ -145,21 +152,23 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
             #if it was able to be processed
             if processing_retval is None :
                 self.logger.info(f'Fully-read file {short_filepath} successfully processed')
-                self.completely_processed_filepaths.append(dfc.filepath)
+                with lock :
+                    self.__file_registry.register_file_successfully_processed(dfc)
+                    self.completely_processed_filepaths.append(dfc.filepath)
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
             else :
                 if isinstance(processing_retval,Exception) :
-                    try :
-                        raise processing_retval
-                    except Exception :
-                        self.logger.info(traceback.format_exc())
+                    errmsg = f'ERROR: Fully-read file {short_filepath} was not able to be processed. '
+                    errmsg+= 'The traceback of the Exception thrown during processing will be logged below, but not '
+                    errmsg+= 're-raised. The messages for this file will need to be consumed again if the file is to '
+                    errmsg+= 'be processed! Please rerun with the same consumer ID to try again.'
+                    self.logger.error(errmsg,exc_obj=processing_retval,reraise=False)
                 else :
-                    self.logger.error(f'Return value from _process_downloaded_data_file = {processing_retval}')
-                warnmsg = f'WARNING: Fully-read file {short_filepath} was not able to be processed. '
-                warnmsg+= 'Check log lines above for more details on the specific error. '
-                warnmsg+= 'The messages for this file will need to be consumed again if the file is to be processed!'
-                self.logger.warning(warnmsg)
+                    errmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
+                    self.logger.error(errmsg)
+                with lock :
+                    self.__file_registry.register_file_processing_failed(dfc)
                 self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
                 to_return = False
             #stop tracking the file
@@ -169,16 +178,19 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
             return to_return
         #if the file hashes didn't match, invoke the callback and return False
         elif retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            warnmsg = f'WARNING: file hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} '
-            warnmsg+= 'not matched after being fully read! This file will not be processed.'
-            self.logger.warning(warnmsg)
+            errmsg = f'ERROR: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
+            errmsg+= 'after being fully read! The messages for this file will need to be consumed again if the file '
+            errmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
+            self.logger.error(errmsg)
+            with lock :
+                self.__file_registry.register_file_mismatched_hash(dfc)
             self._mismatched_hash_callback(self.files_in_progress_by_path[dfc.filepath],lock)
             with lock :
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return False
         else :
-            self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
+            self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',NotImplementedError)
             return False
 
     def _undecryptable_message_callback(self,msg) :
@@ -198,7 +210,8 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         """
         timestamp_string = get_encrypted_message_timestamp_string(msg)
         warnmsg = f'WARNING: encountered a message that failed to be decrypted (timestamp = {timestamp_string}). '
-        warnmsg+= 'This message will be skipped, and the file it came from likely cannot be processed from the stream.'
+        warnmsg+= 'This message will be skipped, and the file it came from cannot be processed from the stream '
+        warnmsg+= 'until it is decryptable. Please rerun with a new Consumer ID to consume these messages again.'
         self.logger.warning(warnmsg)
         return False
 
@@ -247,7 +260,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
 
     @classmethod
     def _get_auto_output_dir(cls) :
-        return pathlib.Path()/f'{cls.__name__}_LOGS'
+        return pathlib.Path()/f'{cls.__name__}_output'
 
     @classmethod
     def get_command_line_arguments(cls):

@@ -3,6 +3,7 @@ import pathlib
 from hashlib import sha512
 from ..utilities.logging import Logger
 from ..kafka_wrapper.producible import Producible
+from .utilities import get_message_prepend
 
 class DataFileChunk(Producible) :
     """
@@ -43,7 +44,7 @@ class DataFileChunk(Producible) :
         if self.__rootdir is None :
             parentdir_as_posix = self.__filepath.parent.as_posix()
             if parentdir_as_posix=='.' :
-                return None
+                return ''
             else :
                 return parentdir_as_posix
         relpath = self.__filepath.parent.relative_to(self.__rootdir)
@@ -53,10 +54,8 @@ class DataFileChunk(Producible) :
 
     @property
     def msg_key(self) :
-        key_pp = f'{"_".join(self.subdir_str.split("/"))}'
-        if key_pp!='' :
-            key_pp+='_'
-        return f'{key_pp}{self.filename}_chunk_{self.chunk_i}_of_{self.n_total_chunks}'
+        key_pp = get_message_prepend(self.subdir_str,self.filename)
+        return f'{key_pp}_{self.chunk_i}_of_{self.n_total_chunks}'
 
     @property
     def msg_value(self) :

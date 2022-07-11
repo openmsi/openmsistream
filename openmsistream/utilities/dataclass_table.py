@@ -51,6 +51,10 @@ class DataclassTable(LogOwner) :
         return self.__entry_objs.keys()
 
     @property
+    def filepath(self) :
+        return self.__filepath
+
+    @property
     def lock(self) :
         """
         A thread lock to use for ensuring only one thread is interacting with the :class:`~DataclassTable` at a time

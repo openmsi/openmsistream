@@ -41,3 +41,8 @@ def make_callback(func,*args,**kwargs) :
 
 KCCommitOffsetDictKey = namedtuple('KCCommitOffsetDictKey',['topic','partition'])
 KCCommitOffset = namedtuple('KCCommitOffset',['offset'])
+
+def reset_to_beginning_on_assign(consumer, partitions):
+    for p in partitions:
+        p.offset=OFFSET_BEGINNING
+    consumer.assign(partitions)
