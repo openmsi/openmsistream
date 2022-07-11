@@ -63,21 +63,21 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         :return: None if processing was successful, a caught Exception otherwise
         """
         object_key = self.__get_datafile_object_key(datafile)
-        self.logger.info(f'Would process object with key {object_key}')
-        return None
-        #try :
-        #    self.s3d.transfer_object_stream(object_key, datafile)
-        #except Exception as e :
-        #    self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
-        #    return e
-        #if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
-        #    self.logger.info(object_key + ' matched with consumer datafile')
-        #    # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
-        #else :
-        #    warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
-        #    warnmsg+= 'the file originally read from disk!'
-        #    self.logger.warning(warnmsg)
+        #self.logger.info(f'Would process object with key {object_key}')
         #return None
+        try :
+            self.s3d.transfer_object_stream(object_key, datafile)
+        except Exception as e :
+            self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
+            return e
+        if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
+            self.logger.info(object_key + ' matched with consumer datafile')
+            # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
+        else :
+            warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
+            warnmsg+= 'the file originally read from disk!'
+            self.logger.warning(warnmsg)
+        return None
 
     def __get_datafile_object_key(self,datafile) :
         file_name = str(datafile.filename)

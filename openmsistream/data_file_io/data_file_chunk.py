@@ -138,6 +138,9 @@ class DataFileChunk(Producible) :
         s+=')'
         return s
 
+    def __hash__(self) :
+        return super().__hash__()
+
     def get_log_msg(self, print_every=None):
         if (self.chunk_i-1)%print_every==0 or self.chunk_i==self.n_total_chunks :
             return f'uploading {self.filename} chunk {self.chunk_i} (out of {self.n_total_chunks})'

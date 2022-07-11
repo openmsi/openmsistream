@@ -38,6 +38,10 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
         self.checked = True
         super()._on_check()
 
+    @classmethod
+    def run_from_command_line(cls,args=None) :
+        pass
+
 class TestDataFileStreamProcessor(unittest.TestCase) :
     """
     Class for testing behavior of a DataFileStreamProcessor

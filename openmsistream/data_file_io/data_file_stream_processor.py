@@ -36,7 +36,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         Constructor method
         """   
         #make sure the directory for the output is set
-        self._output_dir = self._get_auto_output_dir if output_dir is None else output_dir
+        self._output_dir = self._get_auto_output_dir() if output_dir is None else output_dir
         if not self._output_dir.is_dir() :
             self._output_dir.mkdir(parents=True)
         kwargs = populated_kwargs(kwargs,{'logger_file':self._output_dir})
