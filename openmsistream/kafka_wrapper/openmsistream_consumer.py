@@ -244,17 +244,28 @@ class OpenMSIStreamConsumer(LogOwner) :
         Returns None if a message should be skipped, otherwise returns the message.
         """
         if (self.message_key_regex is not None) and (self.filter_new_messages or self._message_consumed_before(msg)) :
-            msg_key = msg.key() 
+            try :
+                msg_key = msg.key() #from a regular Kafka Consumer
+            except :
+                msg_key = msg.key #from KafkaCrypto
             if not isinstance(msg_key,str) :
                 warnmsg = f'WARNING: found a message whose key ({msg_key}) is not a string, but which should be '
                 warnmsg+= 'filtered using the key regex. This message will be consumed as though it successfully '
                 warnmsg+= 'passed the filter.'
                 self.logger.warning(warnmsg)
+    #            self.logger.error(f'_filter message returning msg but something is weird (key = {msg_key}). regex = {self.message_key_regex}, filter_new_messages = {self.filter_new_messages}, consumed_before = {self._message_consumed_before(msg)}')
                 return msg
             if self.message_key_regex.match(msg_key) :
+    #            self.logger.error(f'_filter message returning msg (key = {msg_key}). regex = {self.message_key_regex}, filter_new_messages = {self.filter_new_messages}, consumed_before = {self._message_consumed_before(msg)}')
                 return msg
             else :
+    #            self.logger.error(f'_filter message returning None (key = {msg_key}). regex = {self.message_key_regex}, filter_new_messages = {self.filter_new_messages}, consumed_before = {self._message_consumed_before(msg)}')
                 return None
+        try :
+            msg_key = msg.key() #from a regular Kafka Consumer
+        except :
+            msg_key = msg.key #from KafkaCrypto
+    #    self.logger.error(f'_filter message returning msg (key = {msg_key}). regex = {self.message_key_regex}, filter_new_messages = {self.filter_new_messages}, consumed_before = {self._message_consumed_before(msg)}')
         return msg
 
     @methodtools.lru_cache()

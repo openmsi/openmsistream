@@ -270,3 +270,9 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
                 'optional_output_dir': cls._get_auto_output_dir(),
             }
         return args, kwargs
+
+    #################### PROPERTIES ####################
+
+    @property
+    def file_registry(self) :
+        return self.__file_registry

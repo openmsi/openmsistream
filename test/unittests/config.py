@@ -12,7 +12,8 @@ class TestRoutineConstants :
         return {
             'test_data_file_directories':'test_data_file_directories',
             'test_data_file_directories_encrypted':'test_oms_encrypted',
-            'test_data_file_stream_processor':'test_data_file_stream_processor',
+            'test_data_file_stream_processor_kafka':'test_data_file_stream_processor',
+            'test_data_file_stream_processor_restart_kafka':'test_data_file_stream_processor_2',
             'test_s3_transfer_stream_processor':'osn_test',
             'test_serialization':'test_oms_encrypted',
         }
@@ -94,5 +95,11 @@ class TestRoutineConstants :
     @property
     def TEST_RECO_DIR_PATH_ENCRYPTED(self) : # same as above except for encrypted tests
         return self.TEST_DIR_PATH / 'test_reco_encrypted'
+    @property
+    def TEST_STREAM_PROCESSOR_OUTPUT_DIR(self) :
+        return self.TEST_DIR_PATH / 'test_stream_processor_output_dir'
+    @property
+    def TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART(self) :
+        return self.TEST_DIR_PATH / 'test_stream_processor_output_dir_restart'
     
 TEST_CONST=TestRoutineConstants()

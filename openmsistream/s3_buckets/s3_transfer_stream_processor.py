@@ -63,8 +63,6 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         :return: None if processing was successful, a caught Exception otherwise
         """
         object_key = self.__get_datafile_object_key(datafile)
-        #self.logger.info(f'Would process object with key {object_key}')
-        #return None
         try :
             self.s3d.transfer_object_stream(object_key, datafile)
         except Exception as e :

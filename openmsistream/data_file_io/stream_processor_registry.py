@@ -23,15 +23,24 @@ class StreamProcessorRegistry(LogOwner) :
     MISMATCHED_HASH = 'mismatched_hash'
 
     @property
+    def table(self) :
+        """
+        The actual underlying dataclass table
+        """
+        return self.__table
+
+    @property
     def filepaths_to_rerun(self) :
         """
-        A generator of all the filepaths that have not yet been successfully processed
+        A list of all the filepaths that have not yet been successfully processed
         """
+        to_rerun = []
         existing_obj_addresses = self.__table.obj_addresses_by_key_attr('status')
         for status_str in (self.IN_PROGRESS,self.FAILED,self.MISMATCHED_HASH) :
             if status_str in existing_obj_addresses.keys() :
                 for existing_obj_addr in existing_obj_addresses[status_str] :
-                    yield self.__table.get_entry_attrs(existing_obj_addr,'rel_filepath')
+                    to_rerun.append(self.__table.get_entry_attrs(existing_obj_addr,'rel_filepath'))
+        return to_rerun
     
     @property
     def rerun_file_key_regex(self) :
