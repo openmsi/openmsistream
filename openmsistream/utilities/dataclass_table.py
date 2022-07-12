@@ -48,7 +48,7 @@ class DataclassTable(LogOwner) :
 
     @property
     def obj_addresses(self) :
-        return self.__entry_objs.keys()
+        return list(self.__entry_objs.keys())
 
     @property
     def filepath(self) :
@@ -148,7 +148,7 @@ class DataclassTable(LogOwner) :
         
         Use `args` to get a dictionary of desired attribute values returned.
         If only one arg is given the return value is just that single attribute.
-        The default (no additional arguments) return a dictionary of all attributes for the entry
+        The default (no additional arguments) returns a dictionary of all attributes for the entry
         
         :param entry_obj_address: the address in memory of the object to return copies of attributes for
         :type entry_obj_address: hex(id(object))

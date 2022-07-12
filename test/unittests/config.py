@@ -14,6 +14,7 @@ class TestRoutineConstants :
             'test_data_file_directories_encrypted':'test_oms_encrypted',
             'test_data_file_stream_processor_kafka':'test_data_file_stream_processor',
             'test_data_file_stream_processor_restart_kafka':'test_data_file_stream_processor_2',
+            'test_data_file_stream_processor_restart_encrypted_kafka':'test_data_file_stream_processor_encrypted',
             'test_s3_transfer_stream_processor':'osn_test',
             'test_serialization':'test_oms_encrypted',
         }
@@ -84,6 +85,9 @@ class TestRoutineConstants :
     def TEST_WATCHED_DIR_PATH_ENCRYPTED(self) : #same as above except for the encrypted tests
         return self.TEST_DIR_PATH / 'test_watched_dir_encrypted'
     @property
+    def TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED(self) :
+        return self.TEST_DIR_PATH / 'test_watched_dir_stream_processor_encrypted'
+    @property
     def TEST_WATCHED_DIR_PATH_S3_TRANSFER(self) : #same as above except for the tests that interact with the object store
         return self.TEST_DIR_PATH / 'test_watched_dir_s3_transfer'
     @property
@@ -101,5 +105,8 @@ class TestRoutineConstants :
     @property
     def TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART(self) :
         return self.TEST_DIR_PATH / 'test_stream_processor_output_dir_restart'
+    @property
+    def TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED(self) :
+        return self.TEST_DIR_PATH / 'test_stream_processor_output_dir_restart_encrypted'
     
 TEST_CONST=TestRoutineConstants()
