@@ -10,7 +10,8 @@ from .serialization import CompoundDeserializer
 
 class OpenMSIStreamConsumer(LogOwner) :
     """
-    Wrapper for working with a Consumer of some type
+    Wrapper for working with a Consumer of some type. Expects message values that are :class:`~DataFileChunk` objects
+    by default; other message value types can be accommodated by setting "value.deserializer" in the config file.
 
     :param consumer_type: The type of underlying Consumer that should be used
     :type consumer_type: :class:`confluent_kafka.DeserializingConsumer` or :class:`kafkacrypto.KafkaConsumer`
@@ -53,10 +54,10 @@ class OpenMSIStreamConsumer(LogOwner) :
             if kafkacrypto is None :
                 self.logger.error('ERROR: creating a KafkaConsumer requires holding onto its KafkaCrypto objects!')
             self.__kafkacrypto = kafkacrypto
-            self.__consumer = consumer_type(**configs)
+            self._consumer = consumer_type(**configs)
             self.__messages = []
         elif consumer_type==DeserializingConsumer :
-            self.__consumer = consumer_type(configs)
+            self._consumer = consumer_type(configs)
         else :
             errmsg=f'ERROR: Unrecognized consumer type {consumer_type} for OpenMSIStreamConsumer!'
             self.logger.error(errmsg,ValueError)
@@ -151,12 +152,12 @@ class OpenMSIStreamConsumer(LogOwner) :
         :rtype: :class:`confluent_kafka.Message`, :class:`kafkacrypto.Message`, or None
         """ 
         #There's one version for the result of a KafkaConsumer.poll() call
-        if isinstance(self.__consumer,KafkaConsumer) :
+        if isinstance(self._consumer,KafkaConsumer) :
             #check if there are any messages still waiting to be processed from a recent KafkaCrypto poll call
-            if isinstance(self.__consumer,KafkaConsumer) and len(self.__messages)>0 :
+            if isinstance(self._consumer,KafkaConsumer) and len(self.__messages)>0 :
                 consumed_msg = self.__messages.pop(0)
                 return self._filter_message(consumed_msg)
-            msg_dict = self.__consumer.poll(*poll_args,**poll_kwargs)
+            msg_dict = self._consumer.poll(*poll_args,**poll_kwargs)
             if msg_dict=={} :
                 return None
             for pk in msg_dict.keys() :
@@ -167,7 +168,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         else :
             consumed_msg = None
             try :
-                consumed_msg = self.__consumer.poll(*poll_args,**poll_kwargs)
+                consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
             except Exception as e :
                 warnmsg = 'WARNING: encountered an error in a call to consumer.poll() '
                 warnmsg+= f'and this message will be skipped. Exception: {e}'
@@ -188,7 +189,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         """
         A wrapper around the underlying Consumer's subscribe() method
         """
-        return self.__consumer.subscribe(*args,**kwargs)
+        return self._consumer.subscribe(*args,**kwargs)
 
     def commit(self,message=None,offsets=None,asynchronous=True) :
         """
@@ -209,18 +210,18 @@ class OpenMSIStreamConsumer(LogOwner) :
             try :
                 offset_dict = {KCCommitOffsetDictKey(message.topic,message.partition):KCCommitOffset(message.offset)}
                 if asynchronous :
-                    return self.__consumer.commit_async(offsets=offset_dict)
+                    return self._consumer.commit_async(offsets=offset_dict)
                 else :
-                    return self.__consumer.commit(offsets=offset_dict)
+                    return self._consumer.commit(offsets=offset_dict)
             except :
                 warnmsg = 'WARNING: failed to commit an offset for an encrypted message. '
                 warnmsg = 'Duplicates may result if the Consumer is restarted.'
                 self.logger.warning(warnmsg)
                 return None
         if message is None :
-            return self.__consumer.commit(offsets=offsets,asynchronous=asynchronous)
+            return self._consumer.commit(offsets=offsets,asynchronous=asynchronous)
         elif offsets is None :
-            return self.__consumer.commit(message=message,asynchronous=asynchronous)
+            return self._consumer.commit(message=message,asynchronous=asynchronous)
         else :
             errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
             self.logger.error(errmsg,ValueError)
@@ -229,7 +230,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         """
         Combined wrapper around the underlying Consumer's close() method and :func:`kafkacrypto.KafkaCrypto.close`. 
         """
-        self.__consumer.close(*args,**kwargs)
+        self._consumer.close(*args,**kwargs)
         try :
             if self.__kafkacrypto :
                 self.__kafkacrypto.close()
@@ -286,4 +287,3 @@ class OpenMSIStreamConsumer(LogOwner) :
             errmsg+= 'because its topic/partition were not found in the list of starting offsets'
             self.logger.error(errmsg,ValueError)
         return msg_offset<starting_offset 
-        

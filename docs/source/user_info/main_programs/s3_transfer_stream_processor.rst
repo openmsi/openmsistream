@@ -2,7 +2,9 @@
 S3TransferStreamProcessor
 =========================
 
-This module reads messages from a topic to build up data files in memory, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``.
+This module reads messages from a topic to build up data files in memory, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``. 
+
+The :class:`openmsistream.S3TransferStreamProcessor` is a specific type of :class:`openmsistream.DataFileStreamProcessor`.
 
 Extra configs needed
 --------------------
@@ -33,7 +35,7 @@ Other options for running the code include:
 
 #. Changing the number of parallel threads: add the ``--n_threads [threads]`` argument where ``[threads]`` is the desired number of parallel threads to use (and, also, the number of consumers used in the group). The default is 2 threads/consumers; increasing this number may give Kafka warnings or errors depending on how many consumers can be subscribed to a particular topic (generally you can use as many threads as their are partitions to the topic).
 #. Changing the consumer group ID: add the ``--consumer_group_ID [group_id]`` argument where ``[group_id]`` is the string to use for the Consumer group ID. The default creates a new ID every time, but if you would like to keep track of which messages have already been consumed you can choose a consistent group ID to use every time, and only messages whose offsets haven't been comitted yet will be consumed. Please see the `documentation for Kafka Consumers here <https://docs.confluent.io/platform/current/clients/consumer.html>`_ for more details if consumer offset commits are unfamiliar to you.
-#. Specifying the log file to use: add the ``--logger_file [log_file]`` argument, where ``[log_file]`` is the path to the logger file to use (it will be created) or to a directory that should hold the automatically-named log file. By default the log file is written to the same directory from which the program is initially run (which could be surprising if running the program as a Service/daemon!)
+#. Putting the logs and registry .csv files in a custom location: add the ``--output_dir [output_dir]`` argument, where ``[output_dir]`` is the path to a directory where the output should be saved (it will be created if it doesn't exist yet). By default the output is written to a directory called ``S3TransferStreamProcessor_output`` in the current working directory.
 
 To see other optional command line arguments, run ``S3TransferStreamProcessor -h``.
 
@@ -47,4 +49,11 @@ Consumer offset commits
 
 OpenMSIStream manually commits Consumer offsets to guarantee that every message is received "at least once." This guarantee is only valid if ``enable.auto.commit = False`` is set in the ``[consumer]`` section of the config file used. If this parameter isn't set to enable the "at least once" guarantee a warning will be logged, and it's possible that some messages may be dropped or consumed multiple times from the topic.
 
-Additionally, because files are held in memory until all of their messages have been received, it's possible that shutting the program down at an inopportune time could result in dropped messages or files not being transferred to the S3 bucket. A solution to this potential issue will be implemented, but for now users should be mindful about the consumer group IDs they use and the value of ``auto.offset.reset`` set in the config file for the Consumers used.
+Restarting the program
+----------------------
+
+Using an ``S3TransferStreamProcessor`` to transfer files stored as chunks on the broker (and any other program whose underlying class inherits from :class:`openmsistream.DataFileStreamProcessor`) is robust if the code crashes and can be restarted. The output directory includes a log file, as well as two files called "``files_consumed_from_[name_of_topic].csv``" and "``files_successfully_processed_from_[name_of_topic].csv``". The .csv files are special datatable files that list the processing status of each recognized file and information about files that have been successfully transferred, respectively. 
+
+The status of each file is updated atomically upon receipt of each message. If any files fail to be transferred during a run, or the program quits or crashes before all the messages for a file are received, a new run of ``S3TransferStreamProcessor`` restarted with the same consumer group ID and configs will restart the consumers from the beginning of the topic and read only messages from those failed files until they catch up to where they would be otherwise. As long as all messages for the failed files still exist in the same topic, restarting will select and try processing them again.
+
+If the same file is produced multiple times to the same topic, it will appear multiple times in the "successfully_processed" file. Files uploaded to different topics from the same directory will have their own independent .csv files. The files are atomic and accurate to within 5 seconds. You can copy and then browse them while the code is running to check which files have been transferred or recognized.

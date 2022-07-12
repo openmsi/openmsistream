@@ -133,7 +133,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
-        :type args: list
+        :type args: list, optional
         """
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)

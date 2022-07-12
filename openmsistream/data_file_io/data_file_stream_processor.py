@@ -20,7 +20,8 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-    :param output_dir: Path to the directory where the log and csv registry files should be kept
+    :param output_dir: Path to the directory where the log and csv registry files should be kept (if None a default
+        will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
     :param datafile_type: the type of data file that recognized files should be reconstructed as 
         (must be a subclass of :class:`~DownloadDataFileToMemory`)
@@ -105,16 +106,24 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
     def _process_message(self,lock,msg):
         """
         Process a single message to add it to a file being held in memory until all messages are received.
-        If the message is the last message needed for a file and its contents match the original hash 
-        of the file on disk, this method calls :func:`~_process_downloaded_data_file` and returns.
-
-        If the message is the last one needed but the contents are somehow different than the original file on disk,
-        this method calls :func:`~_mismatched_hash_callback` and returns.
 
         If the message failed to be decrypted, this method calls :func:`~_undecryptable_message_callback` and returns.
+        
+        If the message is the first one consumed for a particular file, or any message other than the last one needed, 
+        it registers the file as 'in_progress' in the .csv file.
+        
+        If the message is the last message needed for a file and its contents match the original hash 
+        of the file on disk, this method calls :func:`~_process_downloaded_data_file`.
 
-        If the call to :func:`~_process_downloaded_data_file` returns an Exception, 
-        this method calls :func:`~_failed_processing_callback`.
+        If the call to :func:`~_process_downloaded_data_file` returns None (success), this method moves the file to the
+        'successfully processed' .csv file, and returns.
+        
+        If the call to :func:`~_process_downloaded_data_file` returns an Exception, this method calls 
+        :func:`~_failed_processing_callback`, registers the file as 'failed' in the .csv file, and returns.
+
+        If the message is the last one needed but the contents are somehow different than the original file on disk,
+        this method calls :func:`~_mismatched_hash_callback`, registers the file as 'mismatched_hash' in the .csv file, 
+        and returns.
 
         :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance 
             of :func:`~_process_message` is running at once
@@ -122,7 +131,8 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         :param msg: The received :class:`confluent_kafka.KafkaMessage` object, or an undecrypted KafkaCrypto message
         :type msg: :class:`confluent_kafka.KafkaMessage` or :class:`kafkacrypto.Message` 
 
-        :return: True if processing the message was successful, False otherwise
+        :return: True if processing the message was successful (file in progress or successfully processed), 
+            False otherwise
         :rtype: bool
         """
         retval = super()._process_message(lock, msg, self._output_dir, self.logger)

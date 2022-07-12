@@ -18,10 +18,10 @@ class Runnable(HasArgumentParser,ABC) :
         Get the list of argument names and the dictionary of argument names/default values to add to the argument parser
 
         :return: args, a list of argument names recognized by the argument parser
-        :rtype: List[str]
+        :rtype: list(str)
         :return: kwargs, a dictionary of default argument values keyed by argument names 
             recognized by the argument parser
-        :rtype: Dict
+        :rtype: dict
         """
         return [],{}
 

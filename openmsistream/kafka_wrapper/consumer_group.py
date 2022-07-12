@@ -51,6 +51,7 @@ class ConsumerGroup(LogOwner) :
             Useful when re-reading messages.
         :type restart_at_beginning: bool, optional
         :param kwargs: other keyword arguments are passed to the :class:`~OpenMSIStreamConsumer` constructor method
+            (for example, parameters to set a key regex or how to filter messages)
         :type kwargs: dict
 
         :return: a Consumer created using the configs set in the constructor/from `kwargs`, subscribed to the topic

@@ -117,12 +117,12 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
 
     def producer_callback(self,err,msg,filename,filepath,n_total_chunks,chunk_i) :
         """
-        A referenced to this method is given as the producer callback for each call to 
-        :func:`confluent_kafka.Producer.produce`. It will be called for every message upon acknowledgement 
-        by the broker, and it uses the file registries in the LOGS subdirectory to keep the information 
-        about what has and hasn't been uploaded current with what has been received by the broker.
+        A reference to this method is given as the callback for each call to :func:`confluent_kafka.Producer.produce`.
+        It is called for every message upon acknowledgement by the broker, and it uses the file registries in the 
+        LOGS subdirectory to keep the information about what has and hasn't been uploaded current with what has 
+        been received by the broker.
 
-        If this message is the final one to be acknowledged from its corresponding :class:`~UploadDataFile`, 
+        If the message is the final one to be acknowledged from its corresponding :class:`~UploadDataFile`, 
         the :class:`~UploadDataFile` is registered as "fully produced".
 
         :param err: The error object for the message

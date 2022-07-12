@@ -10,24 +10,14 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
     :type bucket_name: str
-    :param output_dir: Path to the directory where the log and csv registry files should be kept
-    :type output_dir: :class:`pathlib.Path`
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-
-    optional keyword argument:
-
-    :param datafile_type: the type of data file that recognized files should be reconstructed as 
-        (must be a subclass of :class:`~DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
-
-    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
 
-    def __init__(self, bucket_name, config_path, topic_name, **otherkwargs) :
-        super().__init__(config_path, topic_name, **otherkwargs)
+    def __init__(self, bucket_name, config_path, topic_name, **kwargs) :
+        super().__init__(config_path, topic_name, **kwargs)
         parser = S3ConfigFileParser(config_path,logger=self.logger)
         self.__s3_config = parser.s3_configs
         self.__s3_config['bucket_name'] = bucket_name
@@ -44,7 +34,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         :return: the total number of messages processed (registered in memory)
         :rtype: int
         :return: the paths of files successfully transferred to the S3 bucket during the run 
-        :rtype: List
+        :rtype: list
         """
         return self.process_files_as_read()
 
@@ -102,7 +92,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
-        :type args: List
+        :type args: list, optional
         """
         # make the argument parser
         parser = cls.get_argument_parser()
