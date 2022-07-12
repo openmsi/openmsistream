@@ -80,6 +80,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             TEST_CONST.TEST_BUCKET_NAME,
             TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
             consumer_group_ID='test_s3_transfer',
@@ -122,12 +123,15 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                 finally:
                     LOGGER.info('wait until validate with producer...')
                     self.validate_s3_transfer_with_producer()
+        if TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
+           shutil.rmtree(TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR) 
 
     def validate_s3_data_transfer(self):
         s3tsp = S3TransferStreamProcessor(
             TEST_CONST.TEST_BUCKET_NAME,
             TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
             consumer_group_ID='test_s3_transfer',
@@ -167,6 +171,8 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                         raise TimeoutError(errmsg)
                 except Exception as e:
                     raise e
+        if TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
+            shutil.rmtree(TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR)
 
     def hash_file(self, my_file):
         md5 = hashlib.md5()

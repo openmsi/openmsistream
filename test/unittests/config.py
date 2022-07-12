@@ -108,5 +108,8 @@ class TestRoutineConstants :
     @property
     def TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED(self) :
         return self.TEST_DIR_PATH / 'test_stream_processor_output_dir_restart_encrypted'
+    @property
+    def TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR(self) :
+        return self.TEST_DIR_PATH / 'test_s3_transfer_stream_processor_output_dir'
     
 TEST_CONST=TestRoutineConstants()
