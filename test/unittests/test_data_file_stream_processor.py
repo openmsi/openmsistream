@@ -507,10 +507,11 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                 errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
                 raise TimeoutError(errmsg)
             #wait for the uploading thread to complete
-            upload_thread.join(timeout=TIMEOUT_SECS)
+            dfud.control_command_queue.put('q')
+            upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if upload_thread.is_alive() :
                 errmsg = 'ERROR: upload thread in test_data_file_stream_processor_restart_encrypted '
-                errmsg+= f'timed out after {TIMEOUT_SECS} seconds!'
+                errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
                 raise TimeoutError(errmsg)
             #make sure the content of the previously failed file is now correct
             ref_bytestring = None
