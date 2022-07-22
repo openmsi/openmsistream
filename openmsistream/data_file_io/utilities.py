@@ -33,3 +33,11 @@ def get_encrypted_message_key_and_value_filenames(msg,topic_name) :
     timestamp_string = get_encrypted_message_timestamp_string(msg)
     fp_pp = f'encrypted_message_from_{topic_name}_{timestamp_string}'
     return f'{fp_pp}_key.bin',f'{fp_pp}_value.bin'
+
+def get_message_prepend(subdir_str,filename) :
+    key_pp = ''
+    if subdir_str is not None :
+        key_pp = f'{"_".join(subdir_str.split("/"))}'
+    if key_pp!='' :
+        key_pp+='_'
+    return f'{key_pp}{filename}_chunk'

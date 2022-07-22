@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.2.2'
+version = '0.9.3.0'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -35,10 +35,10 @@ setupkwargs = dict(
                             ],
     },
     python_requires='>=3.7,<3.10',
-    install_requires=['atomicwrites>=1.4.0',
+    install_requires=['atomicwrites>=1.4.1',
                       'boto3>=1.23.0',
-                      'confluent-kafka>=1.8.2',
-                      'kafkacrypto>=0.9.9.15',
+                      'confluent-kafka>=1.9.0',
+                      'kafkacrypto>=0.9.9.16',
                       'methodtools',
                       'msgpack',
                      ],

@@ -1,5 +1,5 @@
 #imports
-import traceback, time
+import time
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
@@ -97,19 +97,18 @@ class UploadDataFile(DataFile,Runnable) :
         possibly with some selection defined by :attr:`~select_bytes`
 
         :param chunks_to_add: a list of chunk indices to add to the list to be uploaded (Default=None adds all chunks)
-        :type chunks_to_add: None or List[int], optional
+        :type chunks_to_add: None or list[int], optional
         :param chunk_size: The size of the file chunk in each message in bytes
         :type chunk_size: int, optional
         """
         if self.__chunk_infos is None :
             try :
                 self._build_list_of_file_chunks(chunk_size)
-            except Exception :
-                self.logger.info(traceback.format_exc())
+            except Exception as e :
                 fp = self.filepath.relative_to(self.__rootdir) if self.__rootdir is not None else self.filepath
                 errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
-                errmsg+= 'Check log lines above for details on what went wrong. File will not be uploaded.'
-                self.logger.error(errmsg)
+                errmsg+= 'Check log lines below for details on what went wrong. File will not be uploaded.'
+                self.logger.error(errmsg,exc_obj=e,reraise=False)
                 self.__to_upload = False
                 return
         #add the chunks to the final list as DataFileChunk objects
@@ -138,6 +137,8 @@ class UploadDataFile(DataFile,Runnable) :
         :param n_threads: the number of threads running during uploading; at most 5*this number of chunks will be 
             added per call to this method. If this argument isn't given, every chunk in the internal list will be added.
         :type n_threads: None or int, optional
+        :param chunk_size: The size of the file chunk in each message in bytes
+        :type chunk_size: int, optional
         :param queue_full_timeout: amount of time to wait before returning if the queue is full 
             and new messages can't be added
         :type queue_full_timeout: float, optional
@@ -245,7 +246,7 @@ class UploadDataFile(DataFile,Runnable) :
         Calls :func:`~upload_whole_file` on an :class:`~.UploadDataFile` defined by command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
-        :type args: List
+        :type args: list
         """
         #make the argument parser
         parser = cls.get_argument_parser()

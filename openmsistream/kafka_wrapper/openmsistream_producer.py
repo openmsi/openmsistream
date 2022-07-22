@@ -11,7 +11,8 @@ from .serialization import CompoundSerializer
 
 class OpenMSIStreamProducer(LogOwner) :
     """
-    Wrapper for working with a Producer of some type
+    Wrapper for working with a Producer of some type. Expects message values that are :class:`~DataFileChunk` objects
+    by default; other message value types can be accommodated by setting "value.serializer" in the config file.
 
     :param producer_type: The type of underlying Producer that should be used
     :type producer_type: :class:`confluent_kafka.SerializingProducer` or :class:`kafkacrypto.KafkaProducer`
@@ -20,8 +21,8 @@ class OpenMSIStreamProducer(LogOwner) :
     :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer. 
         Only needed if `producer_type` is :class:`kafkacrypto.KafkaProducer`.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-    :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producer, 
-        with underscores in their names replaced by dots
+    :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the 
+        Producer, with underscores in their names replaced by dots
     :type kwargs: dict
 
     :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer` 
@@ -41,9 +42,9 @@ class OpenMSIStreamProducer(LogOwner) :
                 errmsg = 'ERROR: creating a KafkaProducer requires holding onto its KafkaCrypto objects!'
                 self.logger.error(errmsg,ValueError)
             self.__kafkacrypto = kafkacrypto
-            self.__producer = producer_type(**configs)
+            self._producer = producer_type(**configs)
         elif producer_type==SerializingProducer :
-            self.__producer = producer_type(configs)
+            self._producer = producer_type(configs)
         else :
             errmsg=f'ERROR: Unrecognized producer type {producer_type} for OpenMSIStreamProducer!'
             self.logger.error(errmsg,ValueError)
@@ -182,10 +183,10 @@ class OpenMSIStreamProducer(LogOwner) :
             obj = queue.get()
         queue.task_done()
 
-    def produce(self,*args,topic,key,value,**kwargs) :
+    def produce(self,topic,key,value,**kwargs) :
         """
         Produce a message to a topic. 
-        Other args/kwargs are passed through to the underlying producer's produce() function.
+        Other kwargs are passed through to the underlying producer's produce() function.
 
         :param topic: the name of the topic to produce to
         :type topic: str
@@ -194,22 +195,22 @@ class OpenMSIStreamProducer(LogOwner) :
         :param value: the value of the message
         :type value: depends on the serialization settings
         """
-        if isinstance(self.__producer,KafkaProducer) :
-            key = self.__producer.ks(topic,key)
-            value = self.__producer.vs(topic,value)
-        return self.__producer.produce(*args,topic=topic,key=key,value=value,**kwargs)
+        if isinstance(self._producer,KafkaProducer) :
+            key = self._producer.ks(topic,key)
+            value = self._producer.vs(topic,value)
+        return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
     
     def poll(self,*args,**kwargs) :
         """
         Wrapper around Producer.poll()
         """
-        return self.__producer.poll(*args,**kwargs)
+        return self._producer.poll(*args,**kwargs)
     
     def flush(self,*args,**kwargs) :
         """
         Wrapper around Producer.flush()
         """
-        return self.__producer.flush(*args,**kwargs)
+        return self._producer.flush(*args,**kwargs)
 
     def close(self) :
         """

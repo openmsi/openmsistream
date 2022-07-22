@@ -1,6 +1,5 @@
 #imports
 import pathlib, methodtools, datetime, typing, copy, os
-from time import process_time
 from threading import Lock
 from dataclasses import fields, is_dataclass
 from atomicwrites import atomic_write
@@ -48,7 +47,11 @@ class DataclassTable(LogOwner) :
 
     @property
     def obj_addresses(self) :
-        return self.__entry_objs.keys()
+        return list(self.__entry_objs.keys())
+
+    @property
+    def filepath(self) :
+        return self.__filepath
 
     @property
     def lock(self) :
@@ -81,7 +84,7 @@ class DataclassTable(LogOwner) :
         self.__entry_objs = {}
         self.__entry_lines = {}
         #read or create the file to finish setting up the table
-        self.__file_last_updated = process_time()
+        self.__file_last_updated = datetime.datetime.now()
         if self.__filepath.is_file() :
             self.__read_csv_file()
         else :
@@ -112,7 +115,7 @@ class DataclassTable(LogOwner) :
                 self.__entry_objs[entry_addr] = entry
                 self.__entry_lines[entry_addr] = self.__line_from_obj(entry)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     def remove_entries(self,entry_obj_addresses) :
@@ -134,7 +137,7 @@ class DataclassTable(LogOwner) :
                 self.__entry_objs.pop(entry_addr)
                 self.__entry_lines.pop(entry_addr)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     def get_entry_attrs(self,entry_obj_address,*args) :
@@ -144,7 +147,7 @@ class DataclassTable(LogOwner) :
         
         Use `args` to get a dictionary of desired attribute values returned.
         If only one arg is given the return value is just that single attribute.
-        The default (no additional arguments) return a dictionary of all attributes for the entry
+        The default (no additional arguments) returns a dictionary of all attributes for the entry
         
         :param entry_obj_address: the address in memory of the object to return copies of attributes for
         :type entry_obj_address: hex(id(object))
@@ -194,7 +197,7 @@ class DataclassTable(LogOwner) :
                 setattr(obj,fname,fval)
             self.__entry_lines[entry_obj_address] = self.__line_from_obj(obj)
             self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     @methodtools.lru_cache(maxsize=5)
@@ -235,8 +238,11 @@ class DataclassTable(LogOwner) :
         Call this to force the file to update and reflect the current state of objects. 
         Automatically called in several contexts.
         """
+        lines_to_write = [self.csv_header_line]
+        if len(self.__entry_lines)>0 :
+            lines_to_write+=list(self.__entry_lines.values())
         with DataclassTable.THREAD_LOCK :
-            self.__write_lines([self.csv_header_line,*self.__entry_lines.values()],reraise_exc=reraise_exc)
+            self.__write_lines(lines_to_write,reraise_exc=reraise_exc)
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -284,7 +290,7 @@ class DataclassTable(LogOwner) :
             else :
                 msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
                 self.logger.warning(msg)
-        self.__file_last_updated = process_time()
+        self.__file_last_updated = datetime.datetime.now()
 
     def __line_from_obj(self,obj) :
         """

@@ -106,10 +106,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                                     or path to a file in a different location'''}],
         'topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                         'help':'Name of the topic to produce to or consume from'}],
-        'logger_file':
-            ['optional', {'default': pathlib.Path(), 'type': pathlib.Path,
-                          'help': '''Path to the log file (or directory to hold the auto-named logfile)'''}],        
+                         'help':'Name of the topic to produce to or consume from'}],    
         'n_threads':
             ['optional',{'default':RUN_CONST.DEFAULT_N_THREADS,'type':positive_int,
                          'help':'Maximum number of threads to use'}],

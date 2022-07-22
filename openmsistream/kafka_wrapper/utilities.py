@@ -1,5 +1,7 @@
 #imports
 from collections import namedtuple
+from confluent_kafka import OFFSET_BEGINNING
+from kafkacrypto import KafkaConsumer
 
 def add_kwargs_to_configs(configs,logger,**kwargs) :
     """
@@ -38,6 +40,13 @@ def default_producer_callback(err,msg,logger=None,**other_kwargs) :
 def make_callback(func,*args,**kwargs) :
     return lambda err,msg : func(err,msg,*args,**kwargs)
 
-
 KCCommitOffsetDictKey = namedtuple('KCCommitOffsetDictKey',['topic','partition'])
 KCCommitOffset = namedtuple('KCCommitOffset',['offset'])
+
+def reset_to_beginning_on_assign(consumer, partitions):
+    for p in partitions:
+        p.offset=OFFSET_BEGINNING
+    if isinstance(consumer,KafkaConsumer) :
+        consumer.assign_and_seek(partitions)
+    else :
+        consumer.assign(partitions)

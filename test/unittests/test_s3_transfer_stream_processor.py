@@ -80,6 +80,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             TEST_CONST.TEST_BUCKET_NAME,
             TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
             consumer_group_ID='test_s3_transfer',
@@ -122,12 +123,15 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                 finally:
                     LOGGER.info('wait until validate with producer...')
                     self.validate_s3_transfer_with_producer()
+        if TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
+           shutil.rmtree(TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR) 
 
     def validate_s3_data_transfer(self):
         s3tsp = S3TransferStreamProcessor(
             TEST_CONST.TEST_BUCKET_NAME,
             TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
             consumer_group_ID='test_s3_transfer',
@@ -167,6 +171,8 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                         raise TimeoutError(errmsg)
                 except Exception as e:
                     raise e
+        if TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
+            shutil.rmtree(TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR)
 
     def hash_file(self, my_file):
         md5 = hashlib.md5()
@@ -203,13 +209,11 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                      local_path.__contains__(f'files_to_upload_to_{TOPIC_NAME}') or 
                      local_path.__contains__('LOGS') ) :
                     continue
-
                 hashed_datafile_stream = self.hash_file(local_path)
                 if hashed_datafile_stream == None:
                     raise Exception('datafile_stream producer is null!')
                 local_path = str(os.path.join(subdir, file)).replace('\\', '/')
                 object_key = TOPIC_NAME + '/' + local_path[len(str(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER)) + 1:]
-
                 if not (s3d.compare_producer_datafile_with_s3_object_stream(TEST_CONST.TEST_BUCKET_NAME, object_key,
                                                                          hashed_datafile_stream)):
                     LOGGER.info('did not match for producer')

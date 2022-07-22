@@ -1,11 +1,9 @@
 #imports
-from ..running import Runnable
-from ..data_file_io.config import RUN_OPT_CONST
 from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
 
-class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
+class S3TransferStreamProcessor(DataFileStreamProcessor) :
     """
     A class to reconstruct data files read as messages from a topic, hold them in memory, 
     and transfer them to an S3 bucket when all of their messages have been received
@@ -16,18 +14,10 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-
-    optional keyword argument:
-
-    :param datafile_type: the type of data file that recognized files should be reconstructed as 
-        (must be a subclass of :class:`~DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
-
-    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
 
-    def __init__(self, bucket_name, config_path, topic_name, **otherkwargs) :
-        super().__init__(config_path, topic_name, **otherkwargs)
+    def __init__(self, bucket_name, config_path, topic_name, **kwargs) :
+        super().__init__(config_path, topic_name, **kwargs)
         parser = S3ConfigFileParser(config_path,logger=self.logger)
         self.__s3_config = parser.s3_configs
         self.__s3_config['bucket_name'] = bucket_name
@@ -44,7 +34,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
         :return: the total number of messages processed (registered in memory)
         :rtype: int
         :return: the paths of files successfully transferred to the S3 bucket during the run 
-        :rtype: List
+        :rtype: list
         """
         return self.process_files_as_read()
 
@@ -81,7 +71,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
         file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
         object_key = self.topic_name 
-        if sub_dir is not None :
+        if sub_dir!='' :
             object_key+= '/' + sub_dir 
         object_key+= '/' + file_name
         return object_key
@@ -89,11 +79,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, 'bucket_name',
-                'update_seconds', 'logger_file', 'config', 'topic_name', 'consumer_group_ID']
-        kwargs = {**superkwargs,
-                  'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS, 
-                  }
+        args = [*superargs, 'bucket_name']
+        kwargs = {**superkwargs,'config':'test_s3_transfer'}
         return args, kwargs
 
     @classmethod
@@ -105,17 +92,17 @@ class S3TransferStreamProcessor(DataFileStreamProcessor, Runnable) :
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
-        :type args: List
+        :type args: list, optional
         """
         # make the argument parser
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         s3_stream_proc = cls(args.bucket_name,
                              args.config, args.topic_name,
+                             output_dir=args.output_dir,
                              n_threads=args.n_threads,
                              update_secs=args.update_seconds,
-                             consumer_group_ID=args.consumer_group_ID,
-                             logger_file=args.logger_file)
+                             consumer_group_ID=args.consumer_group_ID)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)
