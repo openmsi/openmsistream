@@ -1,6 +1,5 @@
 #imports
 import pathlib, methodtools, datetime, typing, copy, os
-from time import process_time
 from threading import Lock
 from dataclasses import fields, is_dataclass
 from atomicwrites import atomic_write
@@ -85,7 +84,7 @@ class DataclassTable(LogOwner) :
         self.__entry_objs = {}
         self.__entry_lines = {}
         #read or create the file to finish setting up the table
-        self.__file_last_updated = process_time()
+        self.__file_last_updated = datetime.datetime.now()
         if self.__filepath.is_file() :
             self.__read_csv_file()
         else :
@@ -116,7 +115,7 @@ class DataclassTable(LogOwner) :
                 self.__entry_objs[entry_addr] = entry
                 self.__entry_lines[entry_addr] = self.__line_from_obj(entry)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     def remove_entries(self,entry_obj_addresses) :
@@ -138,7 +137,7 @@ class DataclassTable(LogOwner) :
                 self.__entry_objs.pop(entry_addr)
                 self.__entry_lines.pop(entry_addr)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     def get_entry_attrs(self,entry_obj_address,*args) :
@@ -198,7 +197,7 @@ class DataclassTable(LogOwner) :
                 setattr(obj,fname,fval)
             self.__entry_lines[entry_obj_address] = self.__line_from_obj(obj)
             self.obj_addresses_by_key_attr.cache_clear()
-        if (process_time()-self.__file_last_updated)>DataclassTable.UPDATE_FILE_EVERY :
+        if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
     @methodtools.lru_cache(maxsize=5)
@@ -291,7 +290,7 @@ class DataclassTable(LogOwner) :
             else :
                 msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
                 self.logger.warning(msg)
-        self.__file_last_updated = process_time()
+        self.__file_last_updated = datetime.datetime.now()
 
     def __line_from_obj(self,obj) :
         """
