@@ -10,7 +10,7 @@ from config import TEST_CONST
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 UPDATE_SECS = 5
-TIMEOUT_SECS = 90
+TIMEOUT_SECS = 180
 JOIN_TIMEOUT_SECS = 30
 
 class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
@@ -25,7 +25,6 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
         super().__init__(*args,**kwargs)
 
     def _process_downloaded_data_file(self,datafile,lock) :
-        self.logger.error(f'PROCESS FUNCTION CALLED FOR {datafile.filename}')
         if datafile.filename in self.filenames_to_fail :
             with lock :
                 self.completed_filenames_bytestrings.append((datafile.filename,None))
@@ -219,6 +218,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                       topic_name=TOPIC_NAME,
+                                      consumer_group_ID=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         self.assertEqual(len(spr.filepaths_to_rerun),1)
         in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
@@ -306,6 +306,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                       topic_name=TOPIC_NAME,
+                                      consumer_group_ID=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         succeeded_entries = spr.succeeded_table.obj_addresses
         self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
@@ -317,7 +318,6 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             self.assertEqual(succeeded_entry_attrs[attr_name],testing_entry_attrs[attr_name])
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART)
 
-    @unittest.skip('Need a different solution for KafkaConsumer.subscribe() before this will work')
     def test_data_file_stream_processor_restart_encrypted_kafka(self) :
         """
         Test restarting an encrypted DataFileStreamProcessor after failing to process a file
@@ -439,6 +439,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                       topic_name=TOPIC_NAME,
+                                      consumer_group_ID=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         self.assertEqual(len(spr.filepaths_to_rerun),1)
         in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
@@ -552,6 +553,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                       topic_name=TOPIC_NAME,
+                                      consumer_group_ID=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         succeeded_entries = spr.succeeded_table.obj_addresses
         self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it

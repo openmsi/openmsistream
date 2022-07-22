@@ -1,6 +1,7 @@
 #imports
 from collections import namedtuple
 from confluent_kafka import OFFSET_BEGINNING
+from kafkacrypto import KafkaConsumer
 
 def add_kwargs_to_configs(configs,logger,**kwargs) :
     """
@@ -45,4 +46,7 @@ KCCommitOffset = namedtuple('KCCommitOffset',['offset'])
 def reset_to_beginning_on_assign(consumer, partitions):
     for p in partitions:
         p.offset=OFFSET_BEGINNING
-    consumer.assign(partitions)
+    if isinstance(consumer,KafkaConsumer) :
+        consumer.assign_and_seek(partitions)
+    else :
+        consumer.assign(partitions)
