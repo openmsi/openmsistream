@@ -68,6 +68,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         #set up the stream processor registry
         self.__file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
                                                        topic_name=self.topic_name,
+                                                       consumer_group_ID=self.consumer_group_ID,
                                                        logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self.__file_registry.rerun_file_key_regex is not None :

@@ -77,16 +77,16 @@ class StreamProcessorRegistry(LogOwner) :
             n_files+=1
         return n_files
 
-    def __init__(self,dirpath,topic_name,*args,**kwargs) :
+    def __init__(self,dirpath,topic_name,consumer_group_ID,*args,**kwargs) :
         """
         dirpath    = path to the directory that should contain the csv file
         topic_name = the name of the topic that will be produced to (used in the filename)
         """
         super().__init__(*args,**kwargs)
-        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}.csv'
+        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_ID}.csv'
         self.__in_progress_table = DataclassTable(dataclass_type=StreamProcessorRegistryLineInProgress,
                                                   filepath=in_progress_filepath,logger=self.logger)
-        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}.csv'
+        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_ID}.csv'
         self.__succeeded_table = DataclassTable(dataclass_type=StreamProcessorRegistryLineSucceeded,
                                                   filepath=succeeded_filepath,logger=self.logger)
 

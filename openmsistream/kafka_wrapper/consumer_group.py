@@ -26,6 +26,9 @@ class ConsumerGroup(LogOwner) :
     @property
     def topic_name(self) :
         return self.__topic_name
+    @property
+    def consumer_group_ID(self) :
+        return self.__consumer_group_ID
 
     def __init__(self,config_path,topic_name,*,consumer_group_ID='create_new',**kwargs) :
         """
@@ -37,6 +40,10 @@ class ConsumerGroup(LogOwner) :
         self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(config_path,
                                                                                         group_id=consumer_group_ID,
                                                                                         logger=self.logger)
+        if len(self.__c_args)>1 and 'group.id' in self.__c_args[1].keys() :
+            self.__consumer_group_ID = self.__c_args[1]['group.id'] 
+        else :
+            self.__consumer_group_ID = consumer_group_ID
 
     def get_new_subscribed_consumer(self,*,restart_at_beginning=False,**kwargs) :
         """
