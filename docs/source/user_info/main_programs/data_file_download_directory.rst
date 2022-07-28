@@ -2,6 +2,10 @@
 DataFileDownloadDirectory
 =========================
 
+.. image:: ../../images/data_file_download_directory.png
+   :alt: DataFileDownloadDirectory
+   :scale: 20 %
+
 This module subscribes a group of consumers to a topic on a broker and passively listens in several parallel threads for messages that are chunks of data files. It reconstructs files produced to the topic from their individual chunks and puts the reconstructed files in a specified directory, preserving any subdirectory structure on the production end. To run it in the most common use case, enter the following command and arguments::
 
     DataFileDownloadDirectory [working_directory_path] --config [config_file_path] --topic_name [topic_name]
@@ -14,7 +18,7 @@ where:
 
 Options for running the code include:
 
-#. Changing the number of parallel threads: add the ``--n_threads [threads]`` argument where ``[threads]`` is the desired number of parallel threads to use (and, also, the number of consumers used in the group). The default is 2 threads/consumers; increasing this number may give Kafka warnings or errors depending on how many consumers can be subscribed to a particular topic (generally you can use as many threads as their are partitions to the topic).
+#. Changing the number of parallel threads: add the ``--n_threads [threads]`` argument where ``[threads]`` is the desired number of parallel threads to use (and, also, the number of consumers used in the group). The default is 2 threads/consumers; increasing this number may give Kafka warnings or errors depending on how many consumers can be subscribed to a particular topic (generally you can use as many threads as there are partitions to the topic).
 #. Changing the consumer group ID: add the ``--consumer_group_ID [group_id]`` argument where ``[group_id]`` is the string to use for the Consumer group ID. The default creates a new ID every time, but if you would like to keep track of which messages have already been consumed you can choose a consistent group ID to use every time, and only messages whose offsets haven't been comitted yet will be consumed. Please see the `documentation for Kafka Consumers here <https://docs.confluent.io/platform/current/clients/consumer.html>`_ for more details if consumer offset commits are unfamiliar to you.
 
 To see other optional command line arguments, run ``DataFileDownloadDirectory -h``.

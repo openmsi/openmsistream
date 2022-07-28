@@ -2,6 +2,10 @@
 DataFileUploadDirectory
 =======================
 
+.. image:: ../../images/data_file_upload_directory.png
+   :alt: DataFileUploadDirectory
+   :scale: 20 %
+
 This module uploads any files that are added to a given directory to a topic on a broker by breaking them into chunks and producing those chunks as messages. It preserves subdirectory structure relative to the watched directory. To run it in the most common use case, enter the following command and arguments::
 
     DataFileUploadDirectory [directory_path] --config [config_file_path] --topic_name [name_of_topic]

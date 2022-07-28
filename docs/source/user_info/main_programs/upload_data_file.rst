@@ -2,6 +2,10 @@
 UploadDataFile
 ==============
 
+.. image:: ../../images/upload_data_file.png
+   :alt: UploadDataFile
+   :scale: 20 %
+
 This module uploads a single specified file to a topic on a broker by breaking it into chunks of a particular size and uploading those chunks in several parallel threads. To run it in the most common use case, enter the following command and arguments::
 
     UploadDataFile [file_path] --config [config_file_path] --topic_name [topic_name]
