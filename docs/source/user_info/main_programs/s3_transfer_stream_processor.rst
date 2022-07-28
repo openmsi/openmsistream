@@ -2,6 +2,10 @@
 S3TransferStreamProcessor
 =========================
 
+.. image:: ../../images/s3_transfer_stream_processor.png
+   :alt: S3TransferStreamProcessor
+   :scale: 20 %
+
 This module reads messages from a topic to build up data files in memory, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``. 
 
 The :class:`openmsistream.S3TransferStreamProcessor` is a specific type of :class:`openmsistream.DataFileStreamProcessor`.

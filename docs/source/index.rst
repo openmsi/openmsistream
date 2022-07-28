@@ -7,9 +7,9 @@
 OpenMSIStream 
 =========================================
 
-.. image:: ./images/openmsi_logo.png
+.. image:: ./images/openmsistream_logo.png
    :alt: Open MSI
-   :scale: 40 %
+   :scale: 10 %
 
 OpenMSIStream provides Python applications for laboratory, analysis, and computational materials data streaming using `Apache Kafka <https://kafka.apache.org/>`_. It was developed for Open MSI, under NSF DMREF award #1921959.
 
