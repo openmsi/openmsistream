@@ -9,15 +9,15 @@ from .linux_service_manager import LinuxServiceManager
 
 def main() :
     #get the arguments
-    parser = ServiceManagerBase.get_argument_parser('install')
+    parser = ServiceManagerBase.get_argument_parser('install',sys.argv[1] if len(sys.argv)>1 else None)
     args = parser.parse_args()
     #run the tests if requested
-    if args.service_class_name=='test' :
+    if args.service_spec_string=='test' :
         test_python_code()
     else :
         if args.service_name is None :
             #default name of the Service is just the class name
-            service_name = args.service_class_name
+            service_name = args.service_spec_string
         else :
             service_name = args.service_name
         #make the list of arguments that should be sent to the run function in the executable (removing "service_name")

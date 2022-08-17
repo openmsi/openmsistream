@@ -70,7 +70,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             msg+='a'
             if self.service_dict['class_name'].lower() in ('a','e','i','o','u','y') :
                 msg+='n'
-            msg+=f' {self.service_class_name} program '
+            msg+=f" {self.service_dict['class_name']} program "
         else :
             msg+=f"{self.service_dict['filepath']}"
             if self.service_dict['func_name'] is not None :
@@ -272,11 +272,11 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             if len(service_dict)==1 :
                 self.service_dict = service_dict[0]
             elif len(service_dict)==0 :
-                filepath, class_name, run_class, func_name = self.__parse_custom_service_string()
-                service_dict = {'filepath':filepath,
-                                'class_name':class_name,
-                                'class':run_class,
-                                'func_name':func_name}
+                fp, cn, rc, fn = self.__parse_custom_service_string(self.service_spec_string,self.logger)
+                self.service_dict = {'filepath':fp,
+                                     'class_name':cn,
+                                     'class':rc,
+                                     'func_name':fn}
             else :
                 errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
                 errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
@@ -284,16 +284,64 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         else :
             self.service_dict = None
 
+    @staticmethod
+    def __parse_custom_service_string(service_spec_string,logger=SERVICE_CONST.LOGGER) :
+        """
+        Get the filepath and optional class/function names from the custom Service string
+        """
+        filepath = None; class_name = None; run_class = None; func_name = None
+        try :
+            #at minimum need a path to a file containing a class or function to run
+            if '=' in service_spec_string :
+                equals_split = service_spec_string.split('=')
+                assert len(equals_split)==2
+                class_name = equals_split[0]
+                for_path_and_func_name = equals_split[1]
+            else :
+                class_name = None
+                for_path_and_func_name = service_spec_string
+            if ':' in service_spec_string :
+                colon_split = for_path_and_func_name[1].split(':')
+                assert len(colon_split)==2
+                filepath = colon_split[0]
+                func_name = colon_split[1]
+            else :
+                filepath = for_path_and_func_name
+            assert filepath is not None
+            #make sure the path is valid
+            module = importlib.import_module(filepath)
+            assert module is not None
+            #if the function name was specified, make sure that can be imported from the file, too
+            if func_name is not None :
+                function = getattr(module,func_name)
+                assert function is not None
+            #If the class name was given without a function name, make sure the class can be imported from the file
+            elif class_name is not None and func_name is None :
+                run_class = getattr(module,class_name)
+                #and make sure the class extends Runnable, since we'll be calling its run_from_command_line function
+                assert issubclass(run_class,Runnable)
+            #make sure at least one of the function/class names was given
+            assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
+        except Exception as e :
+            errmsg = f'ERROR: service specification string {service_spec_string} is not valid! '
+            errmsg+= 'Will re-raise specific Exception.'
+            logger.error(errmsg,exc_obj=e)
+        return filepath, class_name, run_class, func_name
+
     #################### CLASS METHODS ####################
     
     @classmethod
-    def get_argument_parser(cls,install_or_manage) :
+    def get_argument_parser(cls,install_or_manage,class_name_or_spec_string=None) :
         """
         Return the command line argument parser that should be used
 
         :param install_or_manage: Whether the parser used should accept commands for "install"-ing 
             or "manage"-ing the Service/daemon
         :type install_or_manage: str
+        :param class_name_or_spec_string: the first argument to the install script, if that's being run. 
+            Used to add subparsers for known Runnable classes or for custom Runnables defined at the time 
+            the Service/daemon is being installed.
+        :type class_name_or_spec_string: str, optional
 
         :return: the :class:`~OpenMSIStreamArgumentParser` object that should be used
         :rtype: :class:`~OpenMSIStreamArgumentParser`
@@ -304,11 +352,22 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         if install_or_manage=='install' :
             #subparsers from the classes that could be run
             subp_desc = 'The name of a "Runnable" class (or the specification for a custom Service code) to install '
-            subp_desc = 'as a service must be given as the first argument. Adding one of the OpenMSIStream class names '
-            subp_desc = 'to the command line along with "-h" will show additional help.'
+            subp_desc = 'as a service must be given as the first argument. Adding the name (or spec string) of a class '
+            subp_desc = 'that extends "Runnable" to the command line along with "-h" will show additional help.'
             parser.add_subparsers(description=subp_desc,required=True,dest='service_spec_string')
-            for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
-                parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
+            if class_name_or_spec_string is None :
+                for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
+                    parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
+            elif class_name_or_spec_string in [d['class_name'] for d in SERVICE_CONST.AVAILABLE_SERVICES] :
+                sds = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES if sd['class_name']==class_name_or_spec_string]
+                sd = sds[0]
+                parser.add_subparser_arguments_from_class(sd['class'],addl_args=['optional_service_name'])
+            else :
+                _, _, rc, _ = cls.__parse_custom_service_string(class_name_or_spec_string)
+                if rc is not None :
+                    parser.add_subparser_arguments_from_class(rc,
+                                                              subp_name=class_name_or_spec_string,
+                                                              addl_args=['optional_service_name'])
         elif install_or_manage=='manage' :
             parser.add_arguments('service_name','run_mode','remove_env_vars','remove_install_args','remove_nssm')
         else :
@@ -337,48 +396,3 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
                 for evn in cfp.env_var_names :
                     yield evn
-
-    #################### PRIVATE HELPER FUNCTIONS ####################
-
-    def __parse_custom_service_string(self) :
-        """
-        Get the filepath and optional class/function names from the custom Service string
-        """
-        filepath = None; class_name = None; run_class = None; func_name = None
-        try :
-            #at minimum need a path to a file containing a class or function to run
-            if '=' in self.service_spec_string :
-                equals_split = self.service_spec_string.split('=')
-                assert len(equals_split)==2
-                class_name = equals_split[0]
-                for_path_and_func_name = equals_split[1]
-            else :
-                class_name = None
-                for_path_and_func_name = self.service_spec_string
-            if ':' in self.service_spec_string :
-                colon_split = for_path_and_func_name[1].split(':')
-                assert len(colon_split)==2
-                filepath = colon_split[0]
-                func_name = colon_split[1]
-            else :
-                filepath = for_path_and_func_name
-            assert filepath is not None
-            #make sure the path is valid
-            module = importlib.import_module(filepath)
-            assert module is not None
-            #if the function name was specified, make sure that can be imported from the file, too
-            if func_name is not None :
-                function = getattr(module,func_name)
-                assert function is not None
-            #If the class name was given without a function name, make sure the class can be imported from the file
-            elif class_name is not None and func_name is None :
-                run_class = getattr(module,class_name)
-                #and make sure the class extends Runnable, since we'll be calling its run_from_command_line function
-                assert issubclass(run_class,Runnable)
-            #make sure at least one of the function/class names was given
-            assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
-        except Exception as e :
-            errmsg = f'ERROR: service specification string {self.service_spec_string} is not valid! '
-            errmsg+= 'Will re-raise specific Exception.'
-            self.logger.error(errmsg,exc_obj=e)
-        return filepath, class_name, run_class, func_name
