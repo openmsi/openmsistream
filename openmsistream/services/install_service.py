@@ -1,5 +1,6 @@
 #imports
-import sys
+import sys, importlib
+from ..running import Runnable
 from .config import SERVICE_CONST
 from .utilities import test_python_code, get_os_name
 from .service_manager_base import ServiceManagerBase
@@ -25,16 +26,15 @@ def main() :
             index = argslist.index('--service_name')
             argslist.pop(index)
             argslist.pop(index)
-        #get the name of the OS and start the object
-        operating_system = get_os_name()
+        #define arguments to and create the ServiceManager
         manager_args = [service_name]
-        manager_kwargs = {'service_class_name':args.service_class_name,
+        manager_kwargs = {'service_spec_string':args.service_spec_string,
                           'argslist':argslist,
                           'interactive':True,
                           'logger':SERVICE_CONST.LOGGER}
         managers_by_os_name = {'Windows':WindowsServiceManager,
                                'Linux':LinuxServiceManager,}
-        manager_class = managers_by_os_name[operating_system]
+        manager_class = managers_by_os_name[get_os_name()]
         manager = manager_class(*manager_args,**manager_kwargs)
         #install the service
         manager.install_service()

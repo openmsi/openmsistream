@@ -1,10 +1,10 @@
 #imports
-import sys, pathlib, textwrap
+import sys, pathlib, textwrap, importlib
 from abc import abstractmethod
 from subprocess import CalledProcessError
 from ..utilities import LogOwner
 from ..utilities.config_file_parser import ConfigFileParser
-from ..running import OpenMSIStreamArgumentParser
+from ..running import Runnable, OpenMSIStreamArgumentParser
 from ..running.has_argument_parser import HasArgumentParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var
@@ -15,9 +15,12 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
     :param service_name: The name of the Service/daemon as installed
     :type service_name: str
-    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
-        as a Service/daemon. Only needed to initially install the Service/daemon.
-    :type service_class_name: :class:`~Runnable`, optional
+    :param service_spec_string: A string specifying which code should be run as a Service. 
+        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code. 
+        Custom Services can also specify a :class:`~Runnable` class name, and/or a function in the file 
+        using special formatting like [class_name]=[path.to.file]:[function_name]. 
+        Only needed to initially install the Service/daemon.
+    :type service_spec_string: str, optional
     :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
         Only needed to initially install the Service/daemon.
     :type argslist: list, optional
@@ -27,11 +30,11 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,service_name,*,service_class_name=None,argslist=None,interactive=None,**kwargs) :
+    def __init__(self,service_name,*,service_spec_string=None,argslist=None,interactive=None,**kwargs) :
         super().__init__(**kwargs)
         self.service_name = service_name
-        self.service_class_name = service_class_name
-        self.__set_service_dict_from_class_name()
+        self.service_spec_string = service_spec_string
+        self.__set_service_dict()
         self.argslist = argslist
         self.interactive = interactive
         self.env_var_filepath = SERVICE_CONST.WORKING_DIR/f'{self.service_name}_env_vars.txt'
@@ -44,8 +47,9 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         child classes should call this method to get the setup done before they do anything specific
         """
         #make sure the necessary information was supplied
-        if self.service_class_name is None or self.service_dict is None or self.argslist is None :
-            errmsg = 'ERROR: newly installing a Service requires that the class name and argslist are supplied!'
+        if self.service_dict is None or self.argslist is None :
+            errmsg = 'ERROR: newly installing a Service requires that the specifying what to install '
+            errmsg+= 'and giving an argslist!'
             self.logger.error(errmsg,RuntimeError)
         #set the environment variables
         must_rerun = set_env_vars(self.env_var_names,interactive=self.interactive)
@@ -61,10 +65,17 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         #write out the executable file
         self._write_executable_file()
         #install the service
-        msg='Installing a'
-        if self.service_class_name[0].lower() in ('a','e','i','o','u','y') :
-            msg+='n'
-        msg+=f' {self.service_class_name} program as "{self.service_name}" from executable at {self.exec_fp}...'
+        msg = 'Installing '
+        if self.service_dict['class_name'] is not None :
+            msg+='a'
+            if self.service_dict['class_name'].lower() in ('a','e','i','o','u','y') :
+                msg+='n'
+            msg+=f' {self.service_class_name} program '
+        else :
+            msg+=f"{self.service_dict['filepath']}"
+            if self.service_dict['func_name'] is not None :
+                msg+=f":{self.service_dict['func_name']}"
+        msg+=f' as "{self.service_name}" from executable at {self.exec_fp}'
         self.logger.info(msg)
 
     def run_manage_command(self,run_mode,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
@@ -173,12 +184,12 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         if not len(lines)>0 :
             errmsg = f'ERROR: installation arguments file {self.install_args_filepath} does not contain enough entries!'
             self.logger.error(errmsg,RuntimeError)
-        self.service_class_name = lines[0].strip()
-        self.__set_service_dict_from_class_name()
+        self.service_spec_string = lines[0].strip()
+        self.__set_service_dict()
         self.argslist = [line.strip() for line in lines[1:]] if len(lines)>1 else []
         if self.interactive :
             msg = 'Running this reinstall would be like running the following from the command line:\n'
-            msg+= f'InstallService {self.service_class_name} '
+            msg+= f'InstallService {self.service_spec_string} '
             for arg in self.argslist :
                 msg+=f'{arg} '
             msg+=f'--service_name {self.service_name}\n'
@@ -199,7 +210,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         Write and set permissions for the file holding the values of the environment variables needed by the Service
         returns True if there are environment variables referenced, False if not
-        not implemented in base class
+        
+        Not implemented in base class
         """
         pass
 
@@ -208,11 +220,11 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         Write out a file storing the arguments used to install the Service so it can be 
         reinstalled using the same configurations/setting if desired
         """
-        if self.service_class_name is None or self.argslist is None :
-            errmsg = "ERROR: can't write the installation arguments file without a class name and argslist!"
+        if self.service_spec_string is None or self.argslist is None :
+            errmsg = "ERROR: can't write the installation arguments file without a service_spec_string and argslist!"
             self.logger.error(errmsg,RuntimeError)
         with open(self.install_args_filepath,'w') as fp :
-            for arg in [self.service_class_name,*self.argslist] :
+            for arg in [self.service_spec_string,*self.argslist] :
                 fp.write(f'{arg}\n')
     
     def _write_executable_file(self,filepath=None) :
@@ -222,9 +234,16 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         error_log_path = pathlib.Path().resolve()/f'{self.service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
         code = f'''\
             if __name__=='__main__' :
-                try :
+                try :'''
+        if self.service_dict['func_name'] is not None :
+            code+=f'''
                     from {self.service_dict['filepath']} import {self.service_dict['func_name']}
-                    {self.service_dict['func_name']}({self.argslist})
+                    {self.service_dict['func_name']}({self.argslist})'''
+        else :
+            code+=f'''
+                    from {self.service_dict['filepath']} import {self.service_dict['class_name']}
+                    {self.service_dict['class_name']}.run_from_command_line({self.argslist})'''
+        code+=f'''
                 except Exception :
                     import pathlib, traceback, datetime
                     output_filepath = pathlib.Path(r"{error_log_path}")
@@ -243,18 +262,25 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         with open(exec_fp,'w') as fp :
             fp.write(textwrap.dedent(code))
 
-    def __set_service_dict_from_class_name(self) :
+    def __set_service_dict(self) :
         """
-        If a service class name has been set, set the service dict with information about the code that should be run
+        Set the service dict with information about the code that should be run based on the service_spec_string
         """
-        if self.service_class_name is not None :
-            #set the dictionary with details about the program that will run
-            service_dict = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES if sd['script_name']==self.service_class_name]
-            if len(service_dict)!=1 :
+        if self.service_spec_string is not None :
+            service_dict = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES 
+                            if sd['class_name']==self.service_spec_string]
+            if len(service_dict)==1 :
+                self.service_dict = service_dict[0]
+            elif len(service_dict)==0 :
+                filepath, class_name, run_class, func_name = self.__parse_custom_service_string()
+                service_dict = {'filepath':filepath,
+                                'class_name':class_name,
+                                'class':run_class,
+                                'func_name':func_name}
+            else :
                 errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
-                errmsg+= f'(a {self.service_class_name} program)! service_dict = {service_dict}'
+                errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
                 self.logger.error(errmsg,RuntimeError)
-            self.service_dict = service_dict[0]
         else :
             self.service_dict = None
 
@@ -277,9 +303,10 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         parser = OpenMSIStreamArgumentParser()
         if install_or_manage=='install' :
             #subparsers from the classes that could be run
-            subp_desc = 'The name of a runnable class to install as a service must be given as the first argument. '
-            subp_desc = 'Adding one of these class names to the command line along with "-h" will show additional help.'
-            parser.add_subparsers(description=subp_desc,required=True,dest='service_class_name')
+            subp_desc = 'The name of a "Runnable" class (or the specification for a custom Service code) to install '
+            subp_desc = 'as a service must be given as the first argument. Adding one of the OpenMSIStream class names '
+            subp_desc = 'to the command line along with "-h" will show additional help.'
+            parser.add_subparsers(description=subp_desc,required=True,dest='service_spec_string')
             for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
                 parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
         elif install_or_manage=='manage' :
@@ -310,3 +337,48 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
                 for evn in cfp.env_var_names :
                     yield evn
+
+    #################### PRIVATE HELPER FUNCTIONS ####################
+
+    def __parse_custom_service_string(self) :
+        """
+        Get the filepath and optional class/function names from the custom Service string
+        """
+        filepath = None; class_name = None; run_class = None; func_name = None
+        try :
+            #at minimum need a path to a file containing a class or function to run
+            if '=' in self.service_spec_string :
+                equals_split = self.service_spec_string.split('=')
+                assert len(equals_split)==2
+                class_name = equals_split[0]
+                for_path_and_func_name = equals_split[1]
+            else :
+                class_name = None
+                for_path_and_func_name = self.service_spec_string
+            if ':' in self.service_spec_string :
+                colon_split = for_path_and_func_name[1].split(':')
+                assert len(colon_split)==2
+                filepath = colon_split[0]
+                func_name = colon_split[1]
+            else :
+                filepath = for_path_and_func_name
+            assert filepath is not None
+            #make sure the path is valid
+            module = importlib.import_module(filepath)
+            assert module is not None
+            #if the function name was specified, make sure that can be imported from the file, too
+            if func_name is not None :
+                function = getattr(module,func_name)
+                assert function is not None
+            #If the class name was given without a function name, make sure the class can be imported from the file
+            elif class_name is not None and func_name is None :
+                run_class = getattr(module,class_name)
+                #and make sure the class extends Runnable, since we'll be calling its run_from_command_line function
+                assert issubclass(run_class,Runnable)
+            #make sure at least one of the function/class names was given
+            assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
+        except Exception as e :
+            errmsg = f'ERROR: service specification string {self.service_spec_string} is not valid! '
+            errmsg+= 'Will re-raise specific Exception.'
+            self.logger.error(errmsg,exc_obj=e)
+        return filepath, class_name, run_class, func_name

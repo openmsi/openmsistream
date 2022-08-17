@@ -26,7 +26,7 @@ class ServicesConstants :
                     errmsg = f'ERROR: could not determine class for script {cmd} in file {path}! '
                     errmsg+= f'Possibilities found: {run_classes}'
                     raise RuntimeError(errmsg)
-                self.service_dicts.append({'script_name':cmd,
+                self.service_dicts.append({'class_name':cmd,
                                            'class':run_classes[0],
                                            'filepath':path,
                                            'func_name':funcname})
