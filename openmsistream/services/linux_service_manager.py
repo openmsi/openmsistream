@@ -143,7 +143,11 @@ class LinuxServiceManager(ServiceManagerBase) :
         #write out the file pointing to the python executable
         description = 'Python script'
         if self.service_dict['class'] is not None :
-            description = self.service_dict['class'].__doc__.strip().replace('\n',' ')
+            classdoc = self.service_dict['class'].__doc__
+            if classdoc is not None :
+                description = classdoc.strip().replace('\n',' ')
+            else :
+                description+=f" for a {self.service_dict['class']} object"
         code = f'''\
             [Unit]
             Description = {description}
