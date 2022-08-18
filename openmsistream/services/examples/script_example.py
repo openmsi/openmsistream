@@ -1,5 +1,5 @@
 #imports
-import pathlib, datetime
+import pathlib, datetime, time
 from argparse import ArgumentParser
 
 def main(args=None) :
@@ -20,6 +20,7 @@ def main(args=None) :
             fp.write('This file was created to test running a generic Python script as a Service/daemon')
     with open(args.output_dir/test_file_name,'a') as fp :
         fp.write(f'\nService rerun {(datetime.datetime.now()).strftime("on %Y-%m-%d at %H:%M:%S")}')
+    time.sleep(30)
 
 if __name__=='__main__' :
     main()

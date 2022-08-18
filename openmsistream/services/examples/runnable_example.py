@@ -1,5 +1,5 @@
 #imports
-import datetime
+import datetime, time
 from openmsistream.running import Runnable
 
 class RunnableExample(Runnable) :
@@ -24,3 +24,4 @@ class RunnableExample(Runnable) :
                 fp.write(msg)
         with open(args.output_dir/test_file_name,'a') as fp :
             fp.write(f'\nService rerun {(datetime.datetime.now()).strftime("on %Y-%m-%d at %H:%M:%S")}')
+        time.sleep(30)
