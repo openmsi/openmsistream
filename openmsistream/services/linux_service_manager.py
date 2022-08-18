@@ -143,7 +143,7 @@ class LinuxServiceManager(ServiceManagerBase) :
         #write out the file pointing to the python executable
         code = f'''\
             [Unit]
-            Description = {self.service_dict['class'].__doc__.strip()}
+            Description = {self.service_dict['class'].__doc__.strip().replace('\n',' ')}
             Requires = network-online.target remote-fs.target
             After = network-online.target remote-fs.target
 
