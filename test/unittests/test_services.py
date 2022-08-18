@@ -149,7 +149,8 @@ class TestServices(unittest.TestCase) :
         except Exception as e :
             raise e
         finally :
-            fps_to_unlink = [(SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
+            fps_to_unlink = [test_file_path,error_log_path,
+                             (SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
                              (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt')]
             if platform.system()=='Linux' :
                 if (SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service').exists() :
@@ -191,7 +192,8 @@ class TestServices(unittest.TestCase) :
         except Exception as e :
             raise e
         finally :
-            fps_to_unlink = [(SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
+            fps_to_unlink = [test_file_path,error_log_path,
+                             (SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
                              (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt')]
             if platform.system()=='Linux' :
                 if (SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service').exists() :
