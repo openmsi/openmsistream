@@ -10,9 +10,12 @@ class LinuxServiceManager(ServiceManagerBase) :
 
     :param service_name: The name of the daemon as installed
     :type service_name: str
-    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
-        as a daemon. Only needed to initially install the daemon.
-    :type service_class_name: :class:`~Runnable`, optional
+    :param service_spec_string: A string specifying which code should be run as a daemon. 
+        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code. 
+        Custom Services can also specify a :class:`~Runnable` class name, and/or a function in the file 
+        using special formatting like [class_name]=[path.to.file]:[function_name]. 
+        Only needed to initially install the daemon.
+    :type service_spec_string: str, optional
     :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
         Only needed to initially install the daemon.
     :type argslist: list, optional

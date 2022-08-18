@@ -354,6 +354,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             subp_desc = 'The name of a "Runnable" class (or the specification for a custom Service code) to install '
             subp_desc = 'as a service must be given as the first argument. Adding the name (or spec string) of a class '
             subp_desc = 'that extends "Runnable" to the command line along with "-h" will show additional help.'
+            if class_name_or_spec_string in ('--help','-h') :
+                return parser
             parser.add_subparsers(description=subp_desc,required=True,dest='service_spec_string')
             if class_name_or_spec_string is None :
                 for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :

@@ -29,7 +29,7 @@ class TestServices(unittest.TestCase) :
                 'DataFileDownloadDirectory':[TEST_CONST.TEST_DIR_SERVICES_TEST,],
                 'OSNStreamProcessor':['phy210127-bucket01',
                                       '--logger_file',TEST_CONST.TEST_DIR_SERVICES_TEST,
-                                      '--config',TEST_CONST.TEST_CONFIG_FILE_PATH_OSN,
+                                      '--config',TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
                                       '--topic_name',TEST_CONST.TEST_TOPIC_NAMES['test_s3_transfer_stream_processor'],
                                       '--consumer_group_id','create_new'],
             }
@@ -55,7 +55,7 @@ class TestServices(unittest.TestCase) :
                 for arg in self.argslists_by_class_name[service_class_name] :
                     argslist_to_use.append(str(arg))
                 manager = WindowsServiceManager(service_name,
-                                                service_class_name=service_class_name,
+                                                service_spec_string=service_class_name,
                                                 argslist=argslist_to_use,
                                                 interactive=False,
                                                 logger=LOGGER)
@@ -93,7 +93,7 @@ class TestServices(unittest.TestCase) :
                 for arg in self.argslists_by_class_name[service_class_name] :
                     argslist_to_use.append(str(arg))
                 manager = LinuxServiceManager(service_name,
-                                                service_class_name=service_class_name,
+                                                service_spec_string=service_class_name,
                                                 argslist=argslist_to_use,
                                                 interactive=False,
                                                 logger=LOGGER)

@@ -104,7 +104,7 @@ def rebuild_test_services_executable() :
     TEST_SERVICE_EXECUTABLE_ARGSLIST = ['test_upload']
     #create the file using the function supplied
     manager = WindowsServiceManager(TEST_SERVICE_NAME,
-                                    service_class_name=TEST_SERVICE_CLASS_NAME,
+                                    service_spec_string=TEST_SERVICE_CLASS_NAME,
                                     argslist=TEST_SERVICE_EXECUTABLE_ARGSLIST)
     manager._write_executable_file()
     #move it to the new test data folder
