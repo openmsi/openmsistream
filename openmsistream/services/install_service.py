@@ -10,7 +10,7 @@ from .linux_service_manager import LinuxServiceManager
 def main() :
     #get the arguments
     parser = ServiceManagerBase.get_argument_parser('install',sys.argv[1] if len(sys.argv)>1 else None)
-    args = parser.parse_args()
+    args, _ = parser.parse_known_args()
     #run the tests if requested
     if args.service_spec_string=='test' :
         test_python_code()

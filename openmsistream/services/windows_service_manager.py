@@ -43,7 +43,7 @@ class WindowsServiceManager(ServiceManagerBase) :
         """
         super().install_service()
         #if it doesn't exist there yet, copy the libsodium.dll file to C:\Windows\system32
-        self.__copy_libsodium_dll_to_system32()
+        self.__copy_lib_dlls_to_system32()
         #find or install NSSM to run the executable
         self.__find_install_NSSM()
         #run NSSM to install the service
@@ -135,20 +135,31 @@ class WindowsServiceManager(ServiceManagerBase) :
             fp.write(code)
         return True
 
-    def __copy_libsodium_dll_to_system32(self) :
+    def __copy_lib_dlls_to_system32(self) :
         """
-        Ensure that the libsodium.dll file exists in C:\Windows\system32
+        Ensure that several .dll files exist in C:\Windows\system32
         (Needed to properly load it when running as a service)
         """
-        system32_path = pathlib.Path(r'C:\Windows\system32')/'libsodium.dll'
-        if system32_path.is_file() :
-            return
-        current_env_dll = ctypes.util.find_library('libsodium')
-        if current_env_dll is not None :
-            shutil.copy(pathlib.Path(current_env_dll),system32_path)
-        else :
-            errmsg = f'ERROR: could not locate libsodium DLL to copy to system32 folder for {self.service_name}!'
-            self.logger.error(errmsg,FileNotFoundError)
+        system32_path = pathlib.Path(r'C:\Windows\system32')
+        package_names = ['libsodium','libcrypto-1_1-x64','libssl-1_1-x64']
+        for pname in package_names :
+            current_env_dll = ctypes.util.find_library(pname)
+            if current_env_dll is not None :
+                current_env_dll_path = pathlib.Path(current_env_dll)
+                if (system32_path/current_env_dll_path.name).is_file() :
+                    continue
+                else :
+                    try :
+                        shutil.copy(current_env_dll_path,system32_path/current_env_dll_path.name)
+                    except Exception as e :
+                        errmsg = f'ERROR: failed to copy {pname} DLL file from {current_env_dll_path} to '
+                        errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
+                        errmsg+=  'to crash. Exception will be logged below, but not reraised.'
+                        self.logger.error(errmsg,exc_obj=e,reraise=False)        
+            else :
+                warnmsg = f'WARNING: could not locate {pname} DLL file to copy to system32 folder for '
+                warnmsg+= f'{self.service_name}! This will likely cause the Python code running as a Service to crash.'
+                self.logger.warning(warnmsg)
 
     def __find_install_NSSM(self,move_local=True) :
         """

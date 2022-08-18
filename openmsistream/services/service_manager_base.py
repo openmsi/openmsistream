@@ -301,7 +301,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 class_name = None
                 for_path_and_func_name = service_spec_string
             if ':' in service_spec_string :
-                colon_split = for_path_and_func_name[1].split(':')
+                colon_split = for_path_and_func_name.split(':')
                 assert len(colon_split)==2
                 filepath = colon_split[0]
                 func_name = colon_split[1]
@@ -368,6 +368,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                     parser.add_subparser_arguments_from_class(rc,
                                                               subp_name=class_name_or_spec_string,
                                                               addl_args=['optional_service_name'])
+                else :
+                    parser.add_subparser_arguments(class_name_or_spec_string,['optional_service_name'])
         elif install_or_manage=='manage' :
             parser.add_arguments('service_name','run_mode','remove_env_vars','remove_install_args','remove_nssm')
         else :
@@ -389,10 +391,11 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             for arg in self.argslist :
                 if arg.startswith('$') :
                     yield arg
-            p = self.service_dict['class'].get_argument_parser()
-            argsdests = [action.dest for action in p._actions]
-            if 'config' in argsdests :
-                pargs = p.parse_args(args=self.argslist)
-                cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
-                for evn in cfp.env_var_names :
-                    yield evn
+            if self.service_dict['class'] is not None :
+                p = self.service_dict['class'].get_argument_parser()
+                argsdests = [action.dest for action in p._actions]
+                if 'config' in argsdests :
+                    pargs = p.parse_args(args=self.argslist)
+                    cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
+                    for evn in cfp.env_var_names :
+                        yield evn

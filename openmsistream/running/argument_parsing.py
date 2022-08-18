@@ -169,18 +169,19 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
 
     def add_subparsers(self,*args,**kwargs) :
         """
-        Overloaded from base class; OpenMSIStreamArgumentParser actually owns its subparsers
+        Overloaded from base class; OpenMSIStreamArgumentParser actually owns its subparsers to simplify conflicting
+        argument names
         """
         if self.__subparsers_action_obj is not None or self.__subparsers!={} :
             raise RuntimeError('ERROR: add_subparsers called for an argument parser that already has subparsers!')
         self.__subparsers_action_obj = super().add_subparsers(*args,**kwargs)
 
-    def parse_args(self,**kwargs) :
+    def parse_args(self,*args,**kwargs) :
         """
         Overloaded from base class to print usage when catching errors in parsing arguments
         """
         try :
-            return super().parse_args(**kwargs)
+            return super().parse_args(*args,**kwargs)
         except Exception :
             self.print_usage()
             raise
@@ -222,6 +223,43 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                 self.add_argument(argname_to_add,**kwargs_for_arg)
                 self.__argnames_added.append(argname_to_add)
 
+    def add_subparser_arguments(self,subp_name,args_to_add=[],kwargs_to_add={},**other_kwargs) :
+        """
+        Create a new subparser and add arguments to it.
+
+        :param subp_name: the name of the subparser command
+        :type subp_name: str
+        :param args_to_add: additional arguments that should be added to the subparser 
+            (same format as `args` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
+        :type args_to_add: list, optional
+        :param kwargs_to_add: additional keyword arguments that should be added to the subparser 
+            (same format as `kwargs` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
+        :type kwargs_to_add: dict, optional
+        :param other_kwargs: any other keyword arguments are passed to the subparser's add_parser() method
+        :type other_kwargs: dict, optional
+
+        :raises ValueError: like in :func:`~OpenMSIStreamArgumentParser.add_arguments`
+        """
+        if self.__subparsers_action_obj is None :
+            errmsg = 'ERROR: add_subparser_arguments called for an argument parser that '
+            errmsg+= 'has not added subparsers!'
+            raise RuntimeError(errmsg)
+        if subp_name in self.__subparsers.keys() :
+            errmsg = f'ERROR: subparser arguments for {subp_name} have already been added to this argument parser!'
+            raise RuntimeError(errmsg)
+        self.__subparsers[subp_name] = self.__subparsers_action_obj.add_parser(subp_name,**other_kwargs)
+        self.__subparser_argnames_added[subp_name] = []
+        for argname in args_to_add :
+            argname_to_add, kwargs_for_arg = self.__get_argname_and_kwargs(argname)
+            if argname_to_add not in self.__subparser_argnames_added[subp_name] :
+                self.__subparsers[subp_name].add_argument(argname_to_add,**kwargs_for_arg)
+                self.__subparser_argnames_added[subp_name].append(argname_to_add)
+        for argname,argdefault in kwargs_to_add.items() :
+            argname_to_add,kwargs_for_arg = self.__get_argname_and_kwargs(argname,argdefault)
+            if argname_to_add not in self.__subparser_argnames_added[subp_name] :
+                self.__subparsers[subp_name].add_argument(argname_to_add,**kwargs_for_arg)
+                self.__subparser_argnames_added[subp_name].append(argname_to_add)
+
     def add_subparser_arguments_from_class(self,class_to_add,*,
                                            subp_name=None,addl_args=None,addl_kwargs=None,**other_kwargs) :
         """
@@ -231,43 +269,25 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         :param subp_name: an override for the name of the command the subparser should be registered under. 
             (Default is the name of the class.)
         :type subp_name: str, optional
-        :param addl_args: additional arguments that should be added to every subparser 
+        :param addl_args: additional arguments that should be added to the subparser 
             (same format as `args` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
-        :type addl_args: list
-        :param addl_kwargs: additional keyword arguments that should be added to every subparser 
+        :type addl_args: list, optional
+        :param addl_kwargs: additional keyword arguments that should be added to the subparser 
             (same format as `kwargs` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
-        :type addl_kwargs: dict
-        :param other_kwargs: passed to subparsers' add_parser() method
-        :type other_kwargs: dict
+        :type addl_kwargs: dict, optional
+        :param other_kwargs: any other keyword arguments are passed to subparsers' add_parser() method
+        :type other_kwargs: dict, optional
 
         :raises ValueError: like in :func:`~OpenMSIStreamArgumentParser.add_arguments`
         """
-        if self.__subparsers_action_obj is None :
-            errmsg = 'ERROR: add_subparser_arguments_for_class called for an argument parser that '
-            errmsg+= 'has not added subparsers!'
-            raise RuntimeError(errmsg)
         if subp_name is None :
             subp_name = class_to_add.__name__ 
-        if subp_name in self.__subparsers.keys() :
-            errmsg = f'ERROR: subparser arguments for {subp_name} have already been added to this argument parser!'
-            raise RuntimeError(errmsg)
-        self.__subparsers[subp_name] = self.__subparsers_action_obj.add_parser(subp_name,**other_kwargs)
-        self.__subparser_argnames_added[subp_name] = []
         argnames, argnames_with_defaults = class_to_add.get_command_line_arguments()
         if addl_args is not None :
             argnames = [*argnames,*addl_args]
         if addl_kwargs is not None :
             argnames_with_defaults = {**argnames_with_defaults,**addl_kwargs}
-        for argname in argnames :
-            argname_to_add, kwargs_for_arg = self.__get_argname_and_kwargs(argname)
-            if argname_to_add not in self.__subparser_argnames_added[subp_name] :
-                self.__subparsers[subp_name].add_argument(argname_to_add,**kwargs_for_arg)
-                self.__subparser_argnames_added[subp_name].append(argname_to_add)
-        for argname,argdefault in argnames_with_defaults.items() :
-            argname_to_add,kwargs_for_arg = self.__get_argname_and_kwargs(argname,argdefault)
-            if argname_to_add not in self.__subparser_argnames_added[subp_name] :
-                self.__subparsers[subp_name].add_argument(argname_to_add,**kwargs_for_arg)
-                self.__subparser_argnames_added[subp_name].append(argname_to_add)
+        self.add_subparser_arguments(subp_name,argnames,argnames_with_defaults,**other_kwargs)
 
     def __get_argname_and_kwargs(self,argname,new_default=None) :
         """

@@ -1,5 +1,5 @@
 #imports
-import pathlib
+import pathlib, datetime
 from argparse import ArgumentParser
 
 def main(args=None) :
@@ -15,8 +15,11 @@ def main(args=None) :
             raise ValueError(f'ERROR: given output directory {args.output_dir} exists but is not a directory!')
         args.output_dir.mkdir(parents=True)
     test_file_name = 'script_example_service_test.txt'
-    with open(args.output_dir/test_file_name,'w') as fp :
-        fp.write('This file was created to test running a generic Python script as a Service/daemon')
+    if not (args.output_dir/test_file_name).is_file() :
+        with open(args.output_dir/test_file_name,'w') as fp :
+            fp.write('This file was created to test running a generic Python script as a Service/daemon')
+    with open(args.output_dir/test_file_name,'a') as fp :
+        fp.write(f'\nService rerun {(datetime.datetime.now()).strftime("on %Y-%m-%d at %H:%M:%S")}')
 
 if __name__=='__main__' :
     main()
