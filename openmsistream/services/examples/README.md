@@ -9,8 +9,8 @@ InstallService RunnableExample=openmsistream.services.examples.runnable_example 
 and then starting/stopping/removing it with:
 
 ```
-ManagerService start RunnableExampleServiceTest
-ManagerService stop_and_remove RunnableExampleServiceTest
+ManageService RunnableExampleServiceTest start
+ManageService RunnableExampleServiceTest stop_and_remove
 ```
 
 Running this successfully will create a file called `runnable_example_service_test_[timestamp].txt` in the directory at `[absolute_path_to_output_dir]`; timestamped lines will continue to be written to the file as the Service is automatically rerun until is is stopped.
@@ -24,8 +24,8 @@ InstallService openmsistream.services.examples.script_example:main [absolute_pat
 and then starting/stopping/removing it with:
 
 ```
-ManagerService start RunnableExampleServiceTest
-ManagerService stop_and_remove RunnableExampleServiceTest
+ManageService RunnableExampleServiceTest start
+ManageService RunnableExampleServiceTest stop_and_remove
 ```
 
 Running this successfully will create a file called `script_example_service_test_[timestamp].txt` in the directory at `[absolute_path_to_output_dir]`; timestamped lines will continue to be written to the file as the Service is automatically rerun until is is stopped.
