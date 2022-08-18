@@ -24,7 +24,7 @@ def main(given_args=None) :
         else :
             service_name = args.service_name
         #make the list of arguments that should be sent to the run function in the executable (removing "service_name")
-        argslist = sys.argv[2:] if given_args is None else args[1:]
+        argslist = sys.argv[2:] if given_args is None else given_args[1:]
         if '--service_name' in argslist :
             index = argslist.index('--service_name')
             argslist.pop(index)
