@@ -1,5 +1,4 @@
 #imports
-import sys
 from .config import SERVICE_CONST
 from .utilities import get_os_name
 from .service_manager_base import ServiceManagerBase

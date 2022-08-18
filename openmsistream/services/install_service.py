@@ -1,6 +1,5 @@
 #imports
-import sys, importlib
-from ..running import Runnable
+import sys
 from .config import SERVICE_CONST
 from .utilities import test_python_code, get_os_name
 from .service_manager_base import ServiceManagerBase

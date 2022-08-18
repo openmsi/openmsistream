@@ -232,7 +232,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         write out the executable python file that the service will actually be running
         """
         error_log_path = pathlib.Path().resolve()/f'{self.service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
-        code = f'''\
+        code = '''\
             if __name__=='__main__' :
                 try :'''
         if self.service_dict['func_name'] is not None :
