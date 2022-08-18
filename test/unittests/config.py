@@ -94,6 +94,9 @@ class TestRoutineConstants :
     def TEST_DIR_SERVICES_TEST(self) : # scrap directory to use for services tests
         return self.TEST_DIR_PATH / 'test_dir_services'
     @property
+    def TEST_DIR_CUSTOM_SERVICES_TEST(self) : # scrap directory to use for custom services tests
+        return self.TEST_DIR_PATH / 'test_dir_custom_services'
+    @property
     def TEST_RECO_DIR_PATH(self) : # Path to the directory where consumed files should be reconstructed
         return self.TEST_DIR_PATH / 'test_reco'
     @property

@@ -7,10 +7,14 @@ from .service_manager_base import ServiceManagerBase
 from .windows_service_manager import WindowsServiceManager
 from .linux_service_manager import LinuxServiceManager
 
-def main() :
+def main(given_args=None) :
     #get the arguments
-    parser = ServiceManagerBase.get_argument_parser('install',sys.argv[1] if len(sys.argv)>1 else None)
-    args, _ = parser.parse_known_args()
+    if given_args is None :
+        parser = ServiceManagerBase.get_argument_parser('install',sys.argv[1] if len(sys.argv)>1 else None)
+        args, _ = parser.parse_known_args()
+    else :
+        parser = ServiceManagerBase.get_argument_parser('install',given_args[0] if len(given_args)>0 else None)
+        args, _ = parser.parse_known_args(given_args)
     #run the tests if requested
     if args.service_spec_string=='test' :
         test_python_code()
@@ -21,7 +25,7 @@ def main() :
         else :
             service_name = args.service_name
         #make the list of arguments that should be sent to the run function in the executable (removing "service_name")
-        argslist = sys.argv[2:]
+        argslist = sys.argv[2:] if given_args is None else args[1:]
         if '--service_name' in argslist :
             index = argslist.index('--service_name')
             argslist.pop(index)

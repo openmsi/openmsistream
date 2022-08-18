@@ -1,14 +1,15 @@
 #imports
+import sys
 from .config import SERVICE_CONST
 from .utilities import get_os_name
 from .service_manager_base import ServiceManagerBase
 from .windows_service_manager import WindowsServiceManager
 from .linux_service_manager import LinuxServiceManager
 
-def main() :
+def main(args=None) :
     #get the arguments
     parser = ServiceManagerBase.get_argument_parser('manage')
-    args = parser.parse_args()
+    args = parser.parse_args() if args is None else parser.parse_args(args)
     #get the name of the OS and start the object
     operating_system = get_os_name()
     manager_args = [args.service_name]
