@@ -141,9 +141,10 @@ class LinuxServiceManager(ServiceManagerBase) :
             SERVICE_CONST.LOGGER.info(f'Creating a new daemon service directory at {SERVICE_CONST.DAEMON_SERVICE_DIR}')
             SERVICE_CONST.DAEMON_SERVICE_DIR.mkdir(parents=True)
         #write out the file pointing to the python executable
+        description = self.service_dict['class'].__doc__.strip().replace('\n',' ')
         code = f'''\
             [Unit]
-            Description = {self.service_dict['class'].__doc__.strip().replace('\n',' ')}
+            Description = {description}
             Requires = network-online.target remote-fs.target
             After = network-online.target remote-fs.target
 
