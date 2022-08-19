@@ -29,6 +29,7 @@ class TestServices(unittest.TestCase) :
                 'DataFileDownloadDirectory':[TEST_CONST.TEST_DIR_SERVICES_TEST,],
                 'S3TransferStreamProcessor':[
                     'phy210127-bucket01',
+                    '--output_dir',TEST_CONST.TEST_DIR_SERVICES_TEST,
                     '--config',TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
                     '--topic_name',TEST_CONST.TEST_TOPIC_NAMES['test_s3_transfer_stream_processor'],
                     '--consumer_group_id','create_new'],
