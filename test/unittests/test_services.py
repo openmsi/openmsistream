@@ -141,7 +141,7 @@ class TestServices(unittest.TestCase) :
             )
             for run_mode in ('start','status','stop','remove','reinstall','remove') :
                 manage_service_main([service_name,run_mode])
-                time.sleep(5 if run_mode=='start' else 1)
+                time.sleep(5 if run_mode in ('start','reinstall') else 1)
             self.assertTrue(test_file_path.is_file())
             self.assertFalse(error_log_path.exists())
             if platform.system()=='Linux' :
@@ -186,7 +186,7 @@ class TestServices(unittest.TestCase) :
             )
             for run_mode in ('start','status','stop','remove','reinstall','remove') :
                 manage_service_main([service_name,run_mode])
-                time.sleep(5 if run_mode=='start' else 1)
+                time.sleep(5 if run_mode in ('start','reinstall') else 1)
             self.assertTrue(test_file_path.is_file())
             self.assertFalse(error_log_path.exists())
             if platform.system()=='Linux' :

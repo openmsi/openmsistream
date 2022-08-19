@@ -99,7 +99,10 @@ class LinuxServiceManager(ServiceManagerBase) :
         """
         self.logger.info(f'Removing {self.service_name}...')
         self.__check_systemd_installed()
-        run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
+        try :
+            run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
+        except :
+            pass
         if self.daemon_filepath.exists() :
             run_cmd_in_subprocess(['sudo','rm','-f',str(self.daemon_filepath)],logger=self.logger)
         run_cmd_in_subprocess(['sudo','systemctl','daemon-reload'],logger=self.logger)
