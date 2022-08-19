@@ -61,7 +61,7 @@ class TestServices(unittest.TestCase) :
                                                 interactive=False,
                                                 logger=LOGGER)
                 manager.install_service()
-                for run_mode in ('start','status','stop','remove','reinstall','remove') :
+                for run_mode in ('start','status','stop','remove','reinstall') :
                     time.sleep(1)
                     manager.run_manage_command(run_mode,False,False)
                 time.sleep(1)
@@ -99,7 +99,7 @@ class TestServices(unittest.TestCase) :
                                                 interactive=False,
                                                 logger=LOGGER)
                 manager.install_service()
-                for run_mode in ('start','status','stop','remove','reinstall','remove') :
+                for run_mode in ('start','status','stop','remove','reinstall') :
                     time.sleep(1)
                     manager.run_manage_command(run_mode,False,False)
                 time.sleep(1)
@@ -140,7 +140,7 @@ class TestServices(unittest.TestCase) :
                 str(test_file_path.parent.resolve()),
                 '--service_name',service_name]
             )
-            for run_mode in ('start','status','stop','remove','reinstall','remove') :
+            for run_mode in ('start','status','stop','remove','reinstall') :
                 manage_service_main([service_name,run_mode])
                 time.sleep(5 if run_mode in ('start','reinstall') else 1)
             self.assertTrue(test_file_path.is_file())
@@ -185,7 +185,7 @@ class TestServices(unittest.TestCase) :
                 str(test_file_path.parent.resolve()),
                 '--service_name',service_name]
             )
-            for run_mode in ('start','status','stop','remove','reinstall','remove') :
+            for run_mode in ('start','status','stop','remove','reinstall') :
                 manage_service_main([service_name,run_mode])
                 time.sleep(5 if run_mode in ('start','reinstall') else 1)
             self.assertTrue(test_file_path.is_file())
