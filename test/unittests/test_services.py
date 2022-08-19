@@ -130,13 +130,13 @@ class TestServices(unittest.TestCase) :
         started, checked, stopped, removed, and reinstalled
         """
         service_name = 'RunnableExampleServiceTest'
-        test_file_path = TEST_CONST.TEST_DIR_CUSTOM_SERVICES_TEST/'runnable_example_service_test.txt'
+        test_file_path = TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST/'runnable_example_service_test.txt'
         error_log_path = pathlib.Path().resolve()/f'{service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
         self.assertFalse(test_file_path.exists())
         try :
             install_service_main(
                 ['RunnableExample=openmsistream.services.examples.runnable_example',
-                str(TEST_CONST.TEST_DIR_CUSTOM_SERVICES_TEST.resolve()),
+                str(test_file_path.parent.resolve()),
                 '--service_name',service_name]
             )
             for run_mode in ('start','status','stop','remove','reinstall','remove') :
@@ -162,6 +162,8 @@ class TestServices(unittest.TestCase) :
             for fp in fps_to_unlink :
                 if fp.exists() :
                     fp.unlink() 
+            if TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST.is_dir() :
+                shutil.rmtree(TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST)
 
     @unittest.skipIf((platform.system()!='Windows') and 
                      (platform.system()!='Linux' or 
@@ -173,13 +175,13 @@ class TestServices(unittest.TestCase) :
         started, checked, stopped, removed, and reinstalled
         """
         service_name = 'ScriptExampleServiceTest'
-        test_file_path = TEST_CONST.TEST_DIR_CUSTOM_SERVICES_TEST/'script_example_service_test.txt'
+        test_file_path = TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST/'script_example_service_test.txt'
         error_log_path = pathlib.Path().resolve()/f'{service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
         self.assertFalse(test_file_path.exists())
         try :
             install_service_main(
                 ['openmsistream.services.examples.script_example:main',
-                str(TEST_CONST.TEST_DIR_CUSTOM_SERVICES_TEST.resolve()),
+                str(test_file_path.parent.resolve()),
                 '--service_name',service_name]
             )
             for run_mode in ('start','status','stop','remove','reinstall','remove') :
@@ -205,3 +207,5 @@ class TestServices(unittest.TestCase) :
             for fp in fps_to_unlink :
                 if fp.exists() :
                     fp.unlink() 
+            if TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST.is_dir() :
+                shutil.rmtree(TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST)
