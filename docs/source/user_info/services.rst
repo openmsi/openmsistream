@@ -4,7 +4,7 @@ Services/Daemons
 
 **Any** of the :doc:`main programs <main_programs>` can be run from the command line or, alternatively, installed as Services on machines running Windows or daemons on machines running Linux. Services can be installed for all users of a particular machine and, once installed, they will run automatically from when the machine boots until it is stopped and/or removed. 
 
-OpenMSIStream uses `the Non-Sucking Service Manager ("NSSM") <https://nssm.cc/>`_ to manage Windows Services. OpenMSIStream will try to download its own copy of the NSSM executable, but that functionality is rather unreliable, so users installing Windows Services are encouraged to download their own version of it `directly from the website here <https://nssm.cc/release/nssm-2.24.zip>`_ and put the nssm.exe program in the directory in which they're running ``InstallService`` (see below).
+OpenMSIStream uses `the Non-Sucking Service Manager ("NSSM") <https://nssm.cc/>`_ to manage Windows Services. OpenMSIStream will try to download its own copy of the NSSM executable, but that functionality is rather unreliable, so users installing Windows Services are encouraged to download their own version of it `directly from the website here <https://nssm.cc/release/nssm-2.24.zip>`_, open the archive, and put the nssm.exe program in the directory in which they're running ``InstallService`` (see below).
 
 On Linux systems, OpenMSIStream installs and interacts with daemons using "systemd". Most (but not all) Linux machines have systemd installed; OpenMSIStream will check for it and give you a command to install it (if you have such authority) if it's not found.
 
@@ -63,3 +63,46 @@ Output in the "working directory"
 ---------------------------------
 
 Working with Services will create a few files in the `working_dir subdirectory of the OpenMSIStream repo <https://github.com/openmsi/openmsistream/tree/main/openmsistream/services/working_dir>`_. A logfile called "Services.log" will contain some lines related to installing or working with any Services or daemons. Python files in that directory will correspond to the executables that are installed as Services, and so checking these files will give details on the setup for their corresponding Services/daemons. None of these created files will be tracked in the repo (`they're in the .gitignore <https://github.com/openmsi/openmsistream/blob/main/.gitignore>`_).
+
+Running other Python code as Services/Daemons
+---------------------------------------------
+
+In addition to the main programs provided by OpenMSIStream, the infrastructure used to work with Services/daemons can be applied to arbitrary Python code as well. To install your own code as a Service or daemon, you can run the same commands as above, except the ``InstallService`` command's ``[program_name]`` should be a specification string instead of the name of a main program. That specification string can have two different formats, depending on the code you want to install.
+
+Installing any class that extends Runnable
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+First, if you've written your own new class that extends :class:`openmsistream.running.Runnable`, you can give the name of the class and the path to it as the specification string, like::
+
+    InstallService [class_name]=[path.to.class.file] [command_line_options] --service_name [name_for_service_or_daemon]
+
+where ``[class_name]`` is the name of the class, and ``[path.to.class.file]`` is a Python path to the file containing it. You can find an example custom Runnable class in the OpenMSIStream repository, called ``runnable_example.py`` in the ``openmsipython/services/examples`` directory. The :func:`openmsistream.running.Runnable.run_from_command_line` function in that class can be run as a Service by installing it with the command::
+
+    InstallService RunnableExample=openmsistream.services.examples.runnable_example [absolute_path_to_output_dir] --service_name RunnableExampleServiceTest
+
+and then starting/stopping/removing it with::
+
+    ManageService RunnableExampleServiceTest start
+    ManageService RunnableExampleServiceTest stop_and_remove
+
+Running this successfully will create a file called ``runnable_example_service_test.txt`` in the directory at ``[absolute_path_to_output_dir]``; timestamped lines will be written to the file when the Python code is run. On Windows, the Service will be restarted each time it completes and so there will be several lines in the file and more will be added until the Service is stopped.
+
+Installing a general Python function
+~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+If instead of a custom Runnable class you've written just a Python script containing a function you'd like to run, the specification string format is slightly different; the ``InstallService`` command would look like::
+
+    InstallService [path.to.script.file]:[func_name] [command_line_options] --service_name [name_for_service_or_daemon]
+
+where ``[path.to.script.file]`` is a Python path to the file containing the function to run, and ``[func_name]`` is the name of the function in the file. **The function you write should accept one argument:** the ``command_line_options`` as a list.
+
+You can find an example custom Service/daemon script in the OpenMSIStream repository, called ``script_example.py`` in the ``openmsipython/services/examples`` directory. In this case the ``main`` function in the script can be run as a Service by installing it with the command::
+
+    InstallService openmsistream.services.examples.script_example:main [absolute_path_to_output_dir] --service_name ScriptExampleServiceTest
+
+and then starting/stopping/removing it with::
+
+    ManageService ScriptExampleServiceTest start
+    ManageService ScriptExampleServiceTest stop_and_remove
+
+Running this successfully will create a file called ``script_example_service_test.txt`` in the directory at ``[absolute_path_to_output_dir]``; timestamped lines will be written to the file when the Python code is run. On Windows, the Service will be restarted each time it completes and so there will be several lines in the file and more will be added until the Service is stopped.

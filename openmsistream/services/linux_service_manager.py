@@ -10,10 +10,14 @@ class LinuxServiceManager(ServiceManagerBase) :
 
     :param service_name: The name of the daemon as installed
     :type service_name: str
-    :param service_class_name: The :class:`~Runnable` class whose `run_from_command_line` method will actually be run
-        as a daemon. Only needed to initially install the daemon.
-    :type service_class_name: :class:`~Runnable`, optional
-    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
+    :param service_spec_string: A string specifying which code should be run as a daemon. 
+        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code. 
+        Custom Services can also specify a :class:`openmsistream.running.Runnable` class name, 
+        and/or a function in the file using special formatting like [class_name]=[path.to.file]:[function_name]. 
+        Only needed to initially install the daemon.
+    :type service_spec_string: str, optional
+    :param argslist: The list of arguments (as from the command line) to pass to the 
+        :class:`openmsistream.running.Runnable` class. 
         Only needed to initially install the daemon.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do
@@ -96,7 +100,10 @@ class LinuxServiceManager(ServiceManagerBase) :
         """
         self.logger.info(f'Removing {self.service_name}...')
         self.__check_systemd_installed()
-        run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
+        try :
+            run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
+        except :
+            pass
         if self.daemon_filepath.exists() :
             run_cmd_in_subprocess(['sudo','rm','-f',str(self.daemon_filepath)],logger=self.logger)
         run_cmd_in_subprocess(['sudo','systemctl','daemon-reload'],logger=self.logger)
@@ -141,9 +148,16 @@ class LinuxServiceManager(ServiceManagerBase) :
             SERVICE_CONST.LOGGER.info(f'Creating a new daemon service directory at {SERVICE_CONST.DAEMON_SERVICE_DIR}')
             SERVICE_CONST.DAEMON_SERVICE_DIR.mkdir(parents=True)
         #write out the file pointing to the python executable
+        description = 'Python script'
+        if self.service_dict['class'] is not None :
+            classdoc = self.service_dict['class'].__doc__
+            if classdoc is not None :
+                description = classdoc.strip().replace('\n',' ')
+            else :
+                description+=f" for a {self.service_dict['class']} object"
         code = f'''\
             [Unit]
-            Description = {self.service_dict['class'].__doc__.strip()}
+            Description = {description}
             Requires = network-online.target remote-fs.target
             After = network-online.target remote-fs.target
 

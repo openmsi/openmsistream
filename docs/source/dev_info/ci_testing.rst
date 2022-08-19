@@ -1,6 +1,6 @@
-===========================
-Automatic Tests On CircleCI
-===========================
+==========
+Code Tests
+==========
 
 There are several tests for the codebase already written (and more will be added over time). The repo also has a continuous integration workflow set up on `CircleCI <https://circleci.com/>`_, and the checks in that workflow must pass successfully on any branch being merged into main via a Pull Request.  
 
@@ -22,6 +22,12 @@ There are also a few options you can add to ``run_all_tests.py`` if you only wan
 #. Add the ``--no_kafka`` flag to skip running tests that need to communicate with the Kafka broker. Adding this flag automatically **skips any test methods whose names end with "kafka"**; you will see that they were skipped at the end of the output.
 #. Add the ``--unittest_regex [regex]`` option to skip any tests whose function names aren't matched to the ``[regex]`` regular expression
 #. Add the ``--failfast`` flag to stop executing the script early if any individual test(s) fail. Normally all tests are run regardless of how many fail, but including this flag will stop the run as soon as any test fails.
+
+**NOTE:** If you are running the ``run_all_tests.py`` script interactively on a Linux system with ``systemd`` installed, some of the tests will temporarily install code as daemons. You should therefore activate sudo privileges before running the script, with::
+
+    sudo ls
+
+or similar.
 
 CircleCI website
 ----------------

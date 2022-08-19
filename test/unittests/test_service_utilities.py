@@ -32,7 +32,7 @@ class TestServiceUtilities(unittest.TestCase) :
         test_exec_fp = pathlib.Path(__file__).parent.parent.parent/'openmsistream'/'services'/'working_dir'
         test_exec_fp = test_exec_fp/f'{TEST_SERVICE_NAME}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}'
         manager = LinuxServiceManager(TEST_SERVICE_NAME,
-                                      service_class_name=TEST_SERVICE_CLASS_NAME,
+                                      service_spec_string=TEST_SERVICE_CLASS_NAME,
                                       argslist=TEST_SERVICE_EXECUTABLE_ARGSLIST)
         manager._write_executable_file(filepath=test_exec_fp)
         self.assertTrue(test_exec_fp.is_file())

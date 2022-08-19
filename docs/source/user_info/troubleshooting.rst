@@ -9,7 +9,9 @@ Missing .dll files on Windows
 
 Due to the wide variety of Windows builds, setting the conda environment variable to modify the DLL search path may not solve all issues stemming from the "librdkafka.dll" file seemingly missing. `See here for more context on this problem <https://github.com/confluentinc/confluent-kafka-python/issues/1221>`_. OpenMSIStream will make its own best efforts to find and pre-load the librdkafka.dll file on Windows, but it may not always be possible to find it. The general fix for this issue is to find the librdkafka file and copy it to a location referenced by your system PATH, unless it's showing up when running programs as Services, in which case :ref:`you should copy it to %WinDir%/System32 <Preparing the environment (quick note for Windows)>`. 
 
-Another common issue with Windows builds is a seemingly missing "libsodium.dll" file. If you encounter errors stating trouble importing ``pysodium``, make sure the directory containing your "libsodium.dll" is added to your system PATH, or copied into %WinDir%/System32 as applicable.
+Another common issue with Windows builds is a seemingly missing "libsodium.dll" file. If you encounter errors stating trouble importing ``pysodium``, make sure the directory containing your "libsodium.dll" is added to your system PATH, or copied into ``%WinDir%/System32`` as applicable.
+
+Like the ``pysodium`` issue, the ``ssl`` library also sometimes suffers from missing DLL files (`see here for more discussion <https://stackoverflow.com/questions/54175042/python-3-7-anaconda-environment-import-ssl-dll-load-fail-error>`_). In this case it is likely the "libcrypto-1_1-x64.dll" and "libssl-1_1-x64.dll" DLL files that should be added to your system PATH (likely the same as the "libsodium.dll" file above) or copied into ``%WinDir%/System32``.
 
 Mac OS "active file descriptors" error
 --------------------------------------

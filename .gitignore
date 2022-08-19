@@ -3,6 +3,8 @@
 /openmsistream/services/working_dir/Services.log
 /openmsistream/services/working_dir/nssm.exe
 /openmsistream/services/working_dir/*_service_executable.py
+/openmsistream/services/working_dir/*_env_vars.txt
+/openmsistream/services/working_dir/*_install_args.txt
 # *.config, *.seed, and *.crypto files (other than the testing files) in openmsistream/kafka_wrapper/config_files/[some_node_name]
 /openmsistream/kafka_wrapper/config_files/*.config
 /openmsistream/kafka_wrapper/config_files/*/*.config
