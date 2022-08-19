@@ -38,7 +38,7 @@ setupkwargs = dict(
     install_requires=['atomicwrites>=1.4.1',
                       'boto3>=1.23.0',
                       'confluent-kafka>=1.9.0',
-                      'kafkacrypto>=0.9.9.16',
+                      'kafkacrypto>=0.9.10.0',
                       'methodtools',
                       'msgpack',
                      ],
