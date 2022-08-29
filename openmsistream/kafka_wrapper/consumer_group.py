@@ -16,8 +16,11 @@ class ConsumerGroup(LogOwner) :
     :param topic_name: The name of the topic to which the Consumers should be subscribed
     :type topic_name: str
     :param consumer_group_ID: The ID string that should be used for each Consumer in the group. 
-        "create_new" will create a new UID to use.
-    :type consumer_group_ID: str
+        "create_new" (the default) will create a new UID to use.
+    :type consumer_group_ID: str, optional
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers. 
+        Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
+    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional 
     :param kwargs: Other keyword arguments will be added to the underlying Consumer's configurations, 
         with underscores in their names replaced with dots.
     :type kwargs: dict
@@ -29,8 +32,11 @@ class ConsumerGroup(LogOwner) :
     @property
     def consumer_group_ID(self) :
         return self.__consumer_group_ID
+    @property
+    def kafkacrypto(self) :
+        return self.__c_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__c_kwargs.keys() else None
 
-    def __init__(self,config_path,topic_name,*,consumer_group_ID='create_new',**kwargs) :
+    def __init__(self,config_path,topic_name,*,consumer_group_ID='create_new',kafkacrypto=None,**kwargs) :
         """
         Constructor method
         """
@@ -39,7 +45,8 @@ class ConsumerGroup(LogOwner) :
         self.__topic_name = topic_name
         self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(config_path,
                                                                                         group_id=consumer_group_ID,
-                                                                                        logger=self.logger)
+                                                                                        logger=self.logger,
+                                                                                        kafkacrypto=kafkacrypto)
         if len(self.__c_args)>1 and 'group.id' in self.__c_args[1].keys() :
             self.__consumer_group_ID = self.__c_args[1]['group.id'] 
         else :

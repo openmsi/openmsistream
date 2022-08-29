@@ -52,7 +52,7 @@ class OpenMSIStreamProducer(LogOwner) :
         self.__poll_counter = 0
 
     @staticmethod
-    def get_producer_args_kwargs(config_file_path,logger=None,**kwargs) :
+    def get_producer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
         """
         Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
         :class:`~OpenMSIStreamProducer` objects based on the given config file. 
@@ -63,6 +63,9 @@ class OpenMSIStreamProducer(LogOwner) :
         :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
             :class:`~OpenMSIStreamProducer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
+        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers. 
+            Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
+        :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
         :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers, 
             with underscores in their names replaced by dots
         :type kwargs: dict
@@ -80,11 +83,22 @@ class OpenMSIStreamProducer(LogOwner) :
         all_configs = {**parser.broker_configs,**parser.producer_configs}
         all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
         #all_configs['debug']='broker,topic,msg'
-        #if there are configs for KafkaCrypto, use a KafkaProducer
-        if parser.kc_config_file_str is not None :
-            if logger is not None :
-                logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+        #if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer
+        if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
+            if kafkacrypto is not None :
+                if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
+                    errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
+                    if logger is not None :
+                        logger.error(errmsg,TypeError)
+                    else :
+                        raise TypeError(errmsg)
+                if logger is not None :
+                    logger.debug(f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}')
+                kc = kafkacrypto
+            else :
+                if logger is not None :
+                    logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
+                kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.serializer' in all_configs.keys() :
                 keyser = CompoundSerializer(all_configs.pop('key.serializer'),kc.key_serializer)
             else :
