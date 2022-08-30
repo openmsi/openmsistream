@@ -15,14 +15,15 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
     CONSUMER_POLL_TIMEOUT = 0.050
     NO_MESSAGE_WAIT = 0.005 #how long to wait if consumer.get_next_message_value returns None
 
-    def __init__(self,producer_topic_name,*args,n_producer_threads=1,n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
+    def __init__(self,config_path,consumer_topic_name,producer_topic_name,*,
+                 n_producer_threads=1,n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
         """
         Hang onto the number of messages read, processed, and produced
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
         self.n_msgs_produced = 0
-        super().__init__(*args,n_threads=max(n_producer_threads,n_consumer_threads),**kwargs)
+        super().__init__(config_path,consumer_topic_name,n_threads=max(n_producer_threads,n_consumer_threads),**kwargs)
         self.restart_at_beginning = False #set to true to reset new consumers to their earliest offsets
         self.message_key_regex = None #set to some regex to filter messages by their keys
         self.filter_new_messages = False #reset the regex after the consumer has filtered through previous messages
@@ -37,17 +38,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
         Child classes implementing more complex producer callbacks should call super().producer_callback 
         to check for errors and increment the number of messages produced
         """
-        # If any error occured, log a warning 
-        if err is None and msg.error() is not None :
-            err = msg.error()
-        if err is not None : 
-            if err.fatal() :
-                warnmsg =f'WARNING: fatally failed to deliver message! Error reason: {err.str()}'
-            elif not err.retriable() :
-                warnmsg =f'WARNING: Failed to deliver message and cannot retry. Error reason: {err.str()}'
-            self.logger.warning(warnmsg)
-        # Otherwise, increment the counter for the number of messages produced
-        else :
+        # If no error occured, increment the counter for the number of messages produced
+        if err is None and msg.error() is None :
             with lock :
                 self.n_msgs_produced+=1
 

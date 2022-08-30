@@ -3,15 +3,14 @@ import pathlib
 from abc import ABC, abstractmethod
 from kafkacrypto.message import KafkaCryptoMessage
 from ..utilities.misc import populated_kwargs
-from ..utilities import LogOwner
 from ..running import Runnable
 from .config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
 from .utilities import get_encrypted_message_timestamp_string
 from .download_data_file import DownloadDataFileToMemory
-from .data_file_chunk_processor import DataFileChunkProcessor
+from .data_file_chunk_handlers import DataFileChunkProcessor
 from .stream_processor_registry import StreamProcessorRegistry
 
-class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
+class DataFileStreamProcessor(DataFileChunkProcessor,Runnable,ABC) :
     """
     A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s) 
     when entire files are available. This is a base class that cannot be instantiated on its own.
