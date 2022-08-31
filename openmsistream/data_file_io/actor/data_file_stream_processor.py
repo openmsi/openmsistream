@@ -59,11 +59,11 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self._file_registry.rerun_file_key_regex is not None :
             msg = f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self.__file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self.__file_registry.n_files_to_rerun>1 else ""}'
+            msg+= f're-read messages for {self._file_registry.n_files_to_rerun} previously-failed '
+            msg+= f'file{"s" if self._file_registry.n_files_to_rerun>1 else ""}'
             self.logger.info(msg)
             self.restart_at_beginning=True
-            self.message_key_regex=self.__file_registry.rerun_file_key_regex
+            self.message_key_regex=self._file_registry.rerun_file_key_regex
         #call the run loop
         self.run()
         #return the results of the processing
