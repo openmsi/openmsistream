@@ -2,7 +2,7 @@
 import pathlib, logging, shutil, filecmp
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.data_file_io.upload_data_file import UploadDataFile
+from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.config import SERVICE_CONST

@@ -2,11 +2,11 @@
 from abc import ABC, abstractmethod
 from threading import Lock
 from kafkacrypto import KafkaCryptoMessage
-from ..kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
-from ..kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer
-from .config import DATA_FILE_HANDLING_CONST
-from .data_file_chunk import DataFileChunk
-from .download_data_file import DownloadDataFile
+from ...kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
+from ...kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer
+from ..config import DATA_FILE_HANDLING_CONST
+from ..entity.data_file_chunk import DataFileChunk
+from ..entity.download_data_file import DownloadDataFile
 
 class DataFileChunkHandler(ABC) :
     """

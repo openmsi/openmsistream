@@ -3,9 +3,9 @@ import unittest, pathlib, logging, filecmp, shutil
 from hashlib import sha512
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
-from openmsistream.data_file_io.data_file_chunk import DataFileChunk
-from openmsistream.data_file_io.upload_data_file import UploadDataFile
-from openmsistream.data_file_io.download_data_file import DownloadDataFileToDisk, DownloadDataFileToMemory
+from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
+from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
+from openmsistream.data_file_io.entity.download_data_file import DownloadDataFileToDisk, DownloadDataFileToMemory
 from config import TEST_CONST
 
 #constants

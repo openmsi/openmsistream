@@ -2,15 +2,15 @@
 import pathlib, datetime, time
 from threading import Lock
 from queue import Queue
-from ..kafka_wrapper import ProducerGroup
-from ..running import Runnable
-from ..running.controlled_process_single_thread import ControlledProcessSingleThread
-from ..utilities.misc import populated_kwargs
-from ..utilities.exception_tracking_thread import ExceptionTrackingThread
-from .config import RUN_OPT_CONST
-from .producer_file_registry import ProducerFileRegistry
-from .data_file_directory import DataFileDirectory
-from .upload_data_file import UploadDataFile
+from ...kafka_wrapper import ProducerGroup
+from ...running import Runnable
+from ...running.controlled_process_single_thread import ControlledProcessSingleThread
+from ...utilities.misc import populated_kwargs
+from ...utilities.exception_tracking_thread import ExceptionTrackingThread
+from ..config import RUN_OPT_CONST
+from .file_registry.producer_file_registry import ProducerFileRegistry
+from ..entity.data_file_directory import DataFileDirectory
+from ..entity.upload_data_file import UploadDataFile
 
 class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,ProducerGroup,Runnable) :
     """

@@ -6,8 +6,8 @@ from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 from openmsistream.kafka_wrapper.serialization import CompoundSerializer, CompoundDeserializer
 from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
-from openmsistream.data_file_io.upload_data_file import UploadDataFile
-from openmsistream.data_file_io.data_file_chunk import DataFileChunk
+from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
+from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
 

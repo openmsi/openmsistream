@@ -47,10 +47,10 @@ class ControlledProcessMultiThreadedForTesting(ControlledProcessMultiThreaded) :
         super()._on_shutdown()
         self.on_shutdown_called = True
 
-    def _run_worker(self,thread_lock) :
+    def _run_worker(self) :
         while self.alive :
             if self.counter<5 :
-                with thread_lock :
+                with self.lock :
                     self.counter+=1
 
 class TestControlledProcess(unittest.TestCase) :

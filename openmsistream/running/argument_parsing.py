@@ -109,9 +109,21 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         'topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                          'help':'Name of the topic to produce to or consume from'}],    
+        'consumer_topic_name':
+            ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                         'help':'Name of the topic to consume from'}],    
+        'producer_topic_name':
+            ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                         'help':'Name of the topic to produce to'}],    
         'n_threads':
             ['optional',{'default':RUN_CONST.DEFAULT_N_THREADS,'type':positive_int,
                          'help':'Maximum number of threads to use'}],
+        'n_consumer_threads':
+            ['optional',{'default':RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,'type':positive_int,
+                         'help':'Number of consumer threads to use'}],
+        'n_producer_threads':
+            ['optional',{'default':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,'type':positive_int,
+                         'help':'Number of producer threads to use'}],
         'upload_regex':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,'type':re.compile,
                          'help':'Only files matching this regular expression will be uploaded'}],

@@ -3,7 +3,7 @@ import os
 from hashlib import sha512
 from contextlib import nullcontext
 from abc import ABC, abstractmethod
-from .config import DATA_FILE_HANDLING_CONST
+from ..config import DATA_FILE_HANDLING_CONST
 from .data_file import DataFile
 
 class DownloadDataFile(DataFile,ABC) :
@@ -34,6 +34,10 @@ class DownloadDataFile(DataFile,ABC) :
         return self.__subdir_str
 
     @property
+    def n_total_chunks(self) :
+        return self.__n_total_chunks
+
+    @property
     @abstractmethod
     def check_file_hash(self) :
         pass #the hash of the data in the file after it was read; not implemented in the base class
@@ -46,6 +50,7 @@ class DownloadDataFile(DataFile,ABC) :
         self._chunk_offsets_downloaded = []
         self.__full_filepath = None
         self.__subdir_str = None
+        self.__n_total_chunks = None
 
     def add_chunk(self,dfc,thread_lock=nullcontext(),*args,**kwargs) :
         """
@@ -84,8 +89,17 @@ class DownloadDataFile(DataFile,ABC) :
         elif self.__subdir_str!=dfc.subdir_str :
             errmsg = f"Mismatched subdirectory strings! From file = {self.__subdir_str}, from chunk = {dfc.subdir_str}"
             self.logger.error(errmsg,ValueError)
+        #set or check the total number of chunks expected
+        if self.__n_total_chunks is None :
+            with thread_lock :
+                self.__n_total_chunks = dfc.n_total_chunks
+        elif self.__n_total_chunks!=dfc.n_total_chunks :
+            errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.__full_filepath} is expecting '
+            errmsg+= f'{self.__n_total_chunks} chunks but found a chunk from a split with '
+            errmsg+= f'{dfc.n_total_chunks} total chunks.'
+            self.logger.error(errmsg,ValueError)
         #acquire the thread lock to make sure this process is the only one dealing with this particular file
-        with thread_lock:
+        with thread_lock :
             #call the function to actually add the chunk
             self._on_add_chunk(dfc,*args,**kwargs)
             #add the offset of the added chunk to the set of reconstructed file chunks

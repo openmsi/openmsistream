@@ -1,9 +1,9 @@
 #imports
 import pathlib
 from hashlib import sha512
-from ..utilities.logging import Logger
-from ..kafka_wrapper.producible import Producible
-from .utilities import get_message_prepend
+from ...utilities.logging import Logger
+from ...kafka_wrapper.producible import Producible
+from ..utilities import get_message_prepend
 
 class DataFileChunk(Producible) :
     """

@@ -1,5 +1,5 @@
 #imports
-from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
+from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
 

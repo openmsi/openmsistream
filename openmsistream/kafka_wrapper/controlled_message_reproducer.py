@@ -32,18 +32,18 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
         self.n_consumer_threads = n_consumer_threads
         self.producer_message_queue = Queue()
 
-    def producer_callback(self,err,msg,lock) :
+    def producer_callback(self,err,msg) :
         """
         The callback that should be registered for each call to Producer.produce.
-        Child classes implementing more complex producer callbacks should call super().producer_callback 
-        to check for errors and increment the number of messages produced
+        Child classes implementing more complex producer callbacks should call super().producer_callback() 
+        to increment the number of messages produced at the end of their own functions
         """
         # If no error occured, increment the counter for the number of messages produced
         if err is None and msg.error() is None :
-            with lock :
+            with self.lock :
                 self.n_msgs_produced+=1
 
-    def _run_worker(self,lock,create_consumer,create_producer,produce_from_queue_args=[],produce_from_queue_kwargs={}):
+    def _run_worker(self,create_consumer,create_producer,produce_from_queue_args=[],produce_from_queue_kwargs={}):
         """
         Handle optional startup and shutdown of thread-independent Consumer and/or Producer. 
         Serve individual messages to the _process_message function on the Consumer side, 
@@ -78,14 +78,14 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                 if msg is None :
                     time.sleep(ControlledMessageReproducer.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
                     continue
-                with lock :
+                with self.lock :
                     self.n_msgs_read+=1
                 last_message = msg
                 #send the message to the _process_message function
-                retval = self._process_message(lock,msg)
+                retval = self._process_message(self.lock,msg)
                 #count and (asynchronously) commit the message as processed (if it wasn't consumed already in the past)
                 if retval :
-                    with lock :
+                    with self.lock :
                         self.n_msgs_processed+=1
                     if not consumer._message_consumed_before(msg) :
                         tps = consumer.commit(msg)

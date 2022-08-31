@@ -4,7 +4,7 @@ from hashlib import sha512
 from confluent_kafka.error import SerializationError
 from confluent_kafka.serialization import Serializer, Deserializer
 from kafkacrypto.message import KafkaCryptoMessage, KafkaCryptoMessageError
-from ..data_file_io.data_file_chunk import DataFileChunk
+from ..data_file_io.entity.data_file_chunk import DataFileChunk
 
 ####################### COMPOUND (DE)SERIALIZERS FOR STACKING MULTIPLE STEPS #######################
 

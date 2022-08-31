@@ -3,7 +3,7 @@ import unittest, time, pathlib, logging, shutil
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.data_file_io.stream_processor_registry import StreamProcessorRegistry
+from openmsistream.data_file_io.actor.file_registry.stream_handler_registries import StreamProcessorRegistry
 from openmsistream import UploadDataFile, DataFileUploadDirectory, DataFileStreamProcessor
 from config import TEST_CONST
 
