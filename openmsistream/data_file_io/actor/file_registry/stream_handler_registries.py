@@ -122,7 +122,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         else :
             return existing_obj_addresses[rel_filepath][0]
 
-class StreamProcessorRegistry(LogOwner) :
+class StreamProcessorRegistry(StreamHandlerRegistry) :
     """
     A class to keep track of the status of files read during stream processing
     """
@@ -173,7 +173,7 @@ class StreamProcessorRegistry(LogOwner) :
         """
         self._add_or_modify_in_progress_entry(dfc,self.FAILED)
 
-class StreamReproducerRegistry(LogOwner) :
+class StreamReproducerRegistry(StreamHandlerRegistry) :
     """
     A class to keep track of the status of files read from one topic with associated information 
     created and re-produced to a different topic
