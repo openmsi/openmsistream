@@ -55,7 +55,6 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
             return None
         return MetadataJSONMessage(datafile,json_content=json_content)
 
-
     @abstractmethod
     def _get_metadata_dict_for_file(self,datafile) :
         """
@@ -74,3 +73,36 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         :rtype: dict
         """
         raise NotImplementedError
+
+    @classmethod
+    def run_from_command_line(cls,args=None) :
+        """
+        Run :func:`~DataFileStreamReproducer.produce_processing_results_for_files_as_read` to continually 
+        extract metadata from consumed .csv files and produce them as json contents to another topic
+        """
+        # make the argument parser
+        parser = cls.get_argument_parser()
+        args = parser.parse_args(args=args)
+        xrd_csv_metadata_reproducer = cls(args.config,args.consumer_topic_name,args.producer_topic_name,
+                                          consumer_group_ID=args.consumer_group_ID,
+                                          n_consumer_threads=args.n_consumer_threads,
+                                          n_producer_threads=args.n_producer_threads,
+                                          output_dir=args.output_dir,
+                                          update_secs=args.update_seconds,
+                                          )
+        # cls.bucket_name = args.bucket_name
+        msg = f'Listening to the {args.consumer_topic_name} topic for XRD CSV files to send their metadata to the '
+        msg+= f'{args.producer_topic_name} topic....'
+        xrd_csv_metadata_reproducer.logger.info(msg)
+        n_r,n_p,f_r_fns,m_p_fns = xrd_csv_metadata_reproducer.produce_processing_results_for_files_as_read()
+        xrd_csv_metadata_reproducer.close()
+        msg = f'{n_r} total messages were consumed'
+        msg+=f', {n_p} messages were successfully processed'
+        msg+=f', {len(f_r_fns)} file{"s" if len(f_r_fns)!=1 else ""} were fully-read'
+        if len(m_p_fns)>0 :
+            msg+=f', and the following {len(m_p_fns)} file'
+            msg+=' had' if len(m_p_fns)==1 else 's had'
+            msg+=f' json metadata produced to the {args.producer_topic_name} topic:'
+            for fn in m_p_fns :
+                msg+=f'\n\t{fn}'
+        xrd_csv_metadata_reproducer.logger.info(msg)
