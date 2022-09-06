@@ -53,7 +53,6 @@ class XRDCSVMetadataReproducer(MetadataJSONReproducer,Runnable) :
             self.logger.warning(warnmsg)
         return metadata_dict
 
-
 def main(args=None) :
     XRDCSVMetadataReproducer.run_from_command_line(args)
 

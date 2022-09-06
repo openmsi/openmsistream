@@ -152,7 +152,7 @@ class OpenMSIStreamProducer(LogOwner) :
             success = self.produce_object(obj,topic_name,**kwargs)
             if not success :
                 warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than '
-                warnmsg+= f'the timeout with no new callbacks served. This message will be re-enqueued.'
+                warnmsg+=  'the timeout with no new callbacks served. This message will be re-enqueued.'
                 self.logger.warning(warnmsg)
                 queue.put(obj)
             self.__poll_counter+=1
@@ -187,7 +187,7 @@ class OpenMSIStreamProducer(LogOwner) :
                 success = self.produce_object(obj,topic_name,**kwargs)
                 if not success :
                     warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than '
-                    warnmsg+= f'the timeout with no new callbacks served. This message will be re-enqueued.'
+                    warnmsg+=  'the timeout with no new callbacks served. This message will be re-enqueued.'
                     self.logger.warning(warnmsg)
                     queue.put(obj)
                 self.__poll_counter+=1
