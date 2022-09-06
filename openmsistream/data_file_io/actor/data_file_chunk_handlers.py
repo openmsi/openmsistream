@@ -117,9 +117,11 @@ class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) 
     def progress_msg(self) :
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
-            progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
-        for fp in self.fully_read_filepaths :
-            progress_msg+=f'\t{fp} (fully read from topic)\n'
+            if datafile.full_filepath not in self.completely_processed_filepaths :
+                progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
+        for fp in self.completely_processed_filepaths :
+            if fp not in self.results_produced_filepaths :
+                progress_msg+=f'\t{fp} (fully read from topic)\n'
         for fp in self.results_produced_filepaths :
             progress_msg+=f'\t{fp} (processing results produced)\n'
         return progress_msg

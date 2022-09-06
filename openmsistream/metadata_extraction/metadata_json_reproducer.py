@@ -1,4 +1,5 @@
-#imports
+#imports'
+import json
 from abc import ABC, abstractmethod
 from ..data_file_io.actor.data_file_stream_reproducer import DataFileStreamReproducer
 from .metadata_json_message import MetadataJSONMessage
@@ -42,7 +43,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
 
     def _get_processing_result_message_for_file(self,datafile,lock) :
         try :
-            json_content = self._get_json_metadata_for_file(datafile)
+            json_content = self._get_metadata_dict_for_file(datafile)
         except Exception as e :
             errmsg = f'ERROR: failed to extract JSON metadata from {datafile.full_filepath}! '
             errmsg+= 'Error will be logged below, but not reraised.'
@@ -74,6 +75,11 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         """
         raise NotImplementedError
 
+    def _on_shutdown(self) :
+        self.logger.info('Will quit after all currently enqueued messages are received.')
+        self.logger.info(self.progress_msg)
+        super()._on_shutdown()
+
     @classmethod
     def run_from_command_line(cls,args=None) :
         """
@@ -96,9 +102,9 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         xrd_csv_metadata_reproducer.logger.info(msg)
         n_r,n_p,f_r_fns,m_p_fns = xrd_csv_metadata_reproducer.produce_processing_results_for_files_as_read()
         xrd_csv_metadata_reproducer.close()
-        msg = f'{n_r} total messages were consumed'
-        msg+=f', {n_p} messages were successfully processed'
-        msg+=f', {len(f_r_fns)} file{"s" if len(f_r_fns)!=1 else ""} were fully-read'
+        msg = f'{n_r} total message{"s were" if n_r!=1 else " was"} consumed'
+        msg+=f', {n_p} message{"s were" if n_p!=1 else " was"} successfully processed'
+        msg+=f', {len(f_r_fns)} file{"s were" if len(f_r_fns)!=1 else " was"} fully-read'
         if len(m_p_fns)>0 :
             msg+=f', and the following {len(m_p_fns)} file'
             msg+=' had' if len(m_p_fns)==1 else 's had'

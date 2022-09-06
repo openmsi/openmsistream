@@ -78,7 +78,7 @@ class UploadDataFile(DataFile,Runnable) :
         upload_threads = []
         for ti in range(n_threads) :
             producers.append(producer_group.get_new_producer())
-            t = Thread(target=producers[-1].produce_from_queue, args=(upload_queue,topic_name))
+            t = Thread(target=producers[-1].produce_from_queue_looped, args=(upload_queue,topic_name))
             t.start()
             upload_threads.append(t)
         #join the threads

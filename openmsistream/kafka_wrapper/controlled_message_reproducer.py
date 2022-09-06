@@ -13,7 +13,9 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
     """
 
     CONSUMER_POLL_TIMEOUT = 0.050
-    NO_MESSAGE_WAIT = 0.005 #how long to wait if consumer.get_next_message_value returns None
+    NO_MESSAGE_WAIT = 0.005 
+    FLUSH_PRODUCER_EVERY = 100 #flush the producer after this many calls to produce_from_queue (could be fast)
+    PRODUCER_FLUSH_TIMEOUT = 0.050 #timeout for the intermediate calls to producer.flush
 
     def __init__(self,config_path,consumer_topic_name,producer_topic_name,*,
                  n_producer_threads=1,n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
@@ -69,38 +71,45 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
             warnmsg+= 'the "consumer" section of the config file to re-enable manual offset commits (recommended).'
             self.logger.warning(warnmsg)
         #start the loop for while the controlled process is alive
-        last_message = None
+        last_message = None; calls_since_producer_flush = 0
         while self.alive :
             #if this thread has a Consumer side
             if consumer is not None :
                 #consume a message from the topic
-                msg = consumer.get_next_message(ControlledMessageReproducer.CONSUMER_POLL_TIMEOUT)
+                msg = consumer.get_next_message(self.CONSUMER_POLL_TIMEOUT)
                 if msg is None :
-                    time.sleep(ControlledMessageReproducer.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
-                    continue
-                with self.lock :
-                    self.n_msgs_read+=1
-                last_message = msg
-                #send the message to the _process_message function
-                retval = self._process_message(self.lock,msg)
-                #count and (asynchronously) commit the message as processed (if it wasn't consumed already in the past)
-                if retval :
+                    time.sleep(self.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
+                else :
                     with self.lock :
-                        self.n_msgs_processed+=1
-                    if not consumer._message_consumed_before(msg) :
-                        tps = consumer.commit(msg)
-                        if tps is not None :
-                            for tp in tps :
-                                if tp.error is not None :
-                                    warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
-                                    warnmsg+= f'"{tp.topic}" partition {tp.partition}. Duplicate messages may result when this '
-                                    warnmsg+= f'Consumer is restarted. Error reason: {tp.error.str()}'
-                                    self.logger.warning(warnmsg)
+                        self.n_msgs_read+=1
+                    last_message = msg
+                    #send the message to the _process_message function
+                    retval = self._process_message(self.lock,msg)
+                    #count and (asynchronously) commit the message as processed (if it wasn't consumed already in the past)
+                    if retval :
+                        with self.lock :
+                            self.n_msgs_processed+=1
+                        if not consumer._message_consumed_before(msg) :
+                            tps = consumer.commit(msg)
+                            if tps is not None :
+                                for tp in tps :
+                                    if tp.error is not None :
+                                        warnmsg = 'WARNING: failed to synchronously commit offset of last message '
+                                        warnmsg+= f'received on "{tp.topic}" partition {tp.partition}. Duplicate '
+                                        warnmsg+=  'messages may result when this Consumer is restarted. '
+                                        warnmsg+= f'Error reason: {tp.error.str()}'
+                                        self.logger.warning(warnmsg)
             #if this thread has a Producer side
             if producer is not None :
-                if not self.producer_message_queue.empty() :
+                if self.producer_message_queue.empty() :
+                    time.sleep(self.NO_MESSAGE_WAIT) #wait just a bit to not overtax things
+                else :
                     producer.produce_from_queue(self.producer_message_queue,self.producer_topic_name,
                                                 *produce_from_queue_args,**produce_from_queue_kwargs)
+                if calls_since_producer_flush>=self.FLUSH_PRODUCER_EVERY :
+                    producer.flush(timeout=self.PRODUCER_FLUSH_TIMEOUT)
+                    calls_since_producer_flush=0
+                calls_since_producer_flush+=1
         #commit the offset of the last message received if it wasn't already consumed in the past (block until done)
         if ( (consumer is not None) and 
              (last_message is not None) and (not consumer._message_consumed_before(last_message)) ) :
@@ -122,6 +131,7 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
         if consumer is not None :
             consumer.close()
         if producer is not None :
+            producer.flush(timeout=-1)
             producer.close()
 
     def _on_shutdown(self):

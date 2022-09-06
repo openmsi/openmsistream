@@ -104,7 +104,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.__upload_threads = []
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
-            t = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue,
+            t = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue_looped,
                                         args=(self.__upload_queue,self.__topic_name),
                                         kwargs={'callback': self.producer_callback},
                     )
@@ -348,7 +348,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     self.__producers[ti] = None
                 #recreate the producer and restart the thread
                 self.__producers[ti] = self.get_new_producer()
-                t = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue,
+                t = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue_looped,
                                             args=(self.__upload_queue,self.__topic_name),
                                             kwargs={'callback': self.producer_callback},
                             )

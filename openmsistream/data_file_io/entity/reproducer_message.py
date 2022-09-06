@@ -36,6 +36,6 @@ class ReproducerMessage(Producible,ABC) :
         else :
             return None
 
-    def __init__(self,*args,datafile,**kwargs) :
+    def __init__(self,datafile,*args,**kwargs) :
         super().__init__(*args,**kwargs)
         self.__datafile = datafile
