@@ -164,7 +164,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
         :return: None if processing was successful, an Exception otherwise
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _failed_processing_callback(self,datafile,lock) :
@@ -181,7 +181,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        pass
+        raise NotImplementedError
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

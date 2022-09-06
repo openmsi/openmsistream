@@ -13,4 +13,4 @@ class HasArgumentParser(ABC) :
         Return the argument parser that objects of this class use
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError

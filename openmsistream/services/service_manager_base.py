@@ -114,7 +114,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         start the Service
         not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def service_status(self) :
@@ -122,7 +122,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         get the status of the service
         not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def stop_service(self) :
@@ -130,7 +130,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         stop the Service
         not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     def remove_service(self,remove_env_vars=False,remove_install_args=False) :
         """
@@ -213,7 +213,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         
         Not implemented in base class
         """
-        pass
+        raise NotImplementedError
 
     def _write_install_args_file(self) :
         """

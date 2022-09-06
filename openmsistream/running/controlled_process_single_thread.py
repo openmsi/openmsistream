@@ -23,4 +23,4 @@ class ControlledProcessSingleThread(ControlledProcess,ABC) :
         The function that is run in an infinite loop while the process is alive
         Not implemented in the base class.
         """
-        pass
+        raise NotImplementedError

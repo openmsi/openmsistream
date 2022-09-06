@@ -40,7 +40,7 @@ class DownloadDataFile(DataFile,ABC) :
     @property
     @abstractmethod
     def check_file_hash(self) :
-        pass #the hash of the data in the file after it was read; not implemented in the base class
+        raise NotImplementedError #the hash of the data in the file after it was read; not implemented in the base class
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -124,7 +124,7 @@ class DownloadDataFile(DataFile,ABC) :
         Also any DataFileChunks passed to this function are guaranteed to have unique offsets
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
 class DownloadDataFileToDisk(DownloadDataFile) :
     """

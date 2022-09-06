@@ -99,4 +99,4 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
 
         Not implemented in the base class 
         """
-        pass
+        raise NotImplementedError

@@ -85,7 +85,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
 
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     def __restart_crashed_threads(self) :
         """

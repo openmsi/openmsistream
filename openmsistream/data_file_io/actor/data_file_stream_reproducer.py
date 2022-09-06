@@ -36,8 +36,6 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
 
-    #################### PUBLIC FUNCTIONS ####################
-
     def __init__(self,config_file,consumer_topic_name,producer_topic_name,**kwargs) :
         """
         Constructor method signature duplicated above to display in Sphinx docs
@@ -69,7 +67,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         self.logger.info(msg)
         #set up the stream reproducer registry
         self._file_registry = StreamReproducerRegistry(dirpath=self._output_dir,
-                                                       consumer_topic_name=self.topic_name,
+                                                       consumer_topic_name=self.consumer_topic_name,
                                                        consumer_group_ID=self.consumer_group_ID,
                                                        producer_topic_name=self.producer_topic_name,
                                                        logger=self.logger)
@@ -209,8 +207,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
     @abstractmethod
     def _get_processing_result_message_for_file(self,datafile,lock) :
         """
-        Given a relative :class:`~DataFile`, compute and return a 
-        :class:`openmsistream.kafka_wrapper.producible.Producible` object 
+        Given a relative :class:`~DownloadDataFileToMemory`, compute and return a 
+        :class:`openmsistream.data_file_io.entity.reproducer_message.ReproducerMessage` object 
         that should be produced as the processing result for the file. 
         
         This function should log an error and return None if the processing result fails to be computed.
@@ -224,10 +222,11 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
             of :func:`~_get_processing_result_message_for_file` is running at once
         :type lock: :class:`threading.Lock`
 
-        :return: :class:`openmsistream.kafka_wrapper.producible.Producible` message object to be produced 
+        :return: message object to be produced 
             (or None if computing it failed for any reason)
+        :rtype: :class:`openmsistream.kafka_wrapper.producible.Producible`
         """
-        pass
+        raise NotImplementedError
 
     def _failed_computing_processing_result(self,datafile,lock) :
         """

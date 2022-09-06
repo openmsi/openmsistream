@@ -139,4 +139,4 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
 
         Not implemented in the base class 
         """
-        pass
+        raise NotImplementedError

@@ -1,6 +1,6 @@
 #imports
 import pathlib
-from abc import ABC, abstractmethod
+from abc import ABC
 from kafkacrypto.message import KafkaCryptoMessage
 from ...utilities.misc import populated_kwargs
 from ...running import Runnable
@@ -94,13 +94,12 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         self.logger.warning(warnmsg)
         return False
 
-    @abstractmethod
     def _mismatched_hash_callback(self,datafile,lock) :
         """
         Called when a file reconstructed in memory doesn't match the hash of its contents originally on disk,
         providing an opportunity for fallback/backup processing in the case of failure.
 
-        Not implemented in the base class.
+        Does nothing in the base class.
 
         :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
             all of its messages from the topic

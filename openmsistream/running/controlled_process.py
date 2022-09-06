@@ -88,7 +88,7 @@ class ControlledProcess(LogOwner,ABC) :
         This function is run when the "check" command is found in the control queue
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     @abstractmethod
     def _on_shutdown(self) :
@@ -96,4 +96,4 @@ class ControlledProcess(LogOwner,ABC) :
         This function is run when the process is stopped; it's called from shutdown
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError

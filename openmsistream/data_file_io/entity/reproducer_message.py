@@ -30,8 +30,6 @@ class ReproducerMessage(Producible,ABC) :
         """
         Given some (optional) "print_every" variable, return the string that should be logged for this message
         If "None" is returned nothing will be logged.
-
-        Not implemented in base class
         """
         if print_every :
             return f'Producing processing result from {self.__datafile.filepath}'
