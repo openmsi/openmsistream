@@ -121,6 +121,9 @@ class TestMetadataReproducer(unittest.TestCase) :
             if msg is None :
                 errmsg = f'ERROR: could not consume metadata message from {DEST_TOPIC_NAME} within {TIMEOUT_SECS} seconds.'
                 raise RuntimeError(errmsg)
+            if not success :
+                errmsg = 'ERROR: message read from destination topic does not match the reference metadata dictionary!'
+                raise RuntimeError(errmsg)
         except Exception as e :
             raise e
         finally :
