@@ -1,4 +1,5 @@
 #imports
+from datetime import datetime
 from ...running.runnable import Runnable
 from ..metadata_json_reproducer import MetadataJSONReproducer
 
@@ -51,6 +52,9 @@ class XRDCSVMetadataReproducer(MetadataJSONReproducer,Runnable) :
             warnmsg = f'WARNING: [Measurement Conditions] block in the "{datafile.full_filepath}" file did not contain '
             warnmsg+=  'any metadata keys/values!'
             self.logger.warning(warnmsg)
+        #add a timestamp
+        metadata_dict['metadata_message_generated_at'] = datetime.now().strftime('%m/%d/%Y, %H:%M:%S')
+        #return the dictionary of metadata
         return metadata_dict
 
 def main(args=None) :
