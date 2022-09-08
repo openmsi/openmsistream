@@ -33,7 +33,7 @@ class ConsumerAndProducerGroup(LogOwner) :
         self.__producer_group = ProducerGroup(config_path,kafkacrypto=self.__consumer_group.kafkacrypto,
                                               logger=self.logger)
 
-    def get_new_subscribed_consumer(self,*args,**kwargs) :
+    def get_new_subscribed_consumer(self,*,restart_at_beginning=False,**kwargs) :
         """
         Return a new Consumer, subscribed to the topic and with the shared group ID.
         Call this function from a child thread to get thread-independent Consumers.
@@ -52,9 +52,9 @@ class ConsumerAndProducerGroup(LogOwner) :
         :return: a Consumer created using the configs set in the constructor/from `kwargs`, subscribed to the topic
         :rtype: :class:`~OpenMSIStreamConsumer`
         """
-        return self.__consumer_group.get_new_subscribed_consumer(*args,**kwargs)
+        return self.__consumer_group.get_new_subscribed_consumer(restart_at_beginning=restart_at_beginning,**kwargs)
 
-    def get_new_producer(self,*args,**kwargs) :
+    def get_new_producer(self) :
         """
         Return a new :class:`~OpenMSIStreamProducer` object. 
         Call this function from a child thread to get thread-independent Producers.
@@ -63,7 +63,7 @@ class ConsumerAndProducerGroup(LogOwner) :
         :return: a Producer created using the config set in the constructor
         :rtype: :class:`~OpenMSIStreamProducer`
         """
-        return self.__producer_group.get_new_producer(*args,**kwargs)
+        return self.__producer_group.get_new_producer()
 
     def close(self) :
         """

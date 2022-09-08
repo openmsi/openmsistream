@@ -13,6 +13,7 @@ LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 TIMEOUT_SECS = 90
 JOIN_TIMEOUT_SECS = 60
 REP_CONFIG_PATH = TEST_CONST.PACKAGE_ROOT_DIR/'metadata_extraction'/'examples'/'test_xrd_csv_metadata_reproducer.config'
+UPLOAD_FILE = TEST_CONST.PACKAGE_ROOT_DIR/'metadata_extraction'/'examples'/'SC001_XRR.csv'
 SOURCE_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_source'
 DEST_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_dest'
 CONSUMER_GROUP_ID = 'test_metadata_reproducer'
@@ -39,7 +40,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             msg = 'Uploading test metadata file in test_metadata_reproducer'
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
-            upload_file = UploadDataFile(TEST_CONST.TEST_METADATA_REPRODUCER_UPLOAD_FILE,
+            upload_file = UploadDataFile(UPLOAD_FILE,
                                         logger=LOGGER)
             upload_file.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,SOURCE_TOPIC_NAME)
             #wait for the file to be processed
@@ -50,7 +51,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             msg+= f'test_metadata_reproducer (will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
-            recofp = TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR/TEST_CONST.TEST_METADATA_REPRODUCER_UPLOAD_FILE.name
+            recofp = TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR/UPLOAD_FILE.name
             while (recofp not in metadata_reproducer.results_produced_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = metadata_reproducer.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
@@ -88,7 +89,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             self.assertTrue(srpr.COMPUTING_RESULT_FAILED not in in_prog_entries.keys())
             #get the attributes of the succeeded file to make sure its the one that was produced
             succeeded_entry_attrs = srpr.succeeded_table.get_entry_attrs(succeeded_entries[0])
-            self.assertTrue(succeeded_entry_attrs['filename']==TEST_CONST.TEST_METADATA_REPRODUCER_UPLOAD_FILE.name)
+            self.assertTrue(succeeded_entry_attrs['filename']==UPLOAD_FILE.name)
             #consume messages from the destination topic and make sure the metadata from the test file is there
             consumer_group = ConsumerGroup(TEST_CONST.TEST_METADATA_REPRODUCER_CONSUMER_CONFIG_FILE_PATH,
                                         DEST_TOPIC_NAME,

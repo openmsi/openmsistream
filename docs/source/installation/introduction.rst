@@ -10,7 +10,12 @@ The main programs offered by OpenMSIStream include streamlined ways to:
 * Persistently watch directory trees on file systems and upload any files added to them to Kafka topics
 * Download files uploaded to Kafka topics to disk
 * Download files uploaded to Kafka topics to S3 object store buckets
-* Call arbitrary Python code to process the contents of files uploaded to Kafka topics as they are made available
+
+OpenMSIStream also includes some base classes that can be extended by users to:
+
+* Call arbitrary Python code to process files uploaded to Kafka topics as they are made available (to keep local logs of files in flight, for example, or to save analysis results locally)
+* Call arbitrary Python code to analyze data files consumed from one Kafka topic and produce the analysis results to another Kafka topic
+* Extract metadata from data files consumed from one Kafka topic and produce it to Kafka topics
 
 Producer-type (upload) and Consumer-type (download/process) programs and the central Kafka broker exist completely independently of one another, providing flexibility for a variety of data ecosystems. The Kafka backend used is fully customizable through a simple config file interface, and data uploaded to topics can optionally be encrypted using `KafkaCrypto <https://github.com/tmcqueen-materials/kafkacrypto>`_. 
 

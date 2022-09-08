@@ -7,17 +7,25 @@ class ReproducerMessage(Producible,ABC) :
     """
     Abstract base class for messages that are computed from data files and produced to a new topic
 
-    :param datafile: The :class:`~DownloadDataFile` object used to compute this message
-    :type datafile: :class:`~DownloadDataFile`
+    :param datafile: The DataFile object used to compute this message
+    :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
     """
     
     @property
     def msg_key(self) :
+        """
+        The automatically defined key for these messages is a string version of the path 
+        to the original file with "_processing_result" appended
+        """
         key_pp = get_message_prepend(self.__datafile.subdir_str,self.__datafile.filename)
         return f'{key_pp}_processing_result'
 
     @property
     def callback_kwargs(self) :
+        """
+        The callback kwargs defined for these messages are the original datafile name, its relative filepath, 
+        and the total number of chunks into which the file was broken. 
+        """
         if self.__datafile.subdir_str!='' :
             rel_filepath = f'{self.__datafile.subdir_str}/{self.__datafile.filename}' 
         else :
@@ -28,8 +36,7 @@ class ReproducerMessage(Producible,ABC) :
 
     def get_log_msg(self,print_every=None) :
         """
-        Given some (optional) "print_every" variable, return the string that should be logged for this message
-        If "None" is returned nothing will be logged.
+        Prints a message saying that the processing result from [filepath] is being produced, if print_every is defined
         """
         if print_every :
             return f'Producing processing result from {self.__datafile.filepath}'

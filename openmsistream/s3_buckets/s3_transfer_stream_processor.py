@@ -127,12 +127,6 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
-    def _failed_processing_callback(self,datafile,lock) :
-        pass
-
-    def _mismatched_hash_callback(self,datafile,lock) :
-        pass
-
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
 
 def main(args=None):

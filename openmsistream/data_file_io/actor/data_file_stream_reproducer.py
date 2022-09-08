@@ -54,10 +54,10 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :return: the total number of messages processed (registered in memory)
         :rtype: int
         :return: the paths of files successfully reconstructed from the Consumer topic during the run 
-        :rtype: List
+        :rtype: list
         :return: the paths of files whose processing results were successfully produced to the Producer topic 
             during the run 
-        :rtype: List
+        :rtype: list
         """
         #startup message
         msg = f'Will process files from messages in the {self.consumer_topic_name} topic using '
@@ -207,9 +207,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
     @abstractmethod
     def _get_processing_result_message_for_file(self,datafile,lock) :
         """
-        Given a relative :class:`~DownloadDataFileToMemory`, compute and return a 
-        :class:`openmsistream.data_file_io.entity.reproducer_message.ReproducerMessage` object 
-        that should be produced as the processing result for the file. 
+        Given a relative :class:`~DownloadDataFileToMemory`, compute and return a :class:`~ReproducerMessage` 
+        object that should be produced as the processing result for the file. 
         
         This function should log an error and return None if the processing result fails to be computed.
 
@@ -224,7 +223,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
 
         :return: message object to be produced 
             (or None if computing it failed for any reason)
-        :rtype: :class:`openmsistream.kafka_wrapper.producible.Producible`
+        :rtype: :class:`openmsistream.kafka_wrapper.Producible`
         """
         raise NotImplementedError
 

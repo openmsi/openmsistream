@@ -10,8 +10,9 @@ class Producible(ABC) :
     @abstractmethod
     def msg_key(self) :
         """
-        The key of the object when it's represented as a message
+        The key of the object when it's represented as a message.
         This can be something that needs to be serialized still
+
         Not implemented in base class
         """
         raise NotImplementedError
@@ -20,8 +21,9 @@ class Producible(ABC) :
     @abstractmethod
     def msg_value(self) :
         """
-        The value of the object when it's represented as a message
+        The value of the object when it's represented as a message.
         This can be something that needs to be serialized still
+        
         Not implemented in base class
         """
         raise NotImplementedError
@@ -31,6 +33,7 @@ class Producible(ABC) :
         """
         A dictionary of keyword arguments that should be sent to the callback function 
         for Producers producing messages of this Producible
+        
         Empty for the base class
         """
         return {}
@@ -38,9 +41,7 @@ class Producible(ABC) :
     @abstractmethod
     def get_log_msg(self,print_every=None) :
         """
-        Given some (optional) "print_every" variable, return the string that should be logged for this message
-        If "None" is returned nothing will be logged.
-
-        Not implemented in base class
+        Given some (optional) "print_every" variable, return the string that should be logged for this message.
+        If "None" is returned (the default) nothing will be logged.
         """
         return None

@@ -15,7 +15,7 @@ class TestRoutineConstants :
             'test_data_file_stream_processor_kafka':'test_data_file_stream_processor',
             'test_data_file_stream_processor_restart_kafka':'test_data_file_stream_processor_2',
             'test_data_file_stream_processor_restart_encrypted_kafka':'test_data_file_stream_processor_encrypted',
-            'test_s3_transfer_stream_processor':'osn_test',
+            'test_s3_transfer_stream_processor':'test_s3_transfer_stream_processor',
             'test_serialization':'test_oms_encrypted',
             'test_metadata_reproducer':'test_metadata_extractor',
         }
@@ -87,7 +87,7 @@ class TestRoutineConstants :
         """
         Path to the config file to use for the final consumer in the metadata reproducer test
         """
-        return self.TEST_DATA_DIR_PATH / 'test_metadata_reproducer_consumer.config'
+        return (RUN_CONST.CONFIG_FILE_DIR / 'test_metadata_reproducer_consumer.config').resolve()
     @property
     def TEST_WATCHED_DIR_PATH(self) : #path to the "watched" directory to use in testing DataFileDirectory etc.
         return self.TEST_DIR_PATH / 'test_watched_dir'
@@ -130,9 +130,6 @@ class TestRoutineConstants :
     @property
     def TEST_METADATA_REPRODUCER_OUTPUT_DIR(self) :
         return self.TEST_DIR_PATH / 'test_metadata_reproducer_output_dir'
-    @property
-    def TEST_METADATA_REPRODUCER_UPLOAD_FILE(self) :
-        return self.TEST_DATA_DIR_PATH / 'SC001_XRR.csv'
     @property
     def TEST_METADATA_DICT_PICKLE_FILE(self) :
         return self.TEST_DATA_DIR_PATH / 'test_metadata_dict.pickle'

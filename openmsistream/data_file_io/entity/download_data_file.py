@@ -170,6 +170,10 @@ class DownloadDataFileToMemory(DownloadDataFile) :
 
     @property
     def bytestring(self) :
+        """
+        The bytestring of the file contents (like calling file_pointer.read() for a file opened in "rb" mode). 
+        Call bytestring.decode() to convert this to a text string.
+        """
         if self.__bytestring is None :
             self.__create_bytestring()
         return self.__bytestring
