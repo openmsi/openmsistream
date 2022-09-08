@@ -27,7 +27,7 @@ class TestRoutineConstants :
         return os.environ['BUCKET_NAME']
     @property
     def TEST_ASSCESS_KEY_ID(self) :  # the access_key_id for s3 Authentication
-        return os.environ['ACCESS_SECRET_KEY_ID']
+        return os.environ['ACCESS_KEY_ID']
     @property
     def TEST_SECRET_KEY_ID(self) :  # the secret_key_id for s3 Authentication
         return os.environ['SECRET_KEY_ID']
