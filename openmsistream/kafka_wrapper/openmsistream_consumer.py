@@ -67,7 +67,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         self.__starting_offsets=starting_offsets
 
     @staticmethod
-    def get_consumer_args_kwargs(config_file_path,logger=None,**kwargs) :
+    def get_consumer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
         """
         Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
         :class:`~OpenMSIStreamConsumer` objects based on the given config file. 
@@ -78,6 +78,9 @@ class OpenMSIStreamConsumer(LogOwner) :
         :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
             :class:`~OpenMSIStreamConsumer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
+        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers. 
+            Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
+        :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional 
         :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumers, 
             with underscores in their names replaced by dots
         :type kwargs: dict
@@ -98,11 +101,22 @@ class OpenMSIStreamConsumer(LogOwner) :
         #if the group.id has been set as "create_new" generate a new group ID
         if 'group.id' in all_configs.keys() and all_configs['group.id'].lower()=='create_new' :
             all_configs['group.id']=str(uuid.uuid1())
-        #if there are configs for KafkaCrypto, use a KafkaConsumer
-        if parser.kc_config_file_str is not None :
-            if logger is not None :
-                logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
-            kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+        #if "kafkacrypto" was given, or there are configs for KafkaCrypto, use a KafkaConsumer
+        if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
+            if kafkacrypto is not None :
+                if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
+                    errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
+                    if logger is not None :
+                        logger.error(errmsg,TypeError)
+                    else :
+                        raise TypeError(errmsg)
+                if logger is not None :
+                    logger.debug(f'Consumed messages will be decrypted using configs at {kafkacrypto.config_file_path}')
+                kc = kafkacrypto
+            else :
+                if logger is not None :
+                    logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
+                kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
             if 'key.deserializer' in all_configs.keys() :
                 keydes = CompoundDeserializer(kc.key_deserializer,all_configs.pop('key.deserializer'))
             else :

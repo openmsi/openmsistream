@@ -15,8 +15,9 @@ class TestRoutineConstants :
             'test_data_file_stream_processor_kafka':'test_data_file_stream_processor',
             'test_data_file_stream_processor_restart_kafka':'test_data_file_stream_processor_2',
             'test_data_file_stream_processor_restart_encrypted_kafka':'test_data_file_stream_processor_encrypted',
-            'test_s3_transfer_stream_processor':'osn_test',
+            'test_s3_transfer_stream_processor':'test_s3_transfer_stream_processor',
             'test_serialization':'test_oms_encrypted',
+            'test_metadata_reproducer':'test_metadata_extractor',
         }
     @property
     def TEST_ENDPOINT_URL(self) :  # the endpoint_url for s3 bucket connection
@@ -26,7 +27,7 @@ class TestRoutineConstants :
         return os.environ['BUCKET_NAME']
     @property
     def TEST_ASSCESS_KEY_ID(self) :  # the access_key_id for s3 Authentication
-        return os.environ['ACCESS_SECRET_KEY_ID']
+        return os.environ['ACCESS_KEY_ID']
     @property
     def TEST_SECRET_KEY_ID(self) :  # the secret_key_id for s3 Authentication
         return os.environ['SECRET_KEY_ID']
@@ -51,6 +52,9 @@ class TestRoutineConstants :
     @property
     def TEST_DIR_PATH(self) :
         return pathlib.Path(__file__).parent.parent
+    @property
+    def PACKAGE_ROOT_DIR(self) :
+        return self.TEST_DIR_PATH.parent / 'openmsistream'
     @property
     def TEST_DATA_DIR_PATH(self) : #path to the test data directory
         return self.TEST_DIR_PATH / 'data'
@@ -78,6 +82,12 @@ class TestRoutineConstants :
     @property
     def TEST_DATA_FILE_2_PATH(self) : # Path to the second test data file
         return self.TEST_DATA_DIR_PATH / self.TEST_DATA_FILE_2_NAME
+    @property
+    def TEST_METADATA_REPRODUCER_CONSUMER_CONFIG_FILE_PATH(self) : 
+        """
+        Path to the config file to use for the final consumer in the metadata reproducer test
+        """
+        return (RUN_CONST.CONFIG_FILE_DIR / 'test_metadata_reproducer_consumer.config').resolve()
     @property
     def TEST_WATCHED_DIR_PATH(self) : #path to the "watched" directory to use in testing DataFileDirectory etc.
         return self.TEST_DIR_PATH / 'test_watched_dir'
@@ -117,5 +127,11 @@ class TestRoutineConstants :
     @property
     def TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR(self) :
         return self.TEST_DIR_PATH / 'test_s3_transfer_stream_processor_output_dir'
+    @property
+    def TEST_METADATA_REPRODUCER_OUTPUT_DIR(self) :
+        return self.TEST_DIR_PATH / 'test_metadata_reproducer_output_dir'
+    @property
+    def TEST_METADATA_DICT_PICKLE_FILE(self) :
+        return self.TEST_DATA_DIR_PATH / 'test_metadata_dict.pickle'
     
 TEST_CONST=TestRoutineConstants()

@@ -1,17 +1,11 @@
 #imports
-import pathlib
-from abc import ABC, abstractmethod
-from kafkacrypto.message import KafkaCryptoMessage
-from ..utilities.misc import populated_kwargs
-from ..utilities import LogOwner
-from ..running import Runnable
-from .config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
-from .utilities import get_encrypted_message_timestamp_string
-from .download_data_file import DownloadDataFileToMemory
-from .data_file_chunk_processor import DataFileChunkProcessor
-from .stream_processor_registry import StreamProcessorRegistry
+from abc import ABC
+from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
+from .data_file_chunk_handlers import DataFileChunkProcessor
+from .data_file_stream_handler import DataFileStreamHandler
+from .file_registry.stream_handler_registries import StreamProcessorRegistry
 
-class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
+class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) :
     """
     A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s) 
     when entire files are available. This is a base class that cannot be instantiated on its own.
@@ -26,27 +20,19 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
     :param datafile_type: the type of data file that recognized files should be reconstructed as 
         (must be a subclass of :class:`~DownloadDataFileToMemory`)
     :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
+    :param n_threads: the number of threads/consumers to run
+    :type n_threads: int, optional
+    :param consumer_group_ID: the group ID under which each consumer should be created
+    :type consumer_group_ID: str, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
 
-    #################### PUBLIC FUNCTIONS ####################
-
-    def __init__(self,config_path,topic_name,*,output_dir=None,datafile_type=DownloadDataFileToMemory,**kwargs) :
+    def __init__(self,config_file,topic_name,**kwargs) :
         """
-        Constructor method
-        """   
-        #make sure the directory for the output is set
-        self._output_dir = self._get_auto_output_dir() if output_dir is None else output_dir
-        if not self._output_dir.is_dir() :
-            self._output_dir.mkdir(parents=True)
-        kwargs = populated_kwargs(kwargs,{'logger_file':self._output_dir})
-        super().__init__(config_path,topic_name,datafile_type=datafile_type,**kwargs)
-        self.logger.info(f'Log files and output will be in {self._output_dir}')
-        if not issubclass(datafile_type,DownloadDataFileToMemory) :
-            errmsg = 'ERROR: DataFileStreamProcessor requires a datafile_type that is a subclass of '
-            errmsg+= f'DownloadDataFileToMemory but {datafile_type} was given!'
-            self.logger.error(errmsg,ValueError)
+        Constructor method signature duplicated above to display in Sphinx docs
+        """
+        super().__init__(config_file,topic_name,**kwargs)
 
     def process_files_as_read(self) :
         """
@@ -66,44 +52,23 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         msg+= f'thread{"s" if self.n_threads>1 else ""}'
         self.logger.info(msg)
         #set up the stream processor registry
-        self.__file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
-                                                       topic_name=self.topic_name,
-                                                       consumer_group_ID=self.consumer_group_ID,
-                                                       logger=self.logger)
+        self._file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
+                                                      topic_name=self.topic_name,
+                                                      consumer_group_ID=self.consumer_group_ID,
+                                                      logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
-        if self.__file_registry.rerun_file_key_regex is not None :
+        if self._file_registry.rerun_file_key_regex is not None :
             msg = f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self.__file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self.__file_registry.n_files_to_rerun>1 else ""}'
+            msg+= f're-read messages for {self._file_registry.n_files_to_rerun} previously-failed '
+            msg+= f'file{"s" if self._file_registry.n_files_to_rerun>1 else ""}'
             self.logger.info(msg)
             self.restart_at_beginning=True
-            self.message_key_regex=self.__file_registry.rerun_file_key_regex
+            self.message_key_regex=self._file_registry.rerun_file_key_regex
         #call the run loop
         self.run()
         #return the results of the processing
         return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths
 
-    #################### PRIVATE HELPER FUNCTIONS ####################
-
-    @abstractmethod
-    def _process_downloaded_data_file(self,datafile,lock) :
-        """
-        Perform some arbitrary operation(s) on a given data file that has been fully read from the stream.
-        Can optionally lock other threads using the given lock.
-        
-        Not implemented in the base class.
-
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
-            all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
-            of :func:`~_process_downloaded_data_file` is running at once
-        :type lock: :class:`threading.Lock`
-
-        :return: None if processing was successful, an Exception otherwise
-        """
-        pass
-    
     def _process_message(self,lock,msg):
         """
         Process a single message to add it to a file being held in memory until all messages are received.
@@ -136,21 +101,15 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
             False otherwise
         :rtype: bool
         """
-        retval = super()._process_message(lock, msg, self._output_dir, self.logger)
-        #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
-        if ( hasattr(retval,'key') and hasattr(retval,'value') and 
-             (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
-            return self._undecryptable_message_callback(retval)
+        retval = super()._process_message(lock,msg)
+        #if the file was in progress or had a mismatched hash, return True or False, respectively
+        if retval in (True,False) :
+            return retval
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
         except :
             dfc = msg.value #from KafkaCrypto
-        #if the file is just in progress
-        if retval==True :
-            with lock : 
-                self.__file_registry.register_file_in_progress(dfc)
-            return retval
         #if the file has had all of its messages read successfully, send it to the processing function
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             if dfc.rootdir is not None :
@@ -164,7 +123,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
             if processing_retval is None :
                 self.logger.info(f'Fully-read file {short_filepath} successfully processed')
                 with lock :
-                    self.__file_registry.register_file_successfully_processed(dfc)
+                    self._file_registry.register_file_successfully_processed(dfc)
                     self.completely_processed_filepaths.append(dfc.filepath)
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
@@ -179,7 +138,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
                     errmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
                     self.logger.error(errmsg)
                 with lock :
-                    self.__file_registry.register_file_processing_failed(dfc)
+                    self._file_registry.register_file_processing_failed(dfc)
                 self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
                 to_return = False
             #stop tracking the file
@@ -187,52 +146,31 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return to_return
-        #if the file hashes didn't match, invoke the callback and return False
-        elif retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            errmsg = f'ERROR: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
-            errmsg+= 'after being fully read! The messages for this file will need to be consumed again if the file '
-            errmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
-            self.logger.error(errmsg)
-            with lock :
-                self.__file_registry.register_file_mismatched_hash(dfc)
-            self._mismatched_hash_callback(self.files_in_progress_by_path[dfc.filepath],lock)
-            with lock :
-                del self.files_in_progress_by_path[dfc.filepath]
-                del self.locks_by_fp[dfc.filepath]
-            return False
-        else :
-            self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',NotImplementedError)
-            return False
 
-    def _undecryptable_message_callback(self,msg) :
+    def _process_downloaded_data_file(self,datafile,lock) :
         """
-        This function is called when a message that could not be decrypted is found.
-        If this function is called it is likely that the file the chunk is coming from won't be able to be processed.
+        Perform some arbitrary operation(s) on a given data file that has been fully read from the stream.
+        Can optionally lock other threads using the given lock.
+        
+        Does nothing in the base class.
 
-        In the base class, this logs a warning and returns False. 
-        Overload this in child classes to do something more sensible.
+        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
+            all of its messages from the topic
+        :type datafile: :class:`~DownloadDataFileToMemory`
+        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
+            of :func:`~_process_downloaded_data_file` is running at once
+        :type lock: :class:`threading.Lock`
 
-        :param msg: the :class:`kafkacrypto.Message` object with undecrypted :class:`kafkacrypto.KafkaCryptoMessages` 
-            for its key and/or value
-        :type msg: :class:`kafkacrypto.Message`
-
-        :return: True if an undecrypted message is considered "successfully processed", and False otherwise
-        :rtype: bool
+        :return: None if processing was successful, an Exception otherwise
         """
-        timestamp_string = get_encrypted_message_timestamp_string(msg)
-        warnmsg = f'WARNING: encountered a message that failed to be decrypted (timestamp = {timestamp_string}). '
-        warnmsg+= 'This message will be skipped, and the file it came from cannot be processed from the stream '
-        warnmsg+= 'until it is decryptable. Please rerun with a new Consumer ID to consume these messages again.'
-        self.logger.warning(warnmsg)
-        return False
+        return
 
-    @abstractmethod
     def _failed_processing_callback(self,datafile,lock) :
         """
         Called when :func:`~_process_downloaded_data_file` returns an Exception, 
         providing an opportunity for fallback/backup processing in the case of failure.
 
-        Not implemented in the base class.
+        Does nothing in the base class.
 
         :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
             all of its messages from the topic
@@ -241,24 +179,7 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        pass
-
-    @abstractmethod
-    def _mismatched_hash_callback(self,datafile,lock) :
-        """
-        Called when a file reconstructed in memory doesn't match the hash of its contents originally on disk,
-        providing an opportunity for fallback/backup processing in the case of failure.
-
-        Not implemented in the base class.
-
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
-            all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
-            of :func:`~_mismatched_hash_callback` is running at once
-        :type lock: :class:`threading.Lock`
-        """
-        pass
+        return
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
@@ -267,23 +188,9 @@ class DataFileStreamProcessor(DataFileChunkProcessor,LogOwner,Runnable,ABC) :
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
-    #################### CLASS METHODS ####################
-
-    @classmethod
-    def _get_auto_output_dir(cls) :
-        return pathlib.Path()/f'{cls.__name__}_output'
-
     @classmethod
     def get_command_line_arguments(cls):
-        args = ['config','topic_name','consumer_group_ID','update_seconds']
-        kwargs = {
-                'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                'optional_output_dir': cls._get_auto_output_dir(),
-            }
+        superargs,superkwargs = super().get_command_line_arguments()
+        args = [*superargs,'topic_name']
+        kwargs = {**superkwargs,'n_threads': RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs
-
-    #################### PROPERTIES ####################
-
-    @property
-    def file_registry(self) :
-        return self.__file_registry

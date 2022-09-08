@@ -10,11 +10,13 @@ Top-level classes
 .. toctree::
    :maxdepth: 1
 
-   api/upload_data_file.rst
-   api/data_file_upload_directory.rst
-   api/data_file_download_directory.rst
-   api/s3_transfer_stream_processor.rst
+   api/upload_data_file
+   api/data_file_upload_directory
+   api/data_file_download_directory
+   api/s3_transfer_stream_processor
+   api/metadata_json_reproducer
    api/data_file_stream_processor
+   api/data_file_stream_reproducer
 
 Kafka wrapper
 -------------
@@ -26,7 +28,9 @@ Kafka wrapper
    api/openmsistream_consumer
    api/producer_group
    api/consumer_group
+   api/consumer_and_producer_group
    api/openmsistream_kafka_crypto
+   api/producible
 
 Services/daemons
 ----------------
@@ -48,3 +52,5 @@ Selected base + utility classes
    api/logger
    api/openmsistream_argument_parser
    api/dataclass_table
+   api/download_data_file_to_memory
+   api/reproducer_message

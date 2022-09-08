@@ -10,8 +10,8 @@ On Linux systems, OpenMSIStream installs and interacts with daemons using "syste
 
 Programs running as Services or daemons cannot be interacted with from the command line after they've been installed, but they will still produce output to log files. The OpenMSIStream interface to install and interact with persistently-running instances of programs is the same regardless of running of Windows or Linux.
 
-Preparing the environment (quick note for Windows)
---------------------------------------------------
+Preparing the environment (note for Windows)
+--------------------------------------------
 
 Issues with loading ``.dll`` files manifest differently when running OpenMSIStream code as Windows Services because Services run in %WinDir%/System32 and don't read the same PATH locations as running interactively. Some workarounds are built into OpenMSIStream to mitigate these problems, but if you run into trouble with missing ``.dll`` files they can typically be resolved by copying those files directly into the %WinDir%/System32 directory.
 

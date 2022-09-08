@@ -1,8 +1,6 @@
-=========================================
+===================
 Using Main Programs
-=========================================
-
-.. include:: config_files.rst
+===================
 
 Details on programs
 -------------------
@@ -16,6 +14,19 @@ The main functional programs provided in OpenMSIStream are accessible through sp
    main_programs/data_file_upload_directory
    main_programs/data_file_download_directory
    main_programs/s3_transfer_stream_processor
+
+OpenMSIStream also provides some useful base classes that can be extended to create customized Kafka streaming workflows for specific lab use cases. Those base classes are described in detail on the pages linked below, as well as documented in :doc:`the API reference <../dev_info/api_reference>`.
+
+.. toctree::
+   :maxdepth: 1
+
+   base_classes/data_file_stream_processor
+   base_classes/data_file_stream_reproducer
+   base_classes/metadata_json_reproducer
+
+The sections on this page below provide further information necessary to work with or extend any of these main programs.
+
+.. include:: config_files.rst
 
 Installing programs as Services or daemons
 ------------------------------------------

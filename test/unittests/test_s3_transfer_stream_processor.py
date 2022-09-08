@@ -6,7 +6,7 @@ from openmsistream.s3_buckets.s3_transfer_stream_processor import S3TransferStre
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.data_file_io.data_file_upload_directory import DataFileUploadDirectory
+from openmsistream.data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
 from config import TEST_CONST
 
 # constants

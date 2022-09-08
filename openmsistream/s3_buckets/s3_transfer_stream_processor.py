@@ -1,5 +1,5 @@
 #imports
-from ..data_file_io.data_file_stream_processor import DataFileStreamProcessor
+from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
 from .s3_data_transfer import S3DataTransfer
 
@@ -126,12 +126,6 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         self.logger.debug(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
-
-    def _failed_processing_callback(self,datafile,lock) :
-        pass
-
-    def _mismatched_hash_callback(self,datafile,lock) :
-        pass
 
 #################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
 

@@ -1,12 +1,12 @@
 #imports
 import datetime
 from kafkacrypto.message import KafkaCryptoMessage
-from ..running import Runnable
-from .config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
-from .utilities import get_encrypted_message_key_and_value_filenames
-from .download_data_file import DownloadDataFileToDisk
-from .data_file_directory import DataFileDirectory
-from .data_file_chunk_processor import DataFileChunkProcessor
+from ...running import Runnable
+from ..config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
+from ..utilities import get_encrypted_message_key_and_value_filenames
+from ..entity.download_data_file import DownloadDataFileToDisk
+from ..entity.data_file_directory import DataFileDirectory
+from .data_file_chunk_handlers import DataFileChunkProcessor
 
 class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnable) :
     """

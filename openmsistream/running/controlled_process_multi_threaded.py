@@ -11,8 +11,11 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
     """
 
     @property
-    def n_threads(self):
+    def n_threads(self) :
         return self.__n_threads
+    @property
+    def lock(self) :
+        return self.__lock
 
     def __init__(self,*args,n_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
         """
@@ -56,7 +59,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         self.__threads = []
         for i in range(self.__n_threads) :
             self.__threads.append(ExceptionTrackingThread(target=self._run_worker,
-                                           args=(self.__lock,*self.__args_per_thread[i]),
+                                           args=self.__args_per_thread[i],
                                            kwargs=self.__kwargs_per_thread[i]))
             self.__threads[-1].start()
         #loop while the process is alive, checking the control command queue and printing the "still alive" character
@@ -73,16 +76,16 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             t.join()
 
     @abstractmethod
-    def _run_worker(self,lock,*args,**kwargs) :
+    def _run_worker(self,*args,**kwargs) :
         """
         A function that should include a while self.alive loop for each independent thread to run 
         until the process is shut down
 
-        lock = a Lock that can be used across all shared threads to guaranteee exactly one process is running
+        `self.lock` can be used across all shared threads to guaranteee exactly one process is running at a time
 
         Not implemented in the base class
         """
-        pass
+        raise NotImplementedError
 
     def __restart_crashed_threads(self) :
         """
@@ -104,6 +107,6 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
                     self.__threads[ti] = None
                 #restart the thread
                 self.__threads[ti] = ExceptionTrackingThread(target=self._run_worker,
-                                              args=(self.__lock,*self.__args_per_thread[ti]),
+                                              args=self.__args_per_thread[ti],
                                               kwargs=self.__kwargs_per_thread[ti])
                 self.__threads[ti].start()

@@ -24,7 +24,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         self.message_key_regex = None #set to some regex to filter messages by their keys
         self.filter_new_messages = False #reset the regex after the consumer has filtered through previous messages
 
-    def _run_worker(self,lock):
+    def _run_worker(self):
         """
         Handle startup and shutdown of a thread-independent Consumer and 
         serve individual messages to the _process_message function
@@ -47,14 +47,14 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
             if msg is None :
                 time.sleep(ControlledMessageProcessor.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
                 continue
-            with lock :
+            with self.lock :
                 self.n_msgs_read+=1
             last_message = msg
             #send the message to the _process_message function
-            retval = self._process_message(lock,msg)
+            retval = self._process_message(self.lock,msg)
             #count and (asynchronously) commit the message as processed (if it wasn't consumed already in the past)
             if retval :
-                with lock :
+                with self.lock :
                     self.n_msgs_processed+=1
                 if not consumer._message_consumed_before(msg) :
                     tps = consumer.commit(msg)
@@ -99,4 +99,4 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
 
         Not implemented in the base class 
         """
-        pass
+        raise NotImplementedError

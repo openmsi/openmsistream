@@ -15,6 +15,9 @@ class OpenMSIStreamKafkaCrypto :
     """
 
     @property
+    def config_file_path(self) :
+        return self.__config_file
+    @property
     def key_serializer(self) :
         """
         The crypto key serializer
@@ -54,6 +57,7 @@ class OpenMSIStreamKafkaCrypto :
             self._kcc = KafkaConsumer(**consumer_configs)
             #initialize the KafkaCrypto object 
             self._kc = KafkaCrypto(None,self._kcp,self._kcc,config_file)
+        self.__config_file = config_file
 
     def close(self) :
         """

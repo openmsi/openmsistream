@@ -3,7 +3,7 @@ import unittest, pathlib, logging
 from queue import Queue
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.data_file_io.upload_data_file import UploadDataFile
+from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from config import TEST_CONST
 
 #constants

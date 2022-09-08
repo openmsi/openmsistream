@@ -3,7 +3,7 @@ import unittest, time, pathlib, logging, shutil
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream.data_file_io.stream_processor_registry import StreamProcessorRegistry
+from openmsistream.data_file_io.actor.file_registry.stream_handler_registries import StreamProcessorRegistry
 from openmsistream import UploadDataFile, DataFileUploadDirectory, DataFileStreamProcessor
 from config import TEST_CONST
 
@@ -421,7 +421,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         self.assertEqual(len(spr.filepaths_to_rerun),1)
         in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
         succeeded_entries = spr.succeeded_table.obj_addresses
-        self.assertEqual(len(succeeded_entries),1)
+        self.assertTrue(len(succeeded_entries)>=1) #allow greater than in case of a previously-failed test
         self.assertEqual(len(in_prog_entries[spr.FAILED]),1)
         #get the attributes of the succeeded file to make sure the entry doesn't change
         succeeded_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[0])

@@ -8,14 +8,23 @@ class ProducerGroup(LogOwner) :
 
     :param config_path: Path to the config file that should be used to define Producers in the group
     :type config_path: :class:`pathlib.Path`
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers. 
+        Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
+    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
     """
 
-    def __init__(self,config_path,**kwargs) :
+    @property
+    def kafkacrypto(self) :
+        return self.__p_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__p_kwargs.keys() else None
+
+    def __init__(self,config_path,kafkacrypto=None,**kwargs) :
         """
         Constructor method
         """
         super().__init__(**kwargs)
-        self.__p_args, self.__p_kwargs = OpenMSIStreamProducer.get_producer_args_kwargs(config_path,logger=self.logger)
+        self.__p_args, self.__p_kwargs = OpenMSIStreamProducer.get_producer_args_kwargs(config_path,
+                                                                                        logger=self.logger,
+                                                                                        kafkacrypto=kafkacrypto)
 
     def get_new_producer(self) :
         """

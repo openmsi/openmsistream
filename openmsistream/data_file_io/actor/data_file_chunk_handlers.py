@@ -1,35 +1,24 @@
 #imports
 from abc import ABC, abstractmethod
 from threading import Lock
-from kafkacrypto.message import KafkaCryptoMessage
-from ..kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
-from .config import DATA_FILE_HANDLING_CONST
-from .data_file_chunk import DataFileChunk
-from .download_data_file import DownloadDataFile
+from kafkacrypto import KafkaCryptoMessage
+from ...kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
+from ...kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer
+from ..config import DATA_FILE_HANDLING_CONST
+from ..entity.data_file_chunk import DataFileChunk
+from ..entity.download_data_file import DownloadDataFile
 
-class DataFileChunkProcessor(ControlledMessageProcessor,ABC) :
+class DataFileChunkHandler(ABC) :
     """
-    Use a ControlledProcessMultiThreaded interface to process messages that are expected to be DataFileChunks
+    A base class to perform some handling of DataFileChunk objects read from a topic.
     """
 
     #################### PROPERTIES ####################
 
     @property
-    def progress_msg(self) :
-        progress_msg = 'The following files have been recognized so far:\n'
-        for datafile in self.files_in_progress_by_path.values() :
-            progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
-        for fp in self.completely_processed_filepaths :
-            progress_msg+=f'\t{fp} (completed)\n'
-        return progress_msg
-
-    @property
     def other_datafile_kwargs(self) :
         return {} #Overload this in child classes to define additional keyword arguments 
                   #that should go to the specific datafile constructor
-    @property
-    def completely_processed_filepaths(self) :
-        return self.__completely_processed_filepaths
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -46,7 +35,7 @@ class DataFileChunkProcessor(ControlledMessageProcessor,ABC) :
             raise ValueError(errmsg)
         self.files_in_progress_by_path = {}
         self.locks_by_fp = {}
-        self.__completely_processed_filepaths = []
+        self.completely_processed_filepaths = []
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -103,3 +92,40 @@ class DataFileChunkProcessor(ControlledMessageProcessor,ABC) :
             return True
         #otherwise just return the code from add_chunk
         return retval
+
+class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
+    """
+    Combine template code in DataFileChunkHandler with specifics of processing messages
+    """
+
+    @property
+    def progress_msg(self) :
+        progress_msg = 'The following files have been recognized so far:\n'
+        for datafile in self.files_in_progress_by_path.values() :
+            progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
+        for fp in self.completely_processed_filepaths :
+            progress_msg+=f'\t{fp} (completed)\n'
+        return progress_msg
+
+class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) :
+    """
+    Combine template code in DataFileChunkHandler with processing messages from one topic 
+    and producing others to a different topic
+    """
+
+    @property
+    def progress_msg(self) :
+        progress_msg = 'The following files have been recognized so far:\n'
+        for datafile in self.files_in_progress_by_path.values() :
+            if datafile.full_filepath not in self.completely_processed_filepaths :
+                progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
+        for fp in self.completely_processed_filepaths :
+            if fp not in self.results_produced_filepaths :
+                progress_msg+=f'\t{fp} (fully read from topic)\n'
+        for fp in self.results_produced_filepaths :
+            progress_msg+=f'\t{fp} (processing results produced)\n'
+        return progress_msg
+
+    def __init__(self,*args,**kwargs) :
+        super().__init__(*args,**kwargs)
+        self.results_produced_filepaths = []
