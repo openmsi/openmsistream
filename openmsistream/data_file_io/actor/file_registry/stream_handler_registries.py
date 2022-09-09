@@ -77,6 +77,17 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             n_files+=1
         return n_files
 
+    def __init__(self,in_progress_filepath,succeeded_filepath,*args,**kwargs) :
+        """
+        in_progress_filepath = path to the file that should hold the "in_progress" datatable
+        succeeded_filepath = path to the file that should hole the "succeeded" datatable
+        """
+        super().__init__(*args,**kwargs)
+        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
+                                                  filepath=in_progress_filepath,logger=self.logger)
+        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                                  filepath=succeeded_filepath,logger=self.logger)
+
     def register_file_in_progress(self,dfc) :
         """
         Add/update a line in the table showing that a file is in progress
@@ -134,13 +145,9 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
         dirpath    = path to the directory that should contain the csv files
         topic_name = the name of the topic that will be produced to (used in the filenames)
         """
-        super().__init__(*args,**kwargs)
         in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_ID}.csv'
-        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
-                                                  filepath=in_progress_filepath,logger=self.logger)
         succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_ID}.csv'
-        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
-                                                  filepath=succeeded_filepath,logger=self.logger)
+        super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_successfully_processed(self,dfc) :
         """
@@ -187,13 +194,9 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
         dirpath    = path to the directory that should contain the csv file
         topic_name = the name of the topic that will be produced to (used in the filename)
         """
-        super().__init__(*args,**kwargs)
         in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_ID}.csv'
-        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
-                                                  filepath=in_progress_filepath,logger=self.logger)
         succeeded_filepath = dirpath / f'files_with_results_produced_to_{producer_topic_name}.csv'
-        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
-                                                  filepath=succeeded_filepath,logger=self.logger)
+        super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_results_produced(self,filename,rel_filepath,n_total_chunks) :
         """

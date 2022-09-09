@@ -1,5 +1,5 @@
 #imports
-from abc import ABC
+from abc import ABC, abstractmethod
 from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
 from .data_file_stream_handler import DataFileStreamHandler
@@ -147,12 +147,13 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                 del self.locks_by_fp[dfc.filepath]
             return to_return
 
+    @abstractmethod
     def _process_downloaded_data_file(self,datafile,lock) :
         """
         Perform some arbitrary operation(s) on a given data file that has been fully read from the stream.
         Can optionally lock other threads using the given lock.
         
-        Does nothing in the base class.
+        Not implemented in the base class.
 
         :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
             all of its messages from the topic
@@ -163,7 +164,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
         :return: None if processing was successful, an Exception otherwise
         """
-        return
+        raise NotImplementedError
 
     def _failed_processing_callback(self,datafile,lock) :
         """
@@ -179,7 +180,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        return
+        pass
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

@@ -117,7 +117,7 @@ class DownloadDataFile(DataFile,ABC) :
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     @abstractmethod
-    def _on_add_chunk(dfc,*args,**kwargs) :
+    def _on_add_chunk(self,dfc,*args,**kwargs) :
         """
         A function to actually process a new chunk being added to the file
         This function is executed while a thread lock is acquired so it will never run asynchronously

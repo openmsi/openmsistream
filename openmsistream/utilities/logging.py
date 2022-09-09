@@ -45,7 +45,7 @@ class Logger :
         """
         self._name = logger_name
         if self._name is None :
-            self._name = self.__name__
+            self._name = self.__class__.__name__
         self._logger_obj = logging.getLogger(self._name)
         self._logger_obj.setLevel(logging.DEBUG)
         self._streamhandler = logging.StreamHandler()

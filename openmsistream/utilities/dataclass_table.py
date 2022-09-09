@@ -1,5 +1,5 @@
 #imports
-import pathlib, methodtools, datetime, typing, copy, os
+import pathlib, functools, methodtools, datetime, typing, copy, os
 from threading import Lock
 from dataclasses import fields, is_dataclass
 from atomicwrites import atomic_write
@@ -200,7 +200,7 @@ class DataclassTable(LogOwner) :
         if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
-    @methodtools.lru_cache(maxsize=5)
+    @functools.lru_cache(maxsize=8)
     def obj_addresses_by_key_attr(self,key_attr_name) :
         """
         Return a dictionary whose keys are the values of some given attribute for each object 

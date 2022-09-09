@@ -132,7 +132,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         raise NotImplementedError
 
-    def remove_service(self,remove_env_vars=False,remove_install_args=False) :
+    def remove_service(self,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
         """
         Remove the Service. Child classes should call this after doing whatever they need to do to 
         optionally remove environment variables.
@@ -142,6 +142,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon 
             (to make it easier to re-install) will be removed.
         :type remove_install_args: bool, optional
+        :param remove_nssm: if True, the NSSM executable will be removed. Only used on Windows.
+        :type remove_nssm: bool, optional
         """
         #remove the executable file
         if self.exec_fp.is_file() :
