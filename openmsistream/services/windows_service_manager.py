@@ -34,12 +34,9 @@ class WindowsServiceManager(ServiceManagerBase) :
             with open(self.env_var_filepath,'r') as fp :
                 lines = fp.readlines()
             for line in lines :
-                try :
-                    linestrip = line.strip()
-                    if linestrip!='' :
-                        yield linestrip
-                except :
-                    pass
+                linestrip = line.strip()
+                if linestrip!='' :
+                    yield linestrip
 
     def install_service(self) :
         """
@@ -141,7 +138,7 @@ class WindowsServiceManager(ServiceManagerBase) :
 
     def __copy_lib_dlls_to_system32(self) :
         """
-        Ensure that several .dll files exist in C:\Windows\system32
+        Ensure that several .dll files exist in C:\\Windows\\system32
         (Needed to properly load it when running as a service)
         """
         system32_path = pathlib.Path(r'C:\Windows\system32')

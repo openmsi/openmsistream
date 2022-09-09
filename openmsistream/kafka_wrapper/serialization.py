@@ -53,6 +53,11 @@ class CompoundSerializer(Serializer):
                 raise SerializationError(errmsg)
         return data
 
+    def __call__(self,data,ctx=None) :
+        if data is None :
+            return None
+        raise SerializationError(f'ERROR: __call__ method not implemented for a {self.__class__.__name__}')
+
 class CompoundDeserializer(Deserializer):
     """
     A Deserializer that stacks multiple steps
@@ -88,6 +93,11 @@ class CompoundDeserializer(Deserializer):
                 errmsg+= f' in CompoundDeserializer! Callable = {des}, exception = {e}'
                 raise SerializationError(errmsg)
         return data
+
+    def __call__(self,data,ctx=None) :
+        if data is None :
+            return None
+        raise SerializationError(f'ERROR: __call__ method not implemented for a {self.__class__.__name__}')
 
 ####################### SERIALIZING/DESERIALIZING FILE CHUNKS #######################
 

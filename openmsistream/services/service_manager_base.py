@@ -40,6 +40,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         self.env_var_filepath = SERVICE_CONST.WORKING_DIR/f'{self.service_name}_env_vars.txt'
         self.install_args_filepath = SERVICE_CONST.WORKING_DIR/f'{self.service_name}_install_args.txt'
         self.exec_fp = SERVICE_CONST.WORKING_DIR/f'{self.service_name}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}'
+        self.env_vars_needed = None
     
     def install_service(self) :
         """
@@ -172,6 +173,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             if self.install_args_filepath.is_file() :
                 self.logger.info(f'Installation arguments file {self.install_args_filepath} will be retained')
         self.logger.info(f'Done removing {self.service_name}')
+        _ = remove_nssm # appease pyflakes / pylint
     
     def reinstall_service(self) :
         """
@@ -333,7 +335,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
     #################### CLASS METHODS ####################
     
     @classmethod
-    def get_argument_parser(cls,install_or_manage,class_name_or_spec_string=None) :
+    def get_argument_parser(cls,install_or_manage=None,class_name_or_spec_string=None) :
         """
         Return the command line argument parser that should be used
 
@@ -397,7 +399,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                     yield arg
             if self.service_dict['class'] is not None :
                 p = self.service_dict['class'].get_argument_parser()
-                argsdests = [action.dest for action in p._actions]
+                argsdests = [action.dest for action in p.actions]
                 if 'config' in argsdests :
                     pargs = p.parse_args(args=self.argslist)
                     cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)

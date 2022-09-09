@@ -325,3 +325,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
             return argname_to_add, kwargs
         else :
             raise ValueError(f'ERROR: argument {argname} is not recognized as an option!')
+
+    @property
+    def actions(self) :
+        return self._actions

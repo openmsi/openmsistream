@@ -21,7 +21,7 @@ class ConfigFileParser(LogOwner) :
     @property
     def env_var_names(self) :
         for csd in self._config.values() :
-            for k,v in csd.items() :
+            for v in csd.values() :
                 if v.startswith('$') :
                     yield v[1:]
 

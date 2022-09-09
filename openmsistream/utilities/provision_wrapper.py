@@ -59,7 +59,7 @@ def main() :
             try :
                 p_code = urllib.request.urlopen(GITHUB_URL).read()
                 p_loc = GITHUB_URL
-            except :
+            except Exception :
                 pass
     if p_loc is None or p_code is None :
         LOGGER.error('ERROR: failed to find the provisioning script to use!',RuntimeError)

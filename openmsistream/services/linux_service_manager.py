@@ -33,12 +33,9 @@ class LinuxServiceManager(ServiceManagerBase) :
             with open(self.env_var_filepath,'r') as fp :
                 lines = fp.readlines()
             for line in lines :
-                try :
-                    linesplit = (line.strip()).split('=')
-                    if len(linesplit)==2 :
-                        yield linesplit[0]
-                except :
-                    pass
+                linesplit = (line.strip()).split('=')
+                if len(linesplit)==2 :
+                    yield linesplit[0]
 
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
@@ -102,7 +99,7 @@ class LinuxServiceManager(ServiceManagerBase) :
         self.__check_systemd_installed()
         try :
             run_cmd_in_subprocess(['sudo','systemctl','disable',f'{self.service_name}.service'],logger=self.logger)
-        except :
+        except Exception :
             pass
         if self.daemon_filepath.exists() :
             run_cmd_in_subprocess(['sudo','rm','-f',str(self.daemon_filepath)],logger=self.logger)

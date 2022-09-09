@@ -54,7 +54,7 @@ class Logger :
         self._logger_obj.addHandler(self._streamhandler)
         self._filehandler = None
         if logger_filepath is not None :
-            self.add_file_handler(logger_filepath)
+            self.add_file_handler(logger_filepath,level=filelevel)
 
     def set_level(self,level) :
         """
@@ -138,12 +138,12 @@ class Logger :
         self._logger_obj.warning(msg,*args,**kwargs)
 
     #log an error message and optionally raise an exception with the same message, or raise a different exception
-    def error(self,msg,exception_type=None,exc_obj=None,reraise=True,*args,**kwargs) :
+    def error(self,msg,exception_type=None,exc_obj=None,reraise=True,**kwargs) :
         """
         Log a message at ERROR level. Optionally raise an exception of a given type with the same message. 
         Optionally log the traceback of a given Exception at ERROR level, reraising it afterward if desired.
         
-        Additional args/kwargs are sent to the underlying logger object's error call.
+        Additional kwargs are sent to the underlying logger object's error call(s).
 
         :param msg: the message to log
         :type msg: str
@@ -156,17 +156,17 @@ class Logger :
         """
         if not msg.startswith('ERROR:') :
             msg = f'ERROR: {msg}'
-        self._logger_obj.error(msg,*args,**kwargs)
+        self._logger_obj.error(msg,**kwargs)
         if exc_obj is not None :
-            self.log_exception_as_error(exc_obj,*args,reraise=reraise,**kwargs)
+            self.log_exception_as_error(exc_obj,reraise=reraise,**kwargs)
         if exception_type is not None : 
             raise exception_type(msg)
 
-    def log_exception_as_error(self,exc,*args,reraise=True,**kwargs) :
+    def log_exception_as_error(self,exc,reraise=True,**kwargs) :
         """
         Log the traceback of a given Exception as an error and optionally reraise it
 
-        Additional args/kwargs are sent to the underlying logger object's error call.
+        Additional kwargs are sent to the underlying logger object's error call.
 
         :param exc: An Exception object whose traceback should be logged at error level
         :type exc: :class:`BaseException`, optional
@@ -180,7 +180,7 @@ class Logger :
             for line in (traceback.format_exc()).split('\n') :
                 exc_to_log+=f'{line},'
             exc_to_log+=']'
-            self._logger_obj.error(exc_to_log,*args,**kwargs)
+            self._logger_obj.error(exc_to_log,**kwargs)
             if reraise :
                 raise exc
 
