@@ -27,8 +27,8 @@ class DownloadDataFile(DataFile,ABC) :
             full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
             return full_fp
 
-    @abstractmethod
     @property
+    @abstractmethod
     def check_file_hash(self) :
         """
         The hash of the data in the file after it was read. Not implemented in the base class.
