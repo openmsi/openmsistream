@@ -47,6 +47,7 @@ class UploadDataFile(DataFile,Runnable) :
         self.__chunks_to_upload = []
         self.__n_total_chunks = 0
         self.__chunk_infos = None
+        self.__file_hash = None
 
     def upload_whole_file(self,config_path,topic_name,
                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
@@ -70,13 +71,13 @@ class UploadDataFile(DataFile,Runnable) :
         upload_queue = Queue()
         self.enqueue_chunks_for_upload(upload_queue,chunk_size=chunk_size)
         #add "None" to the queue for each thread as the final values
-        for ti in range(n_threads) :
+        for _ in range(n_threads) :
             upload_queue.put(None)
         #produce all the messages in the queue using multiple threads
         producer_group = ProducerGroup(config_path,logger=self.logger)
         producers = []
         upload_threads = []
-        for ti in range(n_threads) :
+        for _ in range(n_threads) :
             producers.append(producer_group.get_new_producer())
             t = Thread(target=producers[-1].produce_from_queue_looped, args=(upload_queue,topic_name))
             t.start()

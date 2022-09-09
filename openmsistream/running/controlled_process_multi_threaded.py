@@ -24,8 +24,11 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         self.__n_threads = n_threads
         super().__init__(*args,**kwargs)
         self.__lock = Lock()
+        self.__args_per_thread = []
+        self.__kwargs_per_thread = {}
+        self.__threads = []
 
-    def run(self,args_per_thread=[],kwargs_per_thread={}) :
+    def run(self,args_per_thread=None,kwargs_per_thread=None) :
         """
         args_per_thread = a list of lists of arguments that should be given to the independent threads
                           one list of arguments per thread
@@ -34,7 +37,8 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         """
         super().run()
         #correct the arguments for each thread
-        self.__args_per_thread = args_per_thread
+        if args_per_thread is not None :
+            self.__args_per_thread = args_per_thread
         if self.__args_per_thread==[] or (not type(self.__args_per_thread)==list) :
             self.__args_per_thread = [self.__args_per_thread]
         if not len(self.__args_per_thread)==self.__n_threads :
@@ -45,7 +49,8 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             else :
                 self.__args_per_thread = self.__n_threads*self.__args_per_thread
         #correct the keyword arguments for each thread
-        self.__kwargs_per_thread = kwargs_per_thread
+        if kwargs_per_thread is not None :
+            self.__kwargs_per_thread = kwargs_per_thread 
         if not type(self.__kwargs_per_thread)==list :
             self.__kwargs_per_thread = [self.__kwargs_per_thread]
         if not len(self.__kwargs_per_thread)==self.__n_threads :
@@ -56,7 +61,6 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             else :
                 self.__kwargs_per_thread = self.__n_threads*self.__kwargs_per_thread
         #create and start the independent threads
-        self.__threads = []
         for i in range(self.__n_threads) :
             self.__threads.append(ExceptionTrackingThread(target=self._run_worker,
                                            args=self.__args_per_thread[i],
@@ -101,7 +105,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
                 #try to join the thread 
                 try :
                     thread.join()
-                except :
+                except Exception :
                     pass
                 finally :
                     self.__threads[ti] = None

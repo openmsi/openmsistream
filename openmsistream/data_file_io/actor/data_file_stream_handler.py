@@ -31,7 +31,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             self.logger.error(errmsg,ValueError)
         self._file_registry = None # needs to be set in subclasses
     
-    def _process_message(self,lock,msg):
+    def _process_message(self,lock,msg,rootdir_to_set=None):
         """
         Parent class message processing function to check for:
             undecryptable messages (returns value from _undecryptable_message_callback)
@@ -40,7 +40,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         Child classes should call super()._process_message() and check the return value 
         to find successfully-reconstructed files for further handling.
         """
-        retval = super()._process_message(lock, msg, self._output_dir, self.logger)
+        retval = self._process_message(lock, msg, self._output_dir if rootdir_to_set is None else rootdir_to_set)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
@@ -48,7 +48,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except AttributeError :
             dfc = msg.value #from KafkaCrypto
         #if the file is just in progress
         if retval==True :
@@ -108,7 +108,8 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             of :func:`~_mismatched_hash_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        pass
+        _ = datafile, lock #appease pyflakes/pylint
+        return
 
     @classmethod
     def _get_auto_output_dir(cls) :

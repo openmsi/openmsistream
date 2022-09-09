@@ -41,7 +41,7 @@ class DataFileChunkHandler(LogOwner,ABC) :
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     @abstractmethod
-    def _process_message(self, lock, msg, rootdir_to_set, logger):
+    def _process_message(self, lock, msg, rootdir_to_set):
         """
         Make sure message values are of the expected DataFileChunk type with no root directory set, and then 
         add the chunk to the data file object. If the file is in progress this function returns True.
@@ -53,9 +53,8 @@ class DataFileChunkHandler(LogOwner,ABC) :
         lock = the Thread Lock object to use when processing the file this message comes from
         msg = the actual message object from a call to consumer.poll
         rootdir_to_set = root directory for the new DataFileChunk
-        logger = the logger object to use
         
-        Child classes should call super()._process_message() before doing anything else with
+        Child classes should call self._process_message() before doing anything else with
         the message to perform these checks
         """
         # If the message has KafkaCryptoMessages as its key and/or value, then decryption failed. 
@@ -83,7 +82,7 @@ class DataFileChunkHandler(LogOwner,ABC) :
         with lock :
             if dfc.filepath not in self.files_in_progress_by_path.keys() :
                 self.files_in_progress_by_path[dfc.filepath] = self.datafile_type(dfc.filepath,
-                                                                                  logger=logger,
+                                                                                  logger=self.logger,
                                                                                   **self.other_datafile_kwargs)
                 self.locks_by_fp[dfc.filepath] = Lock()
         retval = self.files_in_progress_by_path[dfc.filepath].add_chunk(dfc,self.locks_by_fp[dfc.filepath])

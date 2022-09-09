@@ -1,5 +1,5 @@
 #imports
-import time
+import datetime
 from queue import Queue, Empty
 from threading import Thread
 from abc import ABC, abstractmethod
@@ -38,6 +38,8 @@ class ControlledProcess(LogOwner,ABC) :
         user_input_thread.start()
         #a variable to indicate if the process has been shut down yet
         self.__alive = False
+        #the last time the "still alive" character was printed
+        self.__last_update = datetime.datetime.now()
         super().__init__(*args,**other_kwargs)
 
     def shutdown(self) :
@@ -52,9 +54,9 @@ class ControlledProcess(LogOwner,ABC) :
 
     def _print_still_alive(self) :
         #print the "still alive" character
-        if self.__update_secs!=-1 and time.time()-self.__last_update>self.__update_secs:
+        if self.__update_secs!=-1 and (datetime.datetime.now()-self.__last_update).total_seconds()>self.__update_secs:
             self.logger.debug('.')
-            self.__last_update = time.time()
+            self.__last_update = datetime.datetime.now()
 
     def _check_control_command_queue(self) :
         #if anything exists in the control command queue
@@ -80,7 +82,7 @@ class ControlledProcess(LogOwner,ABC) :
         before anything else to set these variables
         """
         self.__alive = True
-        self.__last_update = time.time()
+        self.__last_update = datetime.datetime.now()
 
     @abstractmethod
     def _on_check(self) :

@@ -52,12 +52,12 @@ class DownloadDataFile(DataFile,ABC) :
         self.__subdir_str = None
         self.__n_total_chunks = None
 
-    def add_chunk(self,dfc,thread_lock=nullcontext(),*args,**kwargs) :
+    def add_chunk(self,dfc,thread_lock=nullcontext()) :
         """
         A function to process a chunk that's been read from a topic
         Returns a number of codes based on what effect adding the chunk had
         
-        This function calls _on_add_chunk, 
+        This function calls _on_add_chunk, with the DataFileChunk as the argument.
         
         dfc = the DataFileChunk object whose data should be added
         thread_lock = the lock object to acquire/release so that race conditions don't affect 
@@ -101,7 +101,7 @@ class DownloadDataFile(DataFile,ABC) :
         #acquire the thread lock to make sure this process is the only one dealing with this particular file
         with thread_lock :
             #call the function to actually add the chunk
-            self._on_add_chunk(dfc,*args,**kwargs)
+            self._on_add_chunk(dfc)
             #add the offset of the added chunk to the set of reconstructed file chunks
             self._chunk_offsets_downloaded.append(dfc.chunk_offset_write)
             last_chunk = len(self._chunk_offsets_downloaded)==dfc.n_total_chunks
@@ -117,7 +117,7 @@ class DownloadDataFile(DataFile,ABC) :
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     @abstractmethod
-    def _on_add_chunk(self,dfc,*args,**kwargs) :
+    def _on_add_chunk(self,dfc) :
         """
         A function to actually process a new chunk being added to the file
         This function is executed while a thread lock is acquired so it will never run asynchronously

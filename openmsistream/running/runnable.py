@@ -53,4 +53,4 @@ class Runnable(HasArgumentParser,ABC) :
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
         :type args: list
         """
-        pass 
+        raise NotImplementedError
