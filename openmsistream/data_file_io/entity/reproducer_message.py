@@ -1,3 +1,5 @@
+"""Base class for messages computed from reconstructed data files and produced to new topics"""
+
 #imports
 from abc import ABC
 from ...kafka_wrapper.producible import Producible
@@ -10,11 +12,11 @@ class ReproducerMessage(Producible,ABC) :
     :param datafile: The DataFile object used to compute this message
     :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
     """
-    
+
     @property
     def msg_key(self) :
         """
-        The automatically defined key for these messages is a string version of the path 
+        The automatically defined key for these messages is a string version of the path
         to the original file with "_processing_result" appended
         """
         key_pp = get_message_prepend(self.__datafile.subdir_str,self.__datafile.filename)
@@ -23,11 +25,11 @@ class ReproducerMessage(Producible,ABC) :
     @property
     def callback_kwargs(self) :
         """
-        The callback kwargs defined for these messages are the original datafile name, its relative filepath, 
-        and the total number of chunks into which the file was broken. 
+        The callback kwargs defined for these messages are the original datafile name, its relative filepath,
+        and the total number of chunks into which the file was broken.
         """
         if self.__datafile.subdir_str!='' :
-            rel_filepath = f'{self.__datafile.subdir_str}/{self.__datafile.filename}' 
+            rel_filepath = f'{self.__datafile.subdir_str}/{self.__datafile.filename}'
         else :
             rel_filepath = self.__datafile.filename
         return {'filename':self.__datafile.filename,

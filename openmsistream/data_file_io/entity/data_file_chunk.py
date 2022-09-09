@@ -1,3 +1,5 @@
+"""A single chunk of a DataFile. Can be produced to a topic or consumed from one."""
+
 #imports
 import pathlib
 from hashlib import sha512
@@ -14,33 +16,37 @@ class DataFileChunk(Producible) :
 
     @property
     def filepath(self) :
-        return self.__filepath #the path to the file
+        """
+        The path to the file
+        """
+        return self.__filepath
 
     @property
     def rootdir(self) :
-        return self.__rootdir #the path to the file's root directory (already set if chunk is to be produced, 
-                              #but must be set later if chunk is a consumed message)
+        """
+        The path to the file's root directory (already set if chunk is to be produced,
+        but must be set later if chunk is a consumed message)
+        """
+        return self.__rootdir
 
     @rootdir.setter
-    def rootdir(self,rd) : #also resets the overall filepath (used in consuming messages for files in subdirectories)
-        self.__rootdir=rd
-        if rd is not None :
+    def rootdir(self,rootdir) :
+        """
+        Also resets the overall filepath (used in consuming messages for files in subdirectories)
+        """
+        self.__rootdir=rootdir
+        if rootdir is not None :
             try :
                 self.__filepath = self.__filepath.relative_to(self.__rootdir)
             except ValueError :
                 pass
             self.__filepath = self.__rootdir / self.__filepath
-    
-    @property
-    def data(self) :
-        return self.__data #the binary data in the file chunk (populated at time of production or when consumed)
 
-    @data.setter
-    def data(self,d) :
-        self.__data=d
-    
     @property
     def subdir_str(self) :
+        """
+        A string representation of the path to the file, relative to its root directory
+        """
         if self.__rootdir is None :
             parentdir_as_posix = self.__filepath.parent.as_posix()
             if parentdir_as_posix=='.' :
@@ -69,20 +75,20 @@ class DataFileChunk(Producible) :
             'n_total_chunks' : self.n_total_chunks,
             'chunk_i' : self.chunk_i,
             }
-        
+
 
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,filepath,filename,file_hash,chunk_hash,chunk_offset_read,chunk_offset_write,chunk_size,chunk_i,
                  n_total_chunks,rootdir=None,filename_append='',data=None) :
         """
-        filepath           = path to this chunk's file 
+        filepath           = path to this chunk's file
                              (fully resolved if being produced, may be relative if it was consumed)
         filename           = the name of the file
         file_hash          = hash of this chunk's entire file data
         chunk_hash         = hash of this chunk's data
         chunk_offset_read  = offset (in bytes) of this chunk within the original file
-        chunk_offset_write = offset (in bytes) of this chunk within the reconstructed file 
+        chunk_offset_write = offset (in bytes) of this chunk within the reconstructed file
                              (may be different than chunk_offset_read due to excluding some bytes in uploading)
         chunk_size         = size of this chunk (in bytes)
         chunk_i            = index of this chunk within the larger file
@@ -90,7 +96,7 @@ class DataFileChunk(Producible) :
         rootdir            = path to the "root" directory; anything beyond in the filepath is considered a subdirectory
                              (optional, can also be set later)
         filename_append    = string to append to the stem of the filename when the file is reconstructed
-        data               = the actual binary data of this chunk of the file 
+        data               = the actual binary data of this chunk of the file
                              (can be set later if this chunk is being produced and not consumed)
         """
         self.__filepath = filepath
@@ -104,7 +110,7 @@ class DataFileChunk(Producible) :
         self.n_total_chunks = n_total_chunks
         self.__rootdir = rootdir
         self.filename_append = filename_append
-        self.__data = data
+        self.data = data
 
     def __eq__(self,other) :
         if not isinstance(other,DataFileChunk) :
@@ -119,24 +125,24 @@ class DataFileChunk(Producible) :
         retval = retval and self.n_total_chunks == other.n_total_chunks
         retval = retval and self.subdir_str == other.subdir_str
         retval = retval and self.filename_append == other.filename_append
-        retval = retval and self.__data == other.data
+        retval = retval and self.data == other.data
         return retval
 
     def __str__(self) :
-        s = 'DataFileChunk('
-        s+=f'filename: {self.filename}, '
-        s+=f'file_hash: {self.file_hash}, '
-        s+=f'chunk_hash: {self.chunk_hash}, '
-        s+=f'chunk_offset_read: {self.chunk_offset_read}, '
-        s+=f'chunk_offset_write: {self.chunk_offset_write}, '
-        s+=f'chunk_size: {self.chunk_size}, '
-        s+=f'chunk_i: {self.chunk_i}, '
-        s+=f'n_total_chunks: {self.n_total_chunks}, '
-        s+=f'subdir_str: {self.subdir_str}, '
-        s+=f'filename_append: {self.filename_append}, '
-        #s+=f'data: {self.__data}, '
-        s+=')'
-        return s
+        string_rep = 'DataFileChunk('
+        string_rep+=f'filename: {self.filename}, '
+        string_rep+=f'file_hash: {self.file_hash}, '
+        string_rep+=f'chunk_hash: {self.chunk_hash}, '
+        string_rep+=f'chunk_offset_read: {self.chunk_offset_read}, '
+        string_rep+=f'chunk_offset_write: {self.chunk_offset_write}, '
+        string_rep+=f'chunk_size: {self.chunk_size}, '
+        string_rep+=f'chunk_i: {self.chunk_i}, '
+        string_rep+=f'n_total_chunks: {self.n_total_chunks}, '
+        string_rep+=f'subdir_str: {self.subdir_str}, '
+        string_rep+=f'filename_append: {self.filename_append}, '
+        #string_rep+=f'data: {self.data}, '
+        string_rep+=')'
+        return string_rep
 
     def __hash__(self) :
         return super().__hash__()
@@ -175,4 +181,4 @@ class DataFileChunk(Producible) :
             msg+= f'offset {self.chunk_offset_read}'
             logger.error(msg,ValueError)
         #set the chunk's data value
-        self.__data = data
+        self.data = data
