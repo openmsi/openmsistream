@@ -60,7 +60,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     def _process_message(self, lock, msg):
-        retval = super()._process_message(lock,msg,self.dirpath,self.logger)
+        retval = super()._process_message(lock,msg,self.dirpath)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
@@ -83,7 +83,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :

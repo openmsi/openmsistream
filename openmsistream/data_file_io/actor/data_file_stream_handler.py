@@ -40,7 +40,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         Child classes should call super()._process_message() and check the return value 
         to find successfully-reconstructed files for further handling.
         """
-        retval = self._process_message(lock, msg, self._output_dir if rootdir_to_set is None else rootdir_to_set)
+        retval = super()._process_message(lock, msg, self._output_dir if rootdir_to_set is None else rootdir_to_set)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
@@ -48,7 +48,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except AttributeError :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #if the file is just in progress
         if retval==True :

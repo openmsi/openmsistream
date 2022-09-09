@@ -58,6 +58,12 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.__datafile_type = datafile_type
         self.__wait_time = self.MIN_WAIT_TIME
         self.__lock = Lock()
+        self.__topic_name = None
+        self.__chunk_size = None
+        self.__file_registry = None
+        self.__upload_queue = None
+        self.__producers = []
+        self.__upload_threads = []
         
     def upload_files_as_added(self,topic_name,
                               n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
@@ -100,8 +106,6 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.logger.info(msg)
         self.__upload_queue = Queue(max_queue_size)
         #start the producers and upload threads
-        self.__producers = []
-        self.__upload_threads = []
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
             t = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue_looped,
@@ -341,7 +345,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 #try to join the thread 
                 try :
                     upload_thread.join()
-                except :
+                except Exception :
                     pass
                 finally :
                     self.__upload_threads[ti] = None
