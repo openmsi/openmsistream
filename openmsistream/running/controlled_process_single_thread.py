@@ -1,10 +1,15 @@
+"""
+A controlled process that is only running in a single thread
+"""
+
 #imports
 from abc import ABC, abstractmethod
 from .controlled_process import ControlledProcess
 
 class ControlledProcessSingleThread(ControlledProcess,ABC) :
     """
-    A class for running a process in a single thread in a loop until it's explicitly shut down
+    A class for running a process in a single thread in a loop until it's explicitly shut down.
+    Every iteration a single function is called, and then the control command queue is checked.
     """
 
     def run(self) :

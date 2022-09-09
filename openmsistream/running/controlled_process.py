@@ -1,3 +1,7 @@
+"""
+A process that will run while waiting for user input to check progress/status or shut it down
+"""
+
 #imports
 import datetime
 from queue import Queue, Empty
@@ -16,24 +20,24 @@ class ControlledProcess(LogOwner,ABC) :
 
     @property
     def alive(self) :
+        """
+        read-only
+        """
         return self.__alive
-    @property
-    def control_command_queue(self) :
-        return self.__control_command_queue
 
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,*args,update_secs=RUN_CONST.DEFAULT_UPDATE_SECONDS,**other_kwargs) :
         """
-        update_secs = number of seconds to wait between printing a progress character to the console 
+        update_secs = number of seconds to wait between printing a progress character to the console
                       to indicate the program is alive
         """
         self.__update_secs = update_secs
         #start up a Queue that will hold the control commands
-        self.__control_command_queue = Queue()
-        #use a daemon thread to allow a user to input control commands from the command line 
+        self.control_command_queue = Queue()
+        #use a daemon thread to allow a user to input control commands from the command line
         #while the process is running
-        user_input_thread = Thread(target=add_user_input,args=(self.__control_command_queue,))
+        user_input_thread = Thread(target=add_user_input,args=(self.control_command_queue,))
         user_input_thread.daemon=True
         user_input_thread.start()
         #a variable to indicate if the process has been shut down yet
@@ -46,7 +50,7 @@ class ControlledProcess(LogOwner,ABC) :
         """
         Stop the process running
         """
-        self.__control_command_queue.task_done()
+        self.control_command_queue.task_done()
         self.__alive = False
         self._on_shutdown()
 
@@ -61,7 +65,7 @@ class ControlledProcess(LogOwner,ABC) :
     def _check_control_command_queue(self) :
         #if anything exists in the control command queue
         try :
-            cmd = self.__control_command_queue.get(block=True,timeout=0.5)
+            cmd = self.control_command_queue.get(block=True,timeout=0.5)
         except Empty :
             cmd = None
         if cmd is not None :
@@ -77,8 +81,8 @@ class ControlledProcess(LogOwner,ABC) :
     @abstractmethod
     def run(self) :
         """
-        Classes extending this base class should include the logic of actually 
-        running the controlled process in this function, and should call super().run() 
+        Classes extending this base class should include the logic of actually
+        running the controlled process in this function, and should call super().run()
         before anything else to set these variables
         """
         self.__alive = True

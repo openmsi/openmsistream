@@ -1,5 +1,22 @@
+"""OpenMSIStream library for simplified data streaming using Apache Kafka"""
+
 #imports
 import os
+from .data_file_io.entity.upload_data_file import UploadDataFile
+from .data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
+from .data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
+from .data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
+from .data_file_io.actor.data_file_stream_reproducer import DataFileStreamReproducer
+from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
+
+__all__ = [
+    'UploadDataFile',
+    'DataFileUploadDirectory',
+    'DataFileDownloadDirectory',
+    'DataFileStreamProcessor',
+    'DataFileStreamReproducer',
+    'S3TransferStreamProcessor',
+]
 
 #If running on Windows, try to pre-load the librdkafka.dll file
 if os.name=='nt' :
@@ -33,20 +50,3 @@ if os.name=='nt' :
             print(errmsg)
             raise e
     _ = confluent_kafka.Producer #appease pyflakes
-
-#Make some classes available in the openmsistream module itself
-from .data_file_io.entity.upload_data_file import UploadDataFile
-from .data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
-from .data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
-from .data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
-from .data_file_io.actor.data_file_stream_reproducer import DataFileStreamReproducer
-from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
-
-__all__ = [
-    'UploadDataFile',
-    'DataFileUploadDirectory',
-    'DataFileDownloadDirectory',
-    'DataFileStreamProcessor',
-    'DataFileStreamReproducer',
-    'S3TransferStreamProcessor',
-]

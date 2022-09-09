@@ -1,3 +1,5 @@
+"""Anything that has a classmethod to create an argument parser"""
+
 #imports
 from abc import ABC, abstractmethod
 

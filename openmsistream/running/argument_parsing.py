@@ -1,3 +1,5 @@
+"""Custom argument parser and associated functions"""
+
 #imports
 import pathlib, math, re
 from argparse import ArgumentParser
@@ -6,22 +8,28 @@ from .config import RUN_CONST
 
 #################### MISC. FUNCTIONS ####################
 
-#convert a string or path argument into a path to a file, checking if it exists
 def existing_file(argstring) :
+    """
+    convert a string or path argument into a path to a file, checking if it exists
+    """
     filepath = pathlib.Path(argstring)
     if filepath.is_file() :
         return filepath.resolve()
     raise FileNotFoundError(f'ERROR: file {argstring} does not exist!')
 
-#convert a string or path argument into a directory path, checking if it exists
 def existing_dir(argstring) :
+    """
+    convert a string or path argument into a directory path, checking if it exists
+    """
     dirpath = pathlib.Path(argstring)
     if dirpath.is_dir() :
         return dirpath.resolve()
     raise FileNotFoundError(f'ERROR: directory {argstring} does not exist!')
 
-#convert a string or path argument into a directory path, creating it if necessary
 def create_dir(argstring) :
+    """
+    convert a string or path argument into a directory path, creating it if necessary
+    """
     if argstring is None : #Then the argument wasn't given and nothing should be done
         return None
     dirpath = pathlib.Path(argstring)
@@ -32,8 +40,10 @@ def create_dir(argstring) :
     dirpath.mkdir(parents=True)
     return dirpath.resolve()
 
-#convert a string or path argument into a config file path (raise an exception if the file can't be found)
 def config_path(configarg) :
+    """
+    convert a string or path argument into a config file path (raise an exception if the file can't be found)
+    """
     if isinstance(configarg,str) and '.' not in configarg :
         configarg+=RUN_CONST.CONFIG_FILE_EXT
     configpath = pathlib.Path(configarg)
@@ -43,26 +53,32 @@ def config_path(configarg) :
         return (RUN_CONST.CONFIG_FILE_DIR/configpath).resolve()
     raise ValueError(f'ERROR: config argument {configarg} is not a recognized config file!')
 
-#detects if the bucket name contains invalid characters
 def detect_bucket_name(argstring) :
+    """
+    detects if the bucket name contains invalid characters
+    """
     if argstring is None : #Then the argument wasn't given and nothing should be done
         return None
-    illegal_charcters = ['#', '%', '&' ,'{', '}', '\\', '/', '<', '>', '*', '?', ' ', 
+    illegal_charcters = ['#', '%', '&' ,'{', '}', '\\', '/', '<', '>', '*', '?', ' ',
                          '$', '!', '\'', '\"', ':', '@', '+', '`', '|', '=']
     if argstring in illegal_charcters:
         raise RuntimeError(f'ERROR: Illegal characters in bucket_name {argstring}')
     return argstring
 
-#make sure a given value is a nonzero integer power of two (or can be converted to one)
 def int_power_of_two(argval) :
+    """
+    make sure a given value is a nonzero integer power of two (or can be converted to one)
+    """
     if not isinstance(argval,int) :
         argval=int(argval)
     if argval<=0 or math.ceil(math.log2(argval))!=math.floor(math.log2(argval)) :
         raise ValueError(f'ERROR: invalid argument: {argval} must be a (nonzero) power of two!')
     return argval
 
-#make sure a given value is a positive integer
 def positive_int(argval) :
+    """
+    make sure a given value is a positive integer
+    """
     argval = int(argval)
     if (not isinstance(argval,int)) or (argval<1) :
         raise ValueError(f'ERROR: invalid argument: {argval} must be a positive integer!')
@@ -76,9 +92,9 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
 
     All constructor arguments get passed to the underlying :class:`argparse.ArgumentParser` object.
 
-    Arguments for the parser are defined in the :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS` class variable, 
+    Arguments for the parser are defined in the :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS` class variable,
     which is a dictionary. The keys are names of arguments, and the values are lists. The first entry in each list
-    is a string reading "positional" or "optional" depending on the type of argument, and the second entry is a 
+    is a string reading "positional" or "optional" depending on the type of argument, and the second entry is a
     dictionary of keyword arguments to send to :func:`argparse.ArgumentParser.add_argument`.
     """
 
@@ -90,22 +106,22 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         'upload_dir':
             ['positional',{'type':existing_dir,'help':'Path to the directory to watch for files to upload'}],
         'bucket_name':
-            ['positional', {'type': detect_bucket_name, 
+            ['positional', {'type': detect_bucket_name,
                             'help': '''Name of the object store bucket to which consumed files should be transferred.
                                        Name should only contain valid characters'''}],
         'config':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_CONFIG_FILE,'type':config_path,
-                         'help':f'''Name of config file to use in {RUN_CONST.CONFIG_FILE_DIR.resolve()}, 
+                         'help':f'''Name of config file to use in {RUN_CONST.CONFIG_FILE_DIR.resolve()},
                                     or path to a file in a different location'''}],
         'topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                         'help':'Name of the topic to produce to or consume from'}],    
+                         'help':'Name of the topic to produce to or consume from'}],
         'consumer_topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                         'help':'Name of the topic to consume from'}],    
+                         'help':'Name of the topic to consume from'}],
         'producer_topic_name':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                         'help':'Name of the topic to produce to'}],    
+                         'help':'Name of the topic to produce to'}],
         'n_threads':
             ['optional',{'default':RUN_CONST.DEFAULT_N_THREADS,'type':positive_int,
                          'help':'Maximum number of threads to use'}],
@@ -120,20 +136,20 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                          'help':'Only files matching this regular expression will be uploaded'}],
         'chunk_size':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,'type':int_power_of_two,
-                         'help':'''Max size (in bytes) of chunks into which files should be broken 
+                         'help':'''Max size (in bytes) of chunks into which files should be broken
                                    as they are uploaded'''}],
         'queue_max_size':
             ['optional',{'default':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,'type':int,
-                         'help':'''Maximum number of items to allow in the upload queue at a time. 
+                         'help':'''Maximum number of items to allow in the upload queue at a time.
                                  Use to limit RAM usage or throttle production rate if necessary.'''}],
         'update_seconds':
             ['optional',{'default':RUN_CONST.DEFAULT_UPDATE_SECONDS,'type':int,
-                         'help':'''Number of seconds between printing a "." to the console 
+                         'help':'''Number of seconds between printing a "." to the console
                                    to indicate the program is alive'''}],
         'upload_existing':
             ['optional',{'action':'store_true',
-                         'help':'''Add this flag to upload files already existing in addition to those 
-                                   added to the directory after this code starts running (by default 
+                         'help':'''Add this flag to upload files already existing in addition to those
+                                   added to the directory after this code starts running (by default
                                    only files added after startup will be uploaded)'''}],
         'consumer_group_ID':
             ['optional',{'default':'create_new',
@@ -151,7 +167,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                            'help':'What to do with the service'}],
         'remove_env_vars':
             ['optional',{'action':'store_true',
-                         'help':'''Add this flag to also remove username/password environment variables 
+                         'help':'''Add this flag to also remove username/password environment variables
                                    when removing a Service'''}],
         'remove_install_args':
             ['optional',{'action':'store_true',
@@ -175,7 +191,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         Overloaded from base class; OpenMSIStreamArgumentParser actually owns its subparsers to simplify conflicting
         argument names
         """
-        if self.__subparsers_action_obj is not None or self.__subparsers!={} :
+        if self.__subparsers_action_obj is not None or self.__subparsers :
             raise RuntimeError('ERROR: add_subparsers called for an argument parser that already has subparsers!')
         self.__subparsers_action_obj = super().add_subparsers(*args,**kwargs)
 
@@ -195,15 +211,15 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         """
         Add a group of common arguments to the parser
 
-        :param args: Names of arguments that should be added exactly as they're listed in 
+        :param args: Names of arguments that should be added exactly as they're listed in
             :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS`
         :type args: list
-        :param kwargs: Dictionary whose keys are argument names like in `args` and whose values are new 
+        :param kwargs: Dictionary whose keys are argument names like in `args` and whose values are new
             default argument values
         :type kwargs: dict
 
-        :raises ValueError: if the name of an argument isn't recognized in 
-            :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS`, or if the type of a new default argument is different 
+        :raises ValueError: if the name of an argument isn't recognized in
+            :attr:`~OpenMSIStreamArgumentParser.ARGUMENTS`, or if the type of a new default argument is different
             than the type of its original default argument
         """
         if len(args)<1 and len(kwargs)<1 :
@@ -212,7 +228,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         for argname in args :
             if argname not in args_to_use :
                 args_to_use.append(argname)
-        for argname in kwargs.keys() :
+        for argname in kwargs :
             if argname in args_to_use :
                 args_to_use.remove(argname)
         for argname in args_to_use :
@@ -232,10 +248,10 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
 
         :param subp_name: the name of the subparser command
         :type subp_name: str
-        :param args_to_add: additional arguments that should be added to the subparser 
+        :param args_to_add: additional arguments that should be added to the subparser
             (same format as `args` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
         :type args_to_add: list, optional
-        :param kwargs_to_add: additional keyword arguments that should be added to the subparser 
+        :param kwargs_to_add: additional keyword arguments that should be added to the subparser
             (same format as `kwargs` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
         :type kwargs_to_add: dict, optional
         :param other_kwargs: any other keyword arguments are passed to the subparser's add_parser() method
@@ -247,7 +263,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
             errmsg = 'ERROR: add_subparser_arguments called for an argument parser that '
             errmsg+= 'has not added subparsers!'
             raise RuntimeError(errmsg)
-        if subp_name in self.__subparsers.keys() :
+        if subp_name in self.__subparsers :
             errmsg = f'ERROR: subparser arguments for {subp_name} have already been added to this argument parser!'
             raise RuntimeError(errmsg)
         self.__subparsers[subp_name] = self.__subparsers_action_obj.add_parser(subp_name,**other_kwargs)
@@ -271,13 +287,13 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         Create a new subparser and add arguments from the given class to it.
         `class_to_add must` inherit from :class:`~Runnable` to be able to get its arguments.
 
-        :param subp_name: an override for the name of the command the subparser should be registered under. 
+        :param subp_name: an override for the name of the command the subparser should be registered under.
             (Default is the name of the class.)
         :type subp_name: str, optional
-        :param addl_args: additional arguments that should be added to the subparser 
+        :param addl_args: additional arguments that should be added to the subparser
             (same format as `args` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
         :type addl_args: list, optional
-        :param addl_kwargs: additional keyword arguments that should be added to the subparser 
+        :param addl_kwargs: additional keyword arguments that should be added to the subparser
             (same format as `kwargs` for :func:`~OpenMSIStreamArgumentParser.add_arguments`)
         :type addl_kwargs: dict, optional
         :param other_kwargs: any other keyword arguments are passed to subparsers' add_parser() method
@@ -286,7 +302,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         :raises ValueError: like in :func:`~OpenMSIStreamArgumentParser.add_arguments`
         """
         if subp_name is None :
-            subp_name = class_to_add.__name__ 
+            subp_name = class_to_add.__name__
         argnames, argnames_with_defaults = class_to_add.get_command_line_arguments()
         if addl_args is not None :
             argnames = [*argnames,*addl_args]
@@ -301,9 +317,9 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         argname = the given name of the argument, will be matched to a name in ARGUMENTS
         new_default = an optional parameter given to override the default already specified in ARGUMENTS
         """
-        if argname in self.ARGUMENTS.keys() :
+        if argname in self.ARGUMENTS :
             if self.ARGUMENTS[argname][0]=='positional' :
-                argname_to_add = argname 
+                argname_to_add = argname
             else :
                 if argname.startswith('optional_') :
                     argname_to_add = f'--{argname[len("optional_"):]}'
@@ -311,8 +327,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                     argname_to_add = f'--{argname}'
             kwargs = self.ARGUMENTS[argname][1].copy()
             if new_default is not None :
-                if ( 'default' in kwargs.keys() and 
-                    type(new_default)!=type(kwargs['default']) ) :
+                if 'default' in kwargs.keys() and not isinstance(new_default,type(kwargs['default'])) :
                     errmsg = f'ERROR: new default value {new_default} for argument {argname} is of a different type '
                     errmsg+= f'than expected based on the old default ({self.ARGUMENTS[argname]["kwargs"]["default"]})!'
                     raise ValueError(errmsg)
@@ -328,4 +343,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
 
     @property
     def actions(self) :
+        """
+        wrapper around parser._actions to make it publicly available
+        """
         return self._actions
