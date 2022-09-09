@@ -59,8 +59,8 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
-    def _process_message(self, lock, msg):
-        retval = super()._process_message(lock,msg,self.dirpath)
+    def _process_message(self, lock, msg, rootdir_to_set=None):
+        retval = super()._process_message(lock,msg,self.dirpath if rootdir_to_set is None else rootdir_to_set)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and 
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :

@@ -80,7 +80,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             t.join()
 
     @abstractmethod
-    def _run_worker(self,*args,**kwargs) :
+    def _run_worker(self) :
         """
         A function that should include a while self.alive loop for each independent thread to run 
         until the process is shut down

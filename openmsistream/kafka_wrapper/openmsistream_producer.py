@@ -295,7 +295,7 @@ class OpenMSIStreamProducer(LogOwner) :
         try :
             if self.__kafkacrypto :
                 self.__kafkacrypto.close()
-        except :
+        except Exception :
             pass
         finally :
             self.__kafkacrypto = None

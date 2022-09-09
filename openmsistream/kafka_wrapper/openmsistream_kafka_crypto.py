@@ -65,7 +65,7 @@ class OpenMSIStreamKafkaCrypto :
         """
         try :
             self._kc.close()
-        except :
+        except Exception :
             pass
         finally :
             self._kc = None

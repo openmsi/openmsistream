@@ -34,18 +34,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
         self.n_consumer_threads = n_consumer_threads
         self.producer_message_queue = Queue()
 
-    def producer_callback(self,err,msg) :
-        """
-        The callback that should be registered for each call to Producer.produce.
-        Child classes implementing more complex producer callbacks should call super().producer_callback() 
-        to increment the number of messages produced at the end of their own functions
-        """
-        # If no error occured, increment the counter for the number of messages produced
-        if err is None and msg.error() is None :
-            with self.lock :
-                self.n_msgs_produced+=1
-
-    def _run_worker(self,create_consumer,create_producer,produce_from_queue_args=[],produce_from_queue_kwargs={}):
+    def _run_worker(self,create_consumer=False,create_producer=False,
+                    produce_from_queue_args=None,produce_from_queue_kwargs=None):
         """
         Handle optional startup and shutdown of thread-independent Consumer and/or Producer. 
         Serve individual messages to the _process_message function on the Consumer side, 
@@ -89,7 +79,7 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                     if retval :
                         with self.lock :
                             self.n_msgs_processed+=1
-                        if not consumer._message_consumed_before(msg) :
+                        if not consumer.message_consumed_before(msg) :
                             tps = consumer.commit(msg)
                             if tps is not None :
                                 for tp in tps :
@@ -104,6 +94,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                 if self.producer_message_queue.empty() :
                     time.sleep(self.NO_MESSAGE_WAIT) #wait just a bit to not overtax things
                 else :
+                    produce_from_queue_args = [] if produce_from_queue_args is None else produce_from_queue_args
+                    produce_from_queue_kwargs = {} if produce_from_queue_kwargs is None else produce_from_queue_kwargs
                     producer.produce_from_queue(self.producer_message_queue,self.producer_topic_name,
                                                 *produce_from_queue_args,**produce_from_queue_kwargs)
                 if calls_since_producer_flush>=self.FLUSH_PRODUCER_EVERY :
@@ -112,7 +104,7 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                 calls_since_producer_flush+=1
         #commit the offset of the last message received if it wasn't already consumed in the past (block until done)
         if ( (consumer is not None) and 
-             (last_message is not None) and (not consumer._message_consumed_before(last_message)) ) :
+             (last_message is not None) and (not consumer.message_consumed_before(last_message)) ) :
             try :
                 tps = consumer.commit(last_message,asynchronous=False)
                 if tps is not None :

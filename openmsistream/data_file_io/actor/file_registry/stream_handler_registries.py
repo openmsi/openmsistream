@@ -72,10 +72,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         """
         The number of files in the registry that are marked as "in_progress"
         """
-        n_files = 0
-        for fp in self.filepaths_to_rerun :
-            n_files+=1
-        return n_files
+        return len(self.filepaths_to_rerun)
 
     def __init__(self,in_progress_filepath,succeeded_filepath,*args,**kwargs) :
         """

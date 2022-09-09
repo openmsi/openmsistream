@@ -227,7 +227,7 @@ class OpenMSIStreamConsumer(LogOwner) :
                     return self._consumer.commit_async(offsets=offset_dict)
                 else :
                     return self._consumer.commit(offsets=offset_dict)
-            except :
+            except Exception :
                 warnmsg = 'WARNING: failed to commit an offset for an encrypted message. '
                 warnmsg = 'Duplicates may result if the Consumer is restarted.'
                 self.logger.warning(warnmsg)
@@ -248,7 +248,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         try :
             if self.__kafkacrypto :
                 self.__kafkacrypto.close()
-        except :
+        except Exception :
             pass
         finally :
             self.__kafkacrypto = None
@@ -258,10 +258,10 @@ class OpenMSIStreamConsumer(LogOwner) :
         Checks a message's key against the regex and its offset against the starting offsets. 
         Returns None if a message should be skipped, otherwise returns the message.
         """
-        if (self.message_key_regex is not None) and (self.filter_new_messages or self._message_consumed_before(msg)) :
+        if (self.message_key_regex is not None) and (self.filter_new_messages or self.message_consumed_before(msg)) :
             try :
                 msg_key = msg.key() #from a regular Kafka Consumer
-            except :
+            except TypeError :
                 msg_key = msg.key #from KafkaCrypto
             if not isinstance(msg_key,str) :
                 warnmsg = f'WARNING: found a message whose key ({msg_key}) is not a string, but which should be '
@@ -276,7 +276,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         return msg
 
     @methodtools.lru_cache()
-    def _message_consumed_before(self,msg) :
+    def message_consumed_before(self,msg) :
         """
         Returns True if a message has an offset less than the starting offset for the topic/partition, False otherwise
         """
@@ -284,7 +284,7 @@ class OpenMSIStreamConsumer(LogOwner) :
             msg_topic = msg.topic()
             msg_partition = msg.partition()
             msg_offset = msg.offset()
-        except : #from KafkaCrypto
+        except TypeError : #from KafkaCrypto
             msg_topic = msg.topic
             msg_partition = msg.partition
             msg_offset = msg.offset

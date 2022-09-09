@@ -86,7 +86,7 @@ class ConsumerGroup(LogOwner) :
         """
         try :
             self.__c_kwargs['kafkacrypto'].close()
-        except :
+        except Exception :
             pass
         finally :
             self.__c_kwargs['kafkacrypto'] = None

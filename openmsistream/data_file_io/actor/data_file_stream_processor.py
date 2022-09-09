@@ -69,7 +69,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         #return the results of the processing
         return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths
 
-    def _process_message(self,lock,msg):
+    def _process_message(self,lock,msg,rootdir_to_set=None):
         """
         Process a single message to add it to a file being held in memory until all messages are received.
 
@@ -96,19 +96,22 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         :type lock: :class:`threading.Lock`
         :param msg: The received :class:`confluent_kafka.KafkaMessage` object, or an undecrypted KafkaCrypto message
         :type msg: :class:`confluent_kafka.KafkaMessage` or :class:`kafkacrypto.Message` 
+        :param rootdir_to_set: Path to a directory that should be set as the "root" for reconstructed data files 
+            (default is the output directory)
+        :type rootdir_to_set: :class:`pathlib.Path`
 
         :return: True if processing the message was successful (file in progress or successfully processed), 
             False otherwise
         :rtype: bool
         """
-        retval = super()._process_message(lock,msg)
+        retval = super()._process_message(lock,msg,self._output_dir if rootdir_to_set is None else rootdir_to_set)
         #if the file was in progress or had a mismatched hash, return True or False, respectively
         if retval in (True,False) :
             return retval
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #if the file has had all of its messages read successfully, send it to the processing function
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
@@ -180,7 +183,8 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        pass
+        _ = datafile,lock # appease pyflakes/pylint
+        return
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

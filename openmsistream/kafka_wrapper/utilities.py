@@ -21,6 +21,8 @@ def add_kwargs_to_configs(configs,logger,**kwargs) :
 
 #a callback function to use for testing whether a message has been successfully produced to the topic
 def default_producer_callback(err,msg,logger=None,**other_kwargs) :
+    if err is None and msg.error() is not None :
+        err = msg.error()
     if err is not None: #raise an error if the message wasn't sent successfully
         if err.fatal() :
             logmsg =f'ERROR: fatally failed to deliver message with kwargs "{other_kwargs}". '

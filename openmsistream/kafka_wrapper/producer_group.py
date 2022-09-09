@@ -44,7 +44,7 @@ class ProducerGroup(LogOwner) :
         """
         try :
             self.__p_kwargs['kafkacrypto'].close()
-        except :
+        except Exception :
             pass
         finally :
             self.__p_kwargs['kafkacrypto'] = None

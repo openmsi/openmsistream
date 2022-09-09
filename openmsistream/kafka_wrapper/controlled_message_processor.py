@@ -56,7 +56,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
             if retval :
                 with self.lock :
                     self.n_msgs_processed+=1
-                if not consumer._message_consumed_before(msg) :
+                if not consumer.message_consumed_before(msg) :
                     tps = consumer.commit(msg)
                     if tps is not None :
                         for tp in tps :
@@ -66,7 +66,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
                                 warnmsg+= f'Consumer is restarted. Error reason: {tp.error.str()}'
                                 self.logger.warning(warnmsg)
         #commit the offset of the last message received if it wasn't already consumed in the past (block until done)
-        if (last_message is not None) and (not consumer._message_consumed_before(last_message)) :
+        if (last_message is not None) and (not consumer.message_consumed_before(last_message)) :
             try :
                 tps = consumer.commit(last_message,asynchronous=False)
                 if tps is not None :

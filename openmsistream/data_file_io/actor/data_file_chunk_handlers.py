@@ -65,7 +65,7 @@ class DataFileChunkHandler(LogOwner,ABC) :
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #make sure the chunk is of the right type
         if not isinstance(dfc,DataFileChunk) :

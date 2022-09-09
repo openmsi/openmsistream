@@ -116,6 +116,10 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :param n_total_chunks: The total number of chunks in the file used to create this processing result message
         :type n_total_chunks: int
         """
+        # If no error occured, increment the counter for the number of messages produced
+        if err is None and msg.error() is None :
+            with self.lock :
+                self.n_msgs_produced+=1
         # If any error occured, log a warning and re-enqueue the message to be produced again
         if err is None and msg.error() is not None :
             err = msg.error()
@@ -145,9 +149,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
             infomsg = f'Processing result message for {rel_filepath} has been received by the broker for '
             infomsg+= f'the {self.producer_topic_name} topic'
             self.logger.info(infomsg)
-        super().producer_callback(err,msg)
 
-    def _process_message(self,lock,msg):
+    def _process_message(self,lock,msg,rootdir_to_set=None):
         """
         Process a single message to add it to a file being held in memory until all messages are received.
 
@@ -173,19 +176,22 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :type lock: :class:`threading.Lock`
         :param msg: The received :class:`confluent_kafka.KafkaMessage` object, or an undecrypted KafkaCrypto message
         :type msg: :class:`confluent_kafka.KafkaMessage` or :class:`kafkacrypto.Message` 
+        :param rootdir_to_set: Path to a directory that should be set as the "root" for reconstructed data files 
+            (default is the output directory)
+        :type rootdir_to_set: :class:`pathlib.Path`
 
         :return: True if processing the message was successful (file in progress or message enqueue to be produced), 
             False otherwise
         :rtype: bool
         """
-        retval = super()._process_message(lock,msg)
+        retval = super()._process_message(lock,msg,self._output_dir if rootdir_to_set is None else rootdir_to_set)
         #if the file was in progress or had a mismatched hash, return True or False, respectively
         if retval in (True,False) :
             return retval
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #if the file has had all of its messages read successfully, try to enqueue its processing result to produce
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
