@@ -1,3 +1,8 @@
+"""
+Code for managing the two csv files listing files that are
+in the process of being produced/have been fully produced
+"""
+
 #imports
 import pathlib, datetime
 from typing import Set
@@ -6,6 +11,9 @@ from ....utilities import DataclassTable, LogOwner
 
 @dataclass
 class RegistryLineInProgress :
+    """
+    A line in the table listing files in progress
+    """
     filename : str
     filepath : pathlib.Path
     n_chunks : int
@@ -17,6 +25,9 @@ class RegistryLineInProgress :
 
 @dataclass
 class RegistryLineCompleted :
+    """
+    A line in the table listing completed files
+    """
     filename : str
     filepath : pathlib.Path
     n_chunks : int
@@ -68,7 +79,7 @@ class ProducerFileRegistry(LogOwner) :
         #get a dictionary of the existing object addresses keyed by their filepaths
         existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('filepath')
         #if the file is already recognized as in progress
-        if filepath in existing_obj_addresses.keys() :
+        if filepath in existing_obj_addresses :
             #make sure there's only one object with this filepath
             if len(existing_obj_addresses[filepath])!=1 :
                 errmsg = f'ERROR: found {len(existing_obj_addresses[filepath])} files in the producer registry '
@@ -120,9 +131,9 @@ class ProducerFileRegistry(LogOwner) :
         #otherwise it's a new file to list somewhere
         else :
             to_deliver = set([])
-            for ic in range(1,n_total_chunks+1) :
-                if ic!=chunk_i :
-                    to_deliver.add(ic)
+            for ichunk in range(1,n_total_chunks+1) :
+                if ichunk!=chunk_i :
+                    to_deliver.add(ichunk)
             #if there are other chunks to deliver, register it to "in_progress"
             if len(to_deliver)>0 :
                 in_prog_entry = RegistryLineInProgress(filename,filepath,n_total_chunks,

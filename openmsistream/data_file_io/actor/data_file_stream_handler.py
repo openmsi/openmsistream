@@ -1,3 +1,5 @@
+"""Base class for consuming file chunks into memory and then triggering some action when whole files are available"""
+
 #imports
 import pathlib
 from abc import ABC
@@ -29,7 +31,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             errmsg = f'ERROR: {self.__class__.__name__} requires a datafile_type that is a subclass of '
             errmsg+= f'DownloadDataFileToMemory but {datafile_type} was given!'
             self.logger.error(errmsg,ValueError)
-        self._file_registry = None # needs to be set in subclasses
+        self.file_registry = None # needs to be set in subclasses
 
     def _process_message(self,lock,msg,rootdir_to_set=None):
         """
@@ -51,9 +53,9 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         except TypeError :
             dfc = msg.value #from KafkaCrypto
         #if the file is just in progress
-        if retval==True :
+        if retval is True :
             with lock :
-                self._file_registry.register_file_in_progress(dfc)
+                self.file_registry.register_file_in_progress(dfc)
             return retval
         #if the file hashes didn't match, invoke the callback and return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
@@ -62,7 +64,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             errmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
             self.logger.error(errmsg)
             with lock :
-                self._file_registry.register_file_mismatched_hash(dfc)
+                self.file_registry.register_file_mismatched_hash(dfc)
             self._mismatched_hash_callback(self.files_in_progress_by_path[dfc.filepath],lock)
             with lock :
                 del self.files_in_progress_by_path[dfc.filepath]
@@ -120,7 +122,3 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         args = ['config','consumer_group_ID','update_seconds']
         kwargs = {'optional_output_dir': cls._get_auto_output_dir(),}
         return args, kwargs
-
-    @property
-    def file_registry(self) :
-        return self._file_registry

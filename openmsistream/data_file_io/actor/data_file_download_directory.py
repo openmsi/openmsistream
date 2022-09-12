@@ -1,3 +1,8 @@
+"""
+Write DataFileChunks directly to disk as they are consumed from topics.
+Preserve subdirectory structure if applicable
+"""
+
 #imports
 import datetime
 from kafkacrypto.message import KafkaCryptoMessage
@@ -73,12 +78,12 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             warnmsg+= f'{key_fp.relative_to(self.dirpath)} and value bytes will be written to '
             warnmsg+= f'{value_fp.relative_to(self.dirpath)}'
             self.logger.warning(warnmsg)
-            with open(key_fp,'wb') as f :
-                f.write(bytes(retval.key))
-            with open(value_fp,'wb') as f :
-                f.write(bytes(retval.value))
+            with open(key_fp,'wb') as fp :
+                fp.write(bytes(retval.key))
+            with open(value_fp,'wb') as fp :
+                fp.write(bytes(retval.value))
             return False #because the message wasn't processed successfully
-        if retval==True :
+        if retval is True :
             return retval
         #get the DataFileChunk from the message value
         try :
@@ -164,9 +169,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         msg+=f' from {run_start} to {run_stop}'
         reconstructor_directory.logger.info(msg)
 
-#################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
-
 def main(args=None) :
+    """
+    Main method to run from command line
+    """
     DataFileDownloadDirectory.run_from_command_line(args)
 
 if __name__=='__main__' :

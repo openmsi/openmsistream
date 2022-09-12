@@ -1,3 +1,8 @@
+"""
+A stream handler that triggers a function to compute a message on file completion.
+Produces the computed message to a different topic.
+"""
+
 #imports
 from abc import ABC, abstractmethod
 from ..config import DATA_FILE_HANDLING_CONST
@@ -66,19 +71,19 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         msg+= f'thread{"s" if self.n_producer_threads>1 else ""}'
         self.logger.info(msg)
         #set up the stream reproducer registry
-        self._file_registry = StreamReproducerRegistry(dirpath=self._output_dir,
+        self.file_registry = StreamReproducerRegistry(dirpath=self._output_dir,
                                                        consumer_topic_name=self.consumer_topic_name,
                                                        consumer_group_ID=self.consumer_group_ID,
                                                        producer_topic_name=self.producer_topic_name,
                                                        logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
-        if self._file_registry.rerun_file_key_regex is not None :
+        if self.file_registry.rerun_file_key_regex is not None :
             msg = f'Consumer{"s" if self.n_consumer_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self._file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self._file_registry.n_files_to_rerun>1 else ""}'
+            msg+= f're-read messages for {self.file_registry.n_files_to_rerun} previously-failed '
+            msg+= f'file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
             self.logger.info(msg)
             self.restart_at_beginning=True
-            self.message_key_regex=self._file_registry.rerun_file_key_regex
+            self.message_key_regex=self.file_registry.rerun_file_key_regex
         #create the arguments for each _run_worker thread
         run_worker_args_per_thread = []
         for ti in range(self.n_threads) :
@@ -88,7 +93,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         #call the run loop
         self.run(args_per_thread=run_worker_args_per_thread,kwargs_per_thread=run_worker_kwargs_per_thread)
         #return the results of the processing
-        return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths, self.results_produced_filepaths
+        return ( self.n_msgs_read, self.n_msgs_processed,
+                 self.completely_processed_filepaths, self.results_produced_filepaths )
 
     def producer_callback(self,err,msg,filename,rel_filepath,n_total_chunks) :
         """
@@ -124,7 +130,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         if err is None and msg.error() is not None :
             err = msg.error()
         if err is not None :
-            self._file_registry.register_file_result_production_failed(filename,rel_filepath,n_total_chunks)
+            self.file_registry.register_file_result_production_failed(filename,rel_filepath,n_total_chunks)
             if err.fatal() :
                 warnmsg =f'WARNING: fatally failed to deliver processing result message for {rel_filepath}. '
                 warnmsg+=f'This message will be re-enqueued. Error reason: {err.str()}'
@@ -141,7 +147,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         # Otherwise, register the associated file as having its processing result successfully produced
         else :
             with self.lock :
-                self._file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks)
+                self.file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks)
                 self.results_produced_filepaths.append(self._output_dir/rel_filepath)
                 #stop tracking the file
                 del self.files_in_progress_by_path[self._output_dir/rel_filepath]
@@ -249,7 +255,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         """
         #register the file in the registry as computing result failed
         with lock :
-            self._file_registry.register_file_computing_result_failed(datafile.filename,
+            self.file_registry.register_file_computing_result_failed(datafile.filename,
                                                                       datafile.filepath.relative_to(self._output_dir),
                                                                       datafile.n_total_chunks)
         #log the warning

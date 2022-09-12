@@ -1,3 +1,5 @@
+"""A directory holding files that may or may not be marked for uploading. Updates when new files are added."""
+
 #imports
 import pathlib, datetime, time
 from threading import Lock
@@ -108,12 +110,12 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         #start the producers and upload threads
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
-            t = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue_looped,
-                                        args=(self.__upload_queue,self.__topic_name),
-                                        kwargs={'callback': self.producer_callback},
+            thread = ExceptionTrackingThread(target=self.__producers[-1].produce_from_queue_looped,
+                                             args=(self.__upload_queue,self.__topic_name),
+                                             kwargs={'callback': self.producer_callback},
                     )
-            t.start()
-            self.__upload_threads.append(t)
+            thread.start()
+            self.__upload_threads.append(thread)
         #loop until the user inputs a command to stop
         self.run()
         #return a list of filepaths that have been uploaded
@@ -250,10 +252,10 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                                                         chunk_size=self.__chunk_size)
                     break
         #stop the uploading threads by adding "None"s to their queues and joining them
-        for ut in self.__upload_threads :
+        for thread in self.__upload_threads :
             self.__upload_queue.put(None)
-        for ut in self.__upload_threads :
-            ut.join()
+        for thread in self.__upload_threads :
+            thread.join()
         self.logger.info('Waiting for all enqueued messages to be delivered (this may take a moment)....')
         for producer in self.__producers :
             producer.flush(timeout=-1) #don't move on until all enqueued messages have been sent/received
@@ -272,7 +274,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         try :
             for filepath in self.dirpath.rglob('*') :
                 filepath = filepath.resolve()
-                if (filepath not in self.data_files_by_path.keys()) and self.filepath_should_be_uploaded(filepath) :
+                if (filepath not in self.data_files_by_path) and self.filepath_should_be_uploaded(filepath) :
                     #wait until the file is actually available
                     file_ready = False
                     while not file_ready :
@@ -302,7 +304,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             self.__add_chunks_for_filepath(filepath,chunks)
         #make sure any files listed as "completed" will not be uploaded again
         for filepath in self.__file_registry.get_completed_filepaths() :
-            if filepath in self.data_files_by_path.keys() :
+            if filepath in self.data_files_by_path :
                 if self.data_files_by_path[filepath].to_upload :
                     msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
                     self.logger.info(msg)
@@ -321,7 +323,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         Add the given chunks to the list of chunks to upload for a given file
         Creates the file if it doesn't already exist in the dictionary of recognized files
         """
-        if filepath in self.data_files_by_path.keys() :
+        if filepath in self.data_files_by_path :
             self.data_files_by_path[filepath].to_upload=True
         else :
             self.data_files_by_path[filepath]=self.__datafile_type(filepath,
@@ -352,12 +354,12 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     self.__producers[ti] = None
                 #recreate the producer and restart the thread
                 self.__producers[ti] = self.get_new_producer()
-                t = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue_looped,
+                thread = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue_looped,
                                             args=(self.__upload_queue,self.__topic_name),
                                             kwargs={'callback': self.producer_callback},
                             )
-                t.start()
-                self.__upload_threads[ti] = t
+                thread.start()
+                self.__upload_threads[ti] = thread
 
     #################### CLASS METHODS ####################
 
@@ -419,6 +421,9 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         return {}
     @property
     def progress_msg(self) :
+        """
+        A message describing the files that are currently recognized as part of the directory
+        """
         self.__find_new_files()
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.data_files_by_path.values() :
@@ -428,20 +433,30 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         return progress_msg
     @property
     def have_file_to_upload(self) :
+        """
+        True if there are any files waiting to be uploaded or in progress
+        """
         for datafile in self.data_files_by_path.values() :
             if datafile.upload_in_progress or datafile.waiting_to_upload :
                 return True
         return False
     @property
     def partially_done_file_paths(self) :
+        """
+        A list of filepaths whose uploads are currently in progress
+        """
         return [fp for fp,df in self.data_files_by_path.items() if df.upload_in_progress]
     @property
     def n_partially_done_files(self) :
+        """
+        The number of files currently in the process of being uploaded
+        """
         return len(self.partially_done_file_paths)
 
-#################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
-
 def main(args=None) :
+    """
+    Main method to run from command line
+    """
     DataFileUploadDirectory.run_from_command_line(args)
 
 if __name__=='__main__' :

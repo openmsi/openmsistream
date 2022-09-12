@@ -1,3 +1,8 @@
+"""
+Code for managing the two .csv files listing files that are
+being reconstructed from the topic and files that have been fully handled
+"""
+
 #imports
 import datetime, re
 from abc import ABC
@@ -7,6 +12,9 @@ from ...utilities import get_message_prepend
 
 @dataclass
 class StreamHandlerRegistryLineInProgress :
+    """
+    A line in the table listing files in progress
+    """
     filename : str #the name of the file
     rel_filepath : str #the (posix) path to the file, relative to its root directory
     status : str #the status of the file, either "in_progress", "failed", or "mismatched_hash"
@@ -16,6 +24,9 @@ class StreamHandlerRegistryLineInProgress :
 
 @dataclass
 class StreamHandlerRegistryLineSucceeded :
+    """
+    A line in the table listing files that have been successfully handled
+    """
     filename : str #the name of the file
     rel_filepath : str #the (posix) path to the file, relative to its root directory
     n_chunks : int #the total number of chunks in the file
@@ -32,10 +43,16 @@ class StreamHandlerRegistry(LogOwner,ABC) :
 
     @property
     def in_progress_table(self) :
+        """
+        The table listing files in progress
+        """
         return self._in_progress_table
 
     @property
     def succeeded_table(self) :
+        """
+        The table listing files that have been successfully handled
+        """
         return self._succeeded_table
 
     @property
@@ -121,7 +138,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
 
     def _get_in_progress_address_for_rel_filepath(self,rel_filepath) :
         existing_obj_addresses = self._in_progress_table.obj_addresses_by_key_attr('rel_filepath')
-        if rel_filepath not in existing_obj_addresses.keys() :
+        if rel_filepath not in existing_obj_addresses :
             return None
         elif len(existing_obj_addresses[rel_filepath])!=1 :
             errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '

@@ -1,3 +1,5 @@
+"""A DataFileStreamHandler that triggers some arbitrary local code when full files are available"""
+
 #imports
 from abc import ABC, abstractmethod
 from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
@@ -52,18 +54,18 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         msg+= f'thread{"s" if self.n_threads>1 else ""}'
         self.logger.info(msg)
         #set up the stream processor registry
-        self._file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
+        self.file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
                                                       topic_name=self.topic_name,
                                                       consumer_group_ID=self.consumer_group_ID,
                                                       logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
-        if self._file_registry.rerun_file_key_regex is not None :
+        if self.file_registry.rerun_file_key_regex is not None :
             msg = f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self._file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self._file_registry.n_files_to_rerun>1 else ""}'
+            msg+= f're-read messages for {self.file_registry.n_files_to_rerun} previously-failed '
+            msg+= f'file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
             self.logger.info(msg)
             self.restart_at_beginning=True
-            self.message_key_regex=self._file_registry.rerun_file_key_regex
+            self.message_key_regex=self.file_registry.rerun_file_key_regex
         #call the run loop
         self.run()
         #return the results of the processing
@@ -126,7 +128,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             if processing_retval is None :
                 self.logger.info(f'Fully-read file {short_filepath} successfully processed')
                 with lock :
-                    self._file_registry.register_file_successfully_processed(dfc)
+                    self.file_registry.register_file_successfully_processed(dfc)
                     self.completely_processed_filepaths.append(dfc.filepath)
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
@@ -141,7 +143,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                     errmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
                     self.logger.error(errmsg)
                 with lock :
-                    self._file_registry.register_file_processing_failed(dfc)
+                    self.file_registry.register_file_processing_failed(dfc)
                 self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
                 to_return = False
             #stop tracking the file

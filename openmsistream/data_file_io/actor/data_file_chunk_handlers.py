@@ -1,3 +1,5 @@
+"""Anything that receives DataFileChunk messages from a topic and does something with them"""
+
 #imports
 from abc import ABC, abstractmethod
 from threading import Lock
@@ -18,8 +20,11 @@ class DataFileChunkHandler(LogOwner,ABC) :
 
     @property
     def other_datafile_kwargs(self) :
-        return {} #Overload this in child classes to define additional keyword arguments
-                  #that should go to the specific datafile constructor
+        """
+        Overload this in child classes to define additional keyword arguments
+        that should go to the specific datafile constructor
+        """
+        return {}
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -80,7 +85,7 @@ class DataFileChunkHandler(LogOwner,ABC) :
         dfc.rootdir = rootdir_to_set
         #add the chunk's data to the file that's being reconstructed
         with lock :
-            if dfc.filepath not in self.files_in_progress_by_path.keys() :
+            if dfc.filepath not in self.files_in_progress_by_path :
                 self.files_in_progress_by_path[dfc.filepath] = self.datafile_type(dfc.filepath,
                                                                                   logger=self.logger,
                                                                                   **self.other_datafile_kwargs)
@@ -100,6 +105,9 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
 
     @property
     def progress_msg(self) :
+        """
+        A string message describing the files that have had some chunks read
+        """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
             progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
@@ -115,6 +123,9 @@ class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) 
 
     @property
     def progress_msg(self) :
+        """
+        A string message describing the files that have had some chunks read
+        """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
             if datafile.full_filepath not in self.completely_processed_filepaths :
