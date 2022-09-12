@@ -87,8 +87,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         #create the arguments for each _run_worker thread
         run_worker_args_per_thread = []
         for ti in range(self.n_threads) :
-            run_worker_args_per_thread.append([True if ti<self.n_consumer_threads else False,
-                                               True if ti<self.n_producer_threads else False])
+            run_worker_args_per_thread.append([ti<self.n_consumer_threads,ti<self.n_producer_threads])
         run_worker_kwargs_per_thread = {'produce_from_queue_kwargs':{'callback':self.producer_callback,'print_every':1}}
         #call the run loop
         self.run(args_per_thread=run_worker_args_per_thread,kwargs_per_thread=run_worker_kwargs_per_thread)
@@ -212,9 +211,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
             if new_msg is not None :
                 self.producer_message_queue.put(new_msg)
                 return True
-            else :
-                self._failed_computing_processing_result(self.files_in_progress_by_path[dfc.filepath],self.lock)
-                return False
+            self._failed_computing_processing_result(self.files_in_progress_by_path[dfc.filepath],self.lock)
+            return False
 
     @abstractmethod
     def _get_processing_result_message_for_file(self,datafile,lock) :

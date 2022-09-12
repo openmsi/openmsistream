@@ -80,72 +80,87 @@ class ProducerFileRegistry(LogOwner) :
         existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('filepath')
         #if the file is already recognized as in progress
         if filepath in existing_obj_addresses :
-            #make sure there's only one object with this filepath
-            if len(existing_obj_addresses[filepath])!=1 :
-                errmsg = f'ERROR: found {len(existing_obj_addresses[filepath])} files in the producer registry '
-                errmsg+= f'for filepath {filepath}'
-                self.logger.error(errmsg,RuntimeError)
-            existing_addr = existing_obj_addresses[filepath][0]
-            #make sure the total numbers of chunks match
-            existing_n_chunks = self.__in_prog.get_entry_attrs(existing_addr,'n_chunks')
-            if existing_n_chunks!=n_total_chunks :
-                errmsg = f'ERROR: {filepath} in {self.__class__.__name__} is listed as having '
-                errmsg+= f'{existing_n_chunks} total chunks, but the producer callback for this file '
-                errmsg+= f'lists {n_total_chunks} chunks! Did the chunk size change?'
-                self.logger.error(errmsg,RuntimeError)
-            #editing the object's attributes has to be done in one thread at a time
-            with self.__in_prog.lock :
-                #get its current state
-                attrs = self.__in_prog.get_entry_attrs(existing_addr,'chunks_delivered','chunks_to_send')
-                #if the chunk is already registered, just return
-                if chunk_i in attrs['chunks_delivered'] :
-                    return False
-                #otherwise add/remove it from the sets
-                attrs['chunks_delivered'].add(chunk_i)
-                try :
-                    attrs['chunks_to_send'].remove(chunk_i)
-                except KeyError :
-                    pass
-                #reset the attributes for the object
-                new_attrs = {
-                    'n_chunks_delivered':len(attrs['chunks_delivered']),
-                    'n_chunks_to_send':len(attrs['chunks_to_send']),
-                    'chunks_delivered':attrs['chunks_delivered'],
-                    'chunks_to_send':attrs['chunks_to_send'],
-                    }
-            self.__in_prog.set_entry_attrs(existing_addr,**new_attrs)
-            # if there are no more chunks to send and all chunks have been delivered,
-            # move this file from "in progress" to "completed" and force-dump the files
-            if ( self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_delivered')==n_total_chunks and
-                 self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_to_send')==0 ) :
-                started = self.__in_prog.get_entry_attrs(existing_addr,'started')
-                completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
-                                                        started,datetime.datetime.now())
-                self.__completed.add_entries(completed_entry)
-                self.__completed.dump_to_file()
-                self.__in_prog.remove_entries(existing_addr)
-                self.__in_prog.dump_to_file()
-                return True
-            else :
-                return False
+            return self.__register_chunk_of_existing_file(filename,filepath,n_total_chunks,chunk_i)
         #otherwise it's a new file to list somewhere
-        else :
-            to_deliver = set([])
-            for ichunk in range(1,n_total_chunks+1) :
-                if ichunk!=chunk_i :
-                    to_deliver.add(ichunk)
-            #if there are other chunks to deliver, register it to "in_progress"
-            if len(to_deliver)>0 :
-                in_prog_entry = RegistryLineInProgress(filename,filepath,n_total_chunks,
-                                                       1,n_total_chunks-1,datetime.datetime.now(),
-                                                       set([chunk_i]),to_deliver)
-                self.__in_prog.add_entries(in_prog_entry)
-                self.__in_prog.dump_to_file()
+        return self.__register_chunk_for_new_file(filename,filepath,n_total_chunks,chunk_i)
+
+    def __register_chunk_of_existing_file(self,filename,filepath,n_total_chunks,chunk_i) :
+        """
+        Register a chunk that belongs to an existing file.
+        Returns True if all chunks for the file have been received by the broker.
+        """
+        #get a dictionary of the existing object addresses keyed by their filepaths
+        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('filepath')
+        #make sure there's only one object with this filepath
+        if len(existing_obj_addresses[filepath])!=1 :
+            errmsg = f'ERROR: found {len(existing_obj_addresses[filepath])} files in the producer registry '
+            errmsg+= f'for filepath {filepath}'
+            self.logger.error(errmsg,RuntimeError)
+        existing_addr = existing_obj_addresses[filepath][0]
+        #make sure the total numbers of chunks match
+        existing_n_chunks = self.__in_prog.get_entry_attrs(existing_addr,'n_chunks')
+        if existing_n_chunks!=n_total_chunks :
+            errmsg = f'ERROR: {filepath} in {self.__class__.__name__} is listed as having '
+            errmsg+= f'{existing_n_chunks} total chunks, but the producer callback for this file '
+            errmsg+= f'lists {n_total_chunks} chunks! Did the chunk size change?'
+            self.logger.error(errmsg,RuntimeError)
+        #editing the object's attributes has to be done in one thread at a time
+        with self.__in_prog.lock :
+            #get its current state
+            attrs = self.__in_prog.get_entry_attrs(existing_addr,'chunks_delivered','chunks_to_send')
+            #if the chunk is already registered, just return
+            if chunk_i in attrs['chunks_delivered'] :
                 return False
-            #otherwise register it as a completed file
-            else :
-                completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
-                                                        datetime.datetime.now(),datetime.datetime.now())
-                self.__completed.add_entries(completed_entry)
-                self.__completed.dump_to_file()
-                return True
+            #otherwise add/remove it from the sets
+            attrs['chunks_delivered'].add(chunk_i)
+            try :
+                attrs['chunks_to_send'].remove(chunk_i)
+            except KeyError :
+                pass
+            #reset the attributes for the object
+            new_attrs = {
+                'n_chunks_delivered':len(attrs['chunks_delivered']),
+                'n_chunks_to_send':len(attrs['chunks_to_send']),
+                'chunks_delivered':attrs['chunks_delivered'],
+                'chunks_to_send':attrs['chunks_to_send'],
+                }
+        self.__in_prog.set_entry_attrs(existing_addr,**new_attrs)
+        # if there are no more chunks to send and all chunks have been delivered,
+        # move this file from "in progress" to "completed" and force-dump the files
+        if ( self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_delivered')==n_total_chunks and
+                self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_to_send')==0 ) :
+            started = self.__in_prog.get_entry_attrs(existing_addr,'started')
+            completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
+                                                    started,datetime.datetime.now())
+            self.__completed.add_entries(completed_entry)
+            self.__completed.dump_to_file()
+            self.__in_prog.remove_entries(existing_addr)
+            self.__in_prog.dump_to_file()
+            return True
+        else :
+            return False
+
+    def __register_chunk_for_new_file(self,filename,filepath,n_total_chunks,chunk_i) :
+        """
+        Register the first chunk for a file.
+        Returns True if the file only had one chunk.
+        """
+        to_deliver = set([])
+        for ichunk in range(1,n_total_chunks+1) :
+            if ichunk!=chunk_i :
+                to_deliver.add(ichunk)
+        #if there are other chunks to deliver, register it to "in_progress"
+        if len(to_deliver)>0 :
+            in_prog_entry = RegistryLineInProgress(filename,filepath,n_total_chunks,
+                                                    1,n_total_chunks-1,datetime.datetime.now(),
+                                                    set([chunk_i]),to_deliver)
+            self.__in_prog.add_entries(in_prog_entry)
+            self.__in_prog.dump_to_file()
+            return False
+        #otherwise register it as a completed file
+        else :
+            completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
+                                                    datetime.datetime.now(),datetime.datetime.now())
+            self.__completed.add_entries(completed_entry)
+            self.__completed.dump_to_file()
+            return True

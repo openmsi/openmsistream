@@ -101,7 +101,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                 del self.locks_by_fp[dfc.filepath]
             return True
         #If the file hash was mismatched after reconstruction, return False
-        elif retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
+        if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
             warnmsg = f'WARNING: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
             warnmsg+= 'after reconstruction! All data have been written to disk, but not as they were uploaded.'
             self.logger.warning(warnmsg)

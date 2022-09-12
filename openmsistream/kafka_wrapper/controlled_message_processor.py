@@ -60,13 +60,14 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
                     self.n_msgs_processed+=1
                 if not consumer.message_consumed_before(msg) :
                     tps = consumer.commit(msg)
-                    if tps is not None :
-                        for t_p in tps :
-                            if t_p.error is not None :
-                                warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
-                                warnmsg+= f'"{t_p.topic}" partition {t_p.partition}. Duplicate messages may result '
-                                warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
-                                self.logger.warning(warnmsg)
+                    if tps is None :
+                        continue
+                    for t_p in tps :
+                        if t_p.error is not None :
+                            warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
+                            warnmsg+= f'"{t_p.topic}" partition {t_p.partition}. Duplicate messages may result '
+                            warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
+                            self.logger.warning(warnmsg)
         #commit the offset of the last message received if it wasn't already consumed in the past (block until done)
         if (last_message is not None) and (not consumer.message_consumed_before(last_message)) :
             try :

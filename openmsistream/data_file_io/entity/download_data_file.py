@@ -22,10 +22,9 @@ class DownloadDataFile(DataFile,ABC) :
         """
         if dfc.filename_append=='' :
             return dfc.filepath
-        else :
-            filename_split = dfc.filepath.name.split('.')
-            full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
-            return full_fp
+        filename_split = dfc.filepath.name.split('.')
+        full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
+        return full_fp
 
     @property
     @abstractmethod
@@ -102,10 +101,8 @@ class DownloadDataFile(DataFile,ABC) :
         if last_chunk :
             if self.check_file_hash!=dfc.file_hash :
                 return DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE
-            else :
-                return DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
-        else :
-            return DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+            return DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+        return DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 

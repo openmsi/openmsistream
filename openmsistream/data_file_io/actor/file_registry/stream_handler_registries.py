@@ -140,7 +140,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         existing_obj_addresses = self._in_progress_table.obj_addresses_by_key_attr('rel_filepath')
         if rel_filepath not in existing_obj_addresses :
             return None
-        elif len(existing_obj_addresses[rel_filepath])!=1 :
+        if len(existing_obj_addresses[rel_filepath])!=1 :
             errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '
             errmsg+= f'{rel_filepath} in file at {self._in_progress_table.filepath}'
             self.logger.error(errmsg,ValueError)

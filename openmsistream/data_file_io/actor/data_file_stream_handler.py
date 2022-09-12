@@ -36,7 +36,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
     def _process_message(self,lock,msg,rootdir_to_set=None):
         """
         Parent class message processing function to check for:
-            undecryptable messages (returns value from _undecryptable_message_callback)
+            undecryptable messages (returns False)
             files where reconstruction is just in progress (returns True)
             files with mismatched hashes (returns False)
         Child classes should call super()._process_message() and check the return value
@@ -46,7 +46,8 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
         if ( hasattr(retval,'key') and hasattr(retval,'value') and
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
-            return self._undecryptable_message_callback(retval)
+            self._undecryptable_message_callback(retval)
+            return False
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
@@ -70,7 +71,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return False
-        elif retval!=DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
+        if retval!=DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',NotImplementedError)
             return False
         return retval
@@ -80,21 +81,17 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         This function is called when a message that could not be decrypted is found.
         If this function is called it is likely that the file the chunk is coming from won't be able to be processed.
 
-        In the base class, this logs a warning and returns False.
+        In the base class, this logs a warning.
 
         :param msg: the :class:`kafkacrypto.Message` object with undecrypted :class:`kafkacrypto.KafkaCryptoMessages`
             for its key and/or value
         :type msg: :class:`kafkacrypto.Message`
-
-        :return: True if an undecrypted message is considered "successfully processed", and False otherwise
-        :rtype: bool
         """
         timestamp_string = get_encrypted_message_timestamp_string(msg)
         warnmsg = f'WARNING: encountered a message that failed to be decrypted (timestamp = {timestamp_string}). '
         warnmsg+= 'This message will be skipped, and the file it came from cannot be processed from the stream '
         warnmsg+= 'until it is decryptable. Please rerun with a new Consumer ID to consume these messages again.'
         self.logger.warning(warnmsg)
-        return False
 
     def _mismatched_hash_callback(self,datafile,lock) :
         """
@@ -110,8 +107,6 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             of :func:`~_mismatched_hash_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        _ = datafile, lock #appease pyflakes/pylint
-        return
 
     @classmethod
     def _get_auto_output_dir(cls) :

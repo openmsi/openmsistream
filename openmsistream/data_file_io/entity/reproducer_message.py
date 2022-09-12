@@ -42,8 +42,7 @@ class ReproducerMessage(Producible,ABC) :
         """
         if print_every :
             return f'Producing processing result from {self.__datafile.filepath}'
-        else :
-            return None
+        return None
 
     def __init__(self,datafile,*args,**kwargs) :
         super().__init__(*args,**kwargs)

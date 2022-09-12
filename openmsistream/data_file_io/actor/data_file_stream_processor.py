@@ -185,8 +185,6 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """
-        _ = datafile,lock # appease pyflakes/pylint
-        return
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

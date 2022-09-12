@@ -51,8 +51,7 @@ class DataFileChunk(Producible) :
             parentdir_as_posix = self.__filepath.parent.as_posix()
             if parentdir_as_posix=='.' :
                 return ''
-            else :
-                return parentdir_as_posix
+            return parentdir_as_posix
         relpath = self.__filepath.parent.relative_to(self.__rootdir)
         if relpath==pathlib.Path() :
             return ''
@@ -150,8 +149,7 @@ class DataFileChunk(Producible) :
     def get_log_msg(self, print_every=None):
         if (self.chunk_i-1)%print_every==0 or self.chunk_i==self.n_total_chunks :
             return f'uploading {self.filename} chunk {self.chunk_i} (out of {self.n_total_chunks})'
-        else :
-            return None
+        return None
 
     def populate_with_file_data(self,logger=None) :
         """

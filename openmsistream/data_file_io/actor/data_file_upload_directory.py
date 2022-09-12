@@ -279,9 +279,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     file_ready = False
                     while not file_ready :
                         try :
-                            fp = open(filepath)
-                            fp.close()
-                            file_ready = True
+                            with open(filepath) as _ :
+                                file_ready = True
                         except PermissionError :
                             time.sleep(0.05)
                     self.data_files_by_path[filepath]=self.__datafile_type(filepath,

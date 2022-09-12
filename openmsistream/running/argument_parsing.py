@@ -338,8 +338,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                 else :
                     kwargs['help']=f"default = {kwargs['default']}"
             return argname_to_add, kwargs
-        else :
-            raise ValueError(f'ERROR: argument {argname} is not recognized as an option!')
+        raise ValueError(f'ERROR: argument {argname} is not recognized as an option!')
 
     @property
     def actions(self) :
