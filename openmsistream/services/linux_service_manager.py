@@ -1,3 +1,5 @@
+"""Manage Linux daemons"""
+
 #imports
 import sys, os, pathlib, textwrap
 from .config import SERVICE_CONST
@@ -142,7 +144,7 @@ class LinuxServiceManager(ServiceManagerBase) :
         """
         #make sure the directory to hold the file exists
         if not SERVICE_CONST.DAEMON_SERVICE_DIR.is_dir() :
-            SERVICE_CONST.LOGGER.info(f'Creating a new daemon service directory at {SERVICE_CONST.DAEMON_SERVICE_DIR}')
+            SERVICE_CONST.logger.info(f'Creating a new daemon service directory at {SERVICE_CONST.DAEMON_SERVICE_DIR}')
             SERVICE_CONST.DAEMON_SERVICE_DIR.mkdir(parents=True)
         #write out the file pointing to the python executable
         description = 'Python script'

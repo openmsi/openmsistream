@@ -1,3 +1,5 @@
+"""Transfer contents of DataFiles read from chunks in a topic to an S3 bucket when complete files become available"""
+
 #imports
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
@@ -55,9 +57,9 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         object_key = self.__get_datafile_object_key(datafile)
         try :
             self.s3d.transfer_object_stream(object_key, datafile)
-        except Exception as e :
+        except Exception as exc :
             self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
-            return e
+            return exc
         if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
             self.logger.info(object_key + ' matched with consumer datafile')
             # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
@@ -127,9 +129,10 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
-#################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
-
 def main(args=None):
+    """
+    Main method to run from command line
+    """
     S3TransferStreamProcessor.run_from_command_line(args)
 
 if __name__ == '__main__':

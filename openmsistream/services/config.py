@@ -1,12 +1,29 @@
+"""Utility class holding constants and small calculations for working with Services/daemons"""
+
 #imports
-import pathlib, importlib, pkg_resources
+import pathlib, importlib
 from inspect import isclass
+import pkg_resources
 from ..utilities import Logger
 
 class ServicesConstants :
     """
     Constants for working with services
     """
+
+    WORKING_DIR = (pathlib.Path(__file__).parent/'working_dir').resolve()
+    NSSM_PATH = WORKING_DIR / 'nssm.exe'
+    NSSM_DOWNLOAD_URL = 'https://nssm.cc/release/nssm-2.24.zip' # The URL to use for downloading NSSM when needed
+    ERROR_LOG_STEM = '_ERROR_LOG.txt'
+    SERVICE_EXECUTABLE_NAME_STEM = '_service_executable.py'
+    DAEMON_SERVICE_DIR = pathlib.Path('/etc/systemd/system/')
+
+    @property
+    def available_services(self) :
+        """
+        A dictionary with details of the services that are available
+        """
+        return self.service_dicts
 
     def __init__(self) :
         #make the Service dictionaries to use
@@ -32,30 +49,5 @@ class ServicesConstants :
                                            'func_name':funcname})
         #make the logger to use
         self.logger = Logger('Services',logger_filepath=self.WORKING_DIR/'Services.log')
-
-    @property
-    def WORKING_DIR(self) :
-        return (pathlib.Path(__file__).parent/'working_dir').resolve()
-    @property
-    def AVAILABLE_SERVICES(self) :
-        return self.service_dicts # A dictionary with details of the services that are available
-    @property
-    def LOGGER(self) :
-        return self.logger # A shared logger object to use with a constant file
-    @property
-    def NSSM_DOWNLOAD_URL(self) :
-        return 'https://nssm.cc/release/nssm-2.24.zip' # The URL to use for downloading NSSM when needed
-    @property
-    def NSSM_PATH(self) :
-        return (self.WORKING_DIR / 'nssm.exe')
-    @property
-    def ERROR_LOG_STEM(self) :
-        return '_ERROR_LOG.txt'
-    @property
-    def SERVICE_EXECUTABLE_NAME_STEM(self) :
-        return '_service_executable.py'
-    @property
-    def DAEMON_SERVICE_DIR(self) :
-        return pathlib.Path('/etc/systemd/system/')
 
 SERVICE_CONST = ServicesConstants()

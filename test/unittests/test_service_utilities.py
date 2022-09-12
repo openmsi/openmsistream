@@ -19,10 +19,10 @@ class TestServiceUtilities(unittest.TestCase) :
         Make sure that some config variables can be created successfully
         """
         #self.assertFalse(SERVICE_CONST.NSSM_EXECUTABLE_PATH.is_file())
-        for sd in SERVICE_CONST.AVAILABLE_SERVICES :
+        for sd in SERVICE_CONST.available_services :
             _ = importlib.import_module(sd['filepath'])
         #the command below explicitly creates a file but that file should be ignored in the repo
-        SERVICE_CONST.LOGGER.info('testing')
+        SERVICE_CONST.logger.info('testing')
 
     def test_write_executable_file(self) :
         """

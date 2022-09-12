@@ -45,8 +45,8 @@ class TestServices(unittest.TestCase) :
         """
         Make sure every possible Windows service can be installed, started, checked, stopped, removed, and reinstalled
         """
-        self.assertTrue(len(SERVICE_CONST.AVAILABLE_SERVICES)>0)
-        for sd in SERVICE_CONST.AVAILABLE_SERVICES :
+        self.assertTrue(len(SERVICE_CONST.available_services)>0)
+        for sd in SERVICE_CONST.available_services :
             try :
                 service_class_name = sd['class'].__name__
                 if service_class_name not in self.argslists_by_class_name.keys() :
@@ -83,8 +83,8 @@ class TestServices(unittest.TestCase) :
         """
         Make sure every possible Linux service can be installed, started, checked, stopped, removed, and reinstalled
         """
-        self.assertTrue(len(SERVICE_CONST.AVAILABLE_SERVICES)>0)
-        for sd in SERVICE_CONST.AVAILABLE_SERVICES :
+        self.assertTrue(len(SERVICE_CONST.available_services)>0)
+        for sd in SERVICE_CONST.available_services :
             try :
                 service_class_name = sd['class'].__name__
                 if service_class_name not in self.argslists_by_class_name.keys() :

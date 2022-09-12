@@ -1,3 +1,5 @@
+"""Functionality common to both Windows Services and Linux daemons"""
+
 #imports
 import sys, pathlib, textwrap, importlib
 from abc import abstractmethod
@@ -271,16 +273,16 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         Set the service dict with information about the code that should be run based on the service_spec_string
         """
         if self.service_spec_string is not None :
-            service_dict = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES
+            service_dict = [sd for sd in SERVICE_CONST.available_services
                             if sd['class_name']==self.service_spec_string]
             if len(service_dict)==1 :
                 self.service_dict = service_dict[0]
             elif len(service_dict)==0 :
-                fp, cn, rc, fn = self.__parse_custom_service_string(self.service_spec_string,self.logger)
-                self.service_dict = {'filepath':fp,
-                                     'class_name':cn,
-                                     'class':rc,
-                                     'func_name':fn}
+                f_p, c_n, r_c, f_n = self.__parse_custom_service_string(self.service_spec_string,self.logger)
+                self.service_dict = {'filepath':f_p,
+                                     'class_name':c_n,
+                                     'class':r_c,
+                                     'func_name':f_n}
             else :
                 errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
                 errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
@@ -289,11 +291,14 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             self.service_dict = None
 
     @staticmethod
-    def __parse_custom_service_string(service_spec_string,logger=SERVICE_CONST.LOGGER) :
+    def __parse_custom_service_string(service_spec_string,logger=SERVICE_CONST.logger) :
         """
         Get the filepath and optional class/function names from the custom Service string
         """
-        filepath = None; class_name = None; run_class = None; func_name = None
+        filepath = None
+        class_name = None
+        run_class = None
+        func_name = None
         try :
             #at minimum need a path to a file containing a class or function to run
             if '=' in service_spec_string :
@@ -326,10 +331,10 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 assert issubclass(run_class,Runnable)
             #make sure at least one of the function/class names was given
             assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
-        except Exception as e :
+        except Exception as exc :
             errmsg = f'ERROR: service specification string {service_spec_string} is not valid! '
             errmsg+= 'Will re-raise specific Exception.'
-            logger.error(errmsg,exc_obj=e)
+            logger.error(errmsg,exc_obj=exc)
         return filepath, class_name, run_class, func_name
 
     #################### CLASS METHODS ####################
@@ -362,16 +367,16 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 return parser
             parser.add_subparsers(description=subp_desc,required=True,dest='service_spec_string')
             if class_name_or_spec_string is None :
-                for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
+                for service_dict in SERVICE_CONST.available_services :
                     parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
-            elif class_name_or_spec_string in [d['class_name'] for d in SERVICE_CONST.AVAILABLE_SERVICES] :
-                sds = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES if sd['class_name']==class_name_or_spec_string]
-                sd = sds[0]
-                parser.add_subparser_arguments_from_class(sd['class'],addl_args=['optional_service_name'])
+            elif class_name_or_spec_string in [d['class_name'] for d in SERVICE_CONST.available_services] :
+                sds = [sd for sd in SERVICE_CONST.available_services if sd['class_name']==class_name_or_spec_string]
+                s_d = sds[0]
+                parser.add_subparser_arguments_from_class(s_d['class'],addl_args=['optional_service_name'])
             else :
-                _, _, rc, _ = cls.__parse_custom_service_string(class_name_or_spec_string)
-                if rc is not None :
-                    parser.add_subparser_arguments_from_class(rc,
+                _, _, run_class, _ = cls.__parse_custom_service_string(class_name_or_spec_string)
+                if run_class is not None :
+                    parser.add_subparser_arguments_from_class(run_class,
                                                               subp_name=class_name_or_spec_string,
                                                               addl_args=['optional_service_name'])
                 else :
@@ -398,10 +403,10 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 if arg.startswith('$') :
                     yield arg
             if self.service_dict['class'] is not None :
-                p = self.service_dict['class'].get_argument_parser()
-                argsdests = [action.dest for action in p.actions]
+                parser = self.service_dict['class'].get_argument_parser()
+                argsdests = [action.dest for action in parser.actions]
                 if 'config' in argsdests :
-                    pargs = p.parse_args(args=self.argslist)
-                    cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
+                    pargs = parser.parse_args(args=self.argslist)
+                    cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.logger)
                     for evn in cfp.env_var_names :
                         yield evn
