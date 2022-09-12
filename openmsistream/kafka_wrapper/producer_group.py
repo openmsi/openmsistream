@@ -1,3 +1,5 @@
+"""A set of Producers sharing an optional KafkaCrypto instance for key passing"""
+
 #imports
 from ..utilities import LogOwner
 from .openmsistream_producer import OpenMSIStreamProducer
@@ -15,7 +17,10 @@ class ProducerGroup(LogOwner) :
 
     @property
     def kafkacrypto(self) :
-        return self.__p_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__p_kwargs.keys() else None
+        """
+        The KafkaCrypto object handling key passing and serialization for encrypted messages
+        """
+        return self.__p_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__p_kwargs else None
 
     def __init__(self,config_path,kafkacrypto=None,**kwargs) :
         """

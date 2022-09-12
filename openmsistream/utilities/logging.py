@@ -1,3 +1,5 @@
+"""Classes for OpenMSIStream logging infrastructure"""
+
 #imports
 import pathlib, logging, traceback
 
@@ -35,9 +37,7 @@ class Logger :
     :type filelevel: logging level int, optional
     """
 
-    @property
-    def formatter(self):
-        return OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
+    FORMATTER = OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
     def __init__(self,logger_name=None,streamlevel=logging.DEBUG,logger_filepath=None,filelevel=logging.INFO) :
         """
@@ -50,7 +50,7 @@ class Logger :
         self._logger_obj.setLevel(logging.DEBUG)
         self._streamhandler = logging.StreamHandler()
         self._streamhandler.setLevel(streamlevel)
-        self._streamhandler.setFormatter(self.formatter)
+        self._streamhandler.setFormatter(self.FORMATTER)
         self._logger_obj.addHandler(self._streamhandler)
         self._filehandler = None
         if logger_filepath is not None :
@@ -103,7 +103,7 @@ class Logger :
             filepath.touch()
         self._filehandler = logging.FileHandler(filepath)
         self._filehandler.setLevel(level)
-        self._filehandler.setFormatter(self.formatter)
+        self._filehandler.setFormatter(self.FORMATTER)
         self._logger_obj.addHandler(self._filehandler)
 
     #methods for logging different levels of messages
@@ -211,7 +211,9 @@ class LogOwner :
 
     @logger.setter
     def logger(self,logger) :
-        if hasattr(self,'_LogOwner__logger') and self.__logger is not None and type(self.__logger)!=type(logger) :
+        if ( hasattr(self,'_LogOwner__logger') and
+             self.__logger is not None and
+             (not isinstance(self.__logger,type(logger))) ) :
             errmsg = f'ERROR: tried to reset a logger of type {type(self.__logger)} to a new logger of type {logger}!'
             self.__logger.error(errmsg,ValueError)
         else :

@@ -32,7 +32,7 @@ class TestServices(unittest.TestCase) :
                     '--output_dir',TEST_CONST.TEST_DIR_SERVICES_TEST,
                     '--config',TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
                     '--topic_name',TEST_CONST.TEST_TOPIC_NAMES['test_s3_transfer_stream_processor'],
-                    '--consumer_group_ID','create_new'],
+                    '--consumer_group_id','create_new'],
             }
 
     def tearDown(self) :

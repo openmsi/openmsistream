@@ -24,8 +24,8 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
     :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
     :param n_threads: the number of threads/consumers to run
     :type n_threads: int, optional
-    :param consumer_group_ID: the group ID under which each consumer should be created
-    :type consumer_group_ID: str, optional
+    :param consumer_group_id: the group ID under which each consumer should be created
+    :type consumer_group_id: str, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
@@ -56,7 +56,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         #set up the stream processor registry
         self.file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
                                                       topic_name=self.topic_name,
-                                                      consumer_group_ID=self.consumer_group_ID,
+                                                      consumer_group_id=self.consumer_group_id,
                                                       logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self.file_registry.rerun_file_key_regex is not None :

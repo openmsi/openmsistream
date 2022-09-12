@@ -1,3 +1,8 @@
+"""
+A wrapper around ConfigFileParser to handle OpenMSIStream config files that have sections
+for connecting to brokers and running Producers and Consumers
+"""
+
 #imports
 import pathlib
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
@@ -31,21 +36,30 @@ class KafkaConfigFileParser(ConfigFileParser) :
 
     @property
     def broker_configs(self) :
+        """
+        Configs for connecting to the broker
+        """
         if self.__broker_configs is None :
             self.__broker_configs = self._get_config_dict('broker')
         return self.__convert_floats(self.__broker_configs)
     @property
     def producer_configs(self) :
+        """
+        Configs for setting up Producers
+        """
         if self.__producer_configs is None :
             pcs = self._get_config_dict('producer')
             self.__producer_configs = KafkaConfigFileParser.get_replaced_configs(pcs,'serialization')
         return self.__convert_floats(self.__producer_configs)
     @property
     def consumer_configs(self) :
+        """
+        Configs for setting up Consumers
+        """
         if self.__consumer_configs is None :
             ccs = self._get_config_dict('consumer')
             #if the auto.offset.reset was given as "none" then remove it from the ccs
-            if 'auto.offset.reset' in ccs.keys() and ccs['auto.offset.reset']=='none' :
+            if 'auto.offset.reset' in ccs and ccs['auto.offset.reset']=='none' :
                 del ccs['auto.offset.reset']
             self.__consumer_configs = KafkaConfigFileParser.get_replaced_configs(ccs,'deserialization')
         return self.__convert_floats(self.__consumer_configs)
@@ -99,7 +113,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
         if 'kafkacrypto' in self.available_group_names :
             kc_configs = self.get_config_dict_for_groups('kafkacrypto')
             #option 1 above
-            if 'config_file' in kc_configs.keys() :
+            if 'config_file' in kc_configs :
                 path_as_str = (kc_configs['config_file']).lstrip('file#')
                 if not pathlib.Path(path_as_str).is_file() :
                     errmsg = f'ERROR: KafkaCrypto config file {path_as_str} '
@@ -107,7 +121,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
                     self.logger.error(errmsg,FileNotFoundError)
                 return path_as_str
             #option 2 above
-            elif 'node_id' in kc_configs.keys() :
+            elif 'node_id' in kc_configs :
                 node_id = kc_configs['node_id']
                 dirpath = RUN_CONST.CONFIG_FILE_DIR / node_id
                 filepath = dirpath / f'{node_id}.config'
@@ -119,16 +133,17 @@ class KafkaConfigFileParser(ConfigFileParser) :
         #no config file found
         return None
 
-    def __convert_floats(self,d) :
+    def __convert_floats(self,given_dict) :
         """
-        Return a version of the dictionary "d" where any values that can be converted to floats are converted to floats
+        Return a version of the dictionary "given_dict" where any values that can be converted to floats
+        are converted to floats
         (Some KafkaCrypto code assumes configs will be floats)
         """
-        rd = {}
-        for k,v in d.items() :
+        return_dict = {}
+        for k,v in given_dict.items() :
             try :
                 v_as_float = float(v)
-                rd[k] = v_as_float
+                return_dict[k] = v_as_float
             except Exception :
-                rd[k]=v
-        return rd
+                return_dict[k]=v
+        return return_dict

@@ -83,7 +83,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
-            consumer_group_ID='test_s3_transfer',
+            consumer_group_id='test_s3_transfer',
             logger=LOGGER,
         )
         s3tsp_thread = ExceptionTrackingThread(target=s3tsp.make_stream)
@@ -134,7 +134,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
             update_secs=UPDATE_SECS,
-            consumer_group_ID='test_s3_transfer',
+            consumer_group_id='test_s3_transfer',
             logger=LOGGER,
         )
         validate_thread = ExceptionTrackingThread(target=self.validate_s3_transfer_with_producer)

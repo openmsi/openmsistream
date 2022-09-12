@@ -1,4 +1,6 @@
-#imports'
+"""A set of Consumers and Producers that share share the same KafkaCrypto key-passing instance"""
+
+#imports
 from ..utilities.logging import LogOwner
 from .consumer_group import ConsumerGroup
 from .producer_group import ProducerGroup
@@ -11,25 +13,31 @@ class ConsumerAndProducerGroup(LogOwner) :
     :type config_path: :class:`pathlib.Path`
     :param consumer_topic_name: The name of the topic to which the Consumers should be subscribed
     :type consumer_topic_name: str
-    :param consumer_group_ID: The ID string that should be used for each Consumer in the group.
+    :param consumer_group_id: The ID string that should be used for each Consumer in the group.
         "create_new" (the defaults) will create a new UID to use.
-    :type consumer_group_ID: str, optional
+    :type consumer_group_id: str, optional
     """
 
     @property
     def consumer_topic_name(self) :
+        """
+        Name of the topic to which the consumers are subscribed
+        """
         return self.__consumer_group.topic_name
     @property
-    def consumer_group_ID(self) :
-        return self.__consumer_group.consumer_group_ID
+    def consumer_group_id(self) :
+        """
+        Group ID of all consumers in the group
+        """
+        return self.__consumer_group.consumer_group_id
 
-    def __init__(self,config_path,consumer_topic_name,*,consumer_group_ID='create_new',**kwargs) :
+    def __init__(self,config_path,consumer_topic_name,*,consumer_group_id='create_new',**kwargs) :
         """
         Constructor method
         """
         super().__init__(**kwargs)
         self.__consumer_group = ConsumerGroup(config_path,consumer_topic_name,
-                                              consumer_group_ID=consumer_group_ID,logger=self.logger)
+                                              consumer_group_id=consumer_group_id,logger=self.logger)
         self.__producer_group = ProducerGroup(config_path,kafkacrypto=self.__consumer_group.kafkacrypto,
                                               logger=self.logger)
 

@@ -1,3 +1,8 @@
+"""
+A ConsumerAndProducerGroup whose receipt and production of messages
+is managed using the ControlledProcessInfrastructure
+"""
+
 #imports
 import time
 from abc import ABC, abstractmethod
@@ -61,7 +66,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
             warnmsg+= 'the "consumer" section of the config file to re-enable manual offset commits (recommended).'
             self.logger.warning(warnmsg)
         #start the loop for while the controlled process is alive
-        last_message = None; calls_since_producer_flush = 0
+        last_message = None
+        calls_since_producer_flush = 0
         while self.alive :
             #if this thread has a Consumer side
             if consumer is not None :
@@ -75,19 +81,19 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                     last_message = msg
                     #send the message to the _process_message function
                     retval = self._process_message(self.lock,msg)
-                    #count and (asynchronously) commit the message as processed (if it wasn't consumed already in the past)
+                    #count and (asynchronously) commit the message as processed (if not consumed already in the past)
                     if retval :
                         with self.lock :
                             self.n_msgs_processed+=1
                         if not consumer.message_consumed_before(msg) :
                             tps = consumer.commit(msg)
                             if tps is not None :
-                                for tp in tps :
-                                    if tp.error is not None :
+                                for t_p in tps :
+                                    if t_p.error is not None :
                                         warnmsg = 'WARNING: failed to synchronously commit offset of last message '
-                                        warnmsg+= f'received on "{tp.topic}" partition {tp.partition}. Duplicate '
+                                        warnmsg+= f'received on "{t_p.topic}" partition {t_p.partition}. Duplicate '
                                         warnmsg+=  'messages may result when this Consumer is restarted. '
-                                        warnmsg+= f'Error reason: {tp.error.str()}'
+                                        warnmsg+= f'Error reason: {t_p.error.str()}'
                                         self.logger.warning(warnmsg)
             #if this thread has a Producer side
             if producer is not None :
@@ -108,17 +114,17 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
             try :
                 tps = consumer.commit(last_message,asynchronous=False)
                 if tps is not None :
-                    for tp in tps :
-                        if tp.error is not None :
+                    for t_p in tps :
+                        if t_p.error is not None :
                             warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
-                            warnmsg+= f'"{tp.topic}" partition {tp.partition}. Duplicate messages may result when this '
-                            warnmsg+= f'Consumer is restarted. Error reason: {tp.error.str()}'
+                            warnmsg+= f'"{t_p.topic}" partition {t_p.partition}. Duplicate messages may result '
+                            warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
                             self.logger.warning(warnmsg)
-            except Exception as e :
+            except Exception as exc :
                 errmsg = 'WARNING: failed to synchronously commit offset of last message received. '
                 errmsg+= 'Duplicate messages may be read the next time this Consumer is started. '
                 errmsg+= 'Error will be logged below but not re-raised.'
-                self.logger.error(errmsg,exc_obj=e,reraise=False)
+                self.logger.error(errmsg,exc_obj=exc,reraise=False)
         #shut down the Consumer/Producer that was created once the process isn't alive anymore
         if consumer is not None :
             consumer.close()

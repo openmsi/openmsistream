@@ -1,3 +1,5 @@
+"""Small utility class to simplify producing messages with standardized callbacks"""
+
 #imports
 from abc import ABC, abstractmethod
 

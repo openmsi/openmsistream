@@ -154,13 +154,13 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
 
     FAILED = 'failed'
 
-    def __init__(self,dirpath,topic_name,consumer_group_ID,*args,**kwargs) :
+    def __init__(self,dirpath,topic_name,consumer_group_id,*args,**kwargs) :
         """
         dirpath    = path to the directory that should contain the csv files
         topic_name = the name of the topic that will be produced to (used in the filenames)
         """
-        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_ID}.csv'
-        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_ID}.csv'
+        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_id}.csv'
+        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_id}.csv'
         super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_successfully_processed(self,dfc) :
@@ -203,12 +203,12 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
     PRODUCING_MESSAGE_FAILED = 'producing_message_failed'
     COMPUTING_RESULT_FAILED = 'computing_result_message_failed'
 
-    def __init__(self,dirpath,consumer_topic_name,producer_topic_name,consumer_group_ID,*args,**kwargs) :
+    def __init__(self,dirpath,consumer_topic_name,producer_topic_name,consumer_group_id,*args,**kwargs) :
         """
         dirpath    = path to the directory that should contain the csv file
         topic_name = the name of the topic that will be produced to (used in the filename)
         """
-        in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_ID}.csv'
+        in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_id}.csv'
         succeeded_filepath = dirpath / f'files_with_results_produced_to_{producer_topic_name}.csv'
         super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 

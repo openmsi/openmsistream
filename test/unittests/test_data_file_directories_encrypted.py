@@ -52,7 +52,7 @@ class TestDataFileDirectories(unittest.TestCase) :
                                          TOPIC_NAME,
                                          n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
                                          update_secs=UPDATE_SECS,
-                                         consumer_group_ID='test_encrypted_data_file_directories',
+                                         consumer_group_id='test_encrypted_data_file_directories',
                                          logger=LOGGER,
                                          )
         #start reconstruct in a separate thread so we can time it out

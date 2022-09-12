@@ -1,3 +1,5 @@
+"""A wrapped Kafka Consumer. May consume encrypted messages."""
+
 #imports
 import uuid, methodtools
 from confluent_kafka import DeserializingConsumer, Message
@@ -99,7 +101,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
         #all_configs['debug']='broker,topic,msg'
         #if the group.id has been set as "create_new" generate a new group ID
-        if 'group.id' in all_configs.keys() and all_configs['group.id'].lower()=='create_new' :
+        if 'group.id' in all_configs and all_configs['group.id'].lower()=='create_new' :
             all_configs['group.id']=str(uuid.uuid1())
         #if "kafkacrypto" was given, or there are configs for KafkaCrypto, use a KafkaConsumer
         if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
@@ -112,23 +114,23 @@ class OpenMSIStreamConsumer(LogOwner) :
                         raise TypeError(errmsg)
                 if logger is not None :
                     logger.debug(f'Consumed messages will be decrypted using configs at {kafkacrypto.config_file_path}')
-                kc = kafkacrypto
+                k_c = kafkacrypto
             else :
                 if logger is not None :
                     logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
-                kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
-            if 'key.deserializer' in all_configs.keys() :
-                keydes = CompoundDeserializer(kc.key_deserializer,all_configs.pop('key.deserializer'))
+                k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            if 'key.deserializer' in all_configs :
+                keydes = CompoundDeserializer(k_c.key_deserializer,all_configs.pop('key.deserializer'))
             else :
-                keydes = kc.key_deserializer
-            if 'value.deserializer' in all_configs.keys() :
-                valdes = CompoundDeserializer(kc.value_deserializer,all_configs.pop('value.deserializer'))
+                keydes = k_c.key_deserializer
+            if 'value.deserializer' in all_configs :
+                valdes = CompoundDeserializer(k_c.value_deserializer,all_configs.pop('value.deserializer'))
             else :
-                valdes = kc.value_deserializer
+                valdes = k_c.value_deserializer
             all_configs['key_deserializer']=keydes
             all_configs['value_deserializer']=valdes
             ret_args = [KafkaConsumer,all_configs]
-            ret_kwargs['kafkacrypto']=kc
+            ret_kwargs['kafkacrypto']=k_c
         #otherwise use a DeserializingConsumer
         else :
             ret_args = [DeserializingConsumer,all_configs]
@@ -174,20 +176,20 @@ class OpenMSIStreamConsumer(LogOwner) :
             msg_dict = self._consumer.poll(*poll_args,**poll_kwargs)
             if msg_dict=={} :
                 return None
-            for pk in msg_dict.keys() :
-                for m in msg_dict[pk] :
-                    self.__messages.append(m)
+            for t_p in msg_dict.keys() :
+                for msg in msg_dict[t_p] :
+                    self.__messages.append(msg)
             return self.get_next_message(*poll_args,**poll_kwargs)
         #And another version for a regular Consumer
         else :
             consumed_msg = None
             try :
                 consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
-            except Exception as e :
-                warnmsg = 'WARNING: encountered an error in a call to consumer.poll() '
-                warnmsg+= f'and this message will be skipped. Exception: {e}'
+            except Exception as exc :
+                warnmsg = 'WARNING: encountered an error in a call to consumer.poll() and this message will be '
+                warnmsg+= 'skipped. Exception will be logged as an error below (but not re-raised).'
                 self.logger.warning(warnmsg)
-                #raise e
+                self.logger.log_exception_as_error(exc,reraise=False)
                 return None
             if consumed_msg is not None and consumed_msg!={} :
                 if consumed_msg.error() is not None or consumed_msg.value() is None :
@@ -293,9 +295,9 @@ class OpenMSIStreamConsumer(LogOwner) :
             errmsg+= f'because its topic/partition/offset are {msg_topic}/{msg_partition}/{msg_offset}!'
             self.logger.error(errmsg,TypeError)
         starting_offset = None
-        for so in self.__starting_offsets :
-            if so.topic==msg_topic and so.partition==msg_partition :
-                starting_offset = so.offset
+        for tpo in self.__starting_offsets :
+            if tpo.topic==msg_topic and tpo.partition==msg_partition :
+                starting_offset = tpo.offset
         if starting_offset is None :
             errmsg = 'ERROR: failed to check whether a message has been consumed before '
             errmsg+= 'because its topic/partition were not found in the list of starting offsets'

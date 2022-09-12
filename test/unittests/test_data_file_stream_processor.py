@@ -70,7 +70,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_ID='test_data_file_stream_processor',
+                                                 consumer_group_id='test_data_file_stream_processor',
                                                  logger=LOGGER,
                                                 )
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
@@ -156,7 +156,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_ID=CONSUMER_GROUP_ID,
+                                                 consumer_group_id=CONSUMER_GROUP_ID,
                                                  logger=LOGGER,
                                                 )
         dfsp.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
@@ -218,7 +218,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                       topic_name=TOPIC_NAME,
-                                      consumer_group_ID=CONSUMER_GROUP_ID,
+                                      consumer_group_id=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         self.assertEqual(len(spr.filepaths_to_rerun),1)
         in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
@@ -240,7 +240,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_ID=CONSUMER_GROUP_ID,
+                                                 consumer_group_id=CONSUMER_GROUP_ID,
                                                  logger=LOGGER,
                                                 )
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
@@ -306,7 +306,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                       topic_name=TOPIC_NAME,
-                                      consumer_group_ID=CONSUMER_GROUP_ID,
+                                      consumer_group_id=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         succeeded_entries = spr.succeeded_table.obj_addresses
         self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
@@ -354,7 +354,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_ID=CONSUMER_GROUP_ID,
+                                                 consumer_group_id=CONSUMER_GROUP_ID,
                                                  logger=LOGGER,
                                                 )
         dfsp.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
@@ -416,7 +416,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                       topic_name=TOPIC_NAME,
-                                      consumer_group_ID=CONSUMER_GROUP_ID,
+                                      consumer_group_id=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         self.assertEqual(len(spr.filepaths_to_rerun),1)
         in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
@@ -437,7 +437,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_ID=CONSUMER_GROUP_ID,
+                                                 consumer_group_id=CONSUMER_GROUP_ID,
                                                  logger=LOGGER,
                                                 )
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
@@ -520,7 +520,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.file_registry.succeeded_table.dump_to_file()
         spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                       topic_name=TOPIC_NAME,
-                                      consumer_group_ID=CONSUMER_GROUP_ID,
+                                      consumer_group_id=CONSUMER_GROUP_ID,
                                       logger=LOGGER)
         succeeded_entries = spr.succeeded_table.obj_addresses
         self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it

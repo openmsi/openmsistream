@@ -151,7 +151,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                          'help':'''Add this flag to upload files already existing in addition to those
                                    added to the directory after this code starts running (by default
                                    only files added after startup will be uploaded)'''}],
-        'consumer_group_ID':
+        'consumer_group_id':
             ['optional',{'default':'create_new',
                          'help':'ID to use for all consumers in the group'}],
         'optional_output_dir':

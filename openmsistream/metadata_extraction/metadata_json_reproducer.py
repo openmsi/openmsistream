@@ -33,8 +33,8 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
     :param n_consumer_threads: the number of consumers to run. The total number of producer/consumer threads
         started is `max(n_consumer_threads,n_producer_threads)`.
     :type n_consumer_threads: int, optional
-    :param consumer_group_ID: the group ID under which each consumer should be created
-    :type consumer_group_ID: str, optional
+    :param consumer_group_id: the group ID under which each consumer should be created
+    :type consumer_group_id: str, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
     """
@@ -94,7 +94,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         xrd_csv_metadata_reproducer = cls(args.config,args.consumer_topic_name,args.producer_topic_name,
-                                          consumer_group_ID=args.consumer_group_ID,
+                                          consumer_group_id=args.consumer_group_id,
                                           n_consumer_threads=args.n_consumer_threads,
                                           n_producer_threads=args.n_producer_threads,
                                           output_dir=args.output_dir,

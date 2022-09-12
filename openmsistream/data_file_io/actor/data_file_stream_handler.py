@@ -119,6 +119,6 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
 
     @classmethod
     def get_command_line_arguments(cls):
-        args = ['config','consumer_group_ID','update_seconds']
+        args = ['config','consumer_group_id','update_seconds']
         kwargs = {'optional_output_dir': cls._get_auto_output_dir(),}
         return args, kwargs

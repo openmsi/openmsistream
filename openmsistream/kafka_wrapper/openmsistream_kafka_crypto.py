@@ -1,3 +1,5 @@
+"""Wrapper around the KafkaCrypto producer/consumer pair communicating with the key passing topics"""
+
 #imports
 import pathlib, uuid
 from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
@@ -16,6 +18,9 @@ class OpenMSIStreamKafkaCrypto :
 
     @property
     def config_file_path(self) :
+        """
+        The path to the KafkaCrypto config file used
+        """
         return self.__config_file
     @property
     def key_serializer(self) :

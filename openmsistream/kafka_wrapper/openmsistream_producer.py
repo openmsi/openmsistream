@@ -1,3 +1,5 @@
+"""A wrapped Kafka Producer. May produce encrypted messages."""
+
 #imports
 import time
 from confluent_kafka import SerializingProducer
@@ -94,23 +96,23 @@ class OpenMSIStreamProducer(LogOwner) :
                         raise TypeError(errmsg)
                 if logger is not None :
                     logger.debug(f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}')
-                kc = kafkacrypto
+                k_c = kafkacrypto
             else :
                 if logger is not None :
                     logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-                kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
-            if 'key.serializer' in all_configs.keys() :
-                keyser = CompoundSerializer(all_configs.pop('key.serializer'),kc.key_serializer)
+                k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+            if 'key.serializer' in all_configs :
+                keyser = CompoundSerializer(all_configs.pop('key.serializer'),k_c.key_serializer)
             else :
-                keyser = kc.key_serializer
-            if 'value.serializer' in all_configs.keys() :
-                valser = CompoundSerializer(all_configs.pop('value.serializer'),kc.value_serializer)
+                keyser = k_c.key_serializer
+            if 'value.serializer' in all_configs :
+                valser = CompoundSerializer(all_configs.pop('value.serializer'),k_c.value_serializer)
             else :
-                valser = kc.value_serializer
+                valser = k_c.value_serializer
             all_configs['key_serializer']=keyser
             all_configs['value_serializer']=valser
             ret_args = [KafkaProducer,all_configs]
-            ret_kwargs['kafkacrypto']=kc
+            ret_kwargs['kafkacrypto']=k_c
         #otherwise use a SerializingProducer
         else :
             ret_args = [SerializingProducer,all_configs]
@@ -237,7 +239,8 @@ class OpenMSIStreamProducer(LogOwner) :
         else :
             callback_to_use = make_callback(callback,**obj.callback_kwargs)
         #produce the message to the topic
-        success=False; total_wait_secs=0
+        success=False
+        total_wait_secs=0
         while (not success) and total_wait_secs<timeout :
             try :
                 self.produce(topic=topic_name,key=obj.msg_key,value=obj.msg_value,on_delivery=callback_to_use)
@@ -272,8 +275,9 @@ class OpenMSIStreamProducer(LogOwner) :
                 key = self._producer.ks(topic,key)
                 value = self._producer.vs(topic,value)
             return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
-        except Exception as e :
-            self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',exc_obj=e)
+        except Exception as exc :
+            self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
+                              exc_obj=exc)
 
     def poll(self,*args,**kwargs) :
         """

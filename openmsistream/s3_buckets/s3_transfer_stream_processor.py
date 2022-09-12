@@ -102,7 +102,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
                              output_dir=args.output_dir,
                              n_threads=args.n_threads,
                              update_secs=args.update_seconds,
-                             consumer_group_ID=args.consumer_group_ID)
+                             consumer_group_id=args.consumer_group_id)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)

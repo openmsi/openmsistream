@@ -125,7 +125,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     @classmethod
     def get_command_line_arguments(cls) :
         superargs,superkwargs = super().get_command_line_arguments()
-        args = [*superargs,'output_dir','config','topic_name','update_seconds','consumer_group_ID']
+        args = [*superargs,'output_dir','config','topic_name','update_seconds','consumer_group_id']
         kwargs = {**superkwargs,'n_threads':RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args,kwargs
 
@@ -145,7 +145,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #make the download directory
         reconstructor_directory = cls(args.output_dir,args.config,args.topic_name,
                                       n_threads=args.n_threads,
-                                      consumer_group_ID=args.consumer_group_ID,
+                                      consumer_group_id=args.consumer_group_id,
                                       update_secs=args.update_seconds,
                                      )
         #start the reconstructor running
