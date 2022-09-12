@@ -1,3 +1,5 @@
+"""Wrapper around a Python ConfigParser to simplify some commonly-used operations"""
+
 #imports
 import os, configparser
 from .logging import LogOwner
@@ -11,15 +13,21 @@ class ConfigFileParser(LogOwner) :
 
     @property
     def has_default(self) :
+        """
+        True if a config file has a DEFAULT section
+        """
         return 'DEFAULT' in self._config
     @property
     def available_group_names(self) :
+        """
+        The list of section names in the config file
+        """
         return self._config.sections()
     @property
-    def filepath(self) :
-        return self._filepath
-    @property
     def env_var_names(self) :
+        """
+        A generator of the environment variable names used in the config file
+        """
         for csd in self._config.values() :
             for v in csd.values() :
                 if v.startswith('$') :
@@ -32,7 +40,7 @@ class ConfigFileParser(LogOwner) :
         config_path = path to the config file to parse
         """
         super().__init__(*args,**kwargs)
-        self._filepath = config_path
+        self.filepath = config_path
         if not config_path.is_file() :
             self.logger.error(f'ERROR: configuration file {config_path} does not exist!',FileNotFoundError)
         self._config = configparser.ConfigParser()
@@ -49,7 +57,7 @@ class ConfigFileParser(LogOwner) :
         config_dict = {}
         for group_name in group_names :
             if group_name not in self._config :
-                self.logger.error(f'ERROR: {group_name} is not a recognized section in {self._filepath}!',ValueError)
+                self.logger.error(f'ERROR: {group_name} is not a recognized section in {self.filepath}!',ValueError)
             for key, value in self._config[group_name].items() :
                 #don't add the 'node_id' to groups for brokers, producers, or consumers
                 if key=='node_id' and group_name in ['broker','producer','consumer'] :
@@ -58,7 +66,7 @@ class ConfigFileParser(LogOwner) :
                 if value.startswith('$') :
                     exp_value = os.path.expandvars(value)
                     if exp_value == value :
-                        errmsg = f'ERROR: Expanding {value} in {self._filepath} as an environment variable failed '
+                        errmsg = f'ERROR: Expanding {value} in {self.filepath} as an environment variable failed '
                         errmsg+= '(must be set on system)'
                         self.logger.error(errmsg,ValueError)
                     else :

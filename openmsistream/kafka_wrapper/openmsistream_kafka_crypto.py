@@ -3,7 +3,7 @@
 #imports
 import pathlib, uuid
 from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
-from ..utilities.misc import cd
+from ..utilities.misc import change_dir
 
 class OpenMSIStreamKafkaCrypto :
     """
@@ -56,7 +56,7 @@ class OpenMSIStreamKafkaCrypto :
         #figure out a consumer group ID to use (KafkaCrypto Consumers need one)
         if 'group.id' not in consumer_configs.keys() :
             consumer_configs['group.id'] = str(uuid.uuid1())
-        with cd(pathlib.Path(config_file).parent) :
+        with change_dir(pathlib.Path(config_file).parent) :
             #start up the producer and consumer
             self._kcp = KafkaProducer(**producer_configs)
             self._kcc = KafkaConsumer(**consumer_configs)

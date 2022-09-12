@@ -1,9 +1,27 @@
+"""
+A utility class to represent a set of (relatively arbitrary) dataclass objects serialized to/deseralized from
+a corresponding CSV file in an atomic and (relatively) thread-safe way
+"""
+
 #imports
-import pathlib, functools, methodtools, datetime, typing, copy, os
+import pathlib, functools, datetime, typing, copy, os
 from threading import Lock
 from dataclasses import fields, is_dataclass
+import methodtools
 from atomicwrites import atomic_write
 from .logging import LogOwner
+
+def get_nested_types() :
+    """
+    Helper function to generate the class constant that holds the supported nested types for dataclass tables
+    """
+    simple_types = [str,int,float,complex,bool]
+    container_types = [(typing.List,list,'[]'),(typing.Tuple,tuple,'()'),(typing.Set,set,'set()')]
+    nested_types_dict = {}
+    for c_t in container_types :
+        for s_t in simple_types :
+            nested_types_dict[c_t[0][s_t]] = (c_t[1],s_t,c_t[2])
+    return nested_types_dict
 
 class DataclassTable(LogOwner) :
     """
@@ -23,34 +41,34 @@ class DataclassTable(LogOwner) :
     THREAD_LOCK = Lock()
     UPDATE_FILE_EVERY = 5 #only update the .csv file automatically every 5 seconds to make updates less expensive
 
-    @methodtools.lru_cache()
-    @property
-    def NESTED_TYPES(self) :
-        simple_types = [str,int,float,complex,bool]
-        container_types = [(typing.List,list,'[]'),(typing.Tuple,tuple,'()'),(typing.Set,set,'set()')]
-        rd = {}
-        for c_t in container_types :
-            for s_t in simple_types :
-                rd[c_t[0][s_t]] = (c_t[1],s_t,c_t[2])
-        return rd
+    NESTED_TYPES = get_nested_types()
 
     @methodtools.lru_cache()
     @property
     def csv_header_line(self) :
-        s = ''
+        """
+        The first line in the CSV file (OS-dependent)
+        """
+        header_line = ''
         #add an extra line when running on Windows to seamlessly open the file in Excel
         if os.name=='nt' :
-            s+=f'sep={DataclassTable.DELIMETER}\n'
+            header_line+=f'sep={DataclassTable.DELIMETER}\n'
         for fieldname in self.__field_names :
-            s+=f'{fieldname}{DataclassTable.DELIMETER}'
-        return s[:-1]
+            header_line+=f'{fieldname}{DataclassTable.DELIMETER}'
+        return header_line[:-1]
 
     @property
     def obj_addresses(self) :
+        """
+        All recognized object hex addresses
+        """
         return list(self.__entry_objs.keys())
 
     @property
     def filepath(self) :
+        """
+        Path to the CSV file
+        """
         return self.__filepath
 
     @property
@@ -109,7 +127,7 @@ class DataclassTable(LogOwner) :
             new_entries = [new_entries]
         for entry in new_entries :
             entry_addr = hex(id(entry))
-            if entry_addr in self.__entry_objs.keys() or entry_addr in self.__entry_lines.keys() :
+            if entry_addr in self.__entry_objs or entry_addr in self.__entry_lines :
                 self.logger.error('ERROR: address of object sent to add_entries is already registered!',ValueError)
             with DataclassTable.THREAD_LOCK :
                 self.__entry_objs[entry_addr] = entry
@@ -128,10 +146,10 @@ class DataclassTable(LogOwner) :
 
         :raises ValueError: if any of the hex addresses in `entry_obj_addresses` is not present in the table
         """
-        if type(entry_obj_addresses)==str :
+        if isinstance(entry_obj_addresses,str) :
             entry_obj_addresses = [entry_obj_addresses]
         for entry_addr in entry_obj_addresses :
-            if (entry_addr not in self.__entry_objs.keys()) or (entry_addr not in self.__entry_lines.keys()) :
+            if (entry_addr not in self.__entry_objs) or (entry_addr not in self.__entry_lines) :
                 self.logger.error(f'ERROR: address {entry_addr} sent to remove_entries is not registered!',ValueError)
             with DataclassTable.THREAD_LOCK :
                 self.__entry_objs.pop(entry_addr)
@@ -159,7 +177,7 @@ class DataclassTable(LogOwner) :
 
         :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
-        if entry_obj_address not in self.__entry_objs.keys() :
+        if entry_obj_address not in self.__entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
             self.logger.error(errmsg,ValueError)
         obj = self.__entry_objs[entry_obj_address]
@@ -167,11 +185,11 @@ class DataclassTable(LogOwner) :
             return copy.deepcopy(getattr(obj,args[0]))
         to_return = {}
         for fname in self.__field_names :
-            if args==() or fname in args :
+            if (not args) or (fname in args) :
                 to_return[fname] = copy.deepcopy(getattr(obj,fname))
-        if args!=() :
+        if args :
             for arg in args :
-                if arg not in to_return.keys() :
+                if arg not in to_return :
                     errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} '
                     errmsg+= 'Field and will not be returned from get_entry_attrs!'
                     self.logger.warning(errmsg)
@@ -188,7 +206,7 @@ class DataclassTable(LogOwner) :
 
         :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
-        if entry_obj_address not in self.__entry_objs.keys() :
+        if entry_obj_address not in self.__entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to set_entry_attrs is not registered!'
             self.logger.error(errmsg,ValueError)
         with DataclassTable.THREAD_LOCK :
@@ -227,7 +245,7 @@ class DataclassTable(LogOwner) :
         with DataclassTable.THREAD_LOCK :
             for addr,obj in self.__entry_objs.items() :
                 rkey = getattr(obj,key_attr_name)
-                if rkey not in to_return.keys() :
+                if rkey not in to_return :
                     to_return[rkey] = []
                 to_return[rkey].append(addr)
         return to_return
@@ -274,7 +292,7 @@ class DataclassTable(LogOwner) :
         """
         Write a line or container of lines to the csv file, in a thread-safe and atomic way
         """
-        if type(lines)==str :
+        if isinstance(lines,str) :
             lines = [lines]
         lines_string = ''
         for line in lines :
@@ -282,11 +300,11 @@ class DataclassTable(LogOwner) :
         try :
             with atomic_write(self.__filepath,overwrite=overwrite) as fp :
                 fp.write(lines_string)
-        except Exception as e :
+        except Exception as exc :
             if reraise_exc :
                 errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
                 errmsg+=  'Will reraise exception.'
-                self.logger.error(errmsg,exc_obj=e)
+                self.logger.error(errmsg,exc_obj=exc)
             else :
                 msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
                 self.logger.warning(msg)
@@ -298,10 +316,10 @@ class DataclassTable(LogOwner) :
         """
         if obj.__class__ != self.__dataclass_type :
             self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',TypeError)
-        s = ''
+        obj_line = ''
         for fname,ftype in zip(self.__field_names,self.__field_types) :
-            s+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{DataclassTable.DELIMETER}'
-        return s[:-1]
+            obj_line+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{DataclassTable.DELIMETER}'
+        return obj_line[:-1]
 
     def __obj_from_line(self,line) :
         """
@@ -341,7 +359,7 @@ class DataclassTable(LogOwner) :
         elif attrtype in (int,float,complex,bool) :
             return attrtype(attrstr)
         #some simply-nested container types can be casted in two steps
-        elif attrtype in self.NESTED_TYPES.keys() :
+        elif attrtype in self.NESTED_TYPES :
             #empty collections
             if attrstr==self.NESTED_TYPES[attrtype][2] :
                 return self.NESTED_TYPES[attrtype][0]()

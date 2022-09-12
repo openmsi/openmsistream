@@ -1,3 +1,5 @@
+"""Some miscellaneous functions that are universally internally available"""
+
 #imports
 import os, sys, inspect, time, contextlib
 
@@ -25,7 +27,7 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
                     #if the default argument is a class
                     if inspect.isclass((defaults[key])[0]) :
                         #make sure the given argument is also a class
-                        if (not inspect.isclass(given_kwargs[key])) :
+                        if not inspect.isclass(given_kwargs[key]) :
                             errmsg = f'ERROR: Argument "{key}" expected to be a class, not an object!'
                             if logger is not None :
                                 logger.error(errmsg,RuntimeError)
@@ -49,8 +51,8 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
                     elif type(given_kwargs[key]) not in (defaults[key])[1:] :
                         errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {given_kwargs[key]} '
                         errmsg+= '(expected one of '
-                        for t in (defaults[key])[1:] :
-                            errmsg+=f'{t}, '
+                        for typestring in (defaults[key])[1:] :
+                            errmsg+=f'{typestring}, '
                         errmsg+=f'but got {type(given_kwargs[key])})'
                         if logger is not None :
                             logger.error(errmsg,TypeError)
@@ -62,7 +64,7 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
             #if the single default option is a class
             elif inspect.isclass(defaults[key]) :
                 #make sure the given argument is also a class
-                if (not inspect.isclass(given_kwargs[key])) :
+                if not inspect.isclass(given_kwargs[key]) :
                     errmsg = f'ERROR: Argument "{key}" expected to be a class, not an object!'
                     if logger is not None :
                         logger.error(errmsg,RuntimeError)
@@ -93,7 +95,7 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
     return given_kwargs
 
 @contextlib.contextmanager
-def cd(dirpath):
+def change_dir(dirpath):
     """
     Change the current working directory to a different directory,
     and go back when leaving the context manager.

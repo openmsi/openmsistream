@@ -1,10 +1,16 @@
+"""
+A wrapper around KafkaCrypto provision scripts to automatically
+move the output in the location expected by OpenMSIStream
+"""
+
 #imports
-import pathlib, shutil, logging, urllib.request, kafkacrypto
+import pathlib, shutil, logging
 from argparse import ArgumentParser
+import urllib.request, kafkacrypto
 from ..running.config import RUN_CONST
 from .logging import Logger
 from .config_file_parser import ConfigFileParser
-from .misc import cd
+from .misc import change_dir
 
 #constants
 LOGGER = Logger('ProvisionNode',logging.INFO)
@@ -15,6 +21,10 @@ GITHUB_URL = f'https://raw.githubusercontent.com/tmcqueen-materials/kafkacrypto/
 TEMP_DIR_PATH = RUN_CONST.CONFIG_FILE_DIR/'temp_kafkacrypto_dir'
 
 def main() :
+    """
+    Script to run either simple or online provision for KafkaCrypto and
+    move the output to the location expected by OpenMSIStream
+    """
     #command line arguments
     parser = ArgumentParser()
     group = parser.add_mutually_exclusive_group()
@@ -67,10 +77,10 @@ def main() :
     try :
         if not TEMP_DIR_PATH.is_dir() :
             TEMP_DIR_PATH.mkdir(parents=True)
-        with cd(TEMP_DIR_PATH) :
+        with change_dir(TEMP_DIR_PATH) :
             exec(p_code)
-    except Exception as e :
-        LOGGER.error(f'ERROR: failed to run provisioning using {p_loc}! Exception: {e}',RuntimeError)
+    except Exception as exc :
+        LOGGER.error(f'ERROR: failed to run provisioning using {p_loc}! Exception: {exc}',RuntimeError)
     #make sure required files exist and move them into a new directory named for the node_ID
     try :
         new_files = {}
@@ -93,7 +103,7 @@ def main() :
                 LOGGER.error(errmsg,RuntimeError)
         cfp = ConfigFileParser(new_files['.config'],logger=LOGGER)
         default_dict = cfp.get_config_dict_for_groups('DEFAULT')
-        if 'node_id' not in default_dict.keys() :
+        if 'node_id' not in default_dict :
             LOGGER.error(f"ERROR: node_id not listed in {new_files['.config']}!")
         elif default_dict['node_id']!=node_id :
             LOGGER.error(f"ERROR: node_id listed in {new_files['.config']} mismatched to filenames ({node_id})!")
@@ -102,9 +112,9 @@ def main() :
             LOGGER.error(f'ERROR: directory at {new_dirpath} already exists!')
         TEMP_DIR_PATH.rename(new_dirpath)
         LOGGER.info(f'Successfuly set up new KafkaCrypto node called "{node_id}"')
-    except Exception as e :
+    except Exception as exc :
         errmsg = f'ERROR: Running {p_loc} did not produce the expected output! Temporary directories '
-        errmsg+= f'will be removed and you will need to try again. Exception: {e}'
+        errmsg+= f'will be removed and you will need to try again. Exception: {exc}'
         LOGGER.error(errmsg)
     finally :
         if TEMP_DIR_PATH.is_dir() :
