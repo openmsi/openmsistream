@@ -11,7 +11,7 @@ class DataclassTable(LogOwner) :
 
     :param dataclass_type: The :class:`dataclasses.dataclass` defining the entries in the table/csv file
     :type dataclass_type: :class:`dataclasses.dataclass`
-    :param filepath: The path to the .csv file that should be created (or read from) on startup. 
+    :param filepath: The path to the .csv file that should be created (or read from) on startup.
         The default is a file named after the dataclass type in the current directory.
     :type filepath: :class:`pathlib.Path` or None, optional
     """
@@ -122,7 +122,7 @@ class DataclassTable(LogOwner) :
         """
         Remove an entry or entries from the table
 
-        :param entry_obj_addresses: a single value or container of entry addresses (object IDs in hex form) to remove 
+        :param entry_obj_addresses: a single value or container of entry addresses (object IDs in hex form) to remove
             from the table
         :type entry_obj_addresses: hex(id(object)) or list(hex(id(object)))
 
@@ -142,13 +142,13 @@ class DataclassTable(LogOwner) :
 
     def get_entry_attrs(self,entry_obj_address,*args) :
         """
-        Return copies of all or some of the current attributes of an entry in the table. 
+        Return copies of all or some of the current attributes of an entry in the table.
         Returning copies ensures the original objects cannot be modified by accident.
-        
+
         Use `args` to get a dictionary of desired attribute values returned.
         If only one arg is given the return value is just that single attribute.
         The default (no additional arguments) returns a dictionary of all attributes for the entry
-        
+
         :param entry_obj_address: the address in memory of the object to return copies of attributes for
         :type entry_obj_address: hex(id(object))
         :param args: Add other arguments that are names of attributes to get only those specific attributes of the entry
@@ -181,7 +181,7 @@ class DataclassTable(LogOwner) :
         """
         Modify attributes of an entry that already exists in the table
 
-        :param entry_obj_address: The address in memory of the entry object to modify 
+        :param entry_obj_address: The address in memory of the entry object to modify
         :type entry_obj_address: hex(id(object))
         :param kwargs: Attributes to set (keys are names, values are values for those named attrs)
         :type kwargs: dict
@@ -203,18 +203,18 @@ class DataclassTable(LogOwner) :
     @functools.lru_cache(maxsize=8)
     def obj_addresses_by_key_attr(self,key_attr_name) :
         """
-        Return a dictionary whose keys are the values of some given attribute for each object 
+        Return a dictionary whose keys are the values of some given attribute for each object
         and whose values are lists of the addresses in memory of the objects in the table
         that have each value of the requested attribute.
-        
-        Useful to find objects in the table by attribute values so they can be efficiently updated 
+
+        Useful to find objects in the table by attribute values so they can be efficiently updated
         without compromising the integrity of the objects in the table and their attributes.
 
         Up to five calls are cached so if nothing changes this happens a little faster.
 
         :param key_attr_name: the name of the attribute whose values should be used as keys in the returned dictionary
         :type key_attr_name: str
-        
+
         :return: A dictionary listing all objects in the table, keyed by their values of `key_attr_name`
         :rtype: dict
 
@@ -235,7 +235,7 @@ class DataclassTable(LogOwner) :
     def dump_to_file(self,reraise_exc=True) :
         """
         Dump the contents of the table to a csv file.
-        Call this to force the file to update and reflect the current state of objects. 
+        Call this to force the file to update and reflect the current state of objects.
         Automatically called in several contexts.
         """
         lines_to_write = [self.csv_header_line]
@@ -269,7 +269,7 @@ class DataclassTable(LogOwner) :
             self.__entry_lines[dkey] = line
         msg = f'Found {len(self.__entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
         self.logger.info(msg)
-    
+
     def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
         """
         Write a line or container of lines to the csv file, in a thread-safe and atomic way
@@ -314,7 +314,7 @@ class DataclassTable(LogOwner) :
 
     def __get_str_from_attribute(self,attrobj,attrtype) :
         """
-        Given an object and the type it is in the dataclass, 
+        Given an object and the type it is in the dataclass,
         return the string representation of it that should go in the file
         """
         if attrtype==datetime.datetime :

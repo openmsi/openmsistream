@@ -18,14 +18,14 @@ class OpenMSIStreamProducer(LogOwner) :
     :type producer_type: :class:`confluent_kafka.SerializingProducer` or :class:`kafkacrypto.KafkaProducer`
     :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Producer
     :type configs: dict
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer. 
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer.
         Only needed if `producer_type` is :class:`kafkacrypto.KafkaProducer`.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-    :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the 
+    :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the
         Producer, with underscores in their names replaced by dots
     :type kwargs: dict
 
-    :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer` 
+    :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer`
         or :class:`kafkacrypto.KafkaProducer`
     :raises ValueError: if `producer_type` is :class:`kafkacrypto.KafkaProducer` and `kafkacrypto` is None
     """
@@ -54,26 +54,26 @@ class OpenMSIStreamProducer(LogOwner) :
     @staticmethod
     def get_producer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
         """
-        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
-        :class:`~OpenMSIStreamProducer` objects based on the given config file. 
+        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate
+        :class:`~OpenMSIStreamProducer` objects based on the given config file.
         Used to share a single :class:`~OpenMSIStreamKafkaCrypto` instance across several Producers.
 
         :param config_file_path: Path to the config file to use in defining Producers
         :type config_file_path: :class:`pathlib.Path`
-        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
+        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the
             :class:`~OpenMSIStreamProducer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
-        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers. 
+        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers.
             Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
         :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers, 
+        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers,
             with underscores in their names replaced by dots
         :type kwargs: dict
 
-        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamProducer` objects 
+        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamProducer` objects
             based on the config file and arguments to this method
         :rtype: list
-        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamProducer` objects 
+        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamProducer` objects
             based on the config file and arguments to this method
         :rtype: dict
         """
@@ -120,8 +120,8 @@ class OpenMSIStreamProducer(LogOwner) :
     @classmethod
     def from_file(cls,*args,**kwargs) :
         """
-        Wrapper around :func:`~OpenMSIStreamProducer.get_producer_args_kwargs` and the :class:`~OpenMSIStreamProducer` 
-        constructor to return a single :class:`~OpenMSIStreamProducer` from a given config file/arguments. 
+        Wrapper around :func:`~OpenMSIStreamProducer.get_producer_args_kwargs` and the :class:`~OpenMSIStreamProducer`
+        constructor to return a single :class:`~OpenMSIStreamProducer` from a given config file/arguments.
         Arguments are the same as :func:`~OpenMSIStreamProducer.get_producer_args_kwargs`
 
         :returns: An :class:`~OpenMSIStreamProducer` object based on the given config file/arguments
@@ -132,7 +132,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce_from_queue(self,queue,topic_name,**kwargs) :
         """
-        Get a :class:`openmsistream.kafka_wrapper.Producible` object from a given Queue and produce it to 
+        Get a :class:`openmsistream.kafka_wrapper.Producible` object from a given Queue and produce it to
         the given topic. Does nothing if the queue is empty, and does not block waiting for items from the queue.
 
         Meant to be run in multiple threads in parallel.
@@ -163,11 +163,11 @@ class OpenMSIStreamProducer(LogOwner) :
             warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain '
             warnmsg+= 'Producible objects. This object will be skipped!'
             self.logger.warning(warnmsg)
-    
+
     def produce_from_queue_looped(self,queue,topic_name,**kwargs) :
         """
-        Get :class:`openmsistream.kafka_wrapper.Producible` objects from a given Queue and produce  
-        them to the given topic. Blocks while waiting for items to appear in the queue. 
+        Get :class:`openmsistream.kafka_wrapper.Producible` objects from a given Queue and produce
+        them to the given topic. Blocks while waiting for items to appear in the queue.
         Runs until "None" is pulled from the queue.
 
         Meant to be run in multiple threads in parallel.
@@ -204,21 +204,21 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce_object(self,obj,topic_name,callback=None,print_every=1000,timeout=60,retry_sleep=5) :
         """
-        Produce a given :class:`openmsistream.kafka_wrapper.Producible` object to a given topic, 
-        with some handling for BufferErrors, calling poll() automatically, and using callbacks 
+        Produce a given :class:`openmsistream.kafka_wrapper.Producible` object to a given topic,
+        with some handling for BufferErrors, calling poll() automatically, and using callbacks
         constructed on the fly.
 
         :param obj: the object to produce
         :type obj: :class:`openmsistream.kafka_wrapper.Producible`
         :param topic_name: the name of the topic to produce to
         :type topic_name: str
-        :param callback: a function that should be called for each message upon recognition by the broker. 
-            Will be wrapped in a lambda for each call to produce(). 
+        :param callback: a function that should be called for each message upon recognition by the broker.
+            Will be wrapped in a lambda for each call to produce().
             Arguments to the callback function are determined by the particular type of :class:`Producible` object used
         :type callback: producer callback function (takes at least "err" and "msg" arguments), optional
         :param print_every: print/log progress every (this many) messages
         :type print_every: int, optional
-        :param timeout: max time (seconds) to wait for the message to be produced in the event of 
+        :param timeout: max time (seconds) to wait for the message to be produced in the event of
             (repeated) BufferError(s)
         :type timeout: float, optional
         :param retry_sleep: how long (seconds) to wait between produce attempts if one fails with a BufferError
@@ -237,7 +237,7 @@ class OpenMSIStreamProducer(LogOwner) :
         else :
             callback_to_use = make_callback(callback,**obj.callback_kwargs)
         #produce the message to the topic
-        success=False; total_wait_secs=0 
+        success=False; total_wait_secs=0
         while (not success) and total_wait_secs<timeout :
             try :
                 self.produce(topic=topic_name,key=obj.msg_key,value=obj.msg_value,on_delivery=callback_to_use)
@@ -257,7 +257,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce(self,topic,key,value,**kwargs) :
         """
-        Produce a message to a topic. 
+        Produce a message to a topic.
         Other kwargs are passed through to the underlying producer's produce() function.
 
         :param topic: the name of the topic to produce to
@@ -274,13 +274,13 @@ class OpenMSIStreamProducer(LogOwner) :
             return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
         except Exception as e :
             self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',exc_obj=e)
-    
+
     def poll(self,*args,**kwargs) :
         """
         Wrapper around Producer.poll()
         """
         return self._producer.poll(*args,**kwargs)
-    
+
     def flush(self,*args,**kwargs) :
         """
         Wrapper around Producer.flush()
@@ -289,7 +289,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def close(self) :
         """
-        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`. 
+        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         It's important to call this on shutdown if the Producer is producing encrypted messages.
         """
         try :

@@ -11,7 +11,7 @@ class ConsumerAndProducerGroup(LogOwner) :
     :type config_path: :class:`pathlib.Path`
     :param consumer_topic_name: The name of the topic to which the Consumers should be subscribed
     :type consumer_topic_name: str
-    :param consumer_group_ID: The ID string that should be used for each Consumer in the group. 
+    :param consumer_group_ID: The ID string that should be used for each Consumer in the group.
         "create_new" (the defaults) will create a new UID to use.
     :type consumer_group_ID: str, optional
     """
@@ -38,11 +38,11 @@ class ConsumerAndProducerGroup(LogOwner) :
         Return a new Consumer, subscribed to the topic and with the shared group ID.
         Call this function from a child thread to get thread-independent Consumers.
 
-        Note: This function just creates and subscribes the Consumer. Polling it, closing 
+        Note: This function just creates and subscribes the Consumer. Polling it, closing
         it, and everything else must be handled by whatever calls this function.
 
-        :param restart_at_beginning: if True, the new Consumer will start reading partitions from the earliest 
-            messages available, regardless of Consumer group ID and auto.offset.reset values. 
+        :param restart_at_beginning: if True, the new Consumer will start reading partitions from the earliest
+            messages available, regardless of Consumer group ID and auto.offset.reset values.
             Useful when re-reading messages.
         :type restart_at_beginning: bool, optional
         :param kwargs: other keyword arguments are passed to the :class:`~OpenMSIStreamConsumer` constructor method
@@ -56,7 +56,7 @@ class ConsumerAndProducerGroup(LogOwner) :
 
     def get_new_producer(self) :
         """
-        Return a new :class:`~OpenMSIStreamProducer` object. 
+        Return a new :class:`~OpenMSIStreamProducer` object.
         Call this function from a child thread to get thread-independent Producers.
         Note: this function just creates the Producer; closing it etc. must be handled by whatever calls this function.
 
@@ -67,7 +67,7 @@ class ConsumerAndProducerGroup(LogOwner) :
 
     def close(self) :
         """
-        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`. 
+        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
         self.__consumer_group.close()
         self.__producer_group.close()

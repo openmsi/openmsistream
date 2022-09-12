@@ -19,7 +19,7 @@ def main() :
     parser = ArgumentParser()
     group = parser.add_mutually_exclusive_group()
     group.add_argument('--mode', choices=['simple','online'], default='simple',
-                       help='''Choice of which known type of provisioning to use. 
+                       help='''Choice of which known type of provisioning to use.
                                Can also provide a path to the script to run instead.''')
     group.add_argument('--script-path', type=pathlib.Path, default='.',
                         help='Path to the provision script to run')
@@ -30,7 +30,7 @@ def main() :
     #get the location of the simple-provision script
     p_code = None
     p_loc = None
-    if args.script_path is not None: 
+    if args.script_path is not None:
         #path to the script itself was given
         if args.script_path.is_file() :
             p_loc = args.script_path

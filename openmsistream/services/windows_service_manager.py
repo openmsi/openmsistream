@@ -11,14 +11,14 @@ class WindowsServiceManager(ServiceManagerBase) :
 
     :param service_name: The name of the Service as installed
     :type service_name: str
-    :param service_spec_string: A string specifying which code should be run as a Service. 
-        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code. 
-        Custom Services can also specify a :class:`openmsistream.running.Runnable` class name, and/or a function in the file 
-        using special formatting like [class_name]=[path.to.file]:[function_name]. 
+    :param service_spec_string: A string specifying which code should be run as a Service.
+        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code.
+        Custom Services can also specify a :class:`openmsistream.running.Runnable` class name, and/or a function in the file
+        using special formatting like [class_name]=[path.to.file]:[function_name].
         Only needed to initially install the Service.
     :type service_spec_string: str, optional
-    :param argslist: The list of arguments (as from the command line) to pass to the 
-        :class:`openmsistream.running.Runnable` class. 
+    :param argslist: The list of arguments (as from the command line) to pass to the
+        :class:`openmsistream.running.Runnable` class.
         Only needed to initially install the Service.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do
@@ -90,9 +90,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         """
         Remove the Service
 
-        :param remove_env_vars: if True, any environment variables needed by the Service will be removed. 
+        :param remove_env_vars: if True, any environment variables needed by the Service will be removed.
         :type remove_env_vars: bool, optional.
-        :param remove_install_args: if True, the file listing the arguments used to install the Service 
+        :param remove_install_args: if True, the file listing the arguments used to install the Service
             (to make it easier to re-install) will be removed.
         :type remove_install_args: bool, optional
         :param remove_nssm: if True, the NSSM executable will be removed.
@@ -156,7 +156,7 @@ class WindowsServiceManager(ServiceManagerBase) :
                         errmsg = f'ERROR: failed to copy {pname} DLL file from {current_env_dll_path} to '
                         errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
                         errmsg+=  'to crash. Exception will be logged below, but not reraised.'
-                        self.logger.error(errmsg,exc_obj=e,reraise=False)        
+                        self.logger.error(errmsg,exc_obj=e,reraise=False)
             else :
                 warnmsg = f'WARNING: could not locate {pname} DLL file to copy to system32 folder for '
                 warnmsg+= f'{self.service_name}! This will likely cause the Python code running as a Service to crash.'

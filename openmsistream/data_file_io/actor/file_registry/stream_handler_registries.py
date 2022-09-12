@@ -26,7 +26,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
     """
     A general base class to keep track of the status of files read during stream handling
     """
-    
+
     IN_PROGRESS = 'in_progress'
     MISMATCHED_HASH = 'mismatched_hash'
 
@@ -47,7 +47,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         for addr in self._in_progress_table.obj_addresses :
             to_rerun.append(self._in_progress_table.get_entry_attrs(addr,'rel_filepath'))
         return to_rerun
-    
+
     @property
     def rerun_file_key_regex(self) :
         """
@@ -93,7 +93,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
 
     def register_file_mismatched_hash(self,dfc) :
         """
-        Add/update a line in the table to show that a consumed file was mismatched with its original content hash 
+        Add/update a line in the table to show that a consumed file was mismatched with its original content hash
         """
         self._add_or_modify_in_progress_entry(dfc,self.MISMATCHED_HASH)
 
@@ -118,7 +118,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         filename = dfc.filename
         rel_filepath = f'{dfc.subdir_str}/{filename}' if dfc.subdir_str!='' else filename
         return filename,rel_filepath
-    
+
     def _get_in_progress_address_for_rel_filepath(self,rel_filepath) :
         existing_obj_addresses = self._in_progress_table.obj_addresses_by_key_attr('rel_filepath')
         if rel_filepath not in existing_obj_addresses.keys() :
@@ -179,7 +179,7 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
 
 class StreamReproducerRegistry(StreamHandlerRegistry) :
     """
-    A class to keep track of the status of files read from one topic with associated information 
+    A class to keep track of the status of files read from one topic with associated information
     created and re-produced to a different topic
     """
 
@@ -228,7 +228,7 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
 
     def register_file_result_production_failed(self,filename,rel_filepath,n_total_chunks) :
         """
-        Update a line in the table to show that the call to Producer.produce() for a message computed 
+        Update a line in the table to show that the call to Producer.produce() for a message computed
         from a file returned an error
         """
         self._add_or_modify_in_progress_entry_without_chunk(filename,rel_filepath,n_total_chunks,

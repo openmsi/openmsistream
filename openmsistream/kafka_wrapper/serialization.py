@@ -15,7 +15,7 @@ class CompoundSerDes(Serializer, Deserializer):
 
     def __init__(self, *args):
         """
-        args = a list of (De)Serializer (or otherwise callable) objects to apply IN GIVEN ORDER to some data 
+        args = a list of (De)Serializer (or otherwise callable) objects to apply IN GIVEN ORDER to some data
         """
         self.__steps = list(args)
 

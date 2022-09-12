@@ -25,7 +25,7 @@ class RegistryLineCompleted :
 
 class ProducerFileRegistry(LogOwner) :
     """
-    A class to manage two atomic csv files listing which portions 
+    A class to manage two atomic csv files listing which portions
     of which files have been uploaded to a particular topic
     """
 
@@ -103,9 +103,9 @@ class ProducerFileRegistry(LogOwner) :
                     'chunks_to_send':attrs['chunks_to_send'],
                     }
             self.__in_prog.set_entry_attrs(existing_addr,**new_attrs)
-            # if there are no more chunks to send and all chunks have been delivered, 
+            # if there are no more chunks to send and all chunks have been delivered,
             # move this file from "in progress" to "completed" and force-dump the files
-            if ( self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_delivered')==n_total_chunks and 
+            if ( self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_delivered')==n_total_chunks and
                  self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_to_send')==0 ) :
                 started = self.__in_prog.get_entry_attrs(existing_addr,'started')
                 completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,

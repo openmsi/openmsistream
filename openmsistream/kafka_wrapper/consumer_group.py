@@ -15,13 +15,13 @@ class ConsumerGroup(LogOwner) :
     :type config_path: :class:`pathlib.Path`
     :param topic_name: The name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-    :param consumer_group_ID: The ID string that should be used for each Consumer in the group. 
+    :param consumer_group_ID: The ID string that should be used for each Consumer in the group.
         "create_new" (the default) will create a new UID to use.
     :type consumer_group_ID: str, optional
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers. 
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers.
         Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
-    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional 
-    :param kwargs: Other keyword arguments will be added to the underlying Consumer's configurations, 
+    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+    :param kwargs: Other keyword arguments will be added to the underlying Consumer's configurations,
         with underscores in their names replaced with dots.
     :type kwargs: dict
     """
@@ -48,7 +48,7 @@ class ConsumerGroup(LogOwner) :
                                                                                         logger=self.logger,
                                                                                         kafkacrypto=kafkacrypto)
         if len(self.__c_args)>1 and 'group.id' in self.__c_args[1].keys() :
-            self.__consumer_group_ID = self.__c_args[1]['group.id'] 
+            self.__consumer_group_ID = self.__c_args[1]['group.id']
         else :
             self.__consumer_group_ID = consumer_group_ID
 
@@ -57,11 +57,11 @@ class ConsumerGroup(LogOwner) :
         Return a new Consumer, subscribed to the topic and with the shared group ID.
         Call this function from a child thread to get thread-independent Consumers.
 
-        Note: This function just creates and subscribes the Consumer. Polling it, closing 
+        Note: This function just creates and subscribes the Consumer. Polling it, closing
         it, and everything else must be handled by whatever calls this function.
 
-        :param restart_at_beginning: if True, the new Consumer will start reading partitions from the earliest 
-            messages available, regardless of Consumer group ID and auto.offset.reset values. 
+        :param restart_at_beginning: if True, the new Consumer will start reading partitions from the earliest
+            messages available, regardless of Consumer group ID and auto.offset.reset values.
             Useful when re-reading messages.
         :type restart_at_beginning: bool, optional
         :param kwargs: other keyword arguments are passed to the :class:`~OpenMSIStreamConsumer` constructor method
@@ -82,7 +82,7 @@ class ConsumerGroup(LogOwner) :
 
     def close(self) :
         """
-        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`. 
+        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
         try :
             self.__c_kwargs['kafkacrypto'].close()
@@ -93,10 +93,10 @@ class ConsumerGroup(LogOwner) :
 
     def __get_group_starting_offsets(self,config_path,topic_name,consumer_group_ID) :
         """
-        Return a list of TopicPartitions listing the starting offsets for each partition 
+        Return a list of TopicPartitions listing the starting offsets for each partition
         in the topic for the given consumer group ID
 
-        Re-raises any errors encountered in getting the necessary metadata, 
+        Re-raises any errors encountered in getting the necessary metadata,
         returning None if that happens
         """
         cfp = KafkaConfigFileParser(config_path)

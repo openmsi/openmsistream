@@ -7,7 +7,7 @@ from .file_registry.stream_handler_registries import StreamProcessorRegistry
 
 class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) :
     """
-    A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s) 
+    A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s)
     when entire files are available. This is a base class that cannot be instantiated on its own.
 
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
@@ -17,7 +17,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
     :param output_dir: Path to the directory where the log and csv registry files should be kept (if None a default
         will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
-    :param datafile_type: the type of data file that recognized files should be reconstructed as 
+    :param datafile_type: the type of data file that recognized files should be reconstructed as
         (must be a subclass of :class:`~DownloadDataFileToMemory`)
     :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
     :param n_threads: the number of threads/consumers to run
@@ -37,14 +37,14 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
     def process_files_as_read(self) :
         """
         Consumes messages and stores their data in memory.
-        Uses several parallel threads to consume message and calls :func:`~_process_downloaded_data_file` 
-        for fully read files. Runs until the user inputs a command to shut it down. 
-        
+        Uses several parallel threads to consume message and calls :func:`~_process_downloaded_data_file`
+        for fully read files. Runs until the user inputs a command to shut it down.
+
         :return: the total number of messages consumed
         :rtype: int
         :return: the total number of messages processed (registered in memory)
         :rtype: int
-        :return: the paths of files successfully processed during the run 
+        :return: the paths of files successfully processed during the run
         :rtype: List
         """
         #startup message
@@ -74,33 +74,33 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         Process a single message to add it to a file being held in memory until all messages are received.
 
         If the message failed to be decrypted, this method calls :func:`~_undecryptable_message_callback` and returns.
-        
-        If the message is the first one consumed for a particular file, or any message other than the last one needed, 
+
+        If the message is the first one consumed for a particular file, or any message other than the last one needed,
         it registers the file as 'in_progress' in the .csv file.
-        
-        If the message is the last message needed for a file and its contents match the original hash 
+
+        If the message is the last message needed for a file and its contents match the original hash
         of the file on disk, this method calls :func:`~_process_downloaded_data_file`.
 
         If the call to :func:`~_process_downloaded_data_file` returns None (success), this method moves the file to the
         'successfully processed' .csv file, and returns.
-        
-        If the call to :func:`~_process_downloaded_data_file` returns an Exception, this method calls 
+
+        If the call to :func:`~_process_downloaded_data_file` returns an Exception, this method calls
         :func:`~_failed_processing_callback`, registers the file as 'failed' in the .csv file, and returns.
 
         If the message is the last one needed but the contents are somehow different than the original file on disk,
-        this method calls :func:`~_mismatched_hash_callback`, registers the file as 'mismatched_hash' in the .csv file, 
+        this method calls :func:`~_mismatched_hash_callback`, registers the file as 'mismatched_hash' in the .csv file,
         and returns.
 
-        :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance 
+        :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance
             of :func:`~_process_message` is running at once
         :type lock: :class:`threading.Lock`
         :param msg: The received :class:`confluent_kafka.KafkaMessage` object, or an undecrypted KafkaCrypto message
-        :type msg: :class:`confluent_kafka.KafkaMessage` or :class:`kafkacrypto.Message` 
-        :param rootdir_to_set: Path to a directory that should be set as the "root" for reconstructed data files 
+        :type msg: :class:`confluent_kafka.KafkaMessage` or :class:`kafkacrypto.Message`
+        :param rootdir_to_set: Path to a directory that should be set as the "root" for reconstructed data files
             (default is the output directory)
         :type rootdir_to_set: :class:`pathlib.Path`
 
-        :return: True if processing the message was successful (file in progress or successfully processed), 
+        :return: True if processing the message was successful (file in progress or successfully processed),
             False otherwise
         :rtype: bool
         """
@@ -155,13 +155,13 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         """
         Perform some arbitrary operation(s) on a given data file that has been fully read from the stream.
         Can optionally lock other threads using the given lock.
-        
+
         Not implemented in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
+        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
             all of its messages from the topic
         :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
+        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_process_downloaded_data_file` is running at once
         :type lock: :class:`threading.Lock`
 
@@ -171,15 +171,15 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
     def _failed_processing_callback(self,datafile,lock) :
         """
-        Called when :func:`~_process_downloaded_data_file` returns an Exception, 
+        Called when :func:`~_process_downloaded_data_file` returns an Exception,
         providing an opportunity for fallback/backup processing in the case of failure.
 
         Does nothing in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
+        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
             all of its messages from the topic
         :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
+        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
         """

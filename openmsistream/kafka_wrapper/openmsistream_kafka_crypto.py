@@ -55,7 +55,7 @@ class OpenMSIStreamKafkaCrypto :
             #start up the producer and consumer
             self._kcp = KafkaProducer(**producer_configs)
             self._kcc = KafkaConsumer(**consumer_configs)
-            #initialize the KafkaCrypto object 
+            #initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None,self._kcp,self._kcc,config_file)
         self.__config_file = config_file
 

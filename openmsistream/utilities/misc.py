@@ -44,7 +44,7 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
                                 logger.error(errmsg,RuntimeError)
                             else :
                                 raise RuntimeError(errmsg)
-                    #if the default is an object, make sure the that type of the given argument matches 
+                    #if the default is an object, make sure the that type of the given argument matches
                     #one of the possible types in the defaults
                     elif type(given_kwargs[key]) not in (defaults[key])[1:] :
                         errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {given_kwargs[key]} '

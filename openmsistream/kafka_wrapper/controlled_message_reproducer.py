@@ -13,7 +13,7 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
     """
 
     CONSUMER_POLL_TIMEOUT = 0.050
-    NO_MESSAGE_WAIT = 0.005 
+    NO_MESSAGE_WAIT = 0.005
     FLUSH_PRODUCER_EVERY = 100 #flush the producer after this many calls to produce_from_queue (could be fast)
     PRODUCER_FLUSH_TIMEOUT = 0.050 #timeout for the intermediate calls to producer.flush
 
@@ -37,8 +37,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
     def _run_worker(self,create_consumer=False,create_producer=False,
                     produce_from_queue_args=None,produce_from_queue_kwargs=None):
         """
-        Handle optional startup and shutdown of thread-independent Consumer and/or Producer. 
-        Serve individual messages to the _process_message function on the Consumer side, 
+        Handle optional startup and shutdown of thread-independent Consumer and/or Producer.
+        Serve individual messages to the _process_message function on the Consumer side,
         and produce messages from the shared Queue on the Producer side.
         """
         #create the Consumer and/or Producer for this thread
@@ -53,8 +53,8 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                 producer = self.get_new_producer()
             else :
                 producer = None
-        if ( (consumer is not None) and 
-             ( ('enable.auto.commit' not in consumer.configs.keys()) or 
+        if ( (consumer is not None) and
+             ( ('enable.auto.commit' not in consumer.configs.keys()) or
                (consumer.configs['enable.auto.commit'] is True))) :
             warnmsg = 'WARNING: enable.auto.commit has not been set to False for a Consumer that will manually commit '
             warnmsg+= 'offsets. Missed or duplicate messages could result. You can set "enable.auto.commit"=False in '
@@ -103,7 +103,7 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
                     calls_since_producer_flush=0
                 calls_since_producer_flush+=1
         #commit the offset of the last message received if it wasn't already consumed in the past (block until done)
-        if ( (consumer is not None) and 
+        if ( (consumer is not None) and
              (last_message is not None) and (not consumer.message_consumed_before(last_message)) ) :
             try :
                 tps = consumer.commit(last_message,asynchronous=False)
@@ -135,10 +135,10 @@ class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProd
         """
         Process a single message read from the thread-independent Consumer
         Returns true if processing was successful, and False otherwise
-        
+
         lock = lock across all created child threads (use to enforce thread safety during processing)
         msg  = a single message that was consumed and should be processed by this function
 
-        Not implemented in the base class 
+        Not implemented in the base class
         """
         raise NotImplementedError

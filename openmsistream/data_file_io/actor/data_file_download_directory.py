@@ -12,13 +12,13 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     """
     Class representing a directory into which files are being reconstructed.
 
-    :param dirpath: Path to the directory where reconstructed files should be saved 
+    :param dirpath: Path to the directory where reconstructed files should be saved
     :type dirpath: :class:`pathlib.Path`
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-    :param datafile_type: the type of data file that recognized files should be reconstructed as 
+    :param datafile_type: the type of data file that recognized files should be reconstructed as
         (must be a subclass of :class:`~DownloadDataFileToDisk`)
     :type datafile_type: :class:`~DownloadDataFileToDisk`, optional
 
@@ -31,7 +31,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         """
         datafile_type = the type of datafile that the consumed messages should be assumed to represent
         In this class datafile_type should be something that extends DownloadDataFileToDisk
-        """    
+        """
         super().__init__(dirpath,config_path,topic_name,datafile_type=datafile_type,**kwargs)
         if not issubclass(self.datafile_type,DownloadDataFileToDisk) :
             errmsg = 'ERROR: DataFileDownloadDirectory requires a datafile_type that is a subclass of '
@@ -41,14 +41,14 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
 
     def reconstruct(self) :
         """
-        Consumes messages and writes their data to disk using several parallel threads to reconstruct the files 
-        to which they correspond. Runs until the user inputs a command to shut it down. 
-        
+        Consumes messages and writes their data to disk using several parallel threads to reconstruct the files
+        to which they correspond. Runs until the user inputs a command to shut it down.
+
         :return: the total number of messages consumed
         :rtype: int
         :return: the total number of message processed (written to disk)
         :rtype: int
-        :return: the number of files whose reconstruction was completed during the run 
+        :return: the number of files whose reconstruction was completed during the run
         :rtype: int
         """
         msg = f'Will reconstruct files from messages in the {self.topic_name} topic using {self.n_threads} '
@@ -62,7 +62,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     def _process_message(self, lock, msg, rootdir_to_set=None):
         retval = super()._process_message(lock,msg,self.dirpath if rootdir_to_set is None else rootdir_to_set)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
-        if ( hasattr(retval,'key') and hasattr(retval,'value') and 
+        if ( hasattr(retval,'key') and hasattr(retval,'value') and
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
             if not self.__encrypted_messages_subdir.is_dir() :
                 self.__encrypted_messages_subdir.mkdir(parents=True)
@@ -129,7 +129,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         """
         Run a :class:`~DataFileDownloadDirectory` directly from the command line
 
-        Calls :func:`~reconstruct` on a :class:`~DataFileDownloadDirectory` defined by 
+        Calls :func:`~reconstruct` on a :class:`~DataFileDownloadDirectory` defined by
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv

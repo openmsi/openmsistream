@@ -6,7 +6,7 @@ from .consumer_group import ConsumerGroup
 
 class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,ABC) :
     """
-    Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a 
+    Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a
     single interface for reading and processing individual messages
     """
 
@@ -26,7 +26,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
 
     def _run_worker(self):
         """
-        Handle startup and shutdown of a thread-independent Consumer and 
+        Handle startup and shutdown of a thread-independent Consumer and
         serve individual messages to the _process_message function
         """
         #create the Consumer for this thread
@@ -93,10 +93,10 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         """
         Process a single message read from the thread-independent Consumer
         Returns true if processing was successful, and False otherwise
-        
+
         lock = lock across all created child threads (use to enforce thread safety during processing)
         msg  = a single message that was consumed and should be processed by this function
 
-        Not implemented in the base class 
+        Not implemented in the base class
         """
         raise NotImplementedError

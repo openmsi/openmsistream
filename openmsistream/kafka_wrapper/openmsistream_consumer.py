@@ -17,29 +17,29 @@ class OpenMSIStreamConsumer(LogOwner) :
     :type consumer_type: :class:`confluent_kafka.DeserializingConsumer` or :class:`kafkacrypto.KafkaConsumer`
     :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Consumer
     :type configs: dict
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Consumer. 
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Consumer.
         Only needed if `consumer_type` is :class:`kafkacrypto.KafkaConsumer`.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-    :param message_key_regex: A regular expression to filter messages based on their keys. 
+    :param message_key_regex: A regular expression to filter messages based on their keys.
         Only messages matching this regex will be returned by :func:`~get_next_message`.
-        This parameter only has an effect if `restart_at_beginning` is true and a consumer group with the given ID 
-        has previously consumed messages from the topic, or if `filter_new_messages` is True. 
+        This parameter only has an effect if `restart_at_beginning` is true and a consumer group with the given ID
+        has previously consumed messages from the topic, or if `filter_new_messages` is True.
         Messages with keys that are not strings will always be consumed, logging warnings if they should be filtered.
     :type message_key_regex: :func:`re.compile` or None, optional
-    :param filter_new_messages: If False (the default) the `message_key_regex` will only be used to filter 
-        messages from before each partition's currently committed location. Useful if you want to process only some 
+    :param filter_new_messages: If False (the default) the `message_key_regex` will only be used to filter
+        messages from before each partition's currently committed location. Useful if you want to process only some
         messages from earlier in the topic, but all new messages that have never been read. To filter every message read
         instead of just previously-consumed messages, set this to True.
     :type filter_new_messages: bool, optional
-    :param starting_offsets: A list of :class:`confluent_kafka.TopicPartition` objects listing the initial starting 
-        offsets for each partition in the topic for Consumers with this group ID. If `filter_new_messages` is 
+    :param starting_offsets: A list of :class:`confluent_kafka.TopicPartition` objects listing the initial starting
+        offsets for each partition in the topic for Consumers with this group ID. If `filter_new_messages` is
         False, messages with offsets greater than or equal to these will NOT be filtered using `message_key_regex`.
     :type starting_offsets: list(:class:`confluent_kafka.TopicPartition`) or None, optional
-    :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumer, 
+    :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumer,
         with underscores in their names replaced by dots
     :type kwargs: dict
 
-    :raises ValueError: if `consumer_type` is not :class:`confluent_kafka.DeserializingConsumer` 
+    :raises ValueError: if `consumer_type` is not :class:`confluent_kafka.DeserializingConsumer`
         or :class:`kafkacrypto.KafkaConsumer`
     :raises ValueError: if `consumer_type` is :class:`kafkacrypto.KafkaConsumer` and `kafkacrypto` is None
     """
@@ -69,26 +69,26 @@ class OpenMSIStreamConsumer(LogOwner) :
     @staticmethod
     def get_consumer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
         """
-        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
-        :class:`~OpenMSIStreamConsumer` objects based on the given config file. 
+        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate
+        :class:`~OpenMSIStreamConsumer` objects based on the given config file.
         Used to share a single :class:`~OpenMSIStreamKafkaCrypto` instance across several Consumers.
 
         :param config_file_path: Path to the config file to use in defining Consumers
         :type config_file_path: :class:`pathlib.Path`
-        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
+        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the
             :class:`~OpenMSIStreamConsumer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
-        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers. 
+        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Consumers.
             Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
-        :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional 
-        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumers, 
+        :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumers,
             with underscores in their names replaced by dots
         :type kwargs: dict
 
-        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamConsumer` objects 
+        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamConsumer` objects
             based on the config file and arguments to this method
         :rtype: list
-        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamConsumer` objects 
+        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamConsumer` objects
             based on the config file and arguments to this method
         :rtype: dict
         """
@@ -138,8 +138,8 @@ class OpenMSIStreamConsumer(LogOwner) :
     @classmethod
     def from_file(cls,*args,**kwargs) :
         """
-        Wrapper around :func:`~OpenMSIStreamConsumer.get_consumer_args_kwargs` and the :class:`~OpenMSIStreamConsumer` 
-        constructor to return a single :class:`~OpenMSIStreamConsumer` from a given config file/arguments. 
+        Wrapper around :func:`~OpenMSIStreamConsumer.get_consumer_args_kwargs` and the :class:`~OpenMSIStreamConsumer`
+        constructor to return a single :class:`~OpenMSIStreamConsumer` from a given config file/arguments.
         Arguments are the same as :func:`~OpenMSIStreamConsumer.get_consumer_args_kwargs`
 
         :returns: An :class:`~OpenMSIStreamConsumer` object based on the given config file/arguments
@@ -155,16 +155,16 @@ class OpenMSIStreamConsumer(LogOwner) :
 
         If `message_key_regex` is not None this method may return None even though a message was consumed.
 
-        For the case of encrypted messages, this may return a :class:`kafkacrypto.Message` object with 
-        :class:`kafkacrypto.KafkaCryptoMessages` for its key and/or value if the message fails to be 
+        For the case of encrypted messages, this may return a :class:`kafkacrypto.Message` object with
+        :class:`kafkacrypto.KafkaCryptoMessages` for its key and/or value if the message fails to be
         decrypted within a certain amount of time
 
         All arguments/keyword arguments are passed through to the underlying Consumer's poll() function.
 
-        :return: a single consumed :class:`confluent_kafka.Message` object, an undecrypted 
+        :return: a single consumed :class:`confluent_kafka.Message` object, an undecrypted
             :class:`kafkacrypto.Message` object, or None
         :rtype: :class:`confluent_kafka.Message`, :class:`kafkacrypto.Message`, or None
-        """ 
+        """
         #There's one version for the result of a KafkaConsumer.poll() call
         if isinstance(self._consumer,KafkaConsumer) :
             #check if there are any messages still waiting to be processed from a recent KafkaCrypto poll call
@@ -207,14 +207,14 @@ class OpenMSIStreamConsumer(LogOwner) :
 
     def commit(self,message=None,offsets=None,asynchronous=True) :
         """
-        A wrapper around the underlying Consumer's commit() method. 
+        A wrapper around the underlying Consumer's commit() method.
         Exactly one of `message` and `offsets` must be given.
 
         :param message: The message whose offset should be committed
         :type message: :class:`confluent_kafka.Message` or :class:`kafkacrypto.Message`, optional
         :param offsets: The list of topic+partitions+offsets to commit
         :type offsets: list(:class:`confluent_kafka.TopicPartition`), optional
-        :param asynchronous: If True, the Consumer.commit call will return immediately and run asynchronously 
+        :param asynchronous: If True, the Consumer.commit call will return immediately and run asynchronously
             instead of blocking
         :type asynchronous: bool
 
@@ -242,7 +242,7 @@ class OpenMSIStreamConsumer(LogOwner) :
 
     def close(self,*args,**kwargs) :
         """
-        Combined wrapper around the underlying Consumer's close() method and :func:`kafkacrypto.KafkaCrypto.close`. 
+        Combined wrapper around the underlying Consumer's close() method and :func:`kafkacrypto.KafkaCrypto.close`.
         """
         self._consumer.close(*args,**kwargs)
         try :
@@ -255,7 +255,7 @@ class OpenMSIStreamConsumer(LogOwner) :
 
     def _filter_message(self,msg) :
         """
-        Checks a message's key against the regex and its offset against the starting offsets. 
+        Checks a message's key against the regex and its offset against the starting offsets.
         Returns None if a message should be skipped, otherwise returns the message.
         """
         if (self.message_key_regex is not None) and (self.filter_new_messages or self.message_consumed_before(msg)) :
@@ -300,4 +300,4 @@ class OpenMSIStreamConsumer(LogOwner) :
             errmsg = 'ERROR: failed to check whether a message has been consumed before '
             errmsg+= 'because its topic/partition were not found in the list of starting offsets'
             self.logger.error(errmsg,ValueError)
-        return msg_offset<starting_offset 
+        return msg_offset<starting_offset

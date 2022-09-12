@@ -62,7 +62,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
     @staticmethod
     def get_replaced_configs(configs,replacement_type) :
         """
-        Returns a configuration dictionary with (de)serialization parameters replaced 
+        Returns a configuration dictionary with (de)serialization parameters replaced
         by instances of corresponding classes
 
         configs = the configurations dictionary to alter and return
@@ -87,13 +87,13 @@ class KafkaConfigFileParser(ConfigFileParser) :
         """
         Returns the path to the config file that KafkaCrypto needs based on the current configs.
         Return value is a string as expected by KafkaCrypto.
-        If no config file is found according to the conventions listed below, this function returns None 
+        If no config file is found according to the conventions listed below, this function returns None
         and it will be assumed that no configuration for KafkaCrypto exists
 
         Options are:
-        1) The regular config file has a "kafkacrypto" section with a "config_file" parameter that is the 
+        1) The regular config file has a "kafkacrypto" section with a "config_file" parameter that is the
         path to the KafkaCrypo config file
-        2) The regular config file has a "kafkacrypto" section with a "node_id" parameter corresponding to 
+        2) The regular config file has a "kafkacrypto" section with a "node_id" parameter corresponding to
         a named subdirectory in openmsistream/kafka_wrapper/config_files that was created when the node was provisioned
         """
         if 'kafkacrypto' in self.available_group_names :

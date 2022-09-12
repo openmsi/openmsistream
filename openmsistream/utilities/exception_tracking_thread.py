@@ -14,13 +14,13 @@ class ExceptionTrackingThread(Thread) :
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
         self.__exc = None
-    
+
     def run(self,*args,**kwargs) :
         try :
             super().run(*args,**kwargs)
         except Exception as e :
             self.__exc = e
-    
+
     def join(self,*args,**kwargs) :
         super().join(*args,**kwargs)
         if self.__exc is not None :

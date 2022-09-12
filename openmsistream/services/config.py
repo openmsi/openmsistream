@@ -20,7 +20,7 @@ class ServicesConstants :
                 path = ((scriptstr.split())[2].split(':'))[0]
                 funcname = (((scriptstr.split())[2]).split(':'))[1]
                 module = importlib.import_module(path)
-                run_classes = [getattr(module,x) for x in dir(module) 
+                run_classes = [getattr(module,x) for x in dir(module)
                                if isclass(getattr(module,x)) and getattr(module,x).__name__==script.name]
                 if len(run_classes)!=1 :
                     errmsg = f'ERROR: could not determine class for script {cmd} in file {path}! '

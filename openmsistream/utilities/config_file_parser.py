@@ -6,7 +6,7 @@ class ConfigFileParser(LogOwner) :
     """
     A class to parse configurations from files
     """
-    
+
     #################### PROPERTIES ####################
 
     @property
@@ -37,7 +37,7 @@ class ConfigFileParser(LogOwner) :
             self.logger.error(f'ERROR: configuration file {config_path} does not exist!',FileNotFoundError)
         self._config = configparser.ConfigParser()
         self._config.read(config_path)
-    
+
     def get_config_dict_for_groups(self,group_names) :
         """
         Return a config dictionary populated with configurations from groups with the given names

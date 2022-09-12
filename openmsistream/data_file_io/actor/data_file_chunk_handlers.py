@@ -18,16 +18,16 @@ class DataFileChunkHandler(LogOwner,ABC) :
 
     @property
     def other_datafile_kwargs(self) :
-        return {} #Overload this in child classes to define additional keyword arguments 
+        return {} #Overload this in child classes to define additional keyword arguments
                   #that should go to the specific datafile constructor
 
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,*args,datafile_type,**kwargs) :
         """
-        datafile_type = the type of datafile that the consumed messages will be used to create 
+        datafile_type = the type of datafile that the consumed messages will be used to create
             (must be a subclass of DownloadDataFile)
-        """    
+        """
         super().__init__(*args,**kwargs)
         self.datafile_type = datafile_type
         if not issubclass(self.datafile_type,DownloadDataFile) :
@@ -43,23 +43,23 @@ class DataFileChunkHandler(LogOwner,ABC) :
     @abstractmethod
     def _process_message(self, lock, msg, rootdir_to_set):
         """
-        Make sure message values are of the expected DataFileChunk type with no root directory set, and then 
+        Make sure message values are of the expected DataFileChunk type with no root directory set, and then
         add the chunk to the data file object. If the file is in progress this function returns True.
         Otherwise the code from DownloadDataFile.add_chunk will be returned.
 
-        If instead the message was encrypted and could not be successfully decrypted, this will return 
+        If instead the message was encrypted and could not be successfully decrypted, this will return
         the raw Message object with KafkaCryptoMessages as its key and/or value
 
         lock = the Thread Lock object to use when processing the file this message comes from
         msg = the actual message object from a call to consumer.poll
         rootdir_to_set = root directory for the new DataFileChunk
-        
+
         Child classes should call self._process_message() before doing anything else with
         the message to perform these checks
         """
-        # If the message has KafkaCryptoMessages as its key and/or value, then decryption failed. 
+        # If the message has KafkaCryptoMessages as its key and/or value, then decryption failed.
         # Return the message object instead of a code.
-        if ( hasattr(msg,'key') and hasattr(msg,'value') and 
+        if ( hasattr(msg,'key') and hasattr(msg,'value') and
              (isinstance(msg.key,KafkaCryptoMessage) or isinstance(msg.value,KafkaCryptoMessage)) ) :
             return msg
         #get the DataFileChunk from the message value
@@ -109,7 +109,7 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
 
 class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) :
     """
-    Combine template code in DataFileChunkHandler with processing messages from one topic 
+    Combine template code in DataFileChunkHandler with processing messages from one topic
     and producing others to a different topic
     """
 

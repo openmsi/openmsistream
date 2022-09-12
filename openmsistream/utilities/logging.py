@@ -28,7 +28,7 @@ class Logger :
     :type logger_name: str, optional
     :param streamlevel: The level at/above which messages should be logged to the stream/console
     :type streamlevel: logging level int, optional
-    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named
         logger file should be created
     :type logger_filepath: :class:`pathlib.Path`, optional
     :param filelevel: The level at/above which messages should be written to the logfile
@@ -116,7 +116,7 @@ class Logger :
         :type msg: str
         """
         self._logger_obj.debug(msg,*args,**kwargs)
-    
+
     def info(self,msg,*args,**kwargs) :
         """
         Log a message at INFO level. Additional args/kwargs are sent to the underlying logger object's info call.
@@ -125,7 +125,7 @@ class Logger :
         :type msg: str
         """
         self._logger_obj.info(msg,*args,**kwargs)
-    
+
     def warning(self,msg,*args,**kwargs) :
         """
         Log a message at WARNING level. Additional args/kwargs are sent to the underlying logger object's warning call.
@@ -140,9 +140,9 @@ class Logger :
     #log an error message and optionally raise an exception with the same message, or raise a different exception
     def error(self,msg,exception_type=None,exc_obj=None,reraise=True,**kwargs) :
         """
-        Log a message at ERROR level. Optionally raise an exception of a given type with the same message. 
+        Log a message at ERROR level. Optionally raise an exception of a given type with the same message.
         Optionally log the traceback of a given Exception at ERROR level, reraising it afterward if desired.
-        
+
         Additional kwargs are sent to the underlying logger object's error call(s).
 
         :param msg: the message to log
@@ -159,7 +159,7 @@ class Logger :
         self._logger_obj.error(msg,**kwargs)
         if exc_obj is not None :
             self.log_exception_as_error(exc_obj,reraise=reraise,**kwargs)
-        if exception_type is not None : 
+        if exception_type is not None :
             raise exception_type(msg)
 
     def log_exception_as_error(self,exc,reraise=True,**kwargs) :
@@ -195,7 +195,7 @@ class LogOwner :
     :type logger_name: str, optional
     :param streamlevel: The level at/above which messages should be logged to the stream/console
     :type streamlevel: logging level int, optional
-    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named
         logger file should be created
     :type logger_filepath: :class:`pathlib.Path`, optional
     :param filelevel: The level at/above which messages should be written to the logfile
