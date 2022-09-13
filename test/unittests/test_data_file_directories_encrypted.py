@@ -12,7 +12,7 @@ from config import TEST_CONST
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 UPDATE_SECS = 5
-TIMEOUT_SECS = 90
+TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 60
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]
 
@@ -35,7 +35,7 @@ class TestDataFileDirectories(unittest.TestCase) :
         upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
                                                 args=(TOPIC_NAME,),
                                                 kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                                        'chunk_size':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+                                                        'chunk_size':16*RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
                                                         'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
                                                         'upload_existing':True}
                                 )
