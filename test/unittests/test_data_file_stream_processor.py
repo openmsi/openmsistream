@@ -10,7 +10,7 @@ from config import TEST_CONST
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.INFO)#ERROR)
 UPDATE_SECS = 5
-TIMEOUT_SECS = 300
+TIMEOUT_SECS = 3000
 JOIN_TIMEOUT_SECS = 30
 
 class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
@@ -405,7 +405,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                         topic_name=TOPIC_NAME,
                                         consumer_group_id=CONSUMER_GROUP_ID,
                                         logger=LOGGER)
-            #self.assertEqual(len(spr.filepaths_to_rerun),1)
+            self.assertEqual(len(spr.filepaths_to_rerun),1)
             in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
             succeeded_entries = spr.succeeded_table.obj_addresses
             self.assertTrue(len(succeeded_entries)>=1) #allow greater than in case of a previously-failed test
