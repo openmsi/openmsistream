@@ -14,10 +14,10 @@ def add_kwargs_to_configs(configs,logger,**kwargs) :
         config_name = argname.replace('_','.')
         if config_name in new_configs and new_configs[config_name]!=arg :
             if logger is not None :
-                warnmsg = f'WARNING: a new value for the "{config_name}" config has been supplied '
-                warnmsg+=  'by a keyword argument that will overwrite a previously-set value. '
-                warnmsg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
-                logger.warning(warnmsg)
+                msg = f'A new value for the "{config_name}" config has been supplied '
+                msg+=  'by a keyword argument that will overwrite a previously-set value. '
+                msg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
+                logger.info(msg)
         new_configs[config_name]=arg
     return new_configs
 

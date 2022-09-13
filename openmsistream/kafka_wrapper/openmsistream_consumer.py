@@ -168,7 +168,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         #There's one version for the result of a KafkaConsumer.poll() call
         if isinstance(self._consumer,KafkaConsumer) :
             #check if there are any messages still waiting to be processed from a recent KafkaCrypto poll call
-            if isinstance(self._consumer,KafkaConsumer) and len(self.__messages)>0 :
+            if len(self.__messages)>0 :
                 consumed_msg = self.__messages.pop(0)
                 return self._filter_message(consumed_msg)
             msg_dict = self._consumer.poll(*poll_args,**poll_kwargs)

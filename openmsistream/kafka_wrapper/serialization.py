@@ -70,7 +70,7 @@ class CompoundDeserializer(Deserializer):
     For use with KafkaCrypto since topic names must be passed
     """
 
-    MAX_WAIT_PER_MESSAGE = 5 #in seconds
+    MAX_WAIT_PER_DECRYPT = 0.1 #in seconds
 
     def __init__(self, *args):
         self.__steps = list(args)
@@ -97,22 +97,24 @@ class CompoundDeserializer(Deserializer):
         """
         Deserialize a (possibly encrypted) message
         """
+        #deserialize a KafkaCrypto message
         if hasattr(des,'deserialize') and inspect.isroutine(des.deserialize) :
             data = des.deserialize(topic,data)
             if isinstance(data,KafkaCryptoMessage) :
                 success = False
                 elapsed = 0
-                while (not success) and elapsed<self.MAX_WAIT_PER_MESSAGE :
+                while (not success) and elapsed<self.MAX_WAIT_PER_DECRYPT :
                     try :
                         data = data.getMessage()
                         success = True
                     except KafkaCryptoMessageError :
-                        time.sleep(0.1)
-                        elapsed+=0.1
+                        time.sleep(0.01)
+                        elapsed+=0.01
                 #if the message could not be decrypted, return the Message object itself
                 if not success :
                     return data
-        else :
+        #if a previous step failed to deserialize a KafkaCrypto message, don't bother trying this next step
+        elif not isinstance(data,KafkaCryptoMessage) :
             data = des(data,ctx=None)
         return data
 

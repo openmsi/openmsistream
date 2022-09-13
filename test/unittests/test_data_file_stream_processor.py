@@ -199,6 +199,21 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             with open(TEST_CONST.TEST_DATA_FILE_2_PATH,'rb') as fp :
                 ref_bytestring = fp.read()
             self.assertTrue((TEST_CONST.TEST_DATA_FILE_2_NAME,ref_bytestring) in dfsp.completed_filenames_bytestrings)
+             #read the .csv table to make sure it registers one file each succeeded and failed
+            time.sleep(1.0)
+            dfsp.file_registry.in_progress_table.dump_to_file()
+            dfsp.file_registry.succeeded_table.dump_to_file()
+            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
+                                        topic_name=TOPIC_NAME,
+                                        consumer_group_id=CONSUMER_GROUP_ID,
+                                        logger=LOGGER)
+            self.assertEqual(len(spr.filepaths_to_rerun),1)
+            in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
+            succeeded_entries = spr.succeeded_table.obj_addresses
+            self.assertEqual(len(succeeded_entries),1)
+            self.assertEqual(len(in_prog_entries[spr.FAILED]),1)
+            #get the attributes of the succeeded file to make sure the entry doesn't change
+            succeeded_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[0])
         except Exception as e :
             raise e
         finally :
@@ -212,21 +227,6 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                         raise TimeoutError(errmsg)
                 except Exception as e :
                     raise e
-        #read the .csv table to make sure it registers one file each succeeded and failed
-        time.sleep(1.0)
-        dfsp.file_registry.in_progress_table.dump_to_file()
-        dfsp.file_registry.succeeded_table.dump_to_file()
-        spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                      topic_name=TOPIC_NAME,
-                                      consumer_group_id=CONSUMER_GROUP_ID,
-                                      logger=LOGGER)
-        self.assertEqual(len(spr.filepaths_to_rerun),1)
-        in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
-        succeeded_entries = spr.succeeded_table.obj_addresses
-        self.assertEqual(len(succeeded_entries),1)
-        self.assertEqual(len(in_prog_entries[spr.FAILED]),1)
-        #get the attributes of the succeeded file to make sure the entry doesn't change
-        succeeded_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[0])
         #upload a third file (fake config file)
         third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
         upload_datafile = UploadDataFile(third_filepath,
@@ -287,6 +287,22 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             with open(third_filepath,'rb') as fp :
                 ref_bytestring = fp.read()
             self.assertTrue((third_filepath.name,ref_bytestring) in dfsp.completed_filenames_bytestrings)
+            time.sleep(1.0)
+            #read the .csv table to make sure it registers three successful files
+            dfsp.file_registry.in_progress_table.dump_to_file()
+            dfsp.file_registry.succeeded_table.dump_to_file()
+            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
+                                        topic_name=TOPIC_NAME,
+                                        consumer_group_id=CONSUMER_GROUP_ID,
+                                        logger=LOGGER)
+            succeeded_entries = spr.succeeded_table.obj_addresses
+            self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
+            #get the attributes of the originally succeeded file to make sure the entry hasn't changed
+            succeeded_entries = spr.succeeded_table.obj_addresses_by_key_attr('filename')
+            self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME])>=1)
+            testing_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME][0])
+            for attr_name in ['filename','rel_filepath','n_chunks','first_message'] :
+                self.assertEqual(succeeded_entry_attrs[attr_name],testing_entry_attrs[attr_name])
         except Exception as e :
             raise e
         finally :
@@ -300,22 +316,6 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                         raise TimeoutError(errmsg)
                 except Exception as e :
                     raise e
-        time.sleep(1.0)
-        #read the .csv table to make sure it registers three successful files
-        dfsp.file_registry.in_progress_table.dump_to_file()
-        dfsp.file_registry.succeeded_table.dump_to_file()
-        spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                      topic_name=TOPIC_NAME,
-                                      consumer_group_id=CONSUMER_GROUP_ID,
-                                      logger=LOGGER)
-        succeeded_entries = spr.succeeded_table.obj_addresses
-        self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
-        #get the attributes of the originally succeeded file to make sure the entry hasn't changed
-        succeeded_entries = spr.succeeded_table.obj_addresses_by_key_attr('filename')
-        self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME])>=1)
-        testing_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME][0])
-        for attr_name in ['filename','rel_filepath','n_chunks','first_message'] :
-            self.assertEqual(succeeded_entry_attrs[attr_name],testing_entry_attrs[attr_name])
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART)
 
     def test_data_file_stream_processor_restart_encrypted_kafka(self) :
@@ -337,7 +337,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
                                                 args=(TOPIC_NAME,),
                                                 kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                                        'chunk_size':RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+                                                        'chunk_size':16*RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
                                                         'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
                                                         'upload_existing':True}
                                 )
@@ -397,34 +397,44 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             with open(TEST_CONST.TEST_DATA_FILE_2_PATH,'rb') as fp :
                 ref_bytestring = fp.read()
             self.assertTrue((TEST_CONST.TEST_DATA_FILE_2_NAME,ref_bytestring) in dfsp.completed_filenames_bytestrings)
+            #read the .csv table to make sure it registers one file each succeeded and failed
+            time.sleep(1.0)
+            dfsp.file_registry.in_progress_table.dump_to_file()
+            dfsp.file_registry.succeeded_table.dump_to_file()
+            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
+                                        topic_name=TOPIC_NAME,
+                                        consumer_group_id=CONSUMER_GROUP_ID,
+                                        logger=LOGGER)
+            #self.assertEqual(len(spr.filepaths_to_rerun),1)
+            in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
+            succeeded_entries = spr.succeeded_table.obj_addresses
+            self.assertTrue(len(succeeded_entries)>=1) #allow greater than in case of a previously-failed test
+            self.assertEqual(len(in_prog_entries[spr.FAILED]),1)
+            #get the attributes of the succeeded file to make sure the entry doesn't change
+            succeeded_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[0])
         except Exception as e :
+            try :
+                if upload_thread.is_alive() :
+                    dfud.control_command_queue.put('q')
+                    upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
+                    if upload_thread.is_alive() :
+                        errmsg = 'ERROR: upload thread in test_data_file_stream_processor_restart_encrypted '
+                        errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                        raise TimeoutError(errmsg)
+            except Exception :
+                pass
             raise e
         finally :
-            if stream_thread.is_alive() :
-                try :
+            try :
+                if stream_thread.is_alive() :
                     dfsp.control_command_queue.put('q')
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if stream_thread.is_alive() :
                         errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart_encrypted '
                         errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
                         raise TimeoutError(errmsg)
-                except Exception as e :
-                    raise e
-        #read the .csv table to make sure it registers one file each succeeded and failed
-        time.sleep(1.0)
-        dfsp.file_registry.in_progress_table.dump_to_file()
-        dfsp.file_registry.succeeded_table.dump_to_file()
-        spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                      topic_name=TOPIC_NAME,
-                                      consumer_group_id=CONSUMER_GROUP_ID,
-                                      logger=LOGGER)
-        self.assertEqual(len(spr.filepaths_to_rerun),1)
-        in_prog_entries = spr.in_progress_table.obj_addresses_by_key_attr('status')
-        succeeded_entries = spr.succeeded_table.obj_addresses
-        self.assertTrue(len(succeeded_entries)>=1) #allow greater than in case of a previously-failed test
-        self.assertEqual(len(in_prog_entries[spr.FAILED]),1)
-        #get the attributes of the succeeded file to make sure the entry doesn't change
-        succeeded_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[0])
+            except Exception as e :
+                raise e
         #upload a third file (fake config file)
         third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
         time.sleep(1)
@@ -491,6 +501,22 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             with open(third_filepath,'rb') as fp :
                 ref_bytestring = fp.read()
             self.assertTrue((third_filepath.name,ref_bytestring) in dfsp.completed_filenames_bytestrings)
+            time.sleep(1.0)
+            #read the .csv table to make sure it registers three successful files
+            dfsp.file_registry.in_progress_table.dump_to_file()
+            dfsp.file_registry.succeeded_table.dump_to_file()
+            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
+                                        topic_name=TOPIC_NAME,
+                                        consumer_group_id=CONSUMER_GROUP_ID,
+                                        logger=LOGGER)
+            succeeded_entries = spr.succeeded_table.obj_addresses
+            self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
+            #get the attributes of the originally succeeded file to make sure the entry hasn't changed
+            succeeded_entries = spr.succeeded_table.obj_addresses_by_key_attr('filename')
+            self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME])>=1)
+            testing_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME][0])
+            for attr_name in ['filename','rel_filepath','n_chunks','first_message'] :
+                self.assertEqual(succeeded_entry_attrs[attr_name],testing_entry_attrs[attr_name])
         except Exception as e :
             raise e
         finally :
@@ -514,21 +540,5 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                         raise TimeoutError(errmsg)
                 except Exception as e :
                     raise e
-        time.sleep(1.0)
-        #read the .csv table to make sure it registers three successful files
-        dfsp.file_registry.in_progress_table.dump_to_file()
-        dfsp.file_registry.succeeded_table.dump_to_file()
-        spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                      topic_name=TOPIC_NAME,
-                                      consumer_group_id=CONSUMER_GROUP_ID,
-                                      logger=LOGGER)
-        succeeded_entries = spr.succeeded_table.obj_addresses
-        self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
-        #get the attributes of the originally succeeded file to make sure the entry hasn't changed
-        succeeded_entries = spr.succeeded_table.obj_addresses_by_key_attr('filename')
-        self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME])>=1)
-        testing_entry_attrs = spr.succeeded_table.get_entry_attrs(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME][0])
-        for attr_name in ['filename','rel_filepath','n_chunks','first_message'] :
-            self.assertEqual(succeeded_entry_attrs[attr_name],testing_entry_attrs[attr_name])
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED)
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED)
