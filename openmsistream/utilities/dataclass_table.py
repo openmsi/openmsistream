@@ -337,10 +337,9 @@ class DataclassTable(LogOwner) :
         """
         if attrtype==datetime.datetime :
             return repr(attrobj.strftime(DataclassTable.DATETIME_FORMAT))
-        elif attrtype==pathlib.Path :
+        if attrtype==pathlib.Path :
             return repr(str(attrobj))
-        else :
-            return repr(attrobj)
+        return repr(attrobj)
 
     def __get_attribute_from_str(self,attrstr,attrtype) :
         """
@@ -350,16 +349,16 @@ class DataclassTable(LogOwner) :
         if attrtype==datetime.datetime :
             return datetime.datetime.strptime(attrstr[1:-1],DataclassTable.DATETIME_FORMAT)
         #so are path objects
-        elif attrtype==pathlib.Path :
+        if attrtype==pathlib.Path :
             return pathlib.Path(attrstr[1:-1])
         #strings have extra quotes on either end
-        elif attrtype==str :
+        if attrtype==str :
             return attrtype(attrstr[1:-1])
         #int, float, complex, and bool can all be directly re-casted
-        elif attrtype in (int,float,complex,bool) :
+        if attrtype in (int,float,complex,bool) :
             return attrtype(attrstr)
         #some simply-nested container types can be casted in two steps
-        elif attrtype in self.NESTED_TYPES :
+        if attrtype in self.NESTED_TYPES :
             #empty collections
             if attrstr==self.NESTED_TYPES[attrtype][2] :
                 return self.NESTED_TYPES[attrtype][0]()
@@ -367,6 +366,6 @@ class DataclassTable(LogOwner) :
             for vstr in attrstr[1:-1].split(',') :
                 to_cast.append(self.NESTED_TYPES[attrtype][1](vstr))
             return self.NESTED_TYPES[attrtype][0](to_cast)
-        else :
-            errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
-            self.logger.error(errmsg,ValueError)
+        errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
+        self.logger.error(errmsg,ValueError)
+        return None

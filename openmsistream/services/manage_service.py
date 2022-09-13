@@ -17,7 +17,7 @@ def main(given_args=None) :
     #get the name of the OS and start the object
     operating_system = get_os_name()
     manager_args = [args.service_name]
-    manager_kwargs = {'interactive':True if given_args is None else False,
+    manager_kwargs = {'interactive':given_args is None,
                       'logger':SERVICE_CONST.logger}
     managers_by_os_name = {'Windows':WindowsServiceManager,
                            'Linux':LinuxServiceManager,}

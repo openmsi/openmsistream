@@ -151,14 +151,13 @@ class WindowsServiceManager(ServiceManagerBase) :
                 current_env_dll_path = pathlib.Path(current_env_dll)
                 if (system32_path/current_env_dll_path.name).is_file() :
                     continue
-                else :
-                    try :
-                        shutil.copy(current_env_dll_path,system32_path/current_env_dll_path.name)
-                    except Exception as exc :
-                        errmsg = f'ERROR: failed to copy {pname} DLL file from {current_env_dll_path} to '
-                        errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
-                        errmsg+=  'to crash. Exception will be logged below, but not reraised.'
-                        self.logger.error(errmsg,exc_obj=exc,reraise=False)
+                try :
+                    shutil.copy(current_env_dll_path,system32_path/current_env_dll_path.name)
+                except Exception as exc :
+                    errmsg = f'ERROR: failed to copy {pname} DLL file from {current_env_dll_path} to '
+                    errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
+                    errmsg+=  'to crash. Exception will be logged below, but not reraised.'
+                    self.logger.error(errmsg,exc_obj=exc,reraise=False)
             else :
                 warnmsg = f'WARNING: could not locate {pname} DLL file to copy to system32 folder for '
                 warnmsg+= f'{self.service_name}! This will likely cause the Python code running as a Service to crash.'
@@ -172,31 +171,30 @@ class WindowsServiceManager(ServiceManagerBase) :
         """
         if SERVICE_CONST.NSSM_PATH.is_file() :
             return
-        else :
-            if (pathlib.Path()/SERVICE_CONST.NSSM_PATH.name).is_file() and move_local :
-                (pathlib.Path()/SERVICE_CONST.NSSM_PATH.name).replace(SERVICE_CONST.NSSM_PATH)
-                return self.__find_install_nssm(move_local=False)
-            SERVICE_CONST.logger.info(f'Installing NSSM from {SERVICE_CONST.NSSM_DOWNLOAD_URL}...')
-            nssm_zip_file_name = SERVICE_CONST.NSSM_DOWNLOAD_URL.rsplit('/', maxsplit=1)[-1]
-            run_cmd_in_subprocess(['powershell.exe',
-                                   '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12'],
-                                   logger=self.logger)
-            cmd_tuples = [
-                (f'curl {SERVICE_CONST.NSSM_DOWNLOAD_URL} -O',
-                f'Invoke-WebRequest -Uri {SERVICE_CONST.NSSM_DOWNLOAD_URL} -OutFile {nssm_zip_file_name}'),
-                (f'tar -xf {pathlib.Path() / nssm_zip_file_name}',
-                f'Expand-Archive {nssm_zip_file_name} -DestinationPath {pathlib.Path().resolve()}'),
-                (f'del {nssm_zip_file_name}',
-                f'Remove-Item -Path {nssm_zip_file_name}'),
-                (f'move {pathlib.Path() / nssm_zip_file_name.rstrip(".zip") / "win64" / "nssm.exe"} {pathlib.Path()}',
-                f'''Move-Item -Path {pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"} \
-                    -Destination {SERVICE_CONST.NSSM_PATH}'''),
-                (f'rmdir /S /Q {nssm_zip_file_name.rstrip(".zip")}',
-                f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
-            ]
-            for cmd in cmd_tuples :
-                try :
-                    run_cmd_in_subprocess(['powershell.exe',cmd[1]],logger=self.logger)
-                except CalledProcessError :
-                    run_cmd_in_subprocess(cmd[0],shell=True,logger=self.logger)
-            SERVICE_CONST.logger.debug('Done installing NSSM')
+        if (pathlib.Path()/SERVICE_CONST.NSSM_PATH.name).is_file() and move_local :
+            (pathlib.Path()/SERVICE_CONST.NSSM_PATH.name).replace(SERVICE_CONST.NSSM_PATH)
+            self.__find_install_nssm(move_local=False)
+        SERVICE_CONST.logger.info(f'Installing NSSM from {SERVICE_CONST.NSSM_DOWNLOAD_URL}...')
+        nssm_zip_file_name = SERVICE_CONST.NSSM_DOWNLOAD_URL.rsplit('/', maxsplit=1)[-1]
+        run_cmd_in_subprocess(['powershell.exe',
+                                '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12'],
+                                logger=self.logger)
+        cmd_tuples = [
+            (f'curl {SERVICE_CONST.NSSM_DOWNLOAD_URL} -O',
+            f'Invoke-WebRequest -Uri {SERVICE_CONST.NSSM_DOWNLOAD_URL} -OutFile {nssm_zip_file_name}'),
+            (f'tar -xf {pathlib.Path() / nssm_zip_file_name}',
+            f'Expand-Archive {nssm_zip_file_name} -DestinationPath {pathlib.Path().resolve()}'),
+            (f'del {nssm_zip_file_name}',
+            f'Remove-Item -Path {nssm_zip_file_name}'),
+            (f'move {pathlib.Path() / nssm_zip_file_name.rstrip(".zip") / "win64" / "nssm.exe"} {pathlib.Path()}',
+            f'''Move-Item -Path {pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"} \
+                -Destination {SERVICE_CONST.NSSM_PATH}'''),
+            (f'rmdir /S /Q {nssm_zip_file_name.rstrip(".zip")}',
+            f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
+        ]
+        for cmd in cmd_tuples :
+            try :
+                run_cmd_in_subprocess(['powershell.exe',cmd[1]],logger=self.logger)
+            except CalledProcessError :
+                run_cmd_in_subprocess(cmd[0],shell=True,logger=self.logger)
+        SERVICE_CONST.logger.debug('Done installing NSSM')

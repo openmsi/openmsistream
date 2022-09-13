@@ -38,7 +38,7 @@ def main(given_args=None) :
         manager_args = [service_name]
         manager_kwargs = {'service_spec_string':args.service_spec_string,
                           'argslist':argslist,
-                          'interactive':True if given_args is None else False,
+                          'interactive':given_args is None,
                           'logger':SERVICE_CONST.logger}
         managers_by_os_name = {'Windows':WindowsServiceManager,
                                'Linux':LinuxServiceManager,}

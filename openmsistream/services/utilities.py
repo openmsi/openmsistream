@@ -11,7 +11,7 @@ def get_os_name() :
     """
     if platform.system()=='Windows' :
         return 'Windows'
-    elif platform.system()=='Linux' :
+    if platform.system()=='Linux' :
         return 'Linux'
     #MacOS is not supported
     elif platform.system()=='Darwin' :
@@ -21,6 +21,7 @@ def get_os_name() :
     else :
         errmsg = f'ERROR: could not determine operating system from platform.system() output "{platform.system()}"'
         SERVICE_CONST.logger.error(errmsg,ValueError)
+    return None
 
 def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
     """
@@ -43,6 +44,7 @@ def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
             logger.error(errmsg,exc_obj=exc)
         else :
             SERVICE_CONST.logger.error(errmsg,exc_obj=exc)
+        return None
 
 def set_env_var(var_name,var_val) :
     """
