@@ -137,8 +137,7 @@ class ProducerFileRegistry(LogOwner) :
             self.__in_prog.remove_entries(existing_addr)
             self.__in_prog.dump_to_file()
             return True
-        else :
-            return False
+        return False
 
     def __register_chunk_for_new_file(self,filename,filepath,n_total_chunks,chunk_i) :
         """
@@ -158,9 +157,8 @@ class ProducerFileRegistry(LogOwner) :
             self.__in_prog.dump_to_file()
             return False
         #otherwise register it as a completed file
-        else :
-            completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
-                                                    datetime.datetime.now(),datetime.datetime.now())
-            self.__completed.add_entries(completed_entry)
-            self.__completed.dump_to_file()
-            return True
+        completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
+                                                datetime.datetime.now(),datetime.datetime.now())
+        self.__completed.add_entries(completed_entry)
+        self.__completed.dump_to_file()
+        return True

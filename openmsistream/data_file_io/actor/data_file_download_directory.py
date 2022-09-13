@@ -109,9 +109,9 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return False
-        else :
-            self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
-            return False
+        #if this is reached the return code was unrecognized
+        self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
+        return False
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

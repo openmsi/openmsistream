@@ -121,7 +121,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
                     self.logger.error(errmsg,FileNotFoundError)
                 return path_as_str
             #option 2 above
-            elif 'node_id' in kc_configs :
+            if 'node_id' in kc_configs :
                 node_id = kc_configs['node_id']
                 dirpath = RUN_CONST.CONFIG_FILE_DIR / node_id
                 filepath = dirpath / f'{node_id}.config'

@@ -5,6 +5,7 @@ import time
 from confluent_kafka import SerializingProducer
 from kafkacrypto import KafkaProducer
 from ..utilities import LogOwner
+from ..utilities.misc import raise_err_with_optional_logger, debug_msg_with_optional_logger
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
 from .producible import Producible
 from .config_file_parser import KafkaConfigFileParser
@@ -80,43 +81,39 @@ class OpenMSIStreamProducer(LogOwner) :
         :rtype: dict
         """
         parser = KafkaConfigFileParser(config_file_path,logger=logger)
-        ret_kwargs = {}
+        ret_kwargs = {'logger':logger}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
         all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
         #all_configs['debug']='broker,topic,msg'
-        #if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer
-        if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
-            if kafkacrypto is not None :
-                if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
-                    errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
-                    if logger is not None :
-                        logger.error(errmsg,TypeError)
-                    else :
-                        raise TypeError(errmsg)
-                if logger is not None :
-                    logger.debug(f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}')
-                k_c = kafkacrypto
-            else :
-                if logger is not None :
-                    logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-                k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
-            if 'key.serializer' in all_configs :
-                keyser = CompoundSerializer(all_configs.pop('key.serializer'),k_c.key_serializer)
-            else :
-                keyser = k_c.key_serializer
-            if 'value.serializer' in all_configs :
-                valser = CompoundSerializer(all_configs.pop('value.serializer'),k_c.value_serializer)
-            else :
-                valser = k_c.value_serializer
-            all_configs['key_serializer']=keyser
-            all_configs['value_serializer']=valser
-            ret_args = [KafkaProducer,all_configs]
-            ret_kwargs['kafkacrypto']=k_c
-        #otherwise use a SerializingProducer
-        else :
+        #use a SerializingProducer by default
+        if kafkacrypto is None and parser.kc_config_file_str is None :
             ret_args = [SerializingProducer,all_configs]
-        ret_kwargs['logger'] = logger
+            return ret_args, ret_kwargs
+        #if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer
+        if kafkacrypto is not None :
+            if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
+                errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
+                raise_err_with_optional_logger(logger,errmsg,TypeError)
+            debugmsg = f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = kafkacrypto
+        else :
+            debugmsg = f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+        if 'key.serializer' in all_configs :
+            keyser = CompoundSerializer(all_configs.pop('key.serializer'),k_c.key_serializer)
+        else :
+            keyser = k_c.key_serializer
+        if 'value.serializer' in all_configs :
+            valser = CompoundSerializer(all_configs.pop('value.serializer'),k_c.value_serializer)
+        else :
+            valser = k_c.value_serializer
+        all_configs['key_serializer']=keyser
+        all_configs['value_serializer']=valser
+        ret_args = [KafkaProducer,all_configs]
+        ret_kwargs['kafkacrypto']=k_c
         return ret_args, ret_kwargs
 
     @classmethod
@@ -278,6 +275,7 @@ class OpenMSIStreamProducer(LogOwner) :
         except Exception as exc :
             self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
                               exc_obj=exc)
+        return None
 
     def poll(self,*args,**kwargs) :
         """

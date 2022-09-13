@@ -5,6 +5,7 @@ import uuid, methodtools
 from confluent_kafka import DeserializingConsumer, Message
 from kafkacrypto import KafkaConsumer
 from ..utilities import LogOwner
+from ..utilities.misc import raise_err_with_optional_logger, debug_msg_with_optional_logger
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
 from .config_file_parser import KafkaConfigFileParser
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
@@ -95,7 +96,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         :rtype: dict
         """
         parser = KafkaConfigFileParser(config_file_path,logger=logger)
-        ret_kwargs = {}
+        ret_kwargs = {'logger':logger}
         #get the broker and consumer configurations
         all_configs = {**parser.broker_configs,**parser.consumer_configs}
         all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
@@ -103,38 +104,34 @@ class OpenMSIStreamConsumer(LogOwner) :
         #if the group.id has been set as "create_new" generate a new group ID
         if 'group.id' in all_configs and all_configs['group.id'].lower()=='create_new' :
             all_configs['group.id']=str(uuid.uuid1())
-        #if "kafkacrypto" was given, or there are configs for KafkaCrypto, use a KafkaConsumer
-        if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
-            if kafkacrypto is not None :
-                if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
-                    errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
-                    if logger is not None :
-                        logger.error(errmsg,TypeError)
-                    else :
-                        raise TypeError(errmsg)
-                if logger is not None :
-                    logger.debug(f'Consumed messages will be decrypted using configs at {kafkacrypto.config_file_path}')
-                k_c = kafkacrypto
-            else :
-                if logger is not None :
-                    logger.debug(f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}')
-                k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
-            if 'key.deserializer' in all_configs :
-                keydes = CompoundDeserializer(k_c.key_deserializer,all_configs.pop('key.deserializer'))
-            else :
-                keydes = k_c.key_deserializer
-            if 'value.deserializer' in all_configs :
-                valdes = CompoundDeserializer(k_c.value_deserializer,all_configs.pop('value.deserializer'))
-            else :
-                valdes = k_c.value_deserializer
-            all_configs['key_deserializer']=keydes
-            all_configs['value_deserializer']=valdes
-            ret_args = [KafkaConsumer,all_configs]
-            ret_kwargs['kafkacrypto']=k_c
-        #otherwise use a DeserializingConsumer
-        else :
+        #Use a DeserializingConsumer by default
+        if kafkacrypto is None and parser.kc_config_file_str is None :
             ret_args = [DeserializingConsumer,all_configs]
-        ret_kwargs['logger'] = logger
+            return ret_args, ret_kwargs
+        #if "kafkacrypto" was given, or there are configs for KafkaCrypto, use a KafkaConsumer
+        if kafkacrypto is not None :
+            if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
+                errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
+                raise_err_with_optional_logger(logger,errmsg,TypeError)
+            debugmsg = f'Consumed messages will be decrypted using configs at {kafkacrypto.config_file_path}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = kafkacrypto
+        else :
+            debugmsg = f'Consumed messages will be decrypted using configs at {parser.kc_config_file_str}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+        if 'key.deserializer' in all_configs :
+            keydes = CompoundDeserializer(k_c.key_deserializer,all_configs.pop('key.deserializer'))
+        else :
+            keydes = k_c.key_deserializer
+        if 'value.deserializer' in all_configs :
+            valdes = CompoundDeserializer(k_c.value_deserializer,all_configs.pop('value.deserializer'))
+        else :
+            valdes = k_c.value_deserializer
+        all_configs['key_deserializer']=keydes
+        all_configs['value_deserializer']=valdes
+        ret_args = [KafkaConsumer,all_configs]
+        ret_kwargs['kafkacrypto']=k_c
         return ret_args, ret_kwargs
 
     @classmethod
@@ -181,25 +178,23 @@ class OpenMSIStreamConsumer(LogOwner) :
                     self.__messages.append(msg)
             return self.get_next_message(*poll_args,**poll_kwargs)
         #And another version for a regular Consumer
-        else :
-            consumed_msg = None
-            try :
-                consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
-            except Exception as exc :
-                warnmsg = 'WARNING: encountered an error in a call to consumer.poll() and this message will be '
-                warnmsg+= 'skipped. Exception will be logged as an error below (but not re-raised).'
+        consumed_msg = None
+        try :
+            consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
+        except Exception as exc :
+            warnmsg = 'WARNING: encountered an error in a call to consumer.poll() and this message will be '
+            warnmsg+= 'skipped. Exception will be logged as an error below (but not re-raised).'
+            self.logger.warning(warnmsg)
+            self.logger.log_exception_as_error(exc,reraise=False)
+            return None
+        if consumed_msg is not None and consumed_msg!={} :
+            if consumed_msg.error() is not None or consumed_msg.value() is None :
+                warnmsg = f'WARNING: unexpected consumed message, consumed_msg = {consumed_msg}'
+                warnmsg+= f', consumed_msg.error() = {consumed_msg.error()}, '
+                warnmsg+= f'consumed_msg.value() = {consumed_msg.value()}'
                 self.logger.warning(warnmsg)
-                self.logger.log_exception_as_error(exc,reraise=False)
-                return None
-            if consumed_msg is not None and consumed_msg!={} :
-                if consumed_msg.error() is not None or consumed_msg.value() is None :
-                    warnmsg = f'WARNING: unexpected consumed message, consumed_msg = {consumed_msg}'
-                    warnmsg+= f', consumed_msg.error() = {consumed_msg.error()}, '
-                    warnmsg+= f'consumed_msg.value() = {consumed_msg.value()}'
-                    self.logger.warning(warnmsg)
-                return self._filter_message(consumed_msg)
-            else :
-                return None
+            return self._filter_message(consumed_msg)
+        return None
 
     def subscribe(self,*args,**kwargs) :
         """
@@ -227,8 +222,7 @@ class OpenMSIStreamConsumer(LogOwner) :
                 offset_dict = {KCCommitOffsetDictKey(message.topic,message.partition):KCCommitOffset(message.offset)}
                 if asynchronous :
                     return self._consumer.commit_async(offsets=offset_dict)
-                else :
-                    return self._consumer.commit(offsets=offset_dict)
+                return self._consumer.commit(offsets=offset_dict)
             except Exception :
                 warnmsg = 'WARNING: failed to commit an offset for an encrypted message. '
                 warnmsg = 'Duplicates may result if the Consumer is restarted.'
@@ -236,11 +230,11 @@ class OpenMSIStreamConsumer(LogOwner) :
                 return None
         if message is None :
             return self._consumer.commit(offsets=offsets,asynchronous=asynchronous)
-        elif offsets is None :
+        if offsets is None :
             return self._consumer.commit(message=message,asynchronous=asynchronous)
-        else :
-            errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
-            self.logger.error(errmsg,ValueError)
+        errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
+        self.logger.error(errmsg,ValueError)
+        return None
 
     def close(self,*args,**kwargs) :
         """
@@ -273,8 +267,7 @@ class OpenMSIStreamConsumer(LogOwner) :
                 return msg
             if self.message_key_regex.match(msg_key) :
                 return msg
-            else :
-                return None
+            return None
         return msg
 
     @methodtools.lru_cache()

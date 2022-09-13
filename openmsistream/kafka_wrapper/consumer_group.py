@@ -113,8 +113,7 @@ class ConsumerGroup(LogOwner) :
         cfp = KafkaConfigFileParser(config_path)
         starting_offsets = []
         try :
-            admin_client = AdminClient(cfp.broker_configs)
-            cluster_metadata = admin_client.list_topics(topic=topic_name)
+            cluster_metadata = AdminClient(cfp.broker_configs).list_topics(topic=topic_name)
             n_partitions = len(cluster_metadata.topics[topic_name].partitions)
             if n_partitions<=0 :
                 raise RuntimeError(f'ERROR: number of partitions for topic {topic_name} is {n_partitions}')
@@ -125,9 +124,9 @@ class ConsumerGroup(LogOwner) :
                 else :
                     key = k.replace('.','_')
                 kac_kwargs[key]=v
-            kac = kafka.KafkaAdminClient(**kac_kwargs)
-            parts = [kafka.TopicPartition(topic_name,pi) for pi in range(n_partitions)]
-            tp_offsets=kac.list_consumer_group_offsets(group_id=consumer_group_id,partitions=parts)
+            parts = [kafka.TopicPartition(topic_name,p_i) for p_i in range(n_partitions)]
+            tp_offsets=kafka.KafkaAdminClient(**kac_kwargs).list_consumer_group_offsets(group_id=consumer_group_id,
+                                                                                        partitions=parts)
             if len(tp_offsets)!=n_partitions :
                 errmsg = f'Found {n_partitions} partitions for topic {topic_name} but got {len(tp_offsets)} '
                 errmsg+= 'TopicPartitions listing current consumer group offsets'

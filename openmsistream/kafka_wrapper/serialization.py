@@ -54,8 +54,8 @@ class CompoundSerializer(Serializer):
                 else :
                     data = ser(data,ctx=None)
             except Exception as exc :
-                errmsg = f'ERROR: failed to serialize at step {istep} (of {len(self.__steps)}) in CompoundSerializer! '
-                errmsg+= f'Callable = {ser}, exception = {exc}'
+                errmsg = f'ERROR: failed to serialize at step {istep} (of {len(self.__steps)}) in '
+                errmsg+= f'{self.__class__.__name__}! Callable = {ser}, exception = {exc}'
                 raise SerializationError(errmsg)
         return data
 
@@ -70,7 +70,7 @@ class CompoundDeserializer(Deserializer):
     For use with KafkaCrypto since topic names must be passed
     """
 
-    MAX_WAIT_PER_MESSAGE = 60 #in seconds
+    MAX_WAIT_PER_MESSAGE = 5 #in seconds
 
     def __init__(self, *args):
         self.__steps = list(args)
@@ -81,26 +81,10 @@ class CompoundDeserializer(Deserializer):
         """
         for istep,des in enumerate(self.__steps,start=1) :
             try :
-                if hasattr(des,'deserialize') and inspect.isroutine(des.deserialize) :
-                    data = des.deserialize(topic,data)
-                    if isinstance(data,KafkaCryptoMessage) :
-                        success = False
-                        elapsed = 0
-                        while (not success) and elapsed<CompoundDeserializer.MAX_WAIT_PER_MESSAGE :
-                            try :
-                                data = data.getMessage()
-                                success = True
-                            except KafkaCryptoMessageError :
-                                time.sleep(1)
-                                elapsed+=1
-                        #if the message could not be decrypted, return the Message object itself
-                        if not success :
-                            return data
-                else :
-                    data = des(data,ctx=None)
+                data = self.__deserialize_message(des,topic,data)
             except Exception as exc :
                 errmsg = f'ERROR: failed to deserialize at step {istep} (of {len(self.__steps)})'
-                errmsg+= f' in CompoundDeserializer! Callable = {des}, exception = {exc}'
+                errmsg+= f' in {self.__class__.__name__}! Callable = {des}, exception = {exc}'
                 raise SerializationError(errmsg)
         return data
 
@@ -108,6 +92,30 @@ class CompoundDeserializer(Deserializer):
         if data is None :
             return None
         raise SerializationError(f'ERROR: __call__ method not implemented for a {self.__class__.__name__}')
+
+    def __deserialize_message(self,des,topic,data) :
+        """
+        Deserialize a (possibly encrypted) message
+        """
+        if hasattr(des,'deserialize') and inspect.isroutine(des.deserialize) :
+            data = des.deserialize(topic,data)
+            if isinstance(data,KafkaCryptoMessage) :
+                success = False
+                elapsed = 0
+                while (not success) and elapsed<self.MAX_WAIT_PER_MESSAGE :
+                    try :
+                        data = data.getMessage()
+                        success = True
+                    except KafkaCryptoMessageError :
+                        time.sleep(0.1)
+                        elapsed+=0.1
+                #if the message could not be decrypted, return the Message object itself
+                if not success :
+                    return data
+        else :
+            data = des(data,ctx=None)
+        return data
+
 
 ####################### SERIALIZING/DESERIALIZING FILE CHUNKS #######################
 
@@ -119,7 +127,7 @@ class DataFileChunkSerializer(Serializer) :
     def __call__(self,file_chunk_obj,ctx=None) :
         if file_chunk_obj is None :
             return None
-        elif not isinstance(file_chunk_obj,DataFileChunk) :
+        if not isinstance(file_chunk_obj,DataFileChunk) :
             raise SerializationError('ERROR: object passed to FileChunkSerializer is not a DataFileChunk!')
         #pack up all the relevant bits of information into a single bytearray
         try :

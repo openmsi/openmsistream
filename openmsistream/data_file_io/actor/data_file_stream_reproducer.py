@@ -213,6 +213,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                 return True
             self._failed_computing_processing_result(self.files_in_progress_by_path[dfc.filepath],self.lock)
             return False
+        #otherwise the file is just in progress
+        return True
 
     @abstractmethod
     def _get_processing_result_message_for_file(self,datafile,lock) :

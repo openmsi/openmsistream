@@ -144,8 +144,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '
             errmsg+= f'{rel_filepath} in file at {self._in_progress_table.filepath}'
             self.logger.error(errmsg,ValueError)
-        else :
-            return existing_obj_addresses[rel_filepath][0]
+        return existing_obj_addresses[rel_filepath][0]
 
 class StreamProcessorRegistry(StreamHandlerRegistry) :
     """

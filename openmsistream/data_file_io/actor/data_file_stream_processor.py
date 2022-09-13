@@ -151,6 +151,8 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return to_return
+        #otherwise the file is just in progress
+        return True
 
     @abstractmethod
     def _process_downloaded_data_file(self,datafile,lock) :

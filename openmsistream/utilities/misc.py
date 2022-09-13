@@ -11,6 +11,54 @@ def add_user_input(input_queue) :
         time.sleep(1)
         input_queue.put((sys.stdin.read(1)).strip())
 
+def raise_err_with_optional_logger(logger,errmsg,exc_type) :
+    """
+    If logger is not None, log the error message with the given exception type, otherwise raise the error
+    """
+    if logger is not None :
+        logger.error(errmsg,exc_type)
+    else :
+        raise exc_type(errmsg)
+
+def debug_msg_with_optional_logger(logger,msg) :
+    """
+    Log a given message at debug level if logger is not None, otherwise print it
+    """
+    if logger is not None :
+        logger.debug(msg)
+    else :
+        print(msg)
+
+def _ensure_classes_or_types_match_for_key(key,test,options,logger=None) :
+    """
+    Raise errors if "test" is not a subclass of the possibilities in "options" if "options" holds classes,
+    or if the type of "test" is not in "options" if "options" holds objects
+    """
+    #if the options are classes
+    if inspect.isclass(options[0] if isinstance(options,tuple) else options) :
+        #make sure the test argument is also a class
+        if not inspect.isclass(test) :
+            errmsg = f'ERROR: Argument "{key}" expected to be a class, not an object!'
+            raise_err_with_optional_logger(logger,errmsg,RuntimeError)
+        #make sure the test argument is a subtype of any of the classes specified in the defaults
+        if not issubclass(test,options[1:] if isinstance(options,tuple) else options) :
+            errmsg = f'ERROR: Class type mismatch for argument "{key}", got {test} '
+            errmsg+= f'but expected {options[1:] if isinstance(options,tuple) else options}'
+            raise_err_with_optional_logger(logger,errmsg,RuntimeError)
+    #if the options are objects instead, make sure the type of the test argument matches
+    #one of the possible types in the defaults
+    elif ( (isinstance(options,tuple) and type(test) not in options[1:]) or 
+           (not isinstance(options,tuple) and not isinstance(test,options)) ) :
+        errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {test} '
+        errmsg+= '(expected '
+        if isinstance(options,tuple) :
+            for typestring in options[1:] :
+                errmsg+=f'{typestring}, '
+        else :
+            errmsg+=f'{type(options)}'
+        errmsg+=f'but got {type(test)})'
+        raise_err_with_optional_logger(logger,errmsg,TypeError)
+
 def populated_kwargs(given_kwargs,defaults,logger=None) :
     """
     Return a kwargs dictionary where every possible entry from the defaults has a valid value
@@ -20,72 +68,12 @@ def populated_kwargs(given_kwargs,defaults,logger=None) :
     for key in defaults.keys() :
         #if it was given and is not None
         if key in given_kwargs.keys() and given_kwargs[key] is not None :
-            #if there are several options for what the argument can be, check them all
+            # if there's just the default option it doesn't need to be a tuple
             if isinstance(defaults[key],tuple) :
-                #if there is a default and at least one specified class or type that the argument must be
-                if len(defaults[key])>1 :
-                    #if the default argument is a class
-                    if inspect.isclass((defaults[key])[0]) :
-                        #make sure the given argument is also a class
-                        if not inspect.isclass(given_kwargs[key]) :
-                            errmsg = f'ERROR: Argument "{key}" expected to be a class, not an object!'
-                            if logger is not None :
-                                logger.error(errmsg,RuntimeError)
-                            else :
-                                raise RuntimeError(errmsg)
-                        #make sure the given argument is a subtype of any of the classes specified in the defaults
-                        isgood=False
-                        for poss_class in (defaults[key])[1:] :
-                            if issubclass(given_kwargs[key],poss_class) :
-                                isgood=True
-                                break
-                        if not isgood :
-                            errmsg = f'ERROR: Class type mismatch for argument "{key}", got {given_kwargs[key]} '
-                            errmsg+= f'but expected one of {(defaults[key])[1:]}'
-                            if logger is not None :
-                                logger.error(errmsg,RuntimeError)
-                            else :
-                                raise RuntimeError(errmsg)
-                    #if the default is an object, make sure the that type of the given argument matches
-                    #one of the possible types in the defaults
-                    elif type(given_kwargs[key]) not in (defaults[key])[1:] :
-                        errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {given_kwargs[key]} '
-                        errmsg+= '(expected one of '
-                        for typestring in (defaults[key])[1:] :
-                            errmsg+=f'{typestring}, '
-                        errmsg+=f'but got {type(given_kwargs[key])})'
-                        if logger is not None :
-                            logger.error(errmsg,TypeError)
-                        else :
-                            raise TypeError(errmsg)
-                #otherwise if there's just the default option it doesn't need to be a tuple
-                else :
+                if len(defaults[key])==1 :
                     defaults[key] = (defaults[key])[0]
-            #if the single default option is a class
-            elif inspect.isclass(defaults[key]) :
-                #make sure the given argument is also a class
-                if not inspect.isclass(given_kwargs[key]) :
-                    errmsg = f'ERROR: Argument "{key}" expected to be a class, not an object!'
-                    if logger is not None :
-                        logger.error(errmsg,RuntimeError)
-                    else :
-                        raise RuntimeError(errmsg)
-                #make sure the given argument is a subtype of the default class
-                if not issubclass(given_kwargs[key],defaults[key]) :
-                    errmsg = f'ERROR: Class type mismatch for argument "{key}", got {given_kwargs[key]} '
-                    errmsg+= f'but expected {defaults[key]}'
-                    if logger is not None :
-                        logger.error(errmsg,RuntimeError)
-                    else :
-                        raise RuntimeError(errmsg)
-            #if the single default option is just an object, make sure the argument is of the same type as the default
-            elif defaults[key] is not None and type(defaults[key]) is not type(given_kwargs[key]) :
-                errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {given_kwargs[key]} '
-                errmsg+= f'(expected type {type(defaults[key])})'
-                if logger is not None :
-                    logger.error(errmsg,TypeError)
-                else :
-                    raise TypeError(errmsg)
+            #check the options for what the argument is allowed to be
+            _ensure_classes_or_types_match_for_key(key,given_kwargs[key],defaults[key],logger)
         #if it wasn't given, then just add it to the dictionary as the default
         else :
             if isinstance(defaults[key],tuple) :
