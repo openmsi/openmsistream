@@ -47,8 +47,8 @@ def _ensure_classes_or_types_match_for_key(key,test,options,logger=None) :
             raise_err_with_optional_logger(logger,errmsg,RuntimeError)
     #if the options are objects instead, make sure the type of the test argument matches
     #one of the possible types in the defaults
-    elif ( (isinstance(options,tuple) and type(test) not in options[1:]) or 
-           (not isinstance(options,tuple) and not isinstance(test,options)) ) :
+    elif ( (isinstance(options,tuple) and type(test) not in options[1:]) or
+           (not isinstance(options,tuple) and not isinstance(test,type(options))) ) :
         errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {test} '
         errmsg+= '(expected '
         if isinstance(options,tuple) :
