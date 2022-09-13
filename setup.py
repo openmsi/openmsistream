@@ -47,6 +47,7 @@ setupkwargs = dict(
                                'lxml',
                                'marko[toc]',
                                'pyflakes>=2.2.0',
+                               'pylint>=2.15.2',
                                ],
                       'docs': ['sphinx>=5.0.2',
                                'sphinx_rtd_theme>=1.0.0',

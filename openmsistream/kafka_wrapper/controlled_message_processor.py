@@ -73,9 +73,9 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
         Helper function to perform actions that happen continuously while the process is alive
         """
         #consume a message from the topic
-        msg = consumer.get_next_message(ControlledMessageProcessor.CONSUMER_POLL_TIMEOUT)
+        msg = consumer.get_next_message(self.CONSUMER_POLL_TIMEOUT)
         if msg is None :
-            time.sleep(ControlledMessageProcessor.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
+            time.sleep(self.NO_MESSAGE_WAIT) #wait just a bit to not over-tax things
             return
         with self.lock :
             self.n_msgs_read+=1

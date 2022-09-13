@@ -123,7 +123,7 @@ msg-template=
 reports=no
 
 # Activate the evaluation score.
-score=yes
+score=no
 
 
 [MESSAGES CONTROL]
@@ -154,11 +154,12 @@ disable=raw-checker-failed,
         useless-suppression,
         deprecated-pragma,
         use-symbolic-message-instead,
-        useless-parent-delegation,
-        unspecified-encoding,
-        raise-missing-from,
-        exec-used,
-        multiple-imports
+        useless-parent-delegation, # Want this sometimes to show stuff in Sphinx docs
+        unspecified-encoding, # Multi-platform; can't really specify encoding
+        raise-missing-from, # Sometimes eating Exceptions is okay
+        exec-used, # Be careful about using exec() but don't disallow it (only used once)
+        multiple-imports, # Makes for cleaner-looking (and definitely more concise and clear) code
+        duplicate-code # This checker is unfortunately just too enthusiastic
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option

@@ -14,7 +14,7 @@ def get_os_name() :
     if platform.system()=='Linux' :
         return 'Linux'
     #MacOS is not supported
-    elif platform.system()=='Darwin' :
+    if platform.system()=='Darwin' :
         errmsg = 'ERROR: Installing programs as Services is not supported on MacOS!'
         SERVICE_CONST.logger.error(errmsg,NotImplementedError)
     #otherwise I don't know what happened

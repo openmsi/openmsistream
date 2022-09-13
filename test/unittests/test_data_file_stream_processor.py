@@ -8,9 +8,9 @@ from openmsistream import UploadDataFile, DataFileUploadDirectory, DataFileStrea
 from config import TEST_CONST
 
 #constants
-LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.INFO)#ERROR)
+LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 UPDATE_SECS = 5
-TIMEOUT_SECS = 3000
+TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 30
 
 class DataFileStreamProcessorForTesting(DataFileStreamProcessor) :
@@ -87,20 +87,20 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = f'Waiting to read other test file from the "{TOPIC_NAME}" topic in test_data_file_stream_processor '
             msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             while ( (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) and 
                     time_waited<TIMEOUT_SECS ) :
                 current_messages_read = dfsp.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-#                LOGGER.set_stream_level(logging.ERROR)
+                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             LOGGER.set_stream_level(logging.INFO)
             msg = 'Quitting download thread in test_data_file_stream_processor after processing '
             msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             dfsp.control_command_queue.put('q')
             dfsp.close()
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
@@ -169,14 +169,14 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart '
             msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
                     time_waited<TIMEOUT_SECS ) :
                 current_messages_read = dfsp.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-#                LOGGER.set_stream_level(logging.ERROR)
+                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
@@ -184,7 +184,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = 'Quitting download thread in test_data_file_stream_processor after processing '
             msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             dfsp.control_command_queue.put('q')
             dfsp.close()
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
@@ -252,14 +252,14 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart '
             msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (third_filepath.name not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
                     time_waited<TIMEOUT_SECS ) :
                 current_messages_read = dfsp.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-#                LOGGER.set_stream_level(logging.ERROR)
+                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
@@ -267,7 +267,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = 'Quitting download thread in test_data_file_stream_processor_restart after processing '
             msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             dfsp.control_command_queue.put('q')
             dfsp.close()
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
@@ -367,14 +367,14 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart_encrypted'
             msg+= f' (will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
                     time_waited<TIMEOUT_SECS ) :
                 current_messages_read = dfsp.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-#                LOGGER.set_stream_level(logging.ERROR)
+                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
@@ -382,7 +382,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = 'Quitting download thread in test_data_file_stream_processor_restart_encrypted after processing '
             msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             dfsp.control_command_queue.put('q')
             dfsp.close()
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
@@ -459,14 +459,14 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart_encrypted '
             msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (third_filepath.name not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
                     time_waited<TIMEOUT_SECS ) :
                 current_messages_read = dfsp.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-#                LOGGER.set_stream_level(logging.ERROR)
+                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
@@ -474,7 +474,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             msg = 'Quitting download thread in test_data_file_stream_processor_restart_encrypted after processing '
             msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-#            LOGGER.set_stream_level(logging.ERROR)
+            LOGGER.set_stream_level(logging.ERROR)
             dfsp.control_command_queue.put('q')
             dfsp.close()
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)

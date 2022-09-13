@@ -13,6 +13,8 @@ def main(args=None) :
     parser = ArgumentParser()
     parser.add_argument('--no_pyflakes', action='store_true',
                         help='Add this flag to skip running the pyflakes check')
+    parser.add_argument('--no_pylint', action='store_true',
+                        help='Add this flag to skip running the pylint checks')
     unittest_opts = parser.add_mutually_exclusive_group()
     unittest_opts.add_argument('--no_unittests', action='store_true',
                                help='Add this flag to skip running the unittest checks')
@@ -36,6 +38,17 @@ def main(args=None) :
         if stdout!='' :
             raise RuntimeError(f'ERROR: pyflakes check failed with output:\n{stdout}')
         print('Passed pyflakes check : )')
+    #test pylint
+    if args.no_pylint :
+        print('SKIPPING PYLINT TEST')
+    else :
+        print('testing code consistency with pylint...')
+        p = subprocess.Popen(f'cd {TOP_DIR_PATH}; pylint openmsistream; cd {CWD}; exit 0',
+                             stdout=subprocess.PIPE,stderr=subprocess.PIPE,shell=True,universal_newlines=True)
+        stdout,stderr = p.communicate()
+        if stdout!='' :
+            raise RuntimeError(f'ERROR: pylint checks failed with output:\n{stdout}')
+        print('Passed pylint checks : )')
     #perform all the unittests
     if args.no_unittests :
         print('SKIPPING UNITTESTS')
