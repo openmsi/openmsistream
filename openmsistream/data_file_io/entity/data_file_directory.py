@@ -1,3 +1,5 @@
+"""A directory of DataFiles"""
+
 #imports
 from ...utilities import LogOwner
 from ...utilities.misc import populated_kwargs
@@ -5,20 +7,13 @@ from ...utilities.misc import populated_kwargs
 class DataFileDirectory(LogOwner) :
     """
     Base class representing any directory holding data files
+
+    :param dirpath: path to the directory
+    :type dirpath: :class:`pathlib.Path`
     """
 
-    @property
-    def dirpath(self) :
-        return self.__dirpath
-    @property
-    def data_files_by_path(self) :
-        return self.__data_files_by_path
-
     def __init__(self,dirpath,*args,**kwargs) :
-        """
-        dirpath = path to the directory 
-        """
-        self.__dirpath = dirpath.resolve()
-        self.__data_files_by_path = {}
-        kwargs = populated_kwargs(kwargs,{'logger_file':self.__dirpath})
+        self.dirpath = dirpath.resolve()
+        self.data_files_by_path = {}
+        kwargs = populated_kwargs(kwargs,{'logger_file':self.dirpath})
         super().__init__(*args,**kwargs)

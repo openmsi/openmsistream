@@ -1,3 +1,5 @@
+"""Script to use the OS-appropriate ServceManager to install code as a Windows Service or Linux daemon"""
+
 #imports
 import sys
 from .config import SERVICE_CONST
@@ -7,6 +9,9 @@ from .windows_service_manager import WindowsServiceManager
 from .linux_service_manager import LinuxServiceManager
 
 def main(given_args=None) :
+    """
+    Install a Windows Service/Linux daemon (depending on the OS that's running)
+    """
     #get the arguments
     if given_args is None :
         parser = ServiceManagerBase.get_argument_parser('install',sys.argv[1] if len(sys.argv)>1 else None)
@@ -33,8 +38,8 @@ def main(given_args=None) :
         manager_args = [service_name]
         manager_kwargs = {'service_spec_string':args.service_spec_string,
                           'argslist':argslist,
-                          'interactive':True if given_args is None else False,
-                          'logger':SERVICE_CONST.LOGGER}
+                          'interactive':given_args is None,
+                          'logger':SERVICE_CONST.logger}
         managers_by_os_name = {'Windows':WindowsServiceManager,
                                'Linux':LinuxServiceManager,}
         manager_class = managers_by_os_name[get_os_name()]

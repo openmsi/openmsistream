@@ -1,3 +1,5 @@
+"""Classes for OpenMSIStream logging infrastructure"""
+
 #imports
 import pathlib, logging, traceback
 
@@ -28,16 +30,14 @@ class Logger :
     :type logger_name: str, optional
     :param streamlevel: The level at/above which messages should be logged to the stream/console
     :type streamlevel: logging level int, optional
-    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named
         logger file should be created
     :type logger_filepath: :class:`pathlib.Path`, optional
     :param filelevel: The level at/above which messages should be written to the logfile
     :type filelevel: logging level int, optional
     """
 
-    @property
-    def formatter(self):
-        return OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
+    FORMATTER = OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
     def __init__(self,logger_name=None,streamlevel=logging.DEBUG,logger_filepath=None,filelevel=logging.INFO) :
         """
@@ -45,16 +45,16 @@ class Logger :
         """
         self._name = logger_name
         if self._name is None :
-            self._name = self.__name__
+            self._name = self.__class__.__name__
         self._logger_obj = logging.getLogger(self._name)
         self._logger_obj.setLevel(logging.DEBUG)
         self._streamhandler = logging.StreamHandler()
         self._streamhandler.setLevel(streamlevel)
-        self._streamhandler.setFormatter(self.formatter)
+        self._streamhandler.setFormatter(self.FORMATTER)
         self._logger_obj.addHandler(self._streamhandler)
         self._filehandler = None
         if logger_filepath is not None :
-            self.add_file_handler(logger_filepath)
+            self.add_file_handler(logger_filepath,level=filelevel)
 
     def set_level(self,level) :
         """
@@ -103,7 +103,7 @@ class Logger :
             filepath.touch()
         self._filehandler = logging.FileHandler(filepath)
         self._filehandler.setLevel(level)
-        self._filehandler.setFormatter(self.formatter)
+        self._filehandler.setFormatter(self.FORMATTER)
         self._logger_obj.addHandler(self._filehandler)
 
     #methods for logging different levels of messages
@@ -116,7 +116,7 @@ class Logger :
         :type msg: str
         """
         self._logger_obj.debug(msg,*args,**kwargs)
-    
+
     def info(self,msg,*args,**kwargs) :
         """
         Log a message at INFO level. Additional args/kwargs are sent to the underlying logger object's info call.
@@ -125,7 +125,7 @@ class Logger :
         :type msg: str
         """
         self._logger_obj.info(msg,*args,**kwargs)
-    
+
     def warning(self,msg,*args,**kwargs) :
         """
         Log a message at WARNING level. Additional args/kwargs are sent to the underlying logger object's warning call.
@@ -138,12 +138,12 @@ class Logger :
         self._logger_obj.warning(msg,*args,**kwargs)
 
     #log an error message and optionally raise an exception with the same message, or raise a different exception
-    def error(self,msg,exception_type=None,exc_obj=None,reraise=True,*args,**kwargs) :
+    def error(self,msg,exception_type=None,exc_obj=None,reraise=True,**kwargs) :
         """
-        Log a message at ERROR level. Optionally raise an exception of a given type with the same message. 
+        Log a message at ERROR level. Optionally raise an exception of a given type with the same message.
         Optionally log the traceback of a given Exception at ERROR level, reraising it afterward if desired.
-        
-        Additional args/kwargs are sent to the underlying logger object's error call.
+
+        Additional kwargs are sent to the underlying logger object's error call(s).
 
         :param msg: the message to log
         :type msg: str
@@ -156,17 +156,17 @@ class Logger :
         """
         if not msg.startswith('ERROR:') :
             msg = f'ERROR: {msg}'
-        self._logger_obj.error(msg,*args,**kwargs)
+        self._logger_obj.error(msg,**kwargs)
         if exc_obj is not None :
-            self.log_exception_as_error(exc_obj,*args,reraise=reraise,**kwargs)
-        if exception_type is not None : 
+            self.log_exception_as_error(exc_obj,reraise=reraise,**kwargs)
+        if exception_type is not None :
             raise exception_type(msg)
 
-    def log_exception_as_error(self,exc,*args,reraise=True,**kwargs) :
+    def log_exception_as_error(self,exc,reraise=True,**kwargs) :
         """
         Log the traceback of a given Exception as an error and optionally reraise it
 
-        Additional args/kwargs are sent to the underlying logger object's error call.
+        Additional kwargs are sent to the underlying logger object's error call.
 
         :param exc: An Exception object whose traceback should be logged at error level
         :type exc: :class:`BaseException`, optional
@@ -180,7 +180,7 @@ class Logger :
             for line in (traceback.format_exc()).split('\n') :
                 exc_to_log+=f'{line},'
             exc_to_log+=']'
-            self._logger_obj.error(exc_to_log,*args,**kwargs)
+            self._logger_obj.error(exc_to_log,**kwargs)
             if reraise :
                 raise exc
 
@@ -195,7 +195,7 @@ class LogOwner :
     :type logger_name: str, optional
     :param streamlevel: The level at/above which messages should be logged to the stream/console
     :type streamlevel: logging level int, optional
-    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named 
+    :param logger_filepath: The path to a logger file to use or directory in which an automatically-named
         logger file should be created
     :type logger_filepath: :class:`pathlib.Path`, optional
     :param filelevel: The level at/above which messages should be written to the logfile
@@ -211,7 +211,9 @@ class LogOwner :
 
     @logger.setter
     def logger(self,logger) :
-        if hasattr(self,'_LogOwner__logger') and self.__logger is not None and type(self.__logger)!=type(logger) :
+        if ( hasattr(self,'_LogOwner__logger') and
+             self.__logger is not None and
+             (not isinstance(self.__logger,type(logger))) ) :
             errmsg = f'ERROR: tried to reset a logger of type {type(self.__logger)} to a new logger of type {logger}!'
             self.__logger.error(errmsg,ValueError)
         else :

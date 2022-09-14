@@ -1,3 +1,8 @@
+"""
+The OpenMSIStream wrapper around standard Kafka in confluent_kafka.
+Also includes wrapping around needed KafkaCrypto objects.
+"""
+
 from .openmsistream_producer import OpenMSIStreamProducer
 from .openmsistream_consumer import OpenMSIStreamConsumer
 from .producer_group import ProducerGroup

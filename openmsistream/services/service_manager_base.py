@@ -1,3 +1,5 @@
+"""Functionality common to both Windows Services and Linux daemons"""
+
 #imports
 import sys, pathlib, textwrap, importlib
 from abc import abstractmethod
@@ -15,13 +17,13 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
     :param service_name: The name of the Service/daemon as installed
     :type service_name: str
-    :param service_spec_string: A string specifying which code should be run as a Service. 
-        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code. 
-        Custom Services can also specify a :class:`~Runnable` class name, and/or a function in the file 
-        using special formatting like [class_name]=[path.to.file]:[function_name]. 
+    :param service_spec_string: A string specifying which code should be run as a Service.
+        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code.
+        Custom Services can also specify a :class:`~Runnable` class name, and/or a function in the file
+        using special formatting like [class_name]=[path.to.file]:[function_name].
         Only needed to initially install the Service/daemon.
     :type service_spec_string: str, optional
-    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class. 
+    :param argslist: The list of arguments (as from the command line) to pass to the :class:`~Runnable` class.
         Only needed to initially install the Service/daemon.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do
@@ -40,7 +42,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         self.env_var_filepath = SERVICE_CONST.WORKING_DIR/f'{self.service_name}_env_vars.txt'
         self.install_args_filepath = SERVICE_CONST.WORKING_DIR/f'{self.service_name}_install_args.txt'
         self.exec_fp = SERVICE_CONST.WORKING_DIR/f'{self.service_name}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}'
-    
+        self.env_vars_needed = None
+
     def install_service(self) :
         """
         Install the Service
@@ -84,10 +87,10 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
 
         :param run_mode: The string identifying the action(s) that should be taken
         :type run_mode: str
-        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed. 
+        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed.
             Only used when removing the Service/daemon.
         :type remove_env_vars: bool, optional.
-        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon 
+        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon
             (to make it easier to re-install) will be removed. Only used when removing the Service/daemon.
         :type remove_install_args: bool, optional
         :param remove_nssm: if True, the NSSM executable will be removed. Only used when removing the Service/daemon.
@@ -132,16 +135,18 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         raise NotImplementedError
 
-    def remove_service(self,remove_env_vars=False,remove_install_args=False) :
+    def remove_service(self,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
         """
-        Remove the Service. Child classes should call this after doing whatever they need to do to 
+        Remove the Service. Child classes should call this after doing whatever they need to do to
         optionally remove environment variables.
 
-        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed. 
+        :param remove_env_vars: if True, any environment variables needed by the Service/daemon will be removed.
         :type remove_env_vars: bool, optional.
-        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon 
+        :param remove_install_args: if True, the file listing the arguments used to install the Service/daemon
             (to make it easier to re-install) will be removed.
         :type remove_install_args: bool, optional
+        :param remove_nssm: if True, the NSSM executable will be removed. Only used on Windows.
+        :type remove_nssm: bool, optional
         """
         #remove the executable file
         if self.exec_fp.is_file() :
@@ -170,7 +175,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             if self.install_args_filepath.is_file() :
                 self.logger.info(f'Installation arguments file {self.install_args_filepath} will be retained')
         self.logger.info(f'Done removing {self.service_name}')
-    
+        _ = remove_nssm # appease pyflakes / pylint
+
     def reinstall_service(self) :
         """
         Install the service using the arguments defined in the service arguments file
@@ -204,20 +210,20 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 self.install_service()
 
     #################### PRIVATE HELPER FUNCTIONS ####################
-    
+
     @abstractmethod
     def _write_env_var_file(self) :
         """
         Write and set permissions for the file holding the values of the environment variables needed by the Service
         returns True if there are environment variables referenced, False if not
-        
+
         Not implemented in base class
         """
         raise NotImplementedError
 
     def _write_install_args_file(self) :
         """
-        Write out a file storing the arguments used to install the Service so it can be 
+        Write out a file storing the arguments used to install the Service so it can be
         reinstalled using the same configurations/setting if desired
         """
         if self.service_spec_string is None or self.argslist is None :
@@ -226,7 +232,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         with open(self.install_args_filepath,'w') as fp :
             for arg in [self.service_spec_string,*self.argslist] :
                 fp.write(f'{arg}\n')
-    
+
     def _write_executable_file(self,filepath=None) :
         """
         write out the executable python file that the service will actually be running
@@ -267,16 +273,16 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         Set the service dict with information about the code that should be run based on the service_spec_string
         """
         if self.service_spec_string is not None :
-            service_dict = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES 
+            service_dict = [sd for sd in SERVICE_CONST.available_services
                             if sd['class_name']==self.service_spec_string]
             if len(service_dict)==1 :
                 self.service_dict = service_dict[0]
             elif len(service_dict)==0 :
-                fp, cn, rc, fn = self.__parse_custom_service_string(self.service_spec_string,self.logger)
-                self.service_dict = {'filepath':fp,
-                                     'class_name':cn,
-                                     'class':rc,
-                                     'func_name':fn}
+                f_p, c_n, r_c, f_n = self.__parse_custom_service_string(self.service_spec_string,self.logger)
+                self.service_dict = {'filepath':f_p,
+                                     'class_name':c_n,
+                                     'class':r_c,
+                                     'func_name':f_n}
             else :
                 errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
                 errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
@@ -285,11 +291,14 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             self.service_dict = None
 
     @staticmethod
-    def __parse_custom_service_string(service_spec_string,logger=SERVICE_CONST.LOGGER) :
+    def __parse_custom_service_string(service_spec_string,logger=SERVICE_CONST.logger) :
         """
         Get the filepath and optional class/function names from the custom Service string
         """
-        filepath = None; class_name = None; run_class = None; func_name = None
+        filepath = None
+        class_name = None
+        run_class = None
+        func_name = None
         try :
             #at minimum need a path to a file containing a class or function to run
             if '=' in service_spec_string :
@@ -322,24 +331,24 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 assert issubclass(run_class,Runnable)
             #make sure at least one of the function/class names was given
             assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
-        except Exception as e :
+        except Exception as exc :
             errmsg = f'ERROR: service specification string {service_spec_string} is not valid! '
             errmsg+= 'Will re-raise specific Exception.'
-            logger.error(errmsg,exc_obj=e)
+            logger.error(errmsg,exc_obj=exc)
         return filepath, class_name, run_class, func_name
 
     #################### CLASS METHODS ####################
-    
+
     @classmethod
-    def get_argument_parser(cls,install_or_manage,class_name_or_spec_string=None) :
+    def get_argument_parser(cls,install_or_manage=None,class_name_or_spec_string=None) :
         """
         Return the command line argument parser that should be used
 
-        :param install_or_manage: Whether the parser used should accept commands for "install"-ing 
+        :param install_or_manage: Whether the parser used should accept commands for "install"-ing
             or "manage"-ing the Service/daemon
         :type install_or_manage: str
-        :param class_name_or_spec_string: the first argument to the install script, if that's being run. 
-            Used to add subparsers for known Runnable classes or for custom Runnables defined at the time 
+        :param class_name_or_spec_string: the first argument to the install script, if that's being run.
+            Used to add subparsers for known Runnable classes or for custom Runnables defined at the time
             the Service/daemon is being installed.
         :type class_name_or_spec_string: str, optional
 
@@ -358,16 +367,16 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 return parser
             parser.add_subparsers(description=subp_desc,required=True,dest='service_spec_string')
             if class_name_or_spec_string is None :
-                for service_dict in SERVICE_CONST.AVAILABLE_SERVICES :
+                for service_dict in SERVICE_CONST.available_services :
                     parser.add_subparser_arguments_from_class(service_dict['class'],addl_args=['optional_service_name'])
-            elif class_name_or_spec_string in [d['class_name'] for d in SERVICE_CONST.AVAILABLE_SERVICES] :
-                sds = [sd for sd in SERVICE_CONST.AVAILABLE_SERVICES if sd['class_name']==class_name_or_spec_string]
-                sd = sds[0]
-                parser.add_subparser_arguments_from_class(sd['class'],addl_args=['optional_service_name'])
+            elif class_name_or_spec_string in [d['class_name'] for d in SERVICE_CONST.available_services] :
+                sds = [sd for sd in SERVICE_CONST.available_services if sd['class_name']==class_name_or_spec_string]
+                s_d = sds[0]
+                parser.add_subparser_arguments_from_class(s_d['class'],addl_args=['optional_service_name'])
             else :
-                _, _, rc, _ = cls.__parse_custom_service_string(class_name_or_spec_string)
-                if rc is not None :
-                    parser.add_subparser_arguments_from_class(rc,
+                _, _, run_class, _ = cls.__parse_custom_service_string(class_name_or_spec_string)
+                if run_class is not None :
+                    parser.add_subparser_arguments_from_class(run_class,
                                                               subp_name=class_name_or_spec_string,
                                                               addl_args=['optional_service_name'])
                 else :
@@ -385,7 +394,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
     @property
     def env_var_names(self) :
         """
-        Names of the environment variables used by the service 
+        Names of the environment variables used by the service
         (any environment variables in the command line arguments or config file)
         """
         #get the names of environment variables from the command line and config file
@@ -394,10 +403,10 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 if arg.startswith('$') :
                     yield arg
             if self.service_dict['class'] is not None :
-                p = self.service_dict['class'].get_argument_parser()
-                argsdests = [action.dest for action in p._actions]
+                parser = self.service_dict['class'].get_argument_parser()
+                argsdests = [action.dest for action in parser.actions]
                 if 'config' in argsdests :
-                    pargs = p.parse_args(args=self.argslist)
-                    cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.LOGGER)
+                    pargs = parser.parse_args(args=self.argslist)
+                    cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.logger)
                     for evn in cfp.env_var_names :
                         yield evn

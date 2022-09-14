@@ -1,3 +1,5 @@
+"""A set of Producers sharing an optional KafkaCrypto instance for key passing"""
+
 #imports
 from ..utilities import LogOwner
 from .openmsistream_producer import OpenMSIStreamProducer
@@ -8,14 +10,17 @@ class ProducerGroup(LogOwner) :
 
     :param config_path: Path to the config file that should be used to define Producers in the group
     :type config_path: :class:`pathlib.Path`
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers. 
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers.
         Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
     """
 
     @property
     def kafkacrypto(self) :
-        return self.__p_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__p_kwargs.keys() else None
+        """
+        The KafkaCrypto object handling key passing and serialization for encrypted messages
+        """
+        return self.__p_kwargs['kafkacrypto'] if 'kafkacrypto' in self.__p_kwargs else None
 
     def __init__(self,config_path,kafkacrypto=None,**kwargs) :
         """
@@ -28,7 +33,7 @@ class ProducerGroup(LogOwner) :
 
     def get_new_producer(self) :
         """
-        Return a new :class:`~OpenMSIStreamProducer` object. 
+        Return a new :class:`~OpenMSIStreamProducer` object.
         Call this function from a child thread to get thread-independent Producers.
         Note: this function just creates the Producer; closing it etc. must be handled by whatever calls this function.
 
@@ -40,11 +45,11 @@ class ProducerGroup(LogOwner) :
 
     def close(self) :
         """
-        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`. 
+        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
         try :
             self.__p_kwargs['kafkacrypto'].close()
-        except :
+        except Exception :
             pass
         finally :
             self.__p_kwargs['kafkacrypto'] = None

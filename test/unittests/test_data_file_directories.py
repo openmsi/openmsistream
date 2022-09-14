@@ -100,7 +100,7 @@ class TestDataFileDirectories(unittest.TestCase) :
                                          TOPIC_NAME,
                                          n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
                                          update_secs=UPDATE_SECS,
-                                         consumer_group_ID='run_data_file_download_directory',
+                                         consumer_group_id='run_data_file_download_directory',
                                          logger=LOGGER,
                                          )
         #start reconstruct in a separate thread so we can time it out

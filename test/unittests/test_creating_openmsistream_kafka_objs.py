@@ -49,14 +49,14 @@ class TestCreateOpenMSIStreamKafkaObjects(unittest.TestCase) :
     
     def test_create_consumer_group(self) :
         cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                           consumer_group_ID='test_create_consumer_group',
+                           consumer_group_id='test_create_consumer_group',
                            logger=LOGGER)
         self.assertTrue(cg is not None)
         cg.close()
     
     def test_create_consumer_group_encrypted(self) :
         cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-                           consumer_group_ID='test_create_consumer_group_encrypted',
+                           consumer_group_id='test_create_consumer_group_encrypted',
                            logger=LOGGER)
         self.assertTrue(cg is not None)
         cg.close()

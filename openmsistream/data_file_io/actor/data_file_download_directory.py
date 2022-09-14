@@ -1,3 +1,8 @@
+"""
+Write DataFileChunks directly to disk as they are consumed from topics.
+Preserve subdirectory structure if applicable
+"""
+
 #imports
 import datetime
 from kafkacrypto.message import KafkaCryptoMessage
@@ -12,13 +17,13 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     """
     Class representing a directory into which files are being reconstructed.
 
-    :param dirpath: Path to the directory where reconstructed files should be saved 
+    :param dirpath: Path to the directory where reconstructed files should be saved
     :type dirpath: :class:`pathlib.Path`
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
-    :param datafile_type: the type of data file that recognized files should be reconstructed as 
+    :param datafile_type: the type of data file that recognized files should be reconstructed as
         (must be a subclass of :class:`~DownloadDataFileToDisk`)
     :type datafile_type: :class:`~DownloadDataFileToDisk`, optional
 
@@ -31,7 +36,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         """
         datafile_type = the type of datafile that the consumed messages should be assumed to represent
         In this class datafile_type should be something that extends DownloadDataFileToDisk
-        """    
+        """
         super().__init__(dirpath,config_path,topic_name,datafile_type=datafile_type,**kwargs)
         if not issubclass(self.datafile_type,DownloadDataFileToDisk) :
             errmsg = 'ERROR: DataFileDownloadDirectory requires a datafile_type that is a subclass of '
@@ -41,14 +46,14 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
 
     def reconstruct(self) :
         """
-        Consumes messages and writes their data to disk using several parallel threads to reconstruct the files 
-        to which they correspond. Runs until the user inputs a command to shut it down. 
-        
+        Consumes messages and writes their data to disk using several parallel threads to reconstruct the files
+        to which they correspond. Runs until the user inputs a command to shut it down.
+
         :return: the total number of messages consumed
         :rtype: int
         :return: the total number of message processed (written to disk)
         :rtype: int
-        :return: the number of files whose reconstruction was completed during the run 
+        :return: the number of files whose reconstruction was completed during the run
         :rtype: int
         """
         msg = f'Will reconstruct files from messages in the {self.topic_name} topic using {self.n_threads} '
@@ -59,10 +64,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
-    def _process_message(self, lock, msg):
-        retval = super()._process_message(lock,msg,self.dirpath,self.logger)
+    def _process_message(self, lock, msg, rootdir_to_set=None):
+        retval = super()._process_message(lock,msg,self.dirpath if rootdir_to_set is None else rootdir_to_set)
         #if the message was returned because it couldn't be decrypted, write it to the encrypted messages directory
-        if ( hasattr(retval,'key') and hasattr(retval,'value') and 
+        if ( hasattr(retval,'key') and hasattr(retval,'value') and
              (isinstance(retval.key,KafkaCryptoMessage) or isinstance(retval.value,KafkaCryptoMessage)) ) :
             if not self.__encrypted_messages_subdir.is_dir() :
                 self.__encrypted_messages_subdir.mkdir(parents=True)
@@ -73,17 +78,17 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             warnmsg+= f'{key_fp.relative_to(self.dirpath)} and value bytes will be written to '
             warnmsg+= f'{value_fp.relative_to(self.dirpath)}'
             self.logger.warning(warnmsg)
-            with open(key_fp,'wb') as f :
-                f.write(bytes(retval.key))
-            with open(value_fp,'wb') as f :
-                f.write(bytes(retval.value))
+            with open(key_fp,'wb') as fp :
+                fp.write(bytes(retval.key))
+            with open(value_fp,'wb') as fp :
+                fp.write(bytes(retval.value))
             return False #because the message wasn't processed successfully
-        if retval==True :
+        if retval is True :
             return retval
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
@@ -96,7 +101,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                 del self.locks_by_fp[dfc.filepath]
             return True
         #If the file hash was mismatched after reconstruction, return False
-        elif retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
+        if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
             warnmsg = f'WARNING: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
             warnmsg+= 'after reconstruction! All data have been written to disk, but not as they were uploaded.'
             self.logger.warning(warnmsg)
@@ -104,9 +109,9 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                 del self.files_in_progress_by_path[dfc.filepath]
                 del self.locks_by_fp[dfc.filepath]
             return False
-        else :
-            self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
-            return False
+        #if this is reached the return code was unrecognized
+        self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
+        return False
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
@@ -120,7 +125,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     @classmethod
     def get_command_line_arguments(cls) :
         superargs,superkwargs = super().get_command_line_arguments()
-        args = [*superargs,'output_dir','config','topic_name','update_seconds','consumer_group_ID']
+        args = [*superargs,'output_dir','config','topic_name','update_seconds','consumer_group_id']
         kwargs = {**superkwargs,'n_threads':RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args,kwargs
 
@@ -129,7 +134,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         """
         Run a :class:`~DataFileDownloadDirectory` directly from the command line
 
-        Calls :func:`~reconstruct` on a :class:`~DataFileDownloadDirectory` defined by 
+        Calls :func:`~reconstruct` on a :class:`~DataFileDownloadDirectory` defined by
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
@@ -140,7 +145,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #make the download directory
         reconstructor_directory = cls(args.output_dir,args.config,args.topic_name,
                                       n_threads=args.n_threads,
-                                      consumer_group_ID=args.consumer_group_ID,
+                                      consumer_group_id=args.consumer_group_id,
                                       update_secs=args.update_seconds,
                                      )
         #start the reconstructor running
@@ -164,9 +169,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         msg+=f' from {run_start} to {run_stop}'
         reconstructor_directory.logger.info(msg)
 
-#################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
-
 def main(args=None) :
+    """
+    Main method to run from command line
+    """
     DataFileDownloadDirectory.run_from_command_line(args)
 
 if __name__=='__main__' :

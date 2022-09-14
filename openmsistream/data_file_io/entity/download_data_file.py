@@ -1,3 +1,5 @@
+"""Various types of DataFiles that have been read back from messages in a topic"""
+
 #imports
 import os
 from hashlib import sha512
@@ -19,28 +21,18 @@ class DownloadDataFile(DataFile,ABC) :
         Return the full filepath of a file that will be written to disk given one of its DataFileChunks
         """
         if dfc.filename_append=='' :
-            return dfc.filepath 
-        else :
-            filename_split = dfc.filepath.name.split('.')
-            full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
-            return full_fp
-
-    @property
-    def full_filepath(self) :
-        return self.__full_filepath
-
-    @property
-    def subdir_str(self) :
-        return self.__subdir_str
-
-    @property
-    def n_total_chunks(self) :
-        return self.__n_total_chunks
+            return dfc.filepath
+        filename_split = dfc.filepath.name.split('.')
+        full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
+        return full_fp
 
     @property
     @abstractmethod
     def check_file_hash(self) :
-        raise NotImplementedError #the hash of the data in the file after it was read; not implemented in the base class
+        """
+        The hash of the data in the file after it was read. Not implemented in the base class.
+        """
+        raise NotImplementedError
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -48,19 +40,19 @@ class DownloadDataFile(DataFile,ABC) :
         super().__init__(*args,**kwargs)
         #start an empty set of this file's downloaded offsets
         self._chunk_offsets_downloaded = []
-        self.__full_filepath = None
-        self.__subdir_str = None
-        self.__n_total_chunks = None
+        self.full_filepath = None
+        self.subdir_str = None
+        self.n_total_chunks = None
 
-    def add_chunk(self,dfc,thread_lock=nullcontext(),*args,**kwargs) :
+    def add_chunk(self,dfc,thread_lock=nullcontext()) :
         """
         A function to process a chunk that's been read from a topic
         Returns a number of codes based on what effect adding the chunk had
-        
-        This function calls _on_add_chunk, 
-        
+
+        This function calls _on_add_chunk, with the DataFileChunk as the argument.
+
         dfc = the DataFileChunk object whose data should be added
-        thread_lock = the lock object to acquire/release so that race conditions don't affect 
+        thread_lock = the lock object to acquire/release so that race conditions don't affect
                       reconstruction of the files (optional, only needed if running this function asynchronously)
         """
         #if this chunk's offset has already been written to disk, return the "already written" code
@@ -75,33 +67,33 @@ class DownloadDataFile(DataFile,ABC) :
             self.logger.error(errmsg,ValueError)
         #modify the filepath to include any append to the name
         full_filepath = self.__class__.get_full_filepath(dfc)
-        if self.__full_filepath is None :
-            self.__full_filepath = full_filepath
-            self.filename = self.__full_filepath.name
-        elif self.__full_filepath!=full_filepath :
+        if self.full_filepath is None :
+            self.full_filepath = full_filepath
+            self.filename = self.full_filepath.name
+        elif self.full_filepath!=full_filepath :
             errmsg = f'ERROR: filepath for data file chunk {dfc.chunk_i}/{dfc.n_total_chunks} with offset '
             errmsg+= f'{dfc.chunk_offset_write} is {full_filepath} but the file being reconstructed is '
-            errmsg+= f'expected to have filepath {self.__full_filepath}'
+            errmsg+= f'expected to have filepath {self.full_filepath}'
             self.logger.error(errmsg,ValueError)
         #add the subdirectory string to this file
-        if self.__subdir_str is None :
-            self.__subdir_str = dfc.subdir_str
-        elif self.__subdir_str!=dfc.subdir_str :
-            errmsg = f"Mismatched subdirectory strings! From file = {self.__subdir_str}, from chunk = {dfc.subdir_str}"
+        if self.subdir_str is None :
+            self.subdir_str = dfc.subdir_str
+        elif self.subdir_str!=dfc.subdir_str :
+            errmsg = f"Mismatched subdirectory strings! From file = {self.subdir_str}, from chunk = {dfc.subdir_str}"
             self.logger.error(errmsg,ValueError)
         #set or check the total number of chunks expected
-        if self.__n_total_chunks is None :
+        if self.n_total_chunks is None :
             with thread_lock :
-                self.__n_total_chunks = dfc.n_total_chunks
-        elif self.__n_total_chunks!=dfc.n_total_chunks :
-            errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.__full_filepath} is expecting '
-            errmsg+= f'{self.__n_total_chunks} chunks but found a chunk from a split with '
+                self.n_total_chunks = dfc.n_total_chunks
+        elif self.n_total_chunks!=dfc.n_total_chunks :
+            errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.full_filepath} is expecting '
+            errmsg+= f'{self.n_total_chunks} chunks but found a chunk from a split with '
             errmsg+= f'{dfc.n_total_chunks} total chunks.'
             self.logger.error(errmsg,ValueError)
         #acquire the thread lock to make sure this process is the only one dealing with this particular file
         with thread_lock :
             #call the function to actually add the chunk
-            self._on_add_chunk(dfc,*args,**kwargs)
+            self._on_add_chunk(dfc)
             #add the offset of the added chunk to the set of reconstructed file chunks
             self._chunk_offsets_downloaded.append(dfc.chunk_offset_write)
             last_chunk = len(self._chunk_offsets_downloaded)==dfc.n_total_chunks
@@ -109,15 +101,13 @@ class DownloadDataFile(DataFile,ABC) :
         if last_chunk :
             if self.check_file_hash!=dfc.file_hash :
                 return DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE
-            else :
-                return DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
-        else :
-            return DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+            return DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+        return DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     @abstractmethod
-    def _on_add_chunk(dfc,*args,**kwargs) :
+    def _on_add_chunk(self,dfc) :
         """
         A function to actually process a new chunk being added to the file
         This function is executed while a thread lock is acquired so it will never run asynchronously
@@ -171,7 +161,7 @@ class DownloadDataFileToMemory(DownloadDataFile) :
     @property
     def bytestring(self) :
         """
-        The bytestring of the file contents (like calling file_pointer.read() for a file opened in "rb" mode). 
+        The bytestring of the file contents (like calling file_pointer.read() for a file opened in "rb" mode).
         Call bytestring.decode() to convert this to a text string.
         """
         if self.__bytestring is None :

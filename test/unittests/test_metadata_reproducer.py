@@ -29,7 +29,7 @@ class TestMetadataReproducer(unittest.TestCase) :
         start_time = datetime.datetime.now()
         #start up the reproducer
         metadata_reproducer = XRDCSVMetadataReproducer(REP_CONFIG_PATH,SOURCE_TOPIC_NAME,DEST_TOPIC_NAME,
-                                                       consumer_group_ID=CONSUMER_GROUP_ID,
+                                                       consumer_group_id=CONSUMER_GROUP_ID,
                                                        output_dir=TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR,
                                                        logger=LOGGER)
         rep_thread = ExceptionTrackingThread(target=metadata_reproducer.produce_processing_results_for_files_as_read)
@@ -78,7 +78,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             metadata_reproducer.file_registry.succeeded_table.dump_to_file()
             srpr = StreamReproducerRegistry(dirpath=TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR,
                                             consumer_topic_name=SOURCE_TOPIC_NAME,
-                                            consumer_group_ID=CONSUMER_GROUP_ID,
+                                            consumer_group_id=CONSUMER_GROUP_ID,
                                             producer_topic_name=DEST_TOPIC_NAME,
                                             logger=LOGGER)
             self.assertEqual(len(srpr.filepaths_to_rerun),0)
@@ -93,7 +93,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             #consume messages from the destination topic and make sure the metadata from the test file is there
             consumer_group = ConsumerGroup(TEST_CONST.TEST_METADATA_REPRODUCER_CONSUMER_CONFIG_FILE_PATH,
                                         DEST_TOPIC_NAME,
-                                        consumer_group_ID=CONSUMER_GROUP_ID)
+                                        consumer_group_id=CONSUMER_GROUP_ID)
             consumer = consumer_group.get_new_subscribed_consumer()
             LOGGER.set_stream_level(logging.INFO)
             msg =  'Consuming metadata message in test_metadata_reproducer; '

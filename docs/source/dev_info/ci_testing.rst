@@ -13,11 +13,12 @@ If you're editing the code, you can make sure it doesn't break anything currentl
     
 from just inside the directory of the repo. If you'd like to add more tests, you can include any classes that extend :class:`unittest.TestCase` in the `test/unittests subdirectory <https://github.com/openmsi/openmsistream/tree/main/test/unittests>`_. If you name their files anything that starts with "test", the ``run_all_tests.py`` script will run them automatically. 
 
-If any new test methods interact with the Kafka broker, you should end their names with "kafka" so that ``run_all_tests.py`` can exclude them if requested. Running the tests also requires that ``pyflakes`` and a few other dependencies be installed, which you can get right from this repo by running ``pip install openmsi[test]`` (with or without the ``--editable`` or ``-e`` flag(s)).
+If any new test methods interact with the Kafka broker, you should end their names with "kafka" so that ``run_all_tests.py`` can exclude them if requested. Running the tests also requires that ``pyflakes``, ``pylint``, and a few other dependencies be installed, which you can get right from this repo by running ``pip install openmsistream[test]`` (with or without the ``--editable`` or ``-e`` flag(s)).
 
 There are also a few options you can add to ``run_all_tests.py`` if you only want to run some subset of the available tests:
 
 #. Add the ``--no_pyflakes`` flag to skip the pyflakes test
+#. Add the ``--no_pylint`` flag to skip the pylint checks
 #. Add the ``--no_unittests`` flag to skip the unittests entirely, OR
 #. Add the ``--no_kafka`` flag to skip running tests that need to communicate with the Kafka broker. Adding this flag automatically **skips any test methods whose names end with "kafka"**; you will see that they were skipped at the end of the output.
 #. Add the ``--unittest_regex [regex]`` option to skip any tests whose function names aren't matched to the ``[regex]`` regular expression

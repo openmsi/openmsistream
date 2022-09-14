@@ -1,3 +1,5 @@
+"""Transfer contents of DataFiles read from chunks in a topic to an S3 bucket when complete files become available"""
+
 #imports
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from .config_file_parser import S3ConfigFileParser
@@ -5,7 +7,7 @@ from .s3_data_transfer import S3DataTransfer
 
 class S3TransferStreamProcessor(DataFileStreamProcessor) :
     """
-    A class to reconstruct data files read as messages from a topic, hold them in memory, 
+    A class to reconstruct data files read as messages from a topic, hold them in memory,
     and transfer them to an S3 bucket when all of their messages have been received
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
@@ -26,27 +28,27 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
 
     def make_stream(self):
         """
-        Runs :func:`~DataFileStreamProcessor.process_files_as_read` to reconstruct files in memory 
-        and transfer completed files to the S3 bucket. Runs until the user inputs a command to shut it down. 
-        
+        Runs :func:`~DataFileStreamProcessor.process_files_as_read` to reconstruct files in memory
+        and transfer completed files to the S3 bucket. Runs until the user inputs a command to shut it down.
+
         :return: the total number of messages consumed
         :rtype: int
         :return: the total number of messages processed (registered in memory)
         :rtype: int
-        :return: the paths of files successfully transferred to the S3 bucket during the run 
+        :return: the paths of files successfully transferred to the S3 bucket during the run
         :rtype: list
         """
         return self.process_files_as_read()
 
     def _process_downloaded_data_file(self, datafile, lock):
         """
-        Transfer a fully-reconstructed file to the S3 bucket and verify that its contents in the bucket 
+        Transfer a fully-reconstructed file to the S3 bucket and verify that its contents in the bucket
         match its original hash from disk. Logs a warning if the file hashes don't match.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received 
+        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
             all of its messages from the topic
         :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance 
+        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_process_downloaded_data_file` is running at once
         :type lock: :class:`threading.Lock`
 
@@ -55,9 +57,9 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         object_key = self.__get_datafile_object_key(datafile)
         try :
             self.s3d.transfer_object_stream(object_key, datafile)
-        except Exception as e :
+        except Exception as exc :
             self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
-            return e
+            return exc
         if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
             self.logger.info(object_key + ' matched with consumer datafile')
             # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
@@ -70,9 +72,9 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
     def __get_datafile_object_key(self,datafile) :
         file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
-        object_key = self.topic_name 
+        object_key = self.topic_name
         if sub_dir!='' :
-            object_key+= '/' + sub_dir 
+            object_key+= '/' + sub_dir
         object_key+= '/' + file_name
         return object_key
 
@@ -88,7 +90,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         """
         Run a :class:`~S3TransferStreamProcessor` directly from the command line
 
-        Calls :func:`~make_stream` on a :class:`~S3TransferStreamProcessor` defined by 
+        Calls :func:`~make_stream` on a :class:`~S3TransferStreamProcessor` defined by
         command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
@@ -102,7 +104,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
                              output_dir=args.output_dir,
                              n_threads=args.n_threads,
                              update_secs=args.update_seconds,
-                             consumer_group_ID=args.consumer_group_ID)
+                             consumer_group_id=args.consumer_group_id)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)
@@ -127,9 +129,10 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
-#################### MAIN METHOD TO RUN FROM COMMAND LINE ####################
-
 def main(args=None):
+    """
+    Main method to run from command line
+    """
     S3TransferStreamProcessor.run_from_command_line(args)
 
 if __name__ == '__main__':

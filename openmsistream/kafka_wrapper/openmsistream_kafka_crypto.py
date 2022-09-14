@@ -1,7 +1,9 @@
+"""Wrapper around the KafkaCrypto producer/consumer pair communicating with the key passing topics"""
+
 #imports
 import pathlib, uuid
 from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
-from ..utilities.misc import cd
+from ..utilities.misc import change_dir
 
 class OpenMSIStreamKafkaCrypto :
     """
@@ -16,6 +18,9 @@ class OpenMSIStreamKafkaCrypto :
 
     @property
     def config_file_path(self) :
+        """
+        The path to the KafkaCrypto config file used
+        """
         return self.__config_file
     @property
     def key_serializer(self) :
@@ -51,11 +56,11 @@ class OpenMSIStreamKafkaCrypto :
         #figure out a consumer group ID to use (KafkaCrypto Consumers need one)
         if 'group.id' not in consumer_configs.keys() :
             consumer_configs['group.id'] = str(uuid.uuid1())
-        with cd(pathlib.Path(config_file).parent) :
+        with change_dir(pathlib.Path(config_file).parent) :
             #start up the producer and consumer
             self._kcp = KafkaProducer(**producer_configs)
             self._kcc = KafkaConsumer(**consumer_configs)
-            #initialize the KafkaCrypto object 
+            #initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None,self._kcp,self._kcc,config_file)
         self.__config_file = config_file
 
@@ -65,7 +70,7 @@ class OpenMSIStreamKafkaCrypto :
         """
         try :
             self._kc.close()
-        except :
+        except Exception :
             pass
         finally :
             self._kc = None

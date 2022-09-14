@@ -1,8 +1,11 @@
+"""A wrapped Kafka Producer. May produce encrypted messages."""
+
 #imports
 import time
 from confluent_kafka import SerializingProducer
 from kafkacrypto import KafkaProducer
 from ..utilities import LogOwner
+from ..utilities.misc import raise_err_with_optional_logger, debug_msg_with_optional_logger
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
 from .producible import Producible
 from .config_file_parser import KafkaConfigFileParser
@@ -18,14 +21,14 @@ class OpenMSIStreamProducer(LogOwner) :
     :type producer_type: :class:`confluent_kafka.SerializingProducer` or :class:`kafkacrypto.KafkaProducer`
     :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Producer
     :type configs: dict
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer. 
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer.
         Only needed if `producer_type` is :class:`kafkacrypto.KafkaProducer`.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-    :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the 
+    :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the
         Producer, with underscores in their names replaced by dots
     :type kwargs: dict
 
-    :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer` 
+    :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer`
         or :class:`kafkacrypto.KafkaProducer`
     :raises ValueError: if `producer_type` is :class:`kafkacrypto.KafkaProducer` and `kafkacrypto` is None
     """
@@ -54,74 +57,70 @@ class OpenMSIStreamProducer(LogOwner) :
     @staticmethod
     def get_producer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
         """
-        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate 
-        :class:`~OpenMSIStreamProducer` objects based on the given config file. 
+        Return the list of arguments and dictionary or keyword arguments that should be used to instantiate
+        :class:`~OpenMSIStreamProducer` objects based on the given config file.
         Used to share a single :class:`~OpenMSIStreamKafkaCrypto` instance across several Producers.
 
         :param config_file_path: Path to the config file to use in defining Producers
         :type config_file_path: :class:`pathlib.Path`
-        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the 
+        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the
             :class:`~OpenMSIStreamProducer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
-        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers. 
+        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers.
             Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
         :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
-        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers, 
+        :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers,
             with underscores in their names replaced by dots
         :type kwargs: dict
 
-        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamProducer` objects 
+        :return: ret_args, the list of arguments to create new :class:`~OpenMSIStreamProducer` objects
             based on the config file and arguments to this method
         :rtype: list
-        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamProducer` objects 
+        :return: ret_kwargs, the dictionary of keyword arguments to create new :class:`~OpenMSIStreamProducer` objects
             based on the config file and arguments to this method
         :rtype: dict
         """
         parser = KafkaConfigFileParser(config_file_path,logger=logger)
-        ret_kwargs = {}
+        ret_kwargs = {'logger':logger}
         #get the broker and producer configurations
         all_configs = {**parser.broker_configs,**parser.producer_configs}
         all_configs = add_kwargs_to_configs(all_configs,logger,**kwargs)
         #all_configs['debug']='broker,topic,msg'
-        #if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer
-        if (kafkacrypto is not None) or (parser.kc_config_file_str is not None) :
-            if kafkacrypto is not None :
-                if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
-                    errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
-                    if logger is not None :
-                        logger.error(errmsg,TypeError)
-                    else :
-                        raise TypeError(errmsg)
-                if logger is not None :
-                    logger.debug(f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}')
-                kc = kafkacrypto
-            else :
-                if logger is not None :
-                    logger.debug(f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}')
-                kc = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
-            if 'key.serializer' in all_configs.keys() :
-                keyser = CompoundSerializer(all_configs.pop('key.serializer'),kc.key_serializer)
-            else :
-                keyser = kc.key_serializer
-            if 'value.serializer' in all_configs.keys() :
-                valser = CompoundSerializer(all_configs.pop('value.serializer'),kc.value_serializer)
-            else :
-                valser = kc.value_serializer
-            all_configs['key_serializer']=keyser
-            all_configs['value_serializer']=valser
-            ret_args = [KafkaProducer,all_configs]
-            ret_kwargs['kafkacrypto']=kc
-        #otherwise use a SerializingProducer
-        else :
+        #use a SerializingProducer by default
+        if kafkacrypto is None and parser.kc_config_file_str is None :
             ret_args = [SerializingProducer,all_configs]
-        ret_kwargs['logger'] = logger
+            return ret_args, ret_kwargs
+        #if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer
+        if kafkacrypto is not None :
+            if not isinstance(kafkacrypto,OpenMSIStreamKafkaCrypto) :
+                errmsg = f'ERROR: kafkacrypto argument type = {type(kafkacrypto)}'
+                raise_err_with_optional_logger(logger,errmsg,TypeError)
+            debugmsg = f'Produced messages will be encrypted using configs at {kafkacrypto.config_file_path}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = kafkacrypto
+        else :
+            debugmsg = f'Produced messages will be encrypted using configs at {parser.kc_config_file_str}'
+            debug_msg_with_optional_logger(logger,debugmsg)
+            k_c = OpenMSIStreamKafkaCrypto(parser.broker_configs,parser.kc_config_file_str)
+        if 'key.serializer' in all_configs :
+            keyser = CompoundSerializer(all_configs.pop('key.serializer'),k_c.key_serializer)
+        else :
+            keyser = k_c.key_serializer
+        if 'value.serializer' in all_configs :
+            valser = CompoundSerializer(all_configs.pop('value.serializer'),k_c.value_serializer)
+        else :
+            valser = k_c.value_serializer
+        all_configs['key_serializer']=keyser
+        all_configs['value_serializer']=valser
+        ret_args = [KafkaProducer,all_configs]
+        ret_kwargs['kafkacrypto']=k_c
         return ret_args, ret_kwargs
 
     @classmethod
     def from_file(cls,*args,**kwargs) :
         """
-        Wrapper around :func:`~OpenMSIStreamProducer.get_producer_args_kwargs` and the :class:`~OpenMSIStreamProducer` 
-        constructor to return a single :class:`~OpenMSIStreamProducer` from a given config file/arguments. 
+        Wrapper around :func:`~OpenMSIStreamProducer.get_producer_args_kwargs` and the :class:`~OpenMSIStreamProducer`
+        constructor to return a single :class:`~OpenMSIStreamProducer` from a given config file/arguments.
         Arguments are the same as :func:`~OpenMSIStreamProducer.get_producer_args_kwargs`
 
         :returns: An :class:`~OpenMSIStreamProducer` object based on the given config file/arguments
@@ -132,7 +131,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce_from_queue(self,queue,topic_name,**kwargs) :
         """
-        Get a :class:`openmsistream.kafka_wrapper.Producible` object from a given Queue and produce it to 
+        Get a :class:`openmsistream.kafka_wrapper.Producible` object from a given Queue and produce it to
         the given topic. Does nothing if the queue is empty, and does not block waiting for items from the queue.
 
         Meant to be run in multiple threads in parallel.
@@ -163,11 +162,11 @@ class OpenMSIStreamProducer(LogOwner) :
             warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain '
             warnmsg+= 'Producible objects. This object will be skipped!'
             self.logger.warning(warnmsg)
-    
+
     def produce_from_queue_looped(self,queue,topic_name,**kwargs) :
         """
-        Get :class:`openmsistream.kafka_wrapper.Producible` objects from a given Queue and produce  
-        them to the given topic. Blocks while waiting for items to appear in the queue. 
+        Get :class:`openmsistream.kafka_wrapper.Producible` objects from a given Queue and produce
+        them to the given topic. Blocks while waiting for items to appear in the queue.
         Runs until "None" is pulled from the queue.
 
         Meant to be run in multiple threads in parallel.
@@ -204,21 +203,21 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce_object(self,obj,topic_name,callback=None,print_every=1000,timeout=60,retry_sleep=5) :
         """
-        Produce a given :class:`openmsistream.kafka_wrapper.Producible` object to a given topic, 
-        with some handling for BufferErrors, calling poll() automatically, and using callbacks 
+        Produce a given :class:`openmsistream.kafka_wrapper.Producible` object to a given topic,
+        with some handling for BufferErrors, calling poll() automatically, and using callbacks
         constructed on the fly.
 
         :param obj: the object to produce
         :type obj: :class:`openmsistream.kafka_wrapper.Producible`
         :param topic_name: the name of the topic to produce to
         :type topic_name: str
-        :param callback: a function that should be called for each message upon recognition by the broker. 
-            Will be wrapped in a lambda for each call to produce(). 
+        :param callback: a function that should be called for each message upon recognition by the broker.
+            Will be wrapped in a lambda for each call to produce().
             Arguments to the callback function are determined by the particular type of :class:`Producible` object used
         :type callback: producer callback function (takes at least "err" and "msg" arguments), optional
         :param print_every: print/log progress every (this many) messages
         :type print_every: int, optional
-        :param timeout: max time (seconds) to wait for the message to be produced in the event of 
+        :param timeout: max time (seconds) to wait for the message to be produced in the event of
             (repeated) BufferError(s)
         :type timeout: float, optional
         :param retry_sleep: how long (seconds) to wait between produce attempts if one fails with a BufferError
@@ -237,7 +236,8 @@ class OpenMSIStreamProducer(LogOwner) :
         else :
             callback_to_use = make_callback(callback,**obj.callback_kwargs)
         #produce the message to the topic
-        success=False; total_wait_secs=0 
+        success=False
+        total_wait_secs=0
         while (not success) and total_wait_secs<timeout :
             try :
                 self.produce(topic=topic_name,key=obj.msg_key,value=obj.msg_value,on_delivery=callback_to_use)
@@ -257,7 +257,7 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def produce(self,topic,key,value,**kwargs) :
         """
-        Produce a message to a topic. 
+        Produce a message to a topic.
         Other kwargs are passed through to the underlying producer's produce() function.
 
         :param topic: the name of the topic to produce to
@@ -272,15 +272,17 @@ class OpenMSIStreamProducer(LogOwner) :
                 key = self._producer.ks(topic,key)
                 value = self._producer.vs(topic,value)
             return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
-        except Exception as e :
-            self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',exc_obj=e)
-    
+        except Exception as exc :
+            self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
+                              exc_obj=exc)
+        return None
+
     def poll(self,*args,**kwargs) :
         """
         Wrapper around Producer.poll()
         """
         return self._producer.poll(*args,**kwargs)
-    
+
     def flush(self,*args,**kwargs) :
         """
         Wrapper around Producer.flush()
@@ -289,13 +291,13 @@ class OpenMSIStreamProducer(LogOwner) :
 
     def close(self) :
         """
-        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`. 
+        Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         It's important to call this on shutdown if the Producer is producing encrypted messages.
         """
         try :
             if self.__kafkacrypto :
                 self.__kafkacrypto.close()
-        except :
+        except Exception :
             pass
         finally :
             self.__kafkacrypto = None

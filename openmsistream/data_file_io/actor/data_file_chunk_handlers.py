@@ -1,14 +1,17 @@
+"""Anything that receives DataFileChunk messages from a topic and does something with them"""
+
 #imports
 from abc import ABC, abstractmethod
 from threading import Lock
 from kafkacrypto import KafkaCryptoMessage
+from ...utilities import LogOwner
 from ...kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
 from ...kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer
 from ..config import DATA_FILE_HANDLING_CONST
 from ..entity.data_file_chunk import DataFileChunk
 from ..entity.download_data_file import DownloadDataFile
 
-class DataFileChunkHandler(ABC) :
+class DataFileChunkHandler(LogOwner,ABC) :
     """
     A base class to perform some handling of DataFileChunk objects read from a topic.
     """
@@ -17,16 +20,19 @@ class DataFileChunkHandler(ABC) :
 
     @property
     def other_datafile_kwargs(self) :
-        return {} #Overload this in child classes to define additional keyword arguments 
-                  #that should go to the specific datafile constructor
+        """
+        Overload this in child classes to define additional keyword arguments
+        that should go to the specific datafile constructor
+        """
+        return {}
 
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,*args,datafile_type,**kwargs) :
         """
-        datafile_type = the type of datafile that the consumed messages will be used to create 
+        datafile_type = the type of datafile that the consumed messages will be used to create
             (must be a subclass of DownloadDataFile)
-        """    
+        """
         super().__init__(*args,**kwargs)
         self.datafile_type = datafile_type
         if not issubclass(self.datafile_type,DownloadDataFile) :
@@ -40,32 +46,31 @@ class DataFileChunkHandler(ABC) :
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     @abstractmethod
-    def _process_message(self, lock, msg, rootdir_to_set, logger):
+    def _process_message(self, lock, msg, rootdir_to_set):
         """
-        Make sure message values are of the expected DataFileChunk type with no root directory set, and then 
+        Make sure message values are of the expected DataFileChunk type with no root directory set, and then
         add the chunk to the data file object. If the file is in progress this function returns True.
         Otherwise the code from DownloadDataFile.add_chunk will be returned.
 
-        If instead the message was encrypted and could not be successfully decrypted, this will return 
+        If instead the message was encrypted and could not be successfully decrypted, this will return
         the raw Message object with KafkaCryptoMessages as its key and/or value
 
         lock = the Thread Lock object to use when processing the file this message comes from
         msg = the actual message object from a call to consumer.poll
         rootdir_to_set = root directory for the new DataFileChunk
-        logger = the logger object to use
-        
-        Child classes should call super()._process_message() before doing anything else with
+
+        Child classes should call self._process_message() before doing anything else with
         the message to perform these checks
         """
-        # If the message has KafkaCryptoMessages as its key and/or value, then decryption failed. 
+        # If the message has KafkaCryptoMessages as its key and/or value, then decryption failed.
         # Return the message object instead of a code.
-        if ( hasattr(msg,'key') and hasattr(msg,'value') and 
+        if ( hasattr(msg,'key') and hasattr(msg,'value') and
              (isinstance(msg.key,KafkaCryptoMessage) or isinstance(msg.value,KafkaCryptoMessage)) ) :
             return msg
         #get the DataFileChunk from the message value
         try :
             dfc = msg.value() #from a regular Kafka Consumer
-        except :
+        except TypeError :
             dfc = msg.value #from KafkaCrypto
         #make sure the chunk is of the right type
         if not isinstance(dfc,DataFileChunk) :
@@ -80,9 +85,9 @@ class DataFileChunkHandler(ABC) :
         dfc.rootdir = rootdir_to_set
         #add the chunk's data to the file that's being reconstructed
         with lock :
-            if dfc.filepath not in self.files_in_progress_by_path.keys() :
+            if dfc.filepath not in self.files_in_progress_by_path :
                 self.files_in_progress_by_path[dfc.filepath] = self.datafile_type(dfc.filepath,
-                                                                                  logger=logger,
+                                                                                  logger=self.logger,
                                                                                   **self.other_datafile_kwargs)
                 self.locks_by_fp[dfc.filepath] = Lock()
         retval = self.files_in_progress_by_path[dfc.filepath].add_chunk(dfc,self.locks_by_fp[dfc.filepath])
@@ -100,6 +105,9 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
 
     @property
     def progress_msg(self) :
+        """
+        A string message describing the files that have had some chunks read
+        """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
             progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
@@ -109,12 +117,15 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
 
 class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) :
     """
-    Combine template code in DataFileChunkHandler with processing messages from one topic 
+    Combine template code in DataFileChunkHandler with processing messages from one topic
     and producing others to a different topic
     """
 
     @property
     def progress_msg(self) :
+        """
+        A string message describing the files that have had some chunks read
+        """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
             if datafile.full_filepath not in self.completely_processed_filepaths :

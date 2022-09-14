@@ -20,7 +20,7 @@ workflows:
 
 ################# JOBS #################
 jobs:
-  # Build the repo and check the code using pyflakes 
+  # Build the repo and check the code using pyflakes and pylint
   build-and-code-check:
     docker:
       - image: containers.repo.sciserver.org/openmsistream:1.3
@@ -34,7 +34,7 @@ jobs:
           args: .[all]
       - run:
           name: code check
-          command: cd ~/project; python -m pyflakes .; cd -
+          command: cd ~/project; python -m pyflakes .; python -m pylint openmsistream; cd -
       - persist_to_workspace:
           root: .
           paths:

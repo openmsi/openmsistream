@@ -1,9 +1,27 @@
+"""
+A utility class to represent a set of (relatively arbitrary) dataclass objects serialized to/deseralized from
+a corresponding CSV file in an atomic and (relatively) thread-safe way
+"""
+
 #imports
-import pathlib, methodtools, datetime, typing, copy, os
+import pathlib, functools, datetime, typing, copy, os
 from threading import Lock
 from dataclasses import fields, is_dataclass
+import methodtools
 from atomicwrites import atomic_write
 from .logging import LogOwner
+
+def get_nested_types() :
+    """
+    Helper function to generate the class constant that holds the supported nested types for dataclass tables
+    """
+    simple_types = [str,int,float,complex,bool]
+    container_types = [(typing.List,list,'[]'),(typing.Tuple,tuple,'()'),(typing.Set,set,'set()')]
+    nested_types_dict = {}
+    for c_t in container_types :
+        for s_t in simple_types :
+            nested_types_dict[c_t[0][s_t]] = (c_t[1],s_t,c_t[2])
+    return nested_types_dict
 
 class DataclassTable(LogOwner) :
     """
@@ -11,7 +29,7 @@ class DataclassTable(LogOwner) :
 
     :param dataclass_type: The :class:`dataclasses.dataclass` defining the entries in the table/csv file
     :type dataclass_type: :class:`dataclasses.dataclass`
-    :param filepath: The path to the .csv file that should be created (or read from) on startup. 
+    :param filepath: The path to the .csv file that should be created (or read from) on startup.
         The default is a file named after the dataclass type in the current directory.
     :type filepath: :class:`pathlib.Path` or None, optional
     """
@@ -23,34 +41,34 @@ class DataclassTable(LogOwner) :
     THREAD_LOCK = Lock()
     UPDATE_FILE_EVERY = 5 #only update the .csv file automatically every 5 seconds to make updates less expensive
 
-    @methodtools.lru_cache()
-    @property
-    def NESTED_TYPES(self) :
-        simple_types = [str,int,float,complex,bool]
-        container_types = [(typing.List,list,'[]'),(typing.Tuple,tuple,'()'),(typing.Set,set,'set()')]
-        rd = {}
-        for c_t in container_types :
-            for s_t in simple_types :
-                rd[c_t[0][s_t]] = (c_t[1],s_t,c_t[2])
-        return rd
+    NESTED_TYPES = get_nested_types()
 
     @methodtools.lru_cache()
     @property
     def csv_header_line(self) :
-        s = ''
+        """
+        The first line in the CSV file (OS-dependent)
+        """
+        header_line = ''
         #add an extra line when running on Windows to seamlessly open the file in Excel
         if os.name=='nt' :
-            s+=f'sep={DataclassTable.DELIMETER}\n'
+            header_line+=f'sep={DataclassTable.DELIMETER}\n'
         for fieldname in self.__field_names :
-            s+=f'{fieldname}{DataclassTable.DELIMETER}'
-        return s[:-1]
+            header_line+=f'{fieldname}{DataclassTable.DELIMETER}'
+        return header_line[:-1]
 
     @property
     def obj_addresses(self) :
+        """
+        All recognized object hex addresses
+        """
         return list(self.__entry_objs.keys())
 
     @property
     def filepath(self) :
+        """
+        Path to the CSV file
+        """
         return self.__filepath
 
     @property
@@ -109,7 +127,7 @@ class DataclassTable(LogOwner) :
             new_entries = [new_entries]
         for entry in new_entries :
             entry_addr = hex(id(entry))
-            if entry_addr in self.__entry_objs.keys() or entry_addr in self.__entry_lines.keys() :
+            if entry_addr in self.__entry_objs or entry_addr in self.__entry_lines :
                 self.logger.error('ERROR: address of object sent to add_entries is already registered!',ValueError)
             with DataclassTable.THREAD_LOCK :
                 self.__entry_objs[entry_addr] = entry
@@ -122,16 +140,16 @@ class DataclassTable(LogOwner) :
         """
         Remove an entry or entries from the table
 
-        :param entry_obj_addresses: a single value or container of entry addresses (object IDs in hex form) to remove 
+        :param entry_obj_addresses: a single value or container of entry addresses (object IDs in hex form) to remove
             from the table
         :type entry_obj_addresses: hex(id(object)) or list(hex(id(object)))
 
         :raises ValueError: if any of the hex addresses in `entry_obj_addresses` is not present in the table
         """
-        if type(entry_obj_addresses)==str :
+        if isinstance(entry_obj_addresses,str) :
             entry_obj_addresses = [entry_obj_addresses]
         for entry_addr in entry_obj_addresses :
-            if (entry_addr not in self.__entry_objs.keys()) or (entry_addr not in self.__entry_lines.keys()) :
+            if (entry_addr not in self.__entry_objs) or (entry_addr not in self.__entry_lines) :
                 self.logger.error(f'ERROR: address {entry_addr} sent to remove_entries is not registered!',ValueError)
             with DataclassTable.THREAD_LOCK :
                 self.__entry_objs.pop(entry_addr)
@@ -142,13 +160,13 @@ class DataclassTable(LogOwner) :
 
     def get_entry_attrs(self,entry_obj_address,*args) :
         """
-        Return copies of all or some of the current attributes of an entry in the table. 
+        Return copies of all or some of the current attributes of an entry in the table.
         Returning copies ensures the original objects cannot be modified by accident.
-        
+
         Use `args` to get a dictionary of desired attribute values returned.
         If only one arg is given the return value is just that single attribute.
         The default (no additional arguments) returns a dictionary of all attributes for the entry
-        
+
         :param entry_obj_address: the address in memory of the object to return copies of attributes for
         :type entry_obj_address: hex(id(object))
         :param args: Add other arguments that are names of attributes to get only those specific attributes of the entry
@@ -159,7 +177,7 @@ class DataclassTable(LogOwner) :
 
         :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
-        if entry_obj_address not in self.__entry_objs.keys() :
+        if entry_obj_address not in self.__entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
             self.logger.error(errmsg,ValueError)
         obj = self.__entry_objs[entry_obj_address]
@@ -167,11 +185,11 @@ class DataclassTable(LogOwner) :
             return copy.deepcopy(getattr(obj,args[0]))
         to_return = {}
         for fname in self.__field_names :
-            if args==() or fname in args :
+            if (not args) or (fname in args) :
                 to_return[fname] = copy.deepcopy(getattr(obj,fname))
-        if args!=() :
+        if args :
             for arg in args :
-                if arg not in to_return.keys() :
+                if arg not in to_return :
                     errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} '
                     errmsg+= 'Field and will not be returned from get_entry_attrs!'
                     self.logger.warning(errmsg)
@@ -181,14 +199,14 @@ class DataclassTable(LogOwner) :
         """
         Modify attributes of an entry that already exists in the table
 
-        :param entry_obj_address: The address in memory of the entry object to modify 
+        :param entry_obj_address: The address in memory of the entry object to modify
         :type entry_obj_address: hex(id(object))
         :param kwargs: Attributes to set (keys are names, values are values for those named attrs)
         :type kwargs: dict
 
         :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
         """
-        if entry_obj_address not in self.__entry_objs.keys() :
+        if entry_obj_address not in self.__entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to set_entry_attrs is not registered!'
             self.logger.error(errmsg,ValueError)
         with DataclassTable.THREAD_LOCK :
@@ -200,21 +218,21 @@ class DataclassTable(LogOwner) :
         if (datetime.datetime.now()-self.__file_last_updated).total_seconds()>DataclassTable.UPDATE_FILE_EVERY :
             self.dump_to_file()
 
-    @methodtools.lru_cache(maxsize=5)
+    @functools.lru_cache(maxsize=8)
     def obj_addresses_by_key_attr(self,key_attr_name) :
         """
-        Return a dictionary whose keys are the values of some given attribute for each object 
+        Return a dictionary whose keys are the values of some given attribute for each object
         and whose values are lists of the addresses in memory of the objects in the table
         that have each value of the requested attribute.
-        
-        Useful to find objects in the table by attribute values so they can be efficiently updated 
+
+        Useful to find objects in the table by attribute values so they can be efficiently updated
         without compromising the integrity of the objects in the table and their attributes.
 
         Up to five calls are cached so if nothing changes this happens a little faster.
 
         :param key_attr_name: the name of the attribute whose values should be used as keys in the returned dictionary
         :type key_attr_name: str
-        
+
         :return: A dictionary listing all objects in the table, keyed by their values of `key_attr_name`
         :rtype: dict
 
@@ -227,7 +245,7 @@ class DataclassTable(LogOwner) :
         with DataclassTable.THREAD_LOCK :
             for addr,obj in self.__entry_objs.items() :
                 rkey = getattr(obj,key_attr_name)
-                if rkey not in to_return.keys() :
+                if rkey not in to_return :
                     to_return[rkey] = []
                 to_return[rkey].append(addr)
         return to_return
@@ -235,7 +253,7 @@ class DataclassTable(LogOwner) :
     def dump_to_file(self,reraise_exc=True) :
         """
         Dump the contents of the table to a csv file.
-        Call this to force the file to update and reflect the current state of objects. 
+        Call this to force the file to update and reflect the current state of objects.
         Automatically called in several contexts.
         """
         lines_to_write = [self.csv_header_line]
@@ -269,12 +287,12 @@ class DataclassTable(LogOwner) :
             self.__entry_lines[dkey] = line
         msg = f'Found {len(self.__entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
         self.logger.info(msg)
-    
+
     def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
         """
         Write a line or container of lines to the csv file, in a thread-safe and atomic way
         """
-        if type(lines)==str :
+        if isinstance(lines,str) :
             lines = [lines]
         lines_string = ''
         for line in lines :
@@ -282,14 +300,16 @@ class DataclassTable(LogOwner) :
         try :
             with atomic_write(self.__filepath,overwrite=overwrite) as fp :
                 fp.write(lines_string)
-        except Exception as e :
-            if reraise_exc :
-                errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
-                errmsg+=  'Will reraise exception.'
-                self.logger.error(errmsg,exc_obj=e)
-            else :
-                msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
-                self.logger.warning(msg)
+        except Exception as exc :
+            if not isinstance(exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
+                if reraise_exc :
+                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
+                    errmsg+=  'Will reraise exception.'
+                    self.logger.error(errmsg,exc_obj=exc)
+                else :
+                    msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at '
+                    msg+= f'{self.__filepath}! Exception ({type(exc)}): {exc}'
+                    self.logger.warning(msg)
         self.__file_last_updated = datetime.datetime.now()
 
     def __line_from_obj(self,obj) :
@@ -298,10 +318,10 @@ class DataclassTable(LogOwner) :
         """
         if obj.__class__ != self.__dataclass_type :
             self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',TypeError)
-        s = ''
+        obj_line = ''
         for fname,ftype in zip(self.__field_names,self.__field_types) :
-            s+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{DataclassTable.DELIMETER}'
-        return s[:-1]
+            obj_line+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{DataclassTable.DELIMETER}'
+        return obj_line[:-1]
 
     def __obj_from_line(self,line) :
         """
@@ -314,15 +334,14 @@ class DataclassTable(LogOwner) :
 
     def __get_str_from_attribute(self,attrobj,attrtype) :
         """
-        Given an object and the type it is in the dataclass, 
+        Given an object and the type it is in the dataclass,
         return the string representation of it that should go in the file
         """
         if attrtype==datetime.datetime :
             return repr(attrobj.strftime(DataclassTable.DATETIME_FORMAT))
-        elif attrtype==pathlib.Path :
+        if attrtype==pathlib.Path :
             return repr(str(attrobj))
-        else :
-            return repr(attrobj)
+        return repr(attrobj)
 
     def __get_attribute_from_str(self,attrstr,attrtype) :
         """
@@ -332,16 +351,16 @@ class DataclassTable(LogOwner) :
         if attrtype==datetime.datetime :
             return datetime.datetime.strptime(attrstr[1:-1],DataclassTable.DATETIME_FORMAT)
         #so are path objects
-        elif attrtype==pathlib.Path :
+        if attrtype==pathlib.Path :
             return pathlib.Path(attrstr[1:-1])
         #strings have extra quotes on either end
-        elif attrtype==str :
+        if attrtype==str :
             return attrtype(attrstr[1:-1])
         #int, float, complex, and bool can all be directly re-casted
-        elif attrtype in (int,float,complex,bool) :
+        if attrtype in (int,float,complex,bool) :
             return attrtype(attrstr)
         #some simply-nested container types can be casted in two steps
-        elif attrtype in self.NESTED_TYPES.keys() :
+        if attrtype in self.NESTED_TYPES :
             #empty collections
             if attrstr==self.NESTED_TYPES[attrtype][2] :
                 return self.NESTED_TYPES[attrtype][0]()
@@ -349,6 +368,6 @@ class DataclassTable(LogOwner) :
             for vstr in attrstr[1:-1].split(',') :
                 to_cast.append(self.NESTED_TYPES[attrtype][1](vstr))
             return self.NESTED_TYPES[attrtype][0](to_cast)
-        else :
-            errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
-            self.logger.error(errmsg,ValueError)
+        errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
+        self.logger.error(errmsg,ValueError)
+        return None

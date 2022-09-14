@@ -1,3 +1,7 @@
+"""
+Class defining the general OpenMSIStream workflow for running from the command line (or as a Service/daemon)
+"""
+
 #imports
 from abc import ABC, abstractmethod
 from .argument_parsing import OpenMSIStreamArgumentParser
@@ -5,7 +9,7 @@ from .has_argument_parser import HasArgumentParser
 
 class Runnable(HasArgumentParser,ABC) :
     """
-    Abstract base class for any child classes that want to define some behavior 
+    Abstract base class for any child classes that want to define some behavior
     for running from the command line (i.e. as a module)
     """
 
@@ -19,7 +23,7 @@ class Runnable(HasArgumentParser,ABC) :
 
         :return: args, a list of argument names recognized by the argument parser
         :rtype: list(str)
-        :return: kwargs, a dictionary of default argument values keyed by argument names 
+        :return: kwargs, a dictionary of default argument values keyed by argument names
             recognized by the argument parser
         :rtype: dict
         """
@@ -30,10 +34,10 @@ class Runnable(HasArgumentParser,ABC) :
         """
         Get the argument parser used to run the code
 
-        :param args: Any arguments to this method are names of arguments recognized 
+        :param args: Any arguments to this method are names of arguments recognized
             by Argument parsers of the :attr:`~Runnable.ARGUMENT_PARSER_TYPE` type
         :type args: list
-        :param kwargs: Any keyword arguments to this method define custom default values for their given arguments, 
+        :param kwargs: Any keyword arguments to this method define custom default values for their given arguments,
             whose names must be recognized by Argument parsers of the :attr:`~Runnable.ARGUMENT_PARSER_TYPE` type
         :type kwargs: dict
 
@@ -53,4 +57,4 @@ class Runnable(HasArgumentParser,ABC) :
         :param args: the list of arguments to send to the parser instead of getting them from sys.argv
         :type args: list
         """
-        pass 
+        raise NotImplementedError

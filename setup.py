@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '0.9.4'
+version = '0.9.5'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -47,6 +47,7 @@ setupkwargs = dict(
                                'lxml',
                                'marko[toc]',
                                'pyflakes>=2.2.0',
+                               'pylint>=2.15.2',
                                ],
                       'docs': ['sphinx>=5.0.2',
                                'sphinx_rtd_theme>=1.0.0',

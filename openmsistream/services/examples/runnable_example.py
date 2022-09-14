@@ -1,3 +1,5 @@
+"""Example of a general Runnable class that can be installed as a Service/daemon"""
+
 #imports
 import datetime, time
 from openmsistream.running import Runnable

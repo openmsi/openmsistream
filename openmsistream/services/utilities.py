@@ -1,3 +1,5 @@
+"""Various helper functions for working with Services/daemons"""
+
 #imports
 import pathlib, os, sys, platform
 from subprocess import check_output, CalledProcessError
@@ -9,16 +11,17 @@ def get_os_name() :
     """
     if platform.system()=='Windows' :
         return 'Windows'
-    elif platform.system()=='Linux' :
+    if platform.system()=='Linux' :
         return 'Linux'
     #MacOS is not supported
-    elif platform.system()=='Darwin' :
+    if platform.system()=='Darwin' :
         errmsg = 'ERROR: Installing programs as Services is not supported on MacOS!'
-        SERVICE_CONST.LOGGER.error(errmsg,NotImplementedError)
+        SERVICE_CONST.logger.error(errmsg,NotImplementedError)
     #otherwise I don't know what happened
     else :
         errmsg = f'ERROR: could not determine operating system from platform.system() output "{platform.system()}"'
-        SERVICE_CONST.LOGGER.error(errmsg,ValueError)
+        SERVICE_CONST.logger.error(errmsg,ValueError)
+    return None
 
 def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
     """
@@ -29,25 +32,27 @@ def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
     try :
         result = check_output(args,shell=shell,env=os.environ)
         return result
-    except CalledProcessError as e :
+    except CalledProcessError as exc :
         errmsg = 'ERROR: failed to run a command! '
-        if e.output is not None and e.output.strip()!='' :
-            errmsg+= f'\noutput:\n{e.output.decode()}'
-        if e.stdout is not None and e.stdout.strip()!=''  :
-            errmsg+= f'\nstdout:\n{e.stdout.decode()}'
-        if e.stderr is not None and e.stderr.strip()!='' :
-            errmsg+= f'\nstderr:\n{e.stderr.decode()}'
+        if exc.output is not None and exc.output.strip()!='' :
+            errmsg+= f'\noutput:\n{exc.output.decode()}'
+        if exc.stdout is not None and exc.stdout.strip()!=''  :
+            errmsg+= f'\nstdout:\n{exc.stdout.decode()}'
+        if exc.stderr is not None and exc.stderr.strip()!='' :
+            errmsg+= f'\nstderr:\n{exc.stderr.decode()}'
         if logger is not None :
-            logger.error(errmsg,exc_obj=e)
+            logger.error(errmsg,exc_obj=exc)
         else :
-            SERVICE_CONST.LOGGER.error(errmsg,exc_obj=e)
+            SERVICE_CONST.logger.error(errmsg,exc_obj=exc)
+        return None
 
 def set_env_var(var_name,var_val) :
     """
     set an environment variable given its name and value
     """
     if get_os_name()=='Windows' :
-        pwrsh_cmd = f'[Environment]::SetEnvironmentVariable("{var_name}","{var_val}",[EnvironmentVariableTarget]::Machine)'
+        pwrsh_cmd = f'[Environment]::SetEnvironmentVariable("{var_name}","{var_val}"'
+        pwrsh_cmd+= ',[EnvironmentVariableTarget]::Machine)'
         run_cmd_in_subprocess(['powershell.exe',pwrsh_cmd])
     elif get_os_name()=='Linux' :
         run_cmd_in_subprocess(['export',f'{var_name}={var_val}'],shell=True)
@@ -103,10 +108,10 @@ def test_python_code() :
     if must_rerun :
         msg = 'New values for environment variables have been set. '
         msg+= 'Please close this window and rerun InstallService so that their values get picked up.'
-        SERVICE_CONST.LOGGER.info(msg)
+        SERVICE_CONST.logger.info(msg)
         sys.exit(0)
-    SERVICE_CONST.LOGGER.debug('Testing code to check for errors...')
+    SERVICE_CONST.logger.debug('Testing code to check for errors...')
     unittest_dir_path = pathlib.Path(__file__).parent.parent.parent / 'test' / 'unittests'
-    SERVICE_CONST.LOGGER.debug(f'Running all unittests in {unittest_dir_path}...')
+    SERVICE_CONST.logger.debug(f'Running all unittests in {unittest_dir_path}...')
     run_cmd_in_subprocess([f'{sys.executable}','-m','unittest','discover','-s',f'{unittest_dir_path}','-vf'])
-    SERVICE_CONST.LOGGER.debug('All unittest checks complete : )')
+    SERVICE_CONST.logger.debug('All unittest checks complete : )')

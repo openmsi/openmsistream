@@ -1,3 +1,8 @@
+"""
+Code for managing the two .csv files listing files that are
+being reconstructed from the topic and files that have been fully handled
+"""
+
 #imports
 import datetime, re
 from abc import ABC
@@ -7,6 +12,9 @@ from ...utilities import get_message_prepend
 
 @dataclass
 class StreamHandlerRegistryLineInProgress :
+    """
+    A line in the table listing files in progress
+    """
     filename : str #the name of the file
     rel_filepath : str #the (posix) path to the file, relative to its root directory
     status : str #the status of the file, either "in_progress", "failed", or "mismatched_hash"
@@ -16,6 +24,9 @@ class StreamHandlerRegistryLineInProgress :
 
 @dataclass
 class StreamHandlerRegistryLineSucceeded :
+    """
+    A line in the table listing files that have been successfully handled
+    """
     filename : str #the name of the file
     rel_filepath : str #the (posix) path to the file, relative to its root directory
     n_chunks : int #the total number of chunks in the file
@@ -26,16 +37,22 @@ class StreamHandlerRegistry(LogOwner,ABC) :
     """
     A general base class to keep track of the status of files read during stream handling
     """
-    
+
     IN_PROGRESS = 'in_progress'
     MISMATCHED_HASH = 'mismatched_hash'
 
     @property
     def in_progress_table(self) :
+        """
+        The table listing files in progress
+        """
         return self._in_progress_table
 
     @property
     def succeeded_table(self) :
+        """
+        The table listing files that have been successfully handled
+        """
         return self._succeeded_table
 
     @property
@@ -47,7 +64,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         for addr in self._in_progress_table.obj_addresses :
             to_rerun.append(self._in_progress_table.get_entry_attrs(addr,'rel_filepath'))
         return to_rerun
-    
+
     @property
     def rerun_file_key_regex(self) :
         """
@@ -72,10 +89,18 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         """
         The number of files in the registry that are marked as "in_progress"
         """
-        n_files = 0
-        for fp in self.filepaths_to_rerun :
-            n_files+=1
-        return n_files
+        return len(self.filepaths_to_rerun)
+
+    def __init__(self,in_progress_filepath,succeeded_filepath,*args,**kwargs) :
+        """
+        in_progress_filepath = path to the file that should hold the "in_progress" datatable
+        succeeded_filepath = path to the file that should hole the "succeeded" datatable
+        """
+        super().__init__(*args,**kwargs)
+        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
+                                                  filepath=in_progress_filepath,logger=self.logger)
+        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                                  filepath=succeeded_filepath,logger=self.logger)
 
     def register_file_in_progress(self,dfc) :
         """
@@ -85,7 +110,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
 
     def register_file_mismatched_hash(self,dfc) :
         """
-        Add/update a line in the table to show that a consumed file was mismatched with its original content hash 
+        Add/update a line in the table to show that a consumed file was mismatched with its original content hash
         """
         self._add_or_modify_in_progress_entry(dfc,self.MISMATCHED_HASH)
 
@@ -110,17 +135,16 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         filename = dfc.filename
         rel_filepath = f'{dfc.subdir_str}/{filename}' if dfc.subdir_str!='' else filename
         return filename,rel_filepath
-    
+
     def _get_in_progress_address_for_rel_filepath(self,rel_filepath) :
         existing_obj_addresses = self._in_progress_table.obj_addresses_by_key_attr('rel_filepath')
-        if rel_filepath not in existing_obj_addresses.keys() :
+        if rel_filepath not in existing_obj_addresses :
             return None
-        elif len(existing_obj_addresses[rel_filepath])!=1 :
+        if len(existing_obj_addresses[rel_filepath])!=1 :
             errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '
             errmsg+= f'{rel_filepath} in file at {self._in_progress_table.filepath}'
             self.logger.error(errmsg,ValueError)
-        else :
-            return existing_obj_addresses[rel_filepath][0]
+        return existing_obj_addresses[rel_filepath][0]
 
 class StreamProcessorRegistry(StreamHandlerRegistry) :
     """
@@ -129,18 +153,14 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
 
     FAILED = 'failed'
 
-    def __init__(self,dirpath,topic_name,consumer_group_ID,*args,**kwargs) :
+    def __init__(self,dirpath,topic_name,consumer_group_id,*args,**kwargs) :
         """
         dirpath    = path to the directory that should contain the csv files
         topic_name = the name of the topic that will be produced to (used in the filenames)
         """
-        super().__init__(*args,**kwargs)
-        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_ID}.csv'
-        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
-                                                  filepath=in_progress_filepath,logger=self.logger)
-        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_ID}.csv'
-        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
-                                                  filepath=succeeded_filepath,logger=self.logger)
+        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_id}.csv'
+        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_id}.csv'
+        super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_successfully_processed(self,dfc) :
         """
@@ -175,25 +195,21 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
 
 class StreamReproducerRegistry(StreamHandlerRegistry) :
     """
-    A class to keep track of the status of files read from one topic with associated information 
+    A class to keep track of the status of files read from one topic with associated information
     created and re-produced to a different topic
     """
 
     PRODUCING_MESSAGE_FAILED = 'producing_message_failed'
     COMPUTING_RESULT_FAILED = 'computing_result_message_failed'
 
-    def __init__(self,dirpath,consumer_topic_name,producer_topic_name,consumer_group_ID,*args,**kwargs) :
+    def __init__(self,dirpath,consumer_topic_name,producer_topic_name,consumer_group_id,*args,**kwargs) :
         """
         dirpath    = path to the directory that should contain the csv file
         topic_name = the name of the topic that will be produced to (used in the filename)
         """
-        super().__init__(*args,**kwargs)
-        in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_ID}.csv'
-        self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
-                                                  filepath=in_progress_filepath,logger=self.logger)
+        in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_id}.csv'
         succeeded_filepath = dirpath / f'files_with_results_produced_to_{producer_topic_name}.csv'
-        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
-                                                  filepath=succeeded_filepath,logger=self.logger)
+        super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_results_produced(self,filename,rel_filepath,n_total_chunks) :
         """
@@ -228,7 +244,7 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
 
     def register_file_result_production_failed(self,filename,rel_filepath,n_total_chunks) :
         """
-        Update a line in the table to show that the call to Producer.produce() for a message computed 
+        Update a line in the table to show that the call to Producer.produce() for a message computed
         from a file returned an error
         """
         self._add_or_modify_in_progress_entry_without_chunk(filename,rel_filepath,n_total_chunks,

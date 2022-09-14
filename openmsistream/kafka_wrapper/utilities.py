@@ -1,3 +1,5 @@
+"""Miscellaneous functions/classes used elsewhere in the Kafka wrapper"""
+
 #imports
 from collections import namedtuple
 from confluent_kafka import OFFSET_BEGINNING
@@ -10,17 +12,21 @@ def add_kwargs_to_configs(configs,logger,**kwargs) :
     new_configs = configs.copy()
     for argname,arg in kwargs.items() :
         config_name = argname.replace('_','.')
-        if config_name in new_configs.keys() and new_configs[config_name]!=arg :
+        if config_name in new_configs and new_configs[config_name]!=arg :
             if logger is not None :
-                warnmsg = f'WARNING: a new value for the "{config_name}" config has been supplied '
-                warnmsg+=  'by a keyword argument that will overwrite a previously-set value. '
-                warnmsg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
-                logger.warning(warnmsg)
+                msg = f'A new value for the "{config_name}" config has been supplied '
+                msg+=  'by a keyword argument that will overwrite a previously-set value. '
+                msg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
+                logger.info(msg)
         new_configs[config_name]=arg
     return new_configs
 
-#a callback function to use for testing whether a message has been successfully produced to the topic
 def default_producer_callback(err,msg,logger=None,**other_kwargs) :
+    """
+    Default callback function to use for testing whether a message has been successfully produced to the topic
+    """
+    if err is None and msg.error() is not None :
+        err = msg.error()
     if err is not None: #raise an error if the message wasn't sent successfully
         if err.fatal() :
             logmsg =f'ERROR: fatally failed to deliver message with kwargs "{other_kwargs}". '
@@ -38,14 +44,22 @@ def default_producer_callback(err,msg,logger=None,**other_kwargs) :
                 raise RuntimeError(logmsg)
 
 def make_callback(func,*args,**kwargs) :
+    """
+    Callbacks are rendered at runtime and so regular functions used as producer callbacks
+    need to be wrapped in this lambda
+    """
     return lambda err,msg : func(err,msg,*args,**kwargs)
 
 KCCommitOffsetDictKey = namedtuple('KCCommitOffsetDictKey',['topic','partition'])
 KCCommitOffset = namedtuple('KCCommitOffset',['offset'])
 
 def reset_to_beginning_on_assign(consumer, partitions):
-    for p in partitions:
-        p.offset=OFFSET_BEGINNING
+    """
+    Used as the "on_assign" parameter to a Consumer constructor to get each partition
+    to start at its earliest message when it's assigned to a Consumer
+    """
+    for part in partitions:
+        part.offset=OFFSET_BEGINNING
     if isinstance(consumer,KafkaConsumer) :
         consumer.assign_and_seek(partitions)
     else :

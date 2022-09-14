@@ -1,3 +1,5 @@
+"""A Thread that re-raises any Exceptions it encounters during running when it is join()ed"""
+
 #imports
 from threading import Thread
 
@@ -9,19 +11,28 @@ class ExceptionTrackingThread(Thread) :
 
     @property
     def caught_exception(self) :
+        """
+        Variable to hold any Exception encountered while the thread is running
+        """
         return self.__exc
 
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
         self.__exc = None
-    
+
     def run(self,*args,**kwargs) :
+        """
+        Wrapper around Thread.run that holds onto any Exception raised during running
+        """
         try :
             super().run(*args,**kwargs)
-        except Exception as e :
-            self.__exc = e
-    
+        except Exception as exc :
+            self.__exc = exc
+
     def join(self,*args,**kwargs) :
+        """
+        Wrapper around Thread.run that re-raises any Exceptions that were encountered
+        """
         super().join(*args,**kwargs)
         if self.__exc is not None :
             raise self.__exc

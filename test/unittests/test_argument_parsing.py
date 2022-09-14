@@ -15,7 +15,7 @@ class TestArgumentParsing(unittest.TestCase) :
     def test_my_argument_parser(self) :
         parser = OpenMSIStreamArgumentParser()
         parser.add_arguments('filepath','output_dir','upload_dir','config','topic_name','queue_max_size',
-                             'upload_existing','consumer_group_ID','optional_output_dir',
+                             'upload_existing','consumer_group_id','optional_output_dir',
                              n_threads=5,chunk_size=128,update_seconds=60)
         args = [os.fspath(TEST_CONST.TEST_DATA_FILE_PATH), 
                 'TEST_OUTPUT',
@@ -122,7 +122,7 @@ class TestArgumentParsing(unittest.TestCase) :
             _ = int_power_of_two('-2')
         with self.assertRaises(ValueError) :
             _ = int_power_of_two(-4)
-        with self.assertRaises(ValueError) :
+        with self.assertRaises(TypeError) :
             _ = int_power_of_two(None)
 
     #test the positive_int argument parser callback
@@ -136,5 +136,5 @@ class TestArgumentParsing(unittest.TestCase) :
             _ = positive_int('-3')
         with self.assertRaises(ValueError) :
             _ = positive_int(-5)
-        with self.assertRaises(ValueError) :
+        with self.assertRaises(TypeError) :
             _ = positive_int(None)
