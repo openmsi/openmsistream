@@ -130,7 +130,7 @@ class OpenMSIStreamConsumer(LogOwner) :
             valdes = k_c.value_deserializer
         all_configs['key_deserializer']=keydes
         all_configs['value_deserializer']=valdes
-        all_configs['max_poll_records']=50
+        all_configs['max_poll_records']=10
         ret_args = [KafkaConsumer,all_configs]
         ret_kwargs['kafkacrypto']=k_c
         return ret_args, ret_kwargs
