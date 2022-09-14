@@ -301,13 +301,15 @@ class DataclassTable(LogOwner) :
             with atomic_write(self.__filepath,overwrite=overwrite) as fp :
                 fp.write(lines_string)
         except Exception as exc :
-            if reraise_exc :
-                errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
-                errmsg+=  'Will reraise exception.'
-                self.logger.error(errmsg,exc_obj=exc)
-            else :
-                msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
-                self.logger.warning(msg)
+            if not isinstance(exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
+                if reraise_exc :
+                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
+                    errmsg+=  'Will reraise exception.'
+                    self.logger.error(errmsg,exc_obj=exc)
+                else :
+                    msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at {self.__filepath}!'
+                    msg+= f' Exception ({type(exc)}): {exc}'
+                    self.logger.warning(msg)
         self.__file_last_updated = datetime.datetime.now()
 
     def __line_from_obj(self,obj) :

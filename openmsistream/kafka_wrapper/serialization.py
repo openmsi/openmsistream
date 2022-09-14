@@ -70,7 +70,7 @@ class CompoundDeserializer(Deserializer):
     For use with KafkaCrypto since topic names must be passed
     """
 
-    MAX_WAIT_PER_DECRYPT = 5.0 #in seconds
+    MAX_WAIT_PER_DECRYPT = 60.0 #in seconds
 
     def __init__(self, *args):
         self.__steps = list(args)

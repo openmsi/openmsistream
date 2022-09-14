@@ -12,7 +12,7 @@ from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
 
 #constants
-LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
+LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.INFO)#ERROR)
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]
 
 class TestSerialization(unittest.TestCase) :

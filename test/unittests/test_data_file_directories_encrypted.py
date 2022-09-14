@@ -115,12 +115,10 @@ class TestDataFileDirectories(unittest.TestCase) :
             self.assertTrue(in_prog_filepath.is_file())
             in_prog_table = DataclassTable(RegistryLineInProgress,filepath=in_prog_filepath,logger=LOGGER)
             self.assertTrue(in_prog_table.obj_addresses_by_key_attr('filename')=={})
-            del in_prog_table
             self.assertTrue(completed_filepath.is_file())
             completed_table = DataclassTable(RegistryLineCompleted,filepath=completed_filepath,logger=LOGGER)
             addrs_by_fp = completed_table.obj_addresses_by_key_attr('filepath')
             self.assertTrue(fp in addrs_by_fp.keys())
-            del completed_table
         except Exception as e :
             raise e
         finally :
