@@ -40,12 +40,12 @@ class TestDataFileDirectories(unittest.TestCase) :
                                                         'upload_existing':True}
                                 )
         upload_thread.start()
-        #wait a second, copy the test file into the watched directory, and wait another second
-        time.sleep(1)
+        #wait a bit, copy the test file into the watched directory, and wait again
+        time.sleep(5)
         fp = TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
         fp = fp/TEST_CONST.TEST_DATA_FILE_NAME
         fp.write_bytes(TEST_CONST.TEST_DATA_FILE_PATH.read_bytes())
-        time.sleep(1)
+        time.sleep(5)
         #start up the DataFileDownloadDirectory
         dfdd = DataFileDownloadDirectory(TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED,
                                          TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,
@@ -58,6 +58,7 @@ class TestDataFileDirectories(unittest.TestCase) :
         #start reconstruct in a separate thread so we can time it out
         download_thread = ExceptionTrackingThread(target=dfdd.reconstruct)
         download_thread.start()
+        time.sleep(10)
         try :
             #put the "check" command into the input queues a couple times to test them
             dfud.control_command_queue.put('c')

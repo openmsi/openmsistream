@@ -327,13 +327,13 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                                                         'upload_existing':True}
                                 )
         upload_thread.start()
-        #wait a second, copy the test files into the watched directory, and wait another second
-        time.sleep(1)
+        #wait a bit, copy the test files into the watched directory, and wait again
+        time.sleep(5)
         fp = watched_subdir/TEST_CONST.TEST_DATA_FILE_NAME
         fp.write_bytes(TEST_CONST.TEST_DATA_FILE_PATH.read_bytes())
         fp = watched_subdir.parent/TEST_CONST.TEST_DATA_FILE_2_NAME
         fp.write_bytes(TEST_CONST.TEST_DATA_FILE_2_PATH.read_bytes())
-        time.sleep(1)
+        time.sleep(5)
         #Use a stream processor to read their data back into memory one time, deliberately failing the first file
         dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,
                                                  TOPIC_NAME,
@@ -345,6 +345,7 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         dfsp.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
         stream_thread.start()
+        time.sleep(10)
         try :
             current_messages_read = -1
             time_waited = 0
