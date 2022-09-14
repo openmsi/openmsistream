@@ -1,5 +1,5 @@
 #imports
-import unittest, pathlib, logging
+import unittest, pathlib, logging, time
 from confluent_kafka.error import SerializationError
 from openmsistream.utilities.logging import Logger
 from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
@@ -82,6 +82,7 @@ class TestSerialization(unittest.TestCase) :
         with self.assertRaises(SerializationError) :
             comp_des.deserialize(TOPIC_NAME,'This is a string, not a DataFileChunk!')
         for chunk_i in self.test_chunk_binaries.keys() :
+            time.sleep(1)
             serialized = comp_ser.serialize(TOPIC_NAME,self.test_ul_chunk_objects[chunk_i])
             deserialized = comp_des.deserialize(TOPIC_NAME,serialized)
             self.assertEqual(deserialized,self.test_ul_chunk_objects[chunk_i])
