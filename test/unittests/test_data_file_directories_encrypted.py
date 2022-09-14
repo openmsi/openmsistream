@@ -10,7 +10,7 @@ from openmsistream.data_file_io.actor.data_file_download_directory import DataFi
 from config import TEST_CONST
 
 #constants
-LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
+LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.INFO)
 UPDATE_SECS = 5
 TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 60
@@ -67,27 +67,21 @@ class TestDataFileDirectories(unittest.TestCase) :
             #wait for the timeout for the test file to be completely reconstructed 
             current_messages_read = -1
             time_waited = 0
-            LOGGER.set_stream_level(logging.INFO)
             msg = f'Waiting to reconstruct test file from the "{TOPIC_NAME}" topic in '
             msg+= f'test_encrypted_upload_and_download (will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
-            LOGGER.set_stream_level(logging.ERROR)
             reco_fp = TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
             reco_fp = reco_fp/TEST_CONST.TEST_DATA_FILE_NAME
             while (reco_fp not in dfdd.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = dfdd.n_msgs_read
-                LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
-                LOGGER.set_stream_level(logging.ERROR)
                 time.sleep(5)
                 time_waited+=5
             #After timing out, stalling, or completely reconstructing the test file, 
             #put the "quit" command into the input queue, which SHOULD stop the method running
-            LOGGER.set_stream_level(logging.INFO)
             msg = f'Quitting download thread in test_encrypted_upload_and_download after reading {dfdd.n_msgs_read} '
             msg+= f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-            LOGGER.set_stream_level(logging.ERROR)
             dfdd.control_command_queue.put('q')
             #wait for the download thread to finish
             download_thread.join(timeout=JOIN_TIMEOUT_SECS)
@@ -97,11 +91,9 @@ class TestDataFileDirectories(unittest.TestCase) :
                 raise TimeoutError(errmsg)
             dfdd.close()
             #put the quit command in the upload directory's command queue to stop the process running
-            LOGGER.set_stream_level(logging.INFO)
             msg = '\nQuitting upload thread in test_encrypted_upload_and_download; '
             msg+= f'will timeout after {TIMEOUT_SECS} seconds....'
             LOGGER.info(msg)
-            LOGGER.set_stream_level(logging.ERROR)
             dfud.control_command_queue.put('q')
             #wait for the uploading thread to complete
             upload_thread.join(timeout=TIMEOUT_SECS)
