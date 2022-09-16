@@ -12,8 +12,8 @@ from .file_registry.stream_handler_registries import StreamReproducerRegistry
 
 class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC) :
     """
-    A class to consume :class:`~DataFileChunk` messages into memory, compute some processing result
-    when entire files are available, and produce that result to a different topic.
+    A class to consume :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk` messages into memory,
+    compute some processing result when entire files are available, and produce that result to a different topic.
 
     This is a base class that cannot be instantiated on its own.
 
@@ -27,8 +27,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
     :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`~DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
+        (must be a subclass of :class:`openmsistream.data_file_io.DownloadDataFileToMemory`)
+    :type datafile_type: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`, optional
     :param n_producer_threads: the number of producers to run. The total number of producer/consumer threads
         started is `max(n_consumer_threads,n_producer_threads)`.
     :type n_producer_threads: int, optional
@@ -38,7 +38,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
     :param consumer_group_id: the group ID under which each consumer should be created
     :type consumer_group_id: str, optional
 
-    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
+    :raises ValueError: if `datafile_type` is not a subclass of
+        :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
     """
 
     def __init__(self,config_file,consumer_topic_name,producer_topic_name,**kwargs) :
@@ -116,7 +117,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :param filename: The name of the file that was used to create this processing result message
         :type filename: str
         :param rel_filepath: The path to the file that was used to create this processing result message,
-            relative to the :class:`~DataFileChunk`'s root directory
+            relative to the :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`'s root directory
         :type rel_filepath: :class:`pathlib.Path`
         :param n_total_chunks: The total number of chunks in the file used to create this processing result message
         :type n_total_chunks: int
@@ -219,16 +220,17 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
     @abstractmethod
     def _get_processing_result_message_for_file(self,datafile,lock) :
         """
-        Given a relative :class:`~DownloadDataFileToMemory`, compute and return a :class:`~ReproducerMessage`
-        object that should be produced as the processing result for the file.
+        Given a relative :class:`openmsistream.data_file_io.DownloadDataFileToMemory`, compute and return a
+        :class:`openmsistream.data_file_io.ReproducerMessage` object that should be produced as the processing
+        result for the file.
 
         This function should log an error and return None if the processing result fails to be computed.
 
         Not implemented in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`openmsistream.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_get_processing_result_message_for_file` is running at once
         :type lock: :class:`threading.Lock`
@@ -248,7 +250,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         warning and stops tracking the file.
 
         :param datafile: The datafile that should have been used to compute a processing result message
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_get_processing_result_message_for_file` is running at once
         :type lock: :class:`threading.Lock`

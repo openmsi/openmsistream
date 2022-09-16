@@ -8,8 +8,8 @@ from hashlib import sha512
 from ...kafka_wrapper import ProducerGroup
 from ...running import Runnable
 from ..config import RUN_OPT_CONST
+from .. import DataFile
 from .data_file_chunk import DataFileChunk
-from .data_file import DataFile
 
 class UploadDataFile(DataFile,Runnable) :
     """

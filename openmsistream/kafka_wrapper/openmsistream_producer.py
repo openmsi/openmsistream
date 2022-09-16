@@ -14,16 +14,17 @@ from .serialization import CompoundSerializer
 
 class OpenMSIStreamProducer(LogOwner) :
     """
-    Wrapper for working with a Producer of some type. Expects message values that are :class:`~DataFileChunk` objects
-    by default; other message value types can be accommodated by setting "value.serializer" in the config file.
+    Wrapper for working with a Producer of some type. Expects message values that are
+    :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk` objects by default;
+    other message value types can be accommodated by setting "value.serializer" in the config file.
 
     :param producer_type: The type of underlying Producer that should be used
     :type producer_type: :class:`confluent_kafka.SerializingProducer` or :class:`kafkacrypto.KafkaProducer`
     :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Producer
     :type configs: dict
-    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate the Producer.
-        Only needed if `producer_type` is :class:`kafkacrypto.KafkaProducer`.
-    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+    :param kafkacrypto: The :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should be used
+        to instantiate the Producer. Only needed if `producer_type` is :class:`kafkacrypto.KafkaProducer`.
+    :type kafkacrypto: :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
     :param kwargs: Any extra keyword arguments (other than "logger") are added to the configuration dict for the
         Producer, with underscores in their names replaced by dots
     :type kwargs: dict
@@ -59,16 +60,18 @@ class OpenMSIStreamProducer(LogOwner) :
         """
         Return the list of arguments and dictionary or keyword arguments that should be used to instantiate
         :class:`~OpenMSIStreamProducer` objects based on the given config file.
-        Used to share a single :class:`~OpenMSIStreamKafkaCrypto` instance across several Producers.
+        Used to share a single :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance across
+        several Producers.
 
         :param config_file_path: Path to the config file to use in defining Producers
         :type config_file_path: :class:`pathlib.Path`
         :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the
             :class:`~OpenMSIStreamProducer` objects
         :type logger: :class:`openmsistream.utilities.Logger`
-        :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used to instantiate Producers.
-            Only needed if a single specific :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
-        :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+        :param kafkacrypto: The :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should
+            be used to instantiate Producers. Only needed if a single specific
+            :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance should be shared.
+        :type kafkacrypto: :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
         :param kwargs: Any extra keyword arguments are added to the configuration dict for the Producers,
             with underscores in their names replaced by dots
         :type kwargs: dict

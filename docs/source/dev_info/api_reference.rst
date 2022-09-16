@@ -47,10 +47,15 @@ Selected base + utility classes
 .. toctree::
    :maxdepth: 1
 
+   api/data_file_chunk
+   api/data_file
+   api/download_data_file
+   api/download_data_file_to_disk
+   api/download_data_file_to_memory
+   api/data_file_directory
    api/runnable
    api/log_owner
    api/logger
    api/openmsistream_argument_parser
    api/dataclass_table
-   api/download_data_file_to_memory
    api/reproducer_message

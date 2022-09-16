@@ -49,7 +49,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
         """
         if self.__producer_configs is None :
             pcs = self._get_config_dict('producer')
-            self.__producer_configs = KafkaConfigFileParser.get_replaced_configs(pcs,'serialization')
+            self.__producer_configs = self.get_replaced_configs(pcs,'serialization')
         return self.__convert_floats(self.__producer_configs)
     @property
     def consumer_configs(self) :
@@ -61,7 +61,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
             #if the auto.offset.reset was given as "none" then remove it from the ccs
             if 'auto.offset.reset' in ccs and ccs['auto.offset.reset']=='none' :
                 del ccs['auto.offset.reset']
-            self.__consumer_configs = KafkaConfigFileParser.get_replaced_configs(ccs,'deserialization')
+            self.__consumer_configs = self.get_replaced_configs(ccs,'deserialization')
         return self.__convert_floats(self.__consumer_configs)
 
     #################### PUBLIC FUNCTIONS ####################
@@ -89,9 +89,9 @@ class KafkaConfigFileParser(ConfigFileParser) :
         else :
             raise ValueError(f'ERROR: unrecognized replacement_type "{replacement_type}" in get_replaced_configs!')
         for cfg_name,cfg_value in configs.items() :
-            for c in classes :
-                if cfg_value==c.__name__ :
-                    configs[cfg_name] = c()
+            for serdes_class in classes :
+                if cfg_value==serdes_class.__name__ :
+                    configs[cfg_name] = serdes_class()
                     break
         return configs
 

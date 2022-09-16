@@ -9,8 +9,9 @@ from .file_registry.stream_handler_registries import StreamProcessorRegistry
 
 class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) :
     """
-    A class to consume :class:`~DataFileChunk` messages into memory and perform some operation(s)
-    when entire files are available. This is a base class that cannot be instantiated on its own.
+    A class to consume :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk` messages into memory
+    and perform some operation(s) when entire files are available.
+    This is a base class that cannot be instantiated on its own.
 
     :param config_path: Path to the config file to use in defining the Broker connection and Consumers
     :type config_path: :class:`pathlib.Path`
@@ -20,14 +21,15 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
     :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`~DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~DownloadDataFileToMemory`, optional
+        (must be a subclass of :class:`openmsistream.data_file_io.DownloadDataFileToMemory`)
+    :type datafile_type: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`, optional
     :param n_threads: the number of threads/consumers to run
     :type n_threads: int, optional
     :param consumer_group_id: the group ID under which each consumer should be created
     :type consumer_group_id: str, optional
 
-    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToMemory`
+    :raises ValueError: if `datafile_type` is not a subclass of
+        :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
     """
 
     def __init__(self,config_file,topic_name,**kwargs) :
@@ -162,9 +164,9 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
         Not implemented in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`openmsistream.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_process_downloaded_data_file` is running at once
         :type lock: :class:`threading.Lock`
@@ -180,9 +182,9 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
         Does nothing in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`openmsistream.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_failed_processing_callback` is running at once
         :type lock: :class:`threading.Lock`
