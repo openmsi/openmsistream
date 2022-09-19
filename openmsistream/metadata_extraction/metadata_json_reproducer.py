@@ -88,7 +88,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
     @classmethod
     def run_from_command_line(cls,args=None) :
         """
-        Run :func:`openmsistream.DataFileStreamReproducer.produce_processing_results_for_files_as_read` to continually
+        Run :func:`~produce_processing_results_for_files_as_read` to continually
         extract metadata from consumed files and produce them as json contents to another topic
         """
         # make the argument parser

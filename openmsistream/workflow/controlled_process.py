@@ -14,6 +14,10 @@ from .config import RUN_CONST
 class ControlledProcess(LogOwner,ABC) :
     """
     A class to use when running processes that should remain active until they are explicitly shut down
+
+    :param update_secs: number of seconds to wait between printing a progress character to the console
+        to indicate the program is alive
+    :type update_secs: int, optional
     """
 
     #################### PROPERTIES ####################
@@ -21,17 +25,13 @@ class ControlledProcess(LogOwner,ABC) :
     @property
     def alive(self) :
         """
-        read-only
+        Read-only boolean indicating if the process is running
         """
         return self.__alive
 
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,*args,update_secs=RUN_CONST.DEFAULT_UPDATE_SECONDS,**other_kwargs) :
-        """
-        update_secs = number of seconds to wait between printing a progress character to the console
-                      to indicate the program is alive
-        """
         self.__update_secs = update_secs
         #start up a Queue that will hold the control commands
         self.control_command_queue = Queue()
@@ -48,7 +48,7 @@ class ControlledProcess(LogOwner,ABC) :
 
     def shutdown(self) :
         """
-        Stop the process running
+        Stop the process running.
         """
         self.control_command_queue.task_done()
         self.__alive = False
@@ -83,7 +83,7 @@ class ControlledProcess(LogOwner,ABC) :
         """
         Classes extending this base class should include the logic of actually
         running the controlled process in this function, and should call super().run()
-        before anything else to set these variables
+        before anything else to set some internal variables
         """
         self.__alive = True
         self.__last_update = datetime.datetime.now()
@@ -91,7 +91,8 @@ class ControlledProcess(LogOwner,ABC) :
     @abstractmethod
     def _on_check(self) :
         """
-        This function is run when the "check" command is found in the control queue
+        This function is run when the "check" command is found in the control queue.
+
         Not implemented in the base class
         """
         raise NotImplementedError
@@ -99,7 +100,8 @@ class ControlledProcess(LogOwner,ABC) :
     @abstractmethod
     def _on_shutdown(self) :
         """
-        This function is run when the process is stopped; it's called from shutdown
+        This function is run when the process is stopped; it's called from :func:`~shutdown`.
+
         Not implemented in the base class
         """
         raise NotImplementedError

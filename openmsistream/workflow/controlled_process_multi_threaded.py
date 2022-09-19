@@ -12,13 +12,12 @@ from .controlled_process import ControlledProcess
 class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
     """
     A class for running a group of processes in multiple threads until they're explicitly shut down.
-    The control command queue and the actual running process are in different threads.
+
+    :param n_threads: the number of threads to use in the group of processes
+    :type n_threads: int, optional
     """
 
     def __init__(self,*args,n_threads=RUN_CONST.DEFAULT_N_THREADS,**kwargs) :
-        """
-        n_threads = number of threads to use
-        """
         self.n_threads = n_threads
         super().__init__(*args,**kwargs)
         self.lock = Lock()
@@ -28,10 +27,16 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
 
     def run(self,args_per_thread=None,kwargs_per_thread=None) :
         """
-        args_per_thread = a list of lists of arguments that should be given to the independent threads
-                          one list of arguments per thread
-        kwargs_per_thread = a list of dicts of keyword arguments that should be given to the independent threads
-                          one dict of keyword arguments per thread
+        Create and start the set of independent threads running :func:`~_run_worker`, which can accept optional
+        arguments/keyword arguments from the call to this function. Once the threads are started they will be
+        automatically restarted if they crash.
+
+        :param args_per_thread: a list of lists of arguments that should be given to the independent threads
+            (one list of arguments per thread)
+        :type args_per_thread: list, optional
+        :param kwargs_per_thread: a list of dicts of keyword arguments that should be given to the independent threads
+            (one dict of keyword arguments per thread)
+        :type kwargs_per_thread: dict, optional
         """
         super().run()
         #correct the arguments for each thread
@@ -72,7 +77,8 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
 
     def _on_shutdown(self) :
         """
-        Can override this method further in subclasses, just be sure to also call super()._on_shutdown() to join threads
+        Join all of the running threads. Can override this method further in subclasses, just be sure to also call
+        :func:`super()._on_shutdown()`.
         """
         for thread in self.__threads :
             thread.join()
@@ -80,18 +86,19 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
     @abstractmethod
     def _run_worker(self) :
         """
-        A function that should include a while self.alive loop for each independent thread to run
-        until the process is shut down
+        The function that will actually be run in multiple threads while the process is alive. Should include a
+        "while self.alive" loop to keep it running.
 
-        `self.lock` can be used across all shared threads to guaranteee exactly one process is running at a time
+        `self.lock` can be used to guarantee exactly one copy of this function is running at a time.
 
-        Not implemented in the base class
+        Not implemented in the base class.
         """
         raise NotImplementedError
 
     def __restart_crashed_threads(self) :
         """
-        Log Exceptions thrown by any of the threads and restart them
+        Log (but don't re-raise) Exceptions thrown by any of the threads and restart them based on the args/kwargs
+        initially passed to :func:`~run`.
         """
         for ti,thread in enumerate(self.__threads) :
             if thread.caught_exception is not None :

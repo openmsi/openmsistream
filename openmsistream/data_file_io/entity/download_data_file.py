@@ -58,7 +58,7 @@ class DownloadDataFile(DataFile,ABC) :
         Process a chunk that's been read from a topic.
         Returns a number of codes based on what effect adding the chunk had.
 
-        This function calls :func:`openmsistream.data_file_io.DownloadDataFile._on_add_chunk`,
+        This function calls :func:`~_on_add_chunk`,
         with the :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` as the argument.
 
         :param dfc: the DataFileChunk object whose data should be added

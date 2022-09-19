@@ -48,7 +48,11 @@ Workflow classes
    :maxdepth: 1
 
    api/runnable
+   api/controlled_process
+   api/controlled_process_single_thread
+   api/controlled_process_multi_threaded
    api/openmsistream_argument_parser
+   api/has_argument_parser
 
 Selected base + utility classes
 -------------------------------
