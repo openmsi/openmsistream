@@ -14,16 +14,16 @@ from .serialization import CompoundDeserializer
 class OpenMSIStreamConsumer(LogOwner) :
     """
     Wrapper for working with a Consumer of some type. Expects message values that are
-    :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk` objects by default;
+    :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` objects by default;
     other message value types can be accommodated by setting "value.deserializer" in the config file.
 
     :param consumer_type: The type of underlying Consumer that should be used
     :type consumer_type: :class:`confluent_kafka.DeserializingConsumer` or :class:`kafkacrypto.KafkaConsumer`
     :param configs: A dictionary of configuration names and parameters to use in instantiating the underlying Consumer
     :type configs: dict
-    :param kafkacrypto: The :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should be used
+    :param kafkacrypto: The :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should be used
         to instantiate the Consumer. Only needed if `consumer_type` is :class:`kafkacrypto.KafkaConsumer`.
-    :type kafkacrypto: :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
+    :type kafkacrypto: :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
     :param message_key_regex: A regular expression to filter messages based on their keys.
         Only messages matching this regex will be returned by :func:`~get_next_message`.
         This parameter only has an effect if `restart_at_beginning` is true and a consumer group with the given ID
@@ -75,18 +75,18 @@ class OpenMSIStreamConsumer(LogOwner) :
         """
         Return the list of arguments and dictionary or keyword arguments that should be used to instantiate
         :class:`~OpenMSIStreamConsumer` objects based on the given config file.
-        Used to share a single :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance across
+        Used to share a single :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance across
         several Consumers.
 
         :param config_file_path: Path to the config file to use in defining Consumers
         :type config_file_path: :class:`pathlib.Path`
-        :param logger: The :class:`openmsistream.utilities.Logger` object to use for each of the
+        :param logger: The :class:`~.utilities.Logger` object to use for each of the
             :class:`~OpenMSIStreamConsumer` objects
-        :type logger: :class:`openmsistream.utilities.Logger`
-        :param kafkacrypto: The :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should be
+        :type logger: :class:`~.utilities.Logger`
+        :param kafkacrypto: The :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto` object that should be
             used to instantiate Consumers. Only needed if a single specific
-            :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance should be shared.
-        :type kafkacrypto: :class:`openmsistream.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
+            :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance should be shared.
+        :type kafkacrypto: :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
         :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumers,
             with underscores in their names replaced by dots
         :type kwargs: dict

@@ -25,8 +25,8 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
     :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`openmsistream.data_file_io.DownloadDataFileToMemory`)
-    :type datafile_type: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`, optional
+        (must be a subclass of :class:`~.data_file_io.DownloadDataFileToMemory`)
+    :type datafile_type: :class:`~.data_file_io.DownloadDataFileToMemory`, optional
     :param n_producer_threads: the number of producers to run. The total number of producer/consumer threads
         started is `max(n_consumer_threads,n_producer_threads)`.
     :type n_producer_threads: int, optional
@@ -37,7 +37,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
     :type consumer_group_id: str, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
-        :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
+        :class:`~.data_file_io.DownloadDataFileToMemory`
     """
 
     def __init__(self,config_file,consumer_topic_name,producer_topic_name,**kwargs) :
@@ -64,16 +64,16 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
     @abstractmethod
     def _get_metadata_dict_for_file(self,datafile) :
         """
-        Given a :class:`openmsistream.data_file_io.DownloadDataFileToMemory`, extract and return its metadata as a
+        Given a :class:`~.data_file_io.DownloadDataFileToMemory`, extract and return its metadata as a
         dictionary. The returned dictionary will be serialized to JSON and produced to the destination topic.
 
         This function can raise errors to be logged if metadata extraction doesn't proceed as expected.
 
         Not implemented in base class
 
-        :param datafile: A :class:`openmsistream.data_file_io.DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`~.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
+        :type datafile: :class:`~.data_file_io.DownloadDataFileToMemory`
 
         :return: metadata keys/values
         :rtype: dict

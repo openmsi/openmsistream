@@ -24,7 +24,7 @@ class DownloadDataFile(DataFile,ABC) :
         Return the full filepath of a downloaded file given one of its DataFileChunks
 
         :param dfc: One of the DataFileChunk objects contributing to the file
-        :type dfc: :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
 
         :return: the full path to the file
         :rtype: :class:`pathlib.Path`
@@ -59,10 +59,10 @@ class DownloadDataFile(DataFile,ABC) :
         Returns a number of codes based on what effect adding the chunk had.
 
         This function calls :func:`openmsistream.data_file_io.DownloadDataFile._on_add_chunk`,
-        with the :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk` as the argument.
+        with the :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` as the argument.
 
         :param dfc: the DataFileChunk object whose data should be added
-        :type dfc: :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         :param thread_lock: the lock object to acquire/release so that race conditions don't affect reconstruction
                             of the files (only needed if running this function asynchronously)
         :type thread_lock: :class:`threading.Lock`, optional
@@ -134,7 +134,7 @@ class DownloadDataFile(DataFile,ABC) :
         Not implemented in the base class.
 
         :param dfc: the DataFileChunk object whose data should be added
-        :type dfc: :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         raise NotImplementedError
 
@@ -172,7 +172,7 @@ class DownloadDataFileToDisk(DownloadDataFile) :
         Add the data from a given file chunk to this file on disk
 
         :param dfc: the DataFileChunk object whose data should be added
-        :type dfc: :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         mode = 'r+b' if self.full_filepath.is_file() else 'w+b'
         with open(self.full_filepath,mode) as fp :
@@ -227,7 +227,7 @@ class DownloadDataFileToMemory(DownloadDataFile) :
         Add the data from a given file chunk to the dictionary of data by offset
 
         :param dfc: the DataFileChunk object whose data should be added
-        :type dfc: :class:`openmsistream.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         self.__chunk_data_by_offset[dfc.chunk_offset_write] = dfc.data
 

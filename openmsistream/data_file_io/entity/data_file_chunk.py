@@ -187,7 +187,7 @@ class DataFileChunk(Producible) :
         Populate this chunk with the actual data from the file. Called only when this chunk is being produced.
 
         :param logger: a logger object to use to log errors that may arise in populating the file chunk
-        :type logger: :class:`openmsistream.utilities.Logger`, optional
+        :type logger: :class:`~.utilities.Logger`, optional
 
         :raises FileNotFoundError: if the file doesn't exist on disk at ``self.filepath``
         :raises ValueError: if the data read from the file is not of the expected size,

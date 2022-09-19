@@ -100,9 +100,9 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
 
         Does nothing in the base class.
 
-        :param datafile: A :class:`openmsistream.data_file_io.DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`~.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`openmsistream.data_file_io.DownloadDataFileToMemory`
+        :type datafile: :class:`~.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_mismatched_hash_callback` is running at once
         :type lock: :class:`threading.Lock`

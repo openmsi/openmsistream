@@ -352,8 +352,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             the Service/daemon is being installed.
         :type class_name_or_spec_string: str, optional
 
-        :return: the :class:`openmsistream.workflow.OpenMSIStreamArgumentParser` object that should be used
-        :rtype: :class:`openmsistream.workflow.OpenMSIStreamArgumentParser`
+        :return: the :class:`~.workflow.OpenMSIStreamArgumentParser` object that should be used
+        :rtype: :class:`~.workflow.OpenMSIStreamArgumentParser`
 
         :raises ValueError: if `install_or_manage` is neither "install" nor "manage"
         """

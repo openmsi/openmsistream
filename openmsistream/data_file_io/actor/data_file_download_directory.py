@@ -23,11 +23,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
     :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`openmsistream.data_file_io.DownloadDataFileToDisk`)
-    :type datafile_type: :class:`openmsistream.data_file_io.DownloadDataFileToDisk`, optional
+        (must be a subclass of :class:`~.data_file_io.DownloadDataFileToDisk`)
+    :type datafile_type: :class:`~.data_file_io.DownloadDataFileToDisk`, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
-        :class:`openmsistream.data_file_io.DownloadDataFileToDisk`
+        :class:`~.data_file_io.DownloadDataFileToDisk`
     """
 
     #################### PUBLIC FUNCTIONS ####################
