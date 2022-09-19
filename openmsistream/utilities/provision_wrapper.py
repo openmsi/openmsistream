@@ -4,9 +4,12 @@ move the output in the location expected by OpenMSIStream
 """
 
 #imports
-import pathlib, shutil, logging
+import pathlib, shutil, logging, warnings
 from argparse import ArgumentParser
-import urllib.request, kafkacrypto
+import urllib.request
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    import kafkacrypto
 from ..workflow.config import RUN_CONST
 from .logging import Logger
 from .config_file_parser import ConfigFileParser

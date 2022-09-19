@@ -1,8 +1,10 @@
 """Wrapper around the KafkaCrypto producer/consumer pair communicating with the key passing topics"""
 
 #imports
-import pathlib, uuid
-from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
+import pathlib, uuid, warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
 from ..utilities.misc import change_dir
 
 class OpenMSIStreamKafkaCrypto :

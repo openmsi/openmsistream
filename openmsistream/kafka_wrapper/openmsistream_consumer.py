@@ -1,9 +1,11 @@
 """A wrapped Kafka Consumer. May consume encrypted messages."""
 
 #imports
-import uuid, methodtools
+import uuid, warnings, methodtools
 from confluent_kafka import DeserializingConsumer, Message
-from kafkacrypto import KafkaConsumer
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto import KafkaConsumer
 from ..utilities import LogOwner
 from ..utilities.misc import raise_err_with_optional_logger, debug_msg_with_optional_logger
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset

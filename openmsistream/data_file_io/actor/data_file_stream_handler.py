@@ -1,9 +1,11 @@
 """Base class for consuming file chunks into memory and then triggering some action when whole files are available"""
 
 #imports
-import pathlib
+import pathlib, warnings
 from abc import ABC
-from kafkacrypto.message import KafkaCryptoMessage
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto.message import KafkaCryptoMessage
 from ...utilities.misc import populated_kwargs
 from ...workflow import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
