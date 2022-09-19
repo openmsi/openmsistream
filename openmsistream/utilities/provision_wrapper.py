@@ -7,7 +7,7 @@ move the output in the location expected by OpenMSIStream
 import pathlib, shutil, logging
 from argparse import ArgumentParser
 import urllib.request, kafkacrypto
-from ..running.config import RUN_CONST
+from ..workflow.config import RUN_CONST
 from .logging import Logger
 from .config_file_parser import ConfigFileParser
 from .misc import change_dir

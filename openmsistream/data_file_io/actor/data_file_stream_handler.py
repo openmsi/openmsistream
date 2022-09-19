@@ -5,7 +5,7 @@ import pathlib
 from abc import ABC
 from kafkacrypto.message import KafkaCryptoMessage
 from ...utilities.misc import populated_kwargs
-from ...running import Runnable
+from ...workflow import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_timestamp_string
 from ..entity.download_data_file import DownloadDataFileToMemory

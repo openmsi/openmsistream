@@ -6,8 +6,8 @@ from abc import abstractmethod
 from subprocess import CalledProcessError
 from ..utilities import LogOwner
 from ..utilities.config_file_parser import ConfigFileParser
-from ..running import Runnable, OpenMSIStreamArgumentParser
-from ..running.has_argument_parser import HasArgumentParser
+from ..workflow import Runnable, OpenMSIStreamArgumentParser
+from ..workflow.has_argument_parser import HasArgumentParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var
 
@@ -352,8 +352,8 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             the Service/daemon is being installed.
         :type class_name_or_spec_string: str, optional
 
-        :return: the :class:`openmsistream.running.OpenMSIStreamArgumentParser` object that should be used
-        :rtype: :class:`openmsistream.running.OpenMSIStreamArgumentParser`
+        :return: the :class:`openmsistream.workflow.OpenMSIStreamArgumentParser` object that should be used
+        :rtype: :class:`openmsistream.workflow.OpenMSIStreamArgumentParser`
 
         :raises ValueError: if `install_or_manage` is neither "install" nor "manage"
         """

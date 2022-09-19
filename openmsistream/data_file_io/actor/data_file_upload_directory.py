@@ -5,8 +5,8 @@ import pathlib, datetime, time
 from threading import Lock
 from queue import Queue
 from ...kafka_wrapper import ProducerGroup
-from ...running import Runnable
-from ...running.controlled_process_single_thread import ControlledProcessSingleThread
+from ...workflow import Runnable
+from ...workflow.controlled_process_single_thread import ControlledProcessSingleThread
 from ...utilities.misc import populated_kwargs
 from ...utilities.exception_tracking_thread import ExceptionTrackingThread
 from ..config import RUN_OPT_CONST

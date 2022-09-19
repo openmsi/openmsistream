@@ -6,7 +6,7 @@ Preserve subdirectory structure if applicable
 #imports
 import datetime
 from kafkacrypto.message import KafkaCryptoMessage
-from ...running import Runnable
+from ...workflow import Runnable
 from ..config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
 from ..utilities import get_encrypted_message_key_and_value_filenames
 from .. import DataFileDirectory, DownloadDataFileToDisk

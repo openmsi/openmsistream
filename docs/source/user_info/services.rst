@@ -72,7 +72,7 @@ In addition to the main programs provided by OpenMSIStream, the infrastructure u
 Installing any class that extends Runnable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, if you've written your own new class that extends :class:`openmsistream.running.Runnable`, you can give the name of the class and the path to it as the specification string, like::
+First, if you've written your own new class that extends :class:`openmsistream.workflow.Runnable`, you can give the name of the class and the path to it as the specification string, like::
 
     InstallService [class_name]=[path.to.class.file] [command_line_options] --service_name [name_for_service_or_daemon]
 
