@@ -1,13 +1,17 @@
-# <div align="center"> Open MSI Stream </div>
+# <div align="center"> OpenMSIStream </div>
 #### <div align="center">***v0.9.5***</div>
 
-#### <div align="center">Maggie Eminizer<sup>2</sup>, Amir Sharifzadeh<sup>2</sup>, Sam Tabrisky<sup>3</sup>, Alakarthika Ulaganathan<sup>4</sup>, David Elbert<sup>1</sup></div>
+#### <div align="center">Maggie Eminizer<sup>1</sup>, Sam Tabrisky<sup>2,3,4</sup>, Amir Sharifzadeh<sup>1</sup>, Chris DiMarco<sup>4</sup>, Jake Diamond<sup>4</sup>, KT Ramesh<sup>4</sup>, Todd Hufnagel<sup>4,5,6</sup>, Tyrel McQueen<sup>5,7,8</sup>, David Elbert<sup>4,9</sup></div>
 
- <div align="center"><sup>1</sup>Hopkins Extreme Materials Institute (HEMI), PARADIM Materials Innovation Platform, and Dept. of Earth and Planetary Sciences, The Johns Hopkins University, Baltimore, MD, USA</div>
-  <div align="center"><sup>2</sup>Institute for Data Intensive Engineering and Science (IDIES), Dept. of Physics and Astronomy, The Johns Hopkins University, Baltimore, MD, USA</div>
- <div align="center"><sup>3</sup>Depts. of Biology and Computer Science, Dartmouth College, Hanover, NH, and HEMI, The Johns Hopkins University, Baltimore, MD, USA</div> 
- <div align="center"><sup>4</sup>Dept. of Applied Mathematics and Statistics, The Johns Hopkins University, Baltimore, MD, USA</div>
- <br>
+ <div align="center"><sup>1</sup> Institute for Data Intensive Engineering and Science (IDIES), The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>2</sup> Department of Biology, Dartmouth College, Hanover, NH, USA </div>
+ <div align="center"><sup>3</sup> Department of Computer Science, Dartmouth College, Hanover, NH, USA </div>
+ <div align="center"><sup>4</sup> Hopkins Extreme Materials Institute (HEMI), The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>5</sup> Department of Materials Science and Engineering, The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>6</sup> Department of Mechanical Engineering, The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>7</sup> Department of Chemistry, The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>8</sup> Institute for Quantum Matter (IQM), The Johns Hopkins University, Baltimore, MD, USA </div>
+ <div align="center"><sup>9</sup> Department of Earth and Planetary Sciences, The Johns Hopkins University, Baltimore, MD, USA </div>
 
  <div align="center"><img src="docs/source/images/openmsistream_logo.png" width="350" /></div>
  <br>
