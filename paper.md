@@ -84,3 +84,5 @@ $\texttt{NumPy}$ [@numpy], $\texttt{SciPy}$ [@scipy], and $\texttt{pandas}$ [@pa
 # Acknowledgments
 
 The development of OpenMSIStream has been financially supported by NSF Awards #1921959, #1539918, and #2129051.
+
+# References
