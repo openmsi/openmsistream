@@ -188,9 +188,9 @@ class LogOwner :
     """
     Any subclasses extending this one will have access to a Logger defined by the first class in the MRO to extend it
 
-    :param logger: a :class:`openmsistream.utilities.Logger` object that this class should have access to. If this
+    :param logger: a :class:`~.utilities.Logger` object that this class should have access to. If this
         parameter is given it will override any of the others provided.
-    :type logger: :class:`openmsistream.utilities.Logger`, optional
+    :type logger: :class:`~.utilities.Logger`, optional
     :param logger_name: The name for the logger to use (automatically inferred from the running module if not given)
     :type logger_name: str, optional
     :param streamlevel: The level at/above which messages should be logged to the stream/console

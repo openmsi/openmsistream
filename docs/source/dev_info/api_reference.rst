@@ -41,16 +41,32 @@ Services/daemons
    api/windows_service_manager
    api/linux_service_manager
 
+Workflow classes
+----------------
+
+.. toctree::
+   :maxdepth: 1
+
+   api/runnable
+   api/controlled_process
+   api/controlled_process_single_thread
+   api/controlled_process_multi_threaded
+   api/openmsistream_argument_parser
+   api/has_argument_parser
+
 Selected base + utility classes
 -------------------------------
 
 .. toctree::
    :maxdepth: 1
 
-   api/runnable
+   api/data_file_chunk
+   api/data_file
+   api/download_data_file
+   api/download_data_file_to_disk
+   api/download_data_file_to_memory
+   api/data_file_directory
    api/log_owner
    api/logger
-   api/openmsistream_argument_parser
    api/dataclass_table
-   api/download_data_file_to_memory
    api/reproducer_message

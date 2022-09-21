@@ -1,11 +1,13 @@
 """Base class for consuming file chunks into memory and then triggering some action when whole files are available"""
 
 #imports
-import pathlib
+import pathlib, warnings
 from abc import ABC
-from kafkacrypto.message import KafkaCryptoMessage
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto.message import KafkaCryptoMessage
 from ...utilities.misc import populated_kwargs
-from ...running import Runnable
+from ...workflow import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_timestamp_string
 from ..entity.download_data_file import DownloadDataFileToMemory
@@ -100,9 +102,9 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
 
         Does nothing in the base class.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`~.data_file_io.DownloadDataFileToMemory` object that has received
             all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`~.data_file_io.DownloadDataFileToMemory`
         :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
             of :func:`~_mismatched_hash_callback` is running at once
         :type lock: :class:`threading.Lock`

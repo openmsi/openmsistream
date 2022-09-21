@@ -12,7 +12,8 @@ class HasArgumentParser(ABC) :
     @abstractmethod
     def get_argument_parser(cls) :
         """
-        Return the argument parser that objects of this class use
+        Return the argument parser that objects of this class use.
+
         Not implemented in the base class
         """
         raise NotImplementedError

@@ -1,9 +1,12 @@
 """Anything that receives DataFileChunk messages from a topic and does something with them"""
 
 #imports
+import warnings
 from abc import ABC, abstractmethod
 from threading import Lock
-from kafkacrypto import KafkaCryptoMessage
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto import KafkaCryptoMessage
 from ...utilities import LogOwner
 from ...kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
 from ...kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer

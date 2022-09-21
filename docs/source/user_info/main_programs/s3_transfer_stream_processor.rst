@@ -8,7 +8,7 @@ S3TransferStreamProcessor
 
 This module reads messages from a topic to build up data files in memory, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``. 
 
-The :class:`openmsistream.S3TransferStreamProcessor` is a specific type of :class:`openmsistream.DataFileStreamProcessor`.
+The :class:`~.S3TransferStreamProcessor` is a specific type of :class:`~.DataFileStreamProcessor`.
 
 Extra configs needed
 --------------------
@@ -56,7 +56,7 @@ OpenMSIStream manually commits Consumer offsets to guarantee that every message 
 Restarting the program
 ----------------------
 
-Using an ``S3TransferStreamProcessor`` to transfer files stored as chunks on the broker (and any other program whose underlying class inherits from :class:`openmsistream.DataFileStreamProcessor`) is robust if the code crashes and can be restarted. The output directory includes a log file, as well as two files called "``files_consumed_from_[name_of_topic]_by_[consumer_group_ID].csv``" and "``files_successfully_processed_from_[name_of_topic]_by_[consumer_group_ID].csv``". The .csv files are special datatable files (they can be read as :class:`openmsistream.utilities.DataclassTable` objects) that list the processing status of each recognized file and information about files that have been successfully transferred, respectively. 
+Using an ``S3TransferStreamProcessor`` to transfer files stored as chunks on the broker (and any other program whose underlying class inherits from :class:`~.DataFileStreamProcessor`) is robust if the code crashes and can be restarted. The output directory includes a log file, as well as two files called "``files_consumed_from_[name_of_topic]_by_[consumer_group_ID].csv``" and "``files_successfully_processed_from_[name_of_topic]_by_[consumer_group_ID].csv``". The .csv files are special datatable files (they can be read as :class:`~.utilities.DataclassTable` objects) that list the processing status of each recognized file and information about files that have been successfully transferred, respectively. 
 
 The status of each file is updated atomically upon receipt of each message. If any files fail to be transferred during a run, or the program quits or crashes before all the messages for a file are received, a new run of ``S3TransferStreamProcessor`` restarted with the same consumer group ID and configs will restart the consumers from the beginning of the topic and read only messages from those failed files until they catch up to where they would be otherwise. As long as all messages for the failed files still exist in the same topic, restarting will select and try processing them again.
 

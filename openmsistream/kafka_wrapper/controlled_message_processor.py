@@ -3,7 +3,7 @@
 #imports
 import time
 from abc import ABC, abstractmethod
-from ..running.controlled_process_multi_threaded import ControlledProcessMultiThreaded
+from ..workflow.controlled_process_multi_threaded import ControlledProcessMultiThreaded
 from .consumer_group import ConsumerGroup
 
 class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,ABC) :

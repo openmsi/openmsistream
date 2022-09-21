@@ -1,6 +1,6 @@
 This directory contains two different examples of files that could be used to install custom Python code as Windows Services or Linux daemons. Both files just write out a small text file to a location specified by a command line argument. 
 
-The `runnable_example.py` file contains the definition of a class that extends [openmsistream.running.Runnable](../../running/runnable.py). In this case the `run_from_command_line` function in the class can be run as a Service by installing it with the command:
+The `runnable_example.py` file contains the definition of a class that extends [openmsistream.workflow.Runnable](../../workflow/runnable.py). In this case the `run_from_command_line` function in the class can be run as a Service by installing it with the command:
 
 ```
 InstallService RunnableExample=openmsistream.services.examples.runnable_example [absolute_path_to_output_dir] --service_name RunnableExampleServiceTest

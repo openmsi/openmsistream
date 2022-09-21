@@ -20,8 +20,8 @@ sys.path.insert(0, os.path.abspath('../../openmsistream'))
 # -- Project information -----------------------------------------------------
 
 project = 'OpenMSIStream'
-copyright = '2022, Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert'
-author = 'Maggie Eminizer, Amir Sharifzadeh, Sam Tabrisky, Alakarthika Ulaganathan, David Elbert'
+copyright = '2022, Open MSI'
+author = 'Open MSI'
 
 
 # -- General configuration ---------------------------------------------------

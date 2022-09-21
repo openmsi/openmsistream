@@ -9,7 +9,36 @@ from ..utilities import get_message_prepend
 
 class DataFileChunk(Producible) :
     """
-    Class to deal with single chunks of file info
+    Class representing a single chunk of an uploaded or downloaded file. DataFileChunk objects are
+    automatically serialized/deserialized when they are produced/consumed to topics using OpenMSIStream.
+
+    :param filepath: path to this chunk's file (fully resolved if being produced, may be relative if it was consumed)
+    :type filepath: :class:`pathlib.Path`
+    :param filename: the name of the file
+    :type filename: str
+    :param file_hash: hash of this chunk's entire file data
+    :type file_hash: str
+    :param chunk_hash: hash of this chunk's data
+    :type chunk_hash: str
+    :param chunk_offset_read: offset (in bytes) of this chunk within the original file
+    :type chunk_offset_read: int
+    :param chunk_offset_write: offset (in bytes) of this chunk within the reconstructed file (may be different than
+        chunk_offset_read due to excluding some bytes in uploading)
+    :type chunk_offset_write: int
+    :param chunk_size: size of this chunk (in bytes)
+    :type chunk_size: int
+    :param chunk_i: index of this chunk within the larger file
+    :type chunk_i: int
+    :param n_total_chunks: the total number of chunks to expect from the original file
+    :type n_total_chunks: int
+    :param rootdir: path to the "root" directory; anything beyond in the filepath is considered a subdirectory
+        (can also be set later)
+    :type rootdir: :class:`pathlib.Path`, optional
+    :param filename_append: string to append to the stem of the filename when the file is reconstructed
+    :type filename_append: str, optional
+    :param data: the actual binary data of this chunk of the file (can be set later if this chunk is being produced
+        and not consumed)
+    :type data: bytes, optional
     """
 
     #################### PROPERTIES ####################
@@ -59,15 +88,25 @@ class DataFileChunk(Producible) :
 
     @property
     def msg_key(self) :
+        """
+        string representing the key of the message this chunk will be produced as
+        """
         key_pp = get_message_prepend(self.subdir_str,self.filename)
         return f'{key_pp}_{self.chunk_i}_of_{self.n_total_chunks}'
 
     @property
     def msg_value(self) :
+        """
+        value of the message this chunk will be produced as (just the object itself, since a
+        :class:`DataFileChunkSerializer` is used)
+        """
         return self
 
     @property
     def callback_kwargs(self):
+        """
+        keyword arguments that should be sent to the producer callback function when the chunk is produced
+        """
         return {
             'filepath' : self.__filepath,
             'filename' : self.filename,
@@ -80,24 +119,6 @@ class DataFileChunk(Producible) :
 
     def __init__(self,filepath,filename,file_hash,chunk_hash,chunk_offset_read,chunk_offset_write,chunk_size,chunk_i,
                  n_total_chunks,rootdir=None,filename_append='',data=None) :
-        """
-        filepath           = path to this chunk's file
-                             (fully resolved if being produced, may be relative if it was consumed)
-        filename           = the name of the file
-        file_hash          = hash of this chunk's entire file data
-        chunk_hash         = hash of this chunk's data
-        chunk_offset_read  = offset (in bytes) of this chunk within the original file
-        chunk_offset_write = offset (in bytes) of this chunk within the reconstructed file
-                             (may be different than chunk_offset_read due to excluding some bytes in uploading)
-        chunk_size         = size of this chunk (in bytes)
-        chunk_i            = index of this chunk within the larger file
-        n_total_chunks     = the total number of chunks to expect from the original file
-        rootdir            = path to the "root" directory; anything beyond in the filepath is considered a subdirectory
-                             (optional, can also be set later)
-        filename_append    = string to append to the stem of the filename when the file is reconstructed
-        data               = the actual binary data of this chunk of the file
-                             (can be set later if this chunk is being produced and not consumed)
-        """
         self.__filepath = filepath
         self.filename = filename
         self.file_hash = file_hash
@@ -147,13 +168,30 @@ class DataFileChunk(Producible) :
         return super().__hash__()
 
     def get_log_msg(self, print_every=None):
-        if (self.chunk_i-1)%print_every==0 or self.chunk_i==self.n_total_chunks :
+        """
+        If the chunk's index mod ``print_every`` is 0, or if the chunk is the last one for the file,
+        returns a message to log. Otherwise returns None.
+
+        :param print_every: number of chunks that should be skipped between logging messages
+        :type print_every: int, optional
+
+        :return: message to log stating which chunk from which file is being uploaded
+        :rtype: str, or None
+        """
+        if (print_every and (self.chunk_i-1)%print_every==0) or self.chunk_i==self.n_total_chunks :
             return f'uploading {self.filename} chunk {self.chunk_i} (out of {self.n_total_chunks})'
         return None
 
     def populate_with_file_data(self,logger=None) :
         """
-        Populate this chunk with the actual data from the file
+        Populate this chunk with the actual data from the file. Called only when this chunk is being produced.
+
+        :param logger: a logger object to use to log errors that may arise in populating the file chunk
+        :type logger: :class:`~.utilities.Logger`, optional
+
+        :raises FileNotFoundError: if the file doesn't exist on disk at ``self.filepath``
+        :raises ValueError: if the data read from the file is not of the expected size,
+            or if its hash is not matched to what was originally calculated.
         """
         #create a new logger if one isn't given
         if logger is None :

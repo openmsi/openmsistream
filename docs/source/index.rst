@@ -1,8 +1,3 @@
-.. OpenMSIStream documentation master file, created by
-   sphinx-quickstart on Wed Jun 22 12:00:10 2022.
-   You can adapt this file completely to your liking, but it should at least
-   contain the root `toctree` directive.
-
 =========================================
 OpenMSIStream 
 =========================================
@@ -11,7 +6,7 @@ OpenMSIStream
    :alt: Open MSI
    :scale: 10 %
 
-OpenMSIStream provides Python applications for laboratory, analysis, and computational materials data streaming using `Apache Kafka <https://kafka.apache.org/>`_. It was developed for Open MSI, under NSF DMREF award #1921959.
+OpenMSIStream provides Python applications for generalized laboratory, analysis, and computational materials data streaming using `Apache Kafka <https://kafka.apache.org/>`_. More information is available on :doc:`the Introduction page <installation/introduction>` for new users. OpenMSIStream is maintained as part of the Open Materials Semantic Infrastructure (Open MSI), under NSF award #1921959.
 
 .. image:: https://img.shields.io/pypi/v/openmsistream
    :alt: PyPI 
@@ -34,11 +29,11 @@ OpenMSIStream provides Python applications for laboratory, analysis, and computa
 
 OpenMSIStream is free and open source. It's available on `PyPI <https://pypi.org/project/openmsistream/>`_ and on `GitHub <https://github.com/openmsi/openmsistream>`_. 
 
-The contact author for the project can be reached at margaret.eminizer@gmail.com.
+The development team can be reached at openmsistream@gmail.com. Please see :doc:`the page on support and contribution <user_info/support_and_contribution>` for ways to get help using OpenMSIStream, as well as information on how to request new functionality or contribute to the project. 
 
 .. toctree::
    :maxdepth: 2
-   :caption: Installing OpenMSIStream:
+   :caption: Intro to OpenMSIStream:
 
    installation/introduction
    installation/getting_started
@@ -51,6 +46,7 @@ The contact author for the project can be reached at margaret.eminizer@gmail.com
    user_info/services
    user_info/encryption
    user_info/troubleshooting
+   user_info/support_and_contribution
 
 .. toctree::
    :maxdepth: 2

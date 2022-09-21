@@ -11,6 +11,9 @@ from .data_file import DataFile
 class DownloadDataFile(DataFile,ABC) :
     """
     Class to represent a data file that will be read as messages from a topic
+
+    :param filepath: Path to the file
+    :type filepath: :class:`pathlib.Path`
     """
 
     #################### PROPERTIES AND STATIC METHODS ####################
@@ -18,7 +21,13 @@ class DownloadDataFile(DataFile,ABC) :
     @staticmethod
     def get_full_filepath(dfc) :
         """
-        Return the full filepath of a file that will be written to disk given one of its DataFileChunks
+        Return the full filepath of a downloaded file given one of its DataFileChunks
+
+        :param dfc: One of the DataFileChunk objects contributing to the file
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
+
+        :return: the full path to the file
+        :rtype: :class:`pathlib.Path`
         """
         if dfc.filename_append=='' :
             return dfc.filepath
@@ -36,8 +45,8 @@ class DownloadDataFile(DataFile,ABC) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,**kwargs) :
-        super().__init__(*args,**kwargs)
+    def __init__(self,filepath,*args,**kwargs) :
+        super().__init__(filepath,*args,**kwargs)
         #start an empty set of this file's downloaded offsets
         self._chunk_offsets_downloaded = []
         self.full_filepath = None
@@ -46,14 +55,23 @@ class DownloadDataFile(DataFile,ABC) :
 
     def add_chunk(self,dfc,thread_lock=nullcontext()) :
         """
-        A function to process a chunk that's been read from a topic
-        Returns a number of codes based on what effect adding the chunk had
+        Process a chunk that's been read from a topic.
+        Returns a number of codes based on what effect adding the chunk had.
 
-        This function calls _on_add_chunk, with the DataFileChunk as the argument.
+        This function calls :func:`~_on_add_chunk`,
+        with the :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` as the argument.
 
-        dfc = the DataFileChunk object whose data should be added
-        thread_lock = the lock object to acquire/release so that race conditions don't affect
-                      reconstruction of the files (optional, only needed if running this function asynchronously)
+        :param dfc: the DataFileChunk object whose data should be added
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
+        :param thread_lock: the lock object to acquire/release so that race conditions don't affect reconstruction
+                            of the files (only needed if running this function asynchronously)
+        :type thread_lock: :class:`threading.Lock`, optional
+
+        :return: an internal code indicating whether the chunk: was successfully added to a file in progress,
+            was already received, was the last chunk needed and the file is successfully reconstructed according
+            to its hash or the post-reconstruction has is mismatched to the hash of the file contents originally
+            read from disk.
+        :rtype: int
         """
         #if this chunk's offset has already been written to disk, return the "already written" code
         with thread_lock :
@@ -109,22 +127,32 @@ class DownloadDataFile(DataFile,ABC) :
     @abstractmethod
     def _on_add_chunk(self,dfc) :
         """
-        A function to actually process a new chunk being added to the file
-        This function is executed while a thread lock is acquired so it will never run asynchronously
-        Also any DataFileChunks passed to this function are guaranteed to have unique offsets
-        Not implemented in the base class
+        A function to actually process a new chunk being added to the file.
+        This function is executed while a thread lock is acquired so it will never run asynchronously.
+        Also any DataFileChunks passed to this function are guaranteed to have unique offsets.
+
+        Not implemented in the base class.
+
+        :param dfc: the DataFileChunk object whose data should be added
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         raise NotImplementedError
 
 class DownloadDataFileToDisk(DownloadDataFile) :
     """
     Class to represent a data file that will be reconstructed on disk using messages read from a topic
+
+    :param filepath: Path to the file
+    :type filepath: :class:`pathlib.Path`
     """
 
     #################### PROPERTIES ####################
 
     @property
     def check_file_hash(self) :
+        """
+        Hash of the file contents as read from its current location on disk
+        """
         check_file_hash = sha512()
         with open(self.full_filepath,'rb') as fp :
             data = fp.read()
@@ -133,8 +161,8 @@ class DownloadDataFileToDisk(DownloadDataFile) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,**kwargs) :
-        super().__init__(*args,**kwargs)
+    def __init__(self,filepath,*args,**kwargs) :
+        super().__init__(filepath,*args,**kwargs)
         #create the parent directory of the file if it doesn't exist yet (in case the file is in a new subdirectory)
         if not self.filepath.parent.is_dir() :
             self.filepath.parent.mkdir(parents=True)
@@ -142,6 +170,9 @@ class DownloadDataFileToDisk(DownloadDataFile) :
     def _on_add_chunk(self,dfc) :
         """
         Add the data from a given file chunk to this file on disk
+
+        :param dfc: the DataFileChunk object whose data should be added
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         mode = 'r+b' if self.full_filepath.is_file() else 'w+b'
         with open(self.full_filepath,mode) as fp :
@@ -154,6 +185,9 @@ class DownloadDataFileToDisk(DownloadDataFile) :
 class DownloadDataFileToMemory(DownloadDataFile) :
     """
     Class to represent a data file that will be held in memory and populated by the contents of messages from a topic
+
+    :param filepath: Path to the file
+    :type filepath: :class:`pathlib.Path`
     """
 
     #################### PROPERTIES ####################
@@ -170,14 +204,17 @@ class DownloadDataFileToMemory(DownloadDataFile) :
 
     @property
     def check_file_hash(self) :
+        """
+        The hash of the file contents determined from the bytestring of the file stored in memory
+        """
         check_file_hash = sha512()
         check_file_hash.update(self.bytestring)
         return check_file_hash.digest()
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,*args,**kwargs) :
-        super().__init__(*args,**kwargs)
+    def __init__(self,filepath,*args,**kwargs) :
+        super().__init__(filepath,*args,**kwargs)
         #start a dictionary of the file data by their offsets
         self.__chunk_data_by_offset = {}
         #placeholder for the eventual full data bytestring
@@ -188,6 +225,9 @@ class DownloadDataFileToMemory(DownloadDataFile) :
     def _on_add_chunk(self,dfc) :
         """
         Add the data from a given file chunk to the dictionary of data by offset
+
+        :param dfc: the DataFileChunk object whose data should be added
+        :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         self.__chunk_data_by_offset[dfc.chunk_offset_write] = dfc.data
 

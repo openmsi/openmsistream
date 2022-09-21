@@ -4,13 +4,14 @@ Preserve subdirectory structure if applicable
 """
 
 #imports
-import datetime
-from kafkacrypto.message import KafkaCryptoMessage
-from ...running import Runnable
+import datetime, warnings
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto.message import KafkaCryptoMessage
+from ...workflow import Runnable
 from ..config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
 from ..utilities import get_encrypted_message_key_and_value_filenames
-from ..entity.download_data_file import DownloadDataFileToDisk
-from ..entity.data_file_directory import DataFileDirectory
+from .. import DataFileDirectory, DownloadDataFileToDisk
 from .data_file_chunk_handlers import DataFileChunkProcessor
 
 class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnable) :
@@ -24,10 +25,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
     :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`~DownloadDataFileToDisk`)
-    :type datafile_type: :class:`~DownloadDataFileToDisk`, optional
+        (must be a subclass of :class:`~.data_file_io.DownloadDataFileToDisk`)
+    :type datafile_type: :class:`~.data_file_io.DownloadDataFileToDisk`, optional
 
-    :raises ValueError: if `datafile_type` is not a subclass of :class:`~DownloadDataFileToDisk`
+    :raises ValueError: if `datafile_type` is not a subclass of
+        :class:`~.data_file_io.DownloadDataFileToDisk`
     """
 
     #################### PUBLIC FUNCTIONS ####################

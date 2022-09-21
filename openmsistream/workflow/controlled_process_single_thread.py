@@ -14,7 +14,7 @@ class ControlledProcessSingleThread(ControlledProcess,ABC) :
 
     def run(self) :
         """
-        Start the process and call run_iteration until the process is shut down
+        Start the process and call :func:`~_run_iteration` until the process is shut down
         """
         super().run()
         while self.alive :
@@ -25,7 +25,8 @@ class ControlledProcessSingleThread(ControlledProcess,ABC) :
     @abstractmethod
     def _run_iteration(self) :
         """
-        The function that is run in an infinite loop while the process is alive
+        The function that is called repeatedly in an infinite loop as long as the process is alive.
+
         Not implemented in the base class.
         """
         raise NotImplementedError
