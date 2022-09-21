@@ -17,6 +17,7 @@ authors:
     orcid: 0000-0002-4100-4898
     affiliation: 1
   - name: Christopher DiMarco
+    orcid: 0000-0002-2267-938X
     affiliation: 4
   - name: Jacob Diamond
     orcid: 0000-0001-7905-4260
