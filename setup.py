@@ -8,7 +8,7 @@ site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-in
 long_description = ''
 with open('README.md', 'r') as readme :
     for il,line in enumerate(readme.readlines(),start=1) :
-        if il>=12 :
+        if il>=19 :
             long_description+=line
 
 setupkwargs = dict(

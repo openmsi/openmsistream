@@ -13,6 +13,7 @@
  <div align="center"><sup>8</sup> Institute for Quantum Matter (IQM), The Johns Hopkins University, Baltimore, MD, USA </div>
  <div align="center"><sup>9</sup> Department of Earth and Planetary Sciences, The Johns Hopkins University, Baltimore, MD, USA </div>
 
+ <br>
  <div align="center"><img src="docs/source/images/openmsistream_logo.png" width="350" /></div>
  <br>
 
