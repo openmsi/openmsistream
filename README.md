@@ -1,5 +1,5 @@
 # <div align="center"> OpenMSIStream </div>
-#### <div align="center">***v0.9.5***</div>
+#### <div align="center">***v0.9.6***</div>
 
 #### <div align="center">Maggie Eminizer<sup>1</sup>, Sam Tabrisky<sup>2,3,4</sup>, Amir Sharifzadeh<sup>1</sup>, Chris DiMarco<sup>4</sup>, Jake Diamond<sup>4</sup>, KT Ramesh<sup>4</sup>, Todd Hufnagel<sup>4,5,6</sup>, Tyrel McQueen<sup>5,7,8</sup>, David Elbert<sup>4,9</sup></div>
 
