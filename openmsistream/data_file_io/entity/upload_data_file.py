@@ -181,7 +181,7 @@ class UploadDataFile(DataFile,Runnable) :
         #first make sure the choices of select_bytes are valid if necessary
         #and sort them by their start byte to keep the file hash in order
         if self.select_bytes :
-            if isinstance(self.select_bytes,list) :
+            if not isinstance(self.select_bytes,list) :
                 self.logger.error(f'ERROR: select_bytes={self.select_bytes} but is expected to be a list!',ValueError)
             for sbt in self.select_bytes :
                 if (not isinstance(sbt,tuple)) or len(sbt)!=2 :
