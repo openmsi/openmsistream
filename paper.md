@@ -19,9 +19,9 @@ authors:
   - name: Christopher DiMarco
     orcid: 0000-0002-2267-938X
     affiliation: 4
-  - name: Jacob Diamond
+  - name: Jacob M. Diamond
     orcid: 0000-0001-7905-4260
-    affiliation: 4
+    affiliation: "4, 6"
   - name: Kaliat Ramesh
     orcid: 0000-0003-2659-4698
     affiliation: 4
