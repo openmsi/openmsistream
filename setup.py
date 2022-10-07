@@ -1,14 +1,14 @@
 #imports
 import setuptools, site
 
-version = '0.9.6'
+version = '1.0.0'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
 long_description = ''
 with open('README.md', 'r') as readme :
     for il,line in enumerate(readme.readlines(),start=1) :
-        if il>=19 :
+        if il>=18 :
             long_description+=line
 
 setupkwargs = dict(
