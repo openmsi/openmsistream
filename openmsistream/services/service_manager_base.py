@@ -243,6 +243,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                 try :'''
         if self.service_dict['func_name'] is not None :
             code+=f'''
+                    import openmsistream
                     from {self.service_dict['filepath']} import {self.service_dict['func_name']}
                     {self.service_dict['func_name']}({self.argslist})'''
         else :
