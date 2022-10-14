@@ -57,7 +57,7 @@ class WindowsServiceManager(ServiceManagerBase) :
             if ' ' in str(self.exec_fp) :
                 cmd+= f'"\""""{self.exec_fp}\"""'
             else :
-                cmd+= f'"{self.exec_fp}"'
+                cmd+= f'\"{self.exec_fp}\"'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
             cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
