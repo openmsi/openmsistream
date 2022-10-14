@@ -53,7 +53,7 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.__find_install_nssm()
         #run NSSM to install the service
         with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
-            cmd = f'\"{SERVICE_CONST.NSSM_PATH.name}\" install {self.service_name} \"{sys.executable}\" '
+            cmd = f'{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} \"{sys.executable}\" '
             cmd+= f'\"{self.exec_fp}\"'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
             cmd = f'\"{SERVICE_CONST.NSSM_PATH.name}\" set {self.service_name} DisplayName {self.service_name}'
@@ -78,7 +78,7 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.__find_install_nssm()
         #get the service status
         with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
-            cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH.name}\" status {self.service_name}']
+            cmds = ['powershell.exe',f'{SERVICE_CONST.NSSM_PATH.name} status {self.service_name}']
             result = run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info(f'{self.service_name} status: {result.decode()}')
 
@@ -109,7 +109,7 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.__find_install_nssm()
         #using NSSM
         with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
-            cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH.name}\" remove {self.service_name} confirm']
+            cmds = ['powershell.exe',f'{SERVICE_CONST.NSSM_PATH.name} remove {self.service_name} confirm']
             run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info('Service removed')
         #remove NSSM if requested
