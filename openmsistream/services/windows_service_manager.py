@@ -56,7 +56,7 @@ class WindowsServiceManager(ServiceManagerBase) :
             cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} \"{sys.executable}\" '
             cmd+= f'\"{self.exec_fp}\"'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
-            cmd = f'\"{SERVICE_CONST.NSSM_PATH.name}\" set {self.service_name} DisplayName {self.service_name}'
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
         self.logger.info(f'Done installing {self.service_name}')
 
