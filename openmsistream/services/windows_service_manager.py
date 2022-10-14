@@ -3,6 +3,7 @@
 #imports
 import sys, os, pathlib, shutil, ctypes.util
 from subprocess import CalledProcessError
+from ..utilities.misc import change_dir
 from .config import SERVICE_CONST
 from .utilities import run_cmd_in_subprocess
 from .service_manager_base import ServiceManagerBase
@@ -51,10 +52,12 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM to run the executable
         self.__find_install_nssm()
         #run NSSM to install the service
-        cmd = f'\"{SERVICE_CONST.NSSM_PATH}\" install {self.service_name} \"{sys.executable}\" \"{self.exec_fp}\"'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
-        cmd = f'\"{SERVICE_CONST.NSSM_PATH}\" set {self.service_name} DisplayName {self.service_name}'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmd = f'\"{SERVICE_CONST.NSSM_PATH.name}\" install {self.service_name} \"{sys.executable}\" '
+            cmd+= f'\"{self.exec_fp}\"'
+            run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+            cmd = f'\"{SERVICE_CONST.NSSM_PATH.name}\" set {self.service_name} DisplayName {self.service_name}'
+            run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
         self.logger.info(f'Done installing {self.service_name}')
 
     def start_service(self) :
@@ -74,8 +77,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM in the current directory
         self.__find_install_nssm()
         #get the service status
-        cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH}\" status {self.service_name}']
-        result = run_cmd_in_subprocess(cmds,logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH.name}\" status {self.service_name}']
+            result = run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info(f'{self.service_name} status: {result.decode()}')
 
     def stop_service(self) :
@@ -104,8 +108,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM in the current directory
         self.__find_install_nssm()
         #using NSSM
-        cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH}\" remove {self.service_name} confirm']
-        run_cmd_in_subprocess(cmds,logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmds = ['powershell.exe',f'\"{SERVICE_CONST.NSSM_PATH.name}\" remove {self.service_name} confirm']
+            run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info('Service removed')
         #remove NSSM if requested
         if remove_nssm :
