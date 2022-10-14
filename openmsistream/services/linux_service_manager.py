@@ -28,8 +28,7 @@ class LinuxServiceManager(ServiceManagerBase) :
 
     @property
     def env_var_names(self):
-        for evn in super().env_var_names :
-            yield evn
+        env_var_names = super().env_var_names
         #get the names of environment variables from the env_var file
         if self.env_var_filepath.is_file() :
             with open(self.env_var_filepath,'r') as fp :
@@ -37,7 +36,9 @@ class LinuxServiceManager(ServiceManagerBase) :
             for line in lines :
                 linesplit = (line.strip()).split('=')
                 if len(linesplit)==2 :
-                    yield linesplit[0]
+                    env_var_names.add(linesplit[0])
+        for evn in env_var_names :
+            yield evn
 
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
