@@ -167,10 +167,6 @@ class WindowsServiceManager(ServiceManagerBase) :
                     errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
                     errmsg+=  'to crash. Exception will be logged below, but not reraised.'
                     self.logger.error(errmsg,exc_obj=exc,reraise=False)
-            else :
-                warnmsg = f'WARNING: could not locate {pname} DLL file to copy to system32 folder for '
-                warnmsg+= f'{self.service_name}! This will likely cause the Python code running as a Service to crash.'
-                self.logger.warning(warnmsg)
 
     def __find_install_nssm(self,move_local=True) :
         """
