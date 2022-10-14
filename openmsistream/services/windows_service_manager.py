@@ -116,7 +116,7 @@ class WindowsServiceManager(ServiceManagerBase) :
         if remove_nssm :
             if SERVICE_CONST.NSSM_PATH.is_file() :
                 try :
-                    run_cmd_in_subprocess(['powershell.exe',f'del \"{SERVICE_CONST.NSSM_PATH}\"'],logger=self.logger)
+                    run_cmd_in_subprocess(['powershell.exe',f'del "{SERVICE_CONST.NSSM_PATH}"'],logger=self.logger)
                 except CalledProcessError :
                     msg = f'WARNING: failed to delete {SERVICE_CONST.NSSM_PATH}. '
                     msg+= 'You are free to delete it manually if you would like.'

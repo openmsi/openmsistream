@@ -111,7 +111,7 @@ class TestServices(unittest.TestCase) :
             finally :
                 service_path = SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'
                 if service_path.exists() :
-                    run_cmd_in_subprocess(['sudo','rm',f'\"{service_path}\"'],logger=LOGGER)
+                    run_cmd_in_subprocess(['sudo','rm',f'"{service_path}"'],logger=LOGGER)
                 fps_to_unlink = [(SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
                                  (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt'),
                                  (SERVICE_CONST.WORKING_DIR/f'{service_name}.service')]
@@ -154,7 +154,7 @@ class TestServices(unittest.TestCase) :
                              (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt')]
             if platform.system()=='Linux' : 
                 if service_path.exists() :
-                    run_cmd_in_subprocess(['sudo','rm',f'\"{service_path}\"'],logger=LOGGER)
+                    run_cmd_in_subprocess(['sudo','rm',f'"{service_path}"'],logger=LOGGER)
                 fps_to_unlink.append(SERVICE_CONST.WORKING_DIR/f'{service_name}.service')
             for fp in fps_to_unlink :
                 if fp.exists() :
