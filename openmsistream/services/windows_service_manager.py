@@ -65,6 +65,8 @@ class WindowsServiceManager(ServiceManagerBase) :
                 else :
                     to_add = pathpart
                 if exe_path_to_use is None :
+                    if to_add.endswith(':') :
+                        to_add = f'{to_add}\\'
                     exe_path_to_use = pathlib.Path(to_add)
                 else :
                     exe_path_to_use = exe_path_to_use/to_add
