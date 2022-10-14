@@ -152,8 +152,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         (Needed to properly load it when running as a service)
         """
         system32_path = pathlib.Path(r'C:\Windows\system32')
-        package_names = ['librdkafka-a2007a74.dll','librdkafka-09f4f3ec',
-                         'libcurl-40bef7bc','zlib1-50deb1cb','zstd-acd7910e',
+        package_names = ['librdkafka-a2007a74','librdkafka-09f4f3ec',
+                         'libcrypto-1_1-x64-6d3f430c','libcurl-40bef7bc','libssl-1_1-x64-a125c0ba',
+                         'zlib1-50deb1cb','zstd-acd7910e',
                          'libcrypto-1_1-x64','libssl-1_1-x64',
                          'libsodium']
         for pname in package_names :
