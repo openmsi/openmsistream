@@ -1,6 +1,5 @@
 if __name__=='__main__' :
     try :
-        import openmsistream
         from openmsistream.data_file_io.actor.data_file_upload_directory import main
         main(['test_upload'])
     except Exception :
