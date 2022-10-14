@@ -152,7 +152,8 @@ class WindowsServiceManager(ServiceManagerBase) :
         (Needed to properly load it when running as a service)
         """
         system32_path = pathlib.Path(r'C:\Windows\system32')
-        package_names = ['libsodium','libcrypto-1_1-x64','libssl-1_1-x64']
+        package_names = ['librdkafka-a2007a74.dll','librdkafka-09f4f3ec',
+                         'libsodium','libcrypto-1_1-x64','libssl-1_1-x64']
         for pname in package_names :
             current_env_dll = ctypes.util.find_library(pname)
             if current_env_dll is not None :
