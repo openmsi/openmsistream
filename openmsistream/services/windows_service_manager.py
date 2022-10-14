@@ -53,8 +53,8 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.__find_install_nssm()
         #run NSSM to install the service
         with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
-            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} \"{sys.executable}\" '
-            cmd+= f'\"{self.exec_fp}\"'
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} "{sys.executable}" '
+            cmd+= f'"{self.exec_fp}"'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
             cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
