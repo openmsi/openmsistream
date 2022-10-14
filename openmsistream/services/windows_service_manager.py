@@ -53,7 +53,22 @@ class WindowsServiceManager(ServiceManagerBase) :
         self.__find_install_nssm()
         #run NSSM to install the service
         with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
-            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} "{sys.executable}" '
+            exe_path_posix = pathlib.Path(sys.executable).as_posix()
+            exe_path_to_use = None
+            for pathpart in exe_path_posix.split('/') :
+                if ' ' in pathpart :
+                    if exe_path_to_use is None :
+                        errmsg = 'ERROR: first part of path to Python Executable for Services cannot contain a space! '
+                        errmsg += f'Executable path = {sys.executable}'
+                        self.logger.error(errmsg,ValueError)
+                    to_add = f'"{pathpart}"'
+                else :
+                    to_add = pathpart
+                if exe_path_to_use is None :
+                    exe_path_to_use = pathlib.Path(to_add)
+                else :
+                    exe_path_to_use = exe_path_to_use/to_add
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} {exe_path_to_use} '
             cmd+= f'"{self.exec_fp}"'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
             cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
@@ -193,7 +208,7 @@ class WindowsServiceManager(ServiceManagerBase) :
              f'Remove-Item -Path {nssm_zip_file_name}'),
             (('move',f'"{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}"',
               f'"{pathlib.Path()}"'),
-             f'''Move-Item -Path "{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}" 
+             f'''Move-Item -Path "{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}"
                  -Destination "{SERVICE_CONST.NSSM_PATH}"'''),
             (('rmdir','/S','/Q',f'{nssm_zip_file_name.rstrip(".zip")}'),
              f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
