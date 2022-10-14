@@ -187,14 +187,14 @@ class WindowsServiceManager(ServiceManagerBase) :
         cmd_tuples = [
             (('curl',f'{SERVICE_CONST.NSSM_DOWNLOAD_URL}','-O'),
              f'Invoke-WebRequest -Uri {SERVICE_CONST.NSSM_DOWNLOAD_URL} -OutFile {nssm_zip_file_name}'),
-            (('tar','-xf',f'\"{pathlib.Path() / nssm_zip_file_name}\"'),
-             f'Expand-Archive {nssm_zip_file_name} -DestinationPath \"{pathlib.Path().resolve()}\"'),
+            (('tar','-xf',f'"{pathlib.Path() / nssm_zip_file_name}"'),
+             f'Expand-Archive {nssm_zip_file_name} -DestinationPath "{pathlib.Path().resolve()}"'),
             (('del',f'{nssm_zip_file_name}'),
              f'Remove-Item -Path {nssm_zip_file_name}'),
-            (('move',f'\"{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}\"',
-              f'\"{pathlib.Path()}\"'),
-             f'''Move-Item -Path \"{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}\" 
-                 -Destination \"{SERVICE_CONST.NSSM_PATH}\"'''),
+            (('move',f'"{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}"',
+              f'"{pathlib.Path()}"'),
+             f'''Move-Item -Path "{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}" 
+                 -Destination "{SERVICE_CONST.NSSM_PATH}"'''),
             (('rmdir','/S','/Q',f'{nssm_zip_file_name.rstrip(".zip")}'),
              f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
         ]
