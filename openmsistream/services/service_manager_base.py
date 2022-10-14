@@ -398,10 +398,11 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         (any environment variables in the command line arguments or config file)
         """
         #get the names of environment variables from the command line and config file
+        env_var_names = set()
         if self.argslist is not None and self.service_dict is not None :
             for arg in self.argslist :
                 if arg.startswith('$') :
-                    yield arg
+                    env_var_names.add(arg)
             if self.service_dict['class'] is not None :
                 parser = self.service_dict['class'].get_argument_parser()
                 argsdests = [action.dest for action in parser.actions]
@@ -409,4 +410,5 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                     pargs = parser.parse_args(args=self.argslist)
                     cfp = ConfigFileParser(pargs.config,logger=SERVICE_CONST.logger)
                     for evn in cfp.env_var_names :
-                        yield evn
+                        env_var_names.add(evn)
+        return env_var_names

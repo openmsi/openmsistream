@@ -109,11 +109,9 @@ class TestServices(unittest.TestCase) :
             except Exception as e :
                 raise e
             finally :
-                if (SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service').exists() :
-                    run_cmd_in_subprocess(['sudo',
-                                           'rm',
-                                           str((SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'))],
-                                           logger=LOGGER)
+                service_path = SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'
+                if service_path.exists() :
+                    run_cmd_in_subprocess(['sudo','rm',f'"{service_path}"'],logger=LOGGER)
                 fps_to_unlink = [(SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
                                  (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt'),
                                  (SERVICE_CONST.WORKING_DIR/f'{service_name}.service')]
@@ -133,6 +131,7 @@ class TestServices(unittest.TestCase) :
         service_name = 'RunnableExampleServiceTest'
         test_file_path = TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST/'runnable_example_service_test.txt'
         error_log_path = pathlib.Path().resolve()/f'{service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
+        service_path = SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'
         self.assertFalse(test_file_path.exists())
         try :
             install_service_main(
@@ -146,19 +145,16 @@ class TestServices(unittest.TestCase) :
             self.assertTrue(test_file_path.is_file())
             self.assertFalse(error_log_path.exists())
             if platform.system()=='Linux' :
-                self.assertFalse((SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service').exists())
+                self.assertFalse(service_path.exists())
         except Exception as e :
             raise e
         finally :
             fps_to_unlink = [test_file_path,error_log_path,
                              (SERVICE_CONST.WORKING_DIR/f'{service_name}_env_vars.txt'),
                              (SERVICE_CONST.WORKING_DIR/f'{service_name}_install_args.txt')]
-            if platform.system()=='Linux' :
-                if (SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service').exists() :
-                    run_cmd_in_subprocess(['sudo',
-                                           'rm',
-                                           str((SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'))],
-                                           logger=LOGGER)
+            if platform.system()=='Linux' : 
+                if service_path.exists() :
+                    run_cmd_in_subprocess(['sudo','rm',f'"{service_path}"'],logger=LOGGER)
                 fps_to_unlink.append(SERVICE_CONST.WORKING_DIR/f'{service_name}.service')
             for fp in fps_to_unlink :
                 if fp.exists() :

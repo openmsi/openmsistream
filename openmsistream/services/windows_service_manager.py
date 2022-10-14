@@ -3,6 +3,7 @@
 #imports
 import sys, os, pathlib, shutil, ctypes.util
 from subprocess import CalledProcessError
+from ..utilities.misc import change_dir
 from .config import SERVICE_CONST
 from .utilities import run_cmd_in_subprocess
 from .service_manager_base import ServiceManagerBase
@@ -29,8 +30,7 @@ class WindowsServiceManager(ServiceManagerBase) :
 
     @property
     def env_var_names(self):
-        for evn in super().env_var_names :
-            yield evn
+        env_var_names = super().env_var_names
         #get the names of environment variables from the env_var file
         if self.env_var_filepath.is_file() :
             with open(self.env_var_filepath,'r') as fp :
@@ -38,7 +38,9 @@ class WindowsServiceManager(ServiceManagerBase) :
             for line in lines :
                 linestrip = line.strip()
                 if linestrip!='' :
-                    yield linestrip
+                    env_var_names.add(linestrip)
+        for evn in env_var_names :
+            yield evn
 
     def install_service(self) :
         """
@@ -50,11 +52,15 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM to run the executable
         self.__find_install_nssm()
         #run NSSM to install the service
-        cmd = f'{SERVICE_CONST.NSSM_PATH} install {self.service_name} \"{sys.executable}\" \"{self.exec_fp}\"'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
-        run_cmd_in_subprocess(['powershell.exe',
-                               f'{SERVICE_CONST.NSSM_PATH} set {self.service_name} DisplayName {self.service_name}'],
-                               logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} install {self.service_name} "{sys.executable}" '
+            if ' ' in str(self.exec_fp) :
+                cmd+= f'"\""""{self.exec_fp}\"""'
+            else :
+                cmd+= f'\"{self.exec_fp}\"'
+            run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
+            run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
         self.logger.info(f'Done installing {self.service_name}')
 
     def start_service(self) :
@@ -63,8 +69,8 @@ class WindowsServiceManager(ServiceManagerBase) :
         """
         self.logger.info(f'Starting {self.service_name}...')
         #start the service using net
-        cmd = f'net start {self.service_name}'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+        cmds = ['powershell.exe',f'net start {self.service_name}']
+        run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info(f'Done starting {self.service_name}')
 
     def service_status(self) :
@@ -74,8 +80,9 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM in the current directory
         self.__find_install_nssm()
         #get the service status
-        cmd = f'{SERVICE_CONST.NSSM_PATH} status {self.service_name}'
-        result = run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmds = ['powershell.exe',f'./{SERVICE_CONST.NSSM_PATH.name} status {self.service_name}']
+            result = run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info(f'{self.service_name} status: {result.decode()}')
 
     def stop_service(self) :
@@ -84,8 +91,8 @@ class WindowsServiceManager(ServiceManagerBase) :
         """
         self.logger.info(f'Stopping {self.service_name}...')
         #stop the service using net
-        cmd = f'net stop {self.service_name}'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+        cmds = ['powershell.exe',f'net stop {self.service_name}']
+        run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info(f'Done stopping {self.service_name}')
 
     def remove_service(self,remove_env_vars=False,remove_install_args=False,remove_nssm=False) :
@@ -104,14 +111,15 @@ class WindowsServiceManager(ServiceManagerBase) :
         #find or install NSSM in the current directory
         self.__find_install_nssm()
         #using NSSM
-        cmd = f'{SERVICE_CONST.NSSM_PATH} remove {self.service_name} confirm'
-        run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+        with change_dir(SERVICE_CONST.NSSM_PATH.parent) :
+            cmds = ['powershell.exe',f'./{SERVICE_CONST.NSSM_PATH.name} remove {self.service_name} confirm']
+            run_cmd_in_subprocess(cmds,logger=self.logger)
         self.logger.info('Service removed')
         #remove NSSM if requested
         if remove_nssm :
             if SERVICE_CONST.NSSM_PATH.is_file() :
                 try :
-                    run_cmd_in_subprocess(['powershell.exe',f'del {SERVICE_CONST.NSSM_PATH}'],logger=self.logger)
+                    run_cmd_in_subprocess(['powershell.exe',f'del "{SERVICE_CONST.NSSM_PATH}"'],logger=self.logger)
                 except CalledProcessError :
                     msg = f'WARNING: failed to delete {SERVICE_CONST.NSSM_PATH}. '
                     msg+= 'You are free to delete it manually if you would like.'
@@ -144,7 +152,11 @@ class WindowsServiceManager(ServiceManagerBase) :
         (Needed to properly load it when running as a service)
         """
         system32_path = pathlib.Path(r'C:\Windows\system32')
-        package_names = ['libsodium','libcrypto-1_1-x64','libssl-1_1-x64']
+        package_names = ['librdkafka-a2007a74','librdkafka-09f4f3ec',
+                         'libcrypto-1_1-x64-6d3f430c','libcurl-40bef7bc','libssl-1_1-x64-a125c0ba',
+                         'zlib1-50deb1cb','zstd-acd7910e',
+                         'libcrypto-1_1-x64','libssl-1_1-x64',
+                         'libsodium']
         for pname in package_names :
             current_env_dll = ctypes.util.find_library(pname)
             if current_env_dll is not None :
@@ -158,10 +170,6 @@ class WindowsServiceManager(ServiceManagerBase) :
                     errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
                     errmsg+=  'to crash. Exception will be logged below, but not reraised.'
                     self.logger.error(errmsg,exc_obj=exc,reraise=False)
-            else :
-                warnmsg = f'WARNING: could not locate {pname} DLL file to copy to system32 folder for '
-                warnmsg+= f'{self.service_name}! This will likely cause the Python code running as a Service to crash.'
-                self.logger.warning(warnmsg)
 
     def __find_install_nssm(self,move_local=True) :
         """
@@ -177,24 +185,34 @@ class WindowsServiceManager(ServiceManagerBase) :
         SERVICE_CONST.logger.info(f'Installing NSSM from {SERVICE_CONST.NSSM_DOWNLOAD_URL}...')
         nssm_zip_file_name = SERVICE_CONST.NSSM_DOWNLOAD_URL.rsplit('/', maxsplit=1)[-1]
         run_cmd_in_subprocess(['powershell.exe',
-                                '[Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12'],
+                                '[Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12'],
                                 logger=self.logger)
         cmd_tuples = [
-            (f'curl {SERVICE_CONST.NSSM_DOWNLOAD_URL} -O',
-            f'Invoke-WebRequest -Uri {SERVICE_CONST.NSSM_DOWNLOAD_URL} -OutFile {nssm_zip_file_name}'),
-            (f'tar -xf {pathlib.Path() / nssm_zip_file_name}',
-            f'Expand-Archive {nssm_zip_file_name} -DestinationPath {pathlib.Path().resolve()}'),
-            (f'del {nssm_zip_file_name}',
-            f'Remove-Item -Path {nssm_zip_file_name}'),
-            (f'move {pathlib.Path() / nssm_zip_file_name.rstrip(".zip") / "win64" / "nssm.exe"} {pathlib.Path()}',
-            f'''Move-Item -Path {pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"} \
-                -Destination {SERVICE_CONST.NSSM_PATH}'''),
-            (f'rmdir /S /Q {nssm_zip_file_name.rstrip(".zip")}',
-            f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
+            (('curl',f'{SERVICE_CONST.NSSM_DOWNLOAD_URL}','-O'),
+             f'Invoke-WebRequest -Uri {SERVICE_CONST.NSSM_DOWNLOAD_URL} -OutFile {nssm_zip_file_name}'),
+            (('tar','-xf',f'"{pathlib.Path() / nssm_zip_file_name}"'),
+             f'Expand-Archive {nssm_zip_file_name} -DestinationPath "{pathlib.Path().resolve()}"'),
+            (('del',f'{nssm_zip_file_name}'),
+             f'Remove-Item -Path {nssm_zip_file_name}'),
+            (('move',f'"{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}"',
+              f'"{pathlib.Path()}"'),
+             f'''Move-Item -Path "{pathlib.Path()/nssm_zip_file_name.rstrip(".zip")/"win64"/"nssm.exe"}"
+                 -Destination "{SERVICE_CONST.NSSM_PATH}"'''),
+            (('rmdir','/S','/Q',f'{nssm_zip_file_name.rstrip(".zip")}'),
+             f'Remove-Item -Recurse -Force {nssm_zip_file_name.rstrip(".zip")}'),
         ]
-        for cmd in cmd_tuples :
-            try :
-                run_cmd_in_subprocess(['powershell.exe',cmd[1]],logger=self.logger)
-            except CalledProcessError :
-                run_cmd_in_subprocess(cmd[0],shell=True,logger=self.logger)
-        SERVICE_CONST.logger.debug('Done installing NSSM')
+        try :
+            for cmd in cmd_tuples :
+                try :
+                    run_cmd_in_subprocess(['powershell.exe',cmd[1]],logger=self.logger)
+                except CalledProcessError :
+                    run_cmd_in_subprocess(list(cmd[0]),shell=True,logger=self.logger)
+        except CalledProcessError :
+            pass
+        if SERVICE_CONST.NSSM_PATH.is_file() :
+            SERVICE_CONST.logger.debug('Done installing NSSM')
+        else :
+            errmsg =  'ERROR: failed to install NSSM automatically. Please download NSSM from '
+            errmsg+= f'{SERVICE_CONST.NSSM_DOWNLOAD_URL}, put the executable in the current directory '
+            errmsg+= f'or in {SERVICE_CONST.NSSM_PATH.parent}, and try again.'
+            SERVICE_CONST.logger.error(errmsg)
