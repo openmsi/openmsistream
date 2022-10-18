@@ -164,7 +164,7 @@ class LinuxServiceManager(ServiceManagerBase) :
             [Service]
             Type = simple
             KillMode = none
-            User = {os.path.expandvars('$USER')}
+            User = root
             ExecStart = {sys.executable} {self.exec_fp}'''
         if self.env_vars_needed :
             code+=f'''\n\
