@@ -158,20 +158,21 @@ class LinuxServiceManager(ServiceManagerBase) :
         code = f'''\
             [Unit]
             Description = {description}
-            Requires = network-online.target remote-fs.target
-            After = network-online.target remote-fs.target
+            Requires = network-online.target local-fs.target remote-fs.target
+            After = network-online.target local-fs.target remote-fs.target
 
             [Service]
             Type = simple
-            User = {os.path.expandvars('$USER')}
+            KillMode = none
+            User = root
             ExecStart = {sys.executable} {self.exec_fp}'''
         if self.env_vars_needed :
             code+=f'''\n\
             EnvironmentFile = {self.env_var_filepath}'''
         code+=f'''\n\
             WorkingDirectory = {pathlib.Path().resolve()}
-            Restart = on-failure
-            RestartSec = 30
+            Restart = always
+            RestartSec = 120
 
             [Install]
             WantedBy = multi-user.target'''
