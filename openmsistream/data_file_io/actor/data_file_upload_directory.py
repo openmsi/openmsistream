@@ -135,6 +135,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :type err: :class:`confluent_kafka.KafkaError`
         :param msg: The message object
         :type msg: :class:`confluent_kafka.Message`
+        :param prodid: The ID of the producer that produced the message (hex(id(producer)) in memory)
+        :type prodid: str
         :param filename: The name of the file the message is coming from
         :type filename: str
         :param filepath: The full path to the file the message is coming from

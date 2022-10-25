@@ -96,7 +96,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         return ( self.n_msgs_read, self.n_msgs_processed,
                  self.completely_processed_filepaths, self.results_produced_filepaths )
 
-    def producer_callback(self,err,msg,filename,rel_filepath,n_total_chunks) :
+    def producer_callback(self,err,msg,prodid,filename,rel_filepath,n_total_chunks) :
         """
         A reference to this method is given as the callback for each call to :func:`confluent_kafka.Producer.produce`.
         It is called for every message upon acknowledgement by the broker, and it uses the file registries in the
@@ -114,6 +114,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :type err: :class:`confluent_kafka.KafkaError`
         :param msg: The message object
         :type msg: :class:`confluent_kafka.Message`
+        :param prodid: The ID of the producer that produced the message (hex(id(producer)) in memory)
+        :type prodid: str
         :param filename: The name of the file that was used to create this processing result message
         :type filename: str
         :param rel_filepath: The path to the file that was used to create this processing result message,
