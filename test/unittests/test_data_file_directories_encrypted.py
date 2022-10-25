@@ -2,7 +2,7 @@
 import unittest, pathlib, time, logging, shutil, filecmp
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.utilities.dataclass_table import DataclassTable, DataclassTableReadOnly
+from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import RegistryLineInProgress, RegistryLineCompleted
 from openmsistream.data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
