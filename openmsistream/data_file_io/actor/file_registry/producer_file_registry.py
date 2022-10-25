@@ -4,7 +4,7 @@ in the process of being produced/have been fully produced
 """
 
 #imports
-import pathlib, datetime
+import pathlib, datetime, time
 from typing import Set
 from dataclasses import dataclass
 from ....utilities import DataclassTableReadOnly, DataclassTableAppendOnly, DataclassTable, LogOwner
@@ -52,12 +52,12 @@ class ProducerFileRegistry(LogOwner) :
                                         logger=self.logger)
         #Pattern for the "completed" .csv file names
         self.completed_filepath_pattern = dirpath / f'uploaded_to_{topic_name}.csv'
-        #Consolidate existing "completed" csv files into one
-        self.consolidate_completed_files()
-        #Make a dictionary to hold tables of any newly received "completed" entries
-        self.__completed_tables_by_path = {}
         #keep track of the maximum number of lines per "completed" file
         self.max_completed_lines_per_file = max_completed_lines_per_file
+        #Make a dictionary to hold tables of any newly received "completed" entries
+        self.__completed_tables_by_path = {}
+        #Consolidate existing "completed" csv files into one
+        self.consolidate_completed_files()
 
     def __del__(self) :
         self.consolidate_completed_files()
@@ -97,10 +97,13 @@ class ProducerFileRegistry(LogOwner) :
                     errmsg+= 'Individual files will be retained and should be manually concatenated. '
                     errmsg+= 'Duplicate entries may be present.'
                     raise RuntimeError(errmsg)
+            del added_file
+            time.sleep(1)
             if fp in self.__completed_tables_by_path :
                 self.__completed_tables_by_path.pop(fp)
+                time.sleep(1)
             fp.unlink()
-    
+
     def get_incomplete_filepaths_and_chunks(self) :
         """
         Generate tuples of (filepath, chunks to upload) for each file that has not yet been completely uploaded
@@ -216,8 +219,9 @@ class ProducerFileRegistry(LogOwner) :
         if they're getting too large
         """
         #create the path to the table file that should be added to
-        prod_suffix = f'_p{prodid}{self.completed_filepath_pattern.suffix}'
-        table_path = self.completed_filepath_pattern.with_suffix(prod_suffix)
+        prod_stem = f'{self.completed_filepath_pattern.stem}_p{prodid}'
+        table_path = self.completed_filepath_pattern.with_stem(prod_stem)
+        create_new_table_at_path = False
         #if the table already exists
         if table_path in self.__completed_tables_by_path :
             #if the table has the max # of entries or more entries already
@@ -226,11 +230,15 @@ class ProducerFileRegistry(LogOwner) :
                 self.__completed_tables_by_path[table_path].dump_to_file()
                 #rename the dumped file with a timestamp
                 timestamp = str(datetime.datetime.now().timestamp()).replace('.','_')
-                new_path = table_path.with_suffix(f'_{timestamp}{table_path.suffix}')
+                new_path = table_path.with_stem(f'{table_path.stem}_{timestamp}')
                 table_path.rename(new_path)
                 #reset the table associated with the filepath for this producer
-                self.__completed_tables_by_path[table_path] = DataclassTableAppendOnly(RegistryLineCompleted,
-                                                                                       filepath=table_path,
-                                                                                       logger=self.logger)
+                create_new_table_at_path = True
+        else :
+            create_new_table_at_path = True
+        if create_new_table_at_path :
+            self.__completed_tables_by_path[table_path] = DataclassTableAppendOnly(RegistryLineCompleted,
+                                                                                   filepath=table_path,
+                                                                                   logger=self.logger)
         self.__completed_tables_by_path[table_path].add_entries(completed_entry)
         self.__completed_tables_by_path[table_path].dump_to_file()

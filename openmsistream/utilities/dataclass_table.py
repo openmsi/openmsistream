@@ -33,6 +33,9 @@ class DataclassTableBase(LogOwner,ABC) :
     :param filepath: The path to the .csv file that should be created (or read from) on startup.
         The default is a file named after the dataclass type in the current directory.
     :type filepath: :class:`pathlib.Path` or None, optional
+    :param create_if_missing: If True, the file at the given path will be created as an empty file
+        if it doesn't already exist
+    :type create_if_missing: bool
     """
 
     #################### PROPERTIES AND CONSTANTS ####################
@@ -80,7 +83,7 @@ class DataclassTableBase(LogOwner,ABC) :
 
     #################### PUBLIC FUNCTIONS ####################
 
-    def __init__(self,dataclass_type,*,filepath=None,**kwargs) :
+    def __init__(self,dataclass_type,*,filepath=None,create_if_missing=True,**kwargs) :
         """
         Constructor method
         """
@@ -107,14 +110,11 @@ class DataclassTableBase(LogOwner,ABC) :
         self._file_last_updated = datetime.datetime.now()
         if self.__filepath.is_file() :
             self.__read_csv_file()
-        else :
+        elif create_if_missing :
             msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} '
             msg+= f'to hold {self.__dataclass_type.__name__} entries'
             self.logger.debug(msg)
             self.dump_to_file()
-
-    def __del__(self) :
-        self.dump_to_file(reraise_exc=False)
 
     def get_entry_attrs(self,entry_obj_address,*args) :
         """
@@ -316,7 +316,7 @@ class DataclassTableReadOnly(DataclassTableBase) :
         """
         Signature duplicated here for documentation
         """
-        super().__init__(dataclass_type,filepath=filepath,**kwargs)
+        super().__init__(dataclass_type,filepath=filepath,create_if_missing=False,**kwargs)
 
     @property
     def objects(self) :
@@ -382,6 +382,9 @@ class DataclassTable(DataclassTableAppendOnly) :
         Signature duplicated here for documentation
         """
         super().__init__(dataclass_type,filepath=filepath,**kwargs)
+
+    def __del__(self) :
+        self.dump_to_file(reraise_exc=False)
 
     def remove_entries(self,entry_obj_addresses) :
         """

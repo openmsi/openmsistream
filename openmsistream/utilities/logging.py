@@ -39,7 +39,7 @@ class Logger :
 
     FORMATTER = OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
-    def __init__(self,logger_name=None,streamlevel=logging.DEBUG,logger_filepath=None,filelevel=logging.INFO) :
+    def __init__(self,logger_name=None,streamlevel=logging.INFO,logger_filepath=None,filelevel=logging.WARNING) :
         """
         name = the name for this logger to use (probably something like the top module that owns it)
         """
@@ -220,7 +220,7 @@ class LogOwner :
             self.__logger = logger
 
     def __init__(self,*args,
-                 logger=None,logger_name=None,streamlevel=logging.DEBUG,logger_file=None,filelevel=logging.INFO,
+                 logger=None,logger_name=None,streamlevel=logging.INFO,logger_file=None,filelevel=logging.WARNING,
                  **other_kwargs) :
         if logger is not None :
             self.__logger = logger

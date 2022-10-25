@@ -299,24 +299,44 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         any files that have previously been fuly uploaded
         """
         #make sure any files listed as "in progress" have their remaining chunks enqueued
+        n_files_to_resume = 0
+        n_chunks_resumed = 0
         for filepath,chunks in self.__file_registry.get_incomplete_filepaths_and_chunks() :
-            self.logger.info(f'Found {filepath} in progress from a previous run. Will re-enqueue {len(chunks)} chunks.')
+            self.logger.debug(f'Found {filepath} in progress from a previous run. Re-enqueuing {len(chunks)} chunks.')
             self.__add_chunks_for_filepath(filepath,chunks)
+            n_files_to_resume+=1
+            n_chunks_resumed+=len(chunks)
+        if n_files_to_resume>0 :
+            infomsg = f'Found {n_files_to_resume} file'
+            if n_files_to_resume!=1 :
+                infomsg+='s'
+            infomsg+= f' in progress from a previous run. Will re-enqueue {n_chunks_resumed} total chunk'
+            if n_chunks_resumed!=1 :
+                infomsg+='s'
+            self.logger.info(infomsg)
         #make sure any files listed as "completed" will not be uploaded again
+        n_files_already_uploaded = 0
         for filepath in self.__file_registry.get_completed_filepaths() :
             if filepath in self.data_files_by_path :
                 if self.data_files_by_path[filepath].to_upload :
                     msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
-                    self.logger.info(msg)
+                    self.logger.debug(msg)
                 self.data_files_by_path[filepath].to_upload=False
             elif filepath.is_file() :
                 msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
-                self.logger.info(msg)
+                self.logger.debug(msg)
                 self.data_files_by_path[filepath]=self.__datafile_type(filepath,
                                                                        to_upload=False,
                                                                        rootdir=self.dirpath,
                                                                        logger=self.logger,
                                                                        **self.other_datafile_kwargs)
+            n_files_already_uploaded+=1
+        if n_files_already_uploaded>0 :
+            infomsg = f'Found {n_files_already_uploaded} file'
+            if n_files_already_uploaded!=1 :
+                infomsg+='s'
+            infomsg+=' fully uploaded during a previous run that will not be produced again.'
+            self.logger.info(infomsg)
 
     def __add_chunks_for_filepath(self,filepath,chunks) :
         """

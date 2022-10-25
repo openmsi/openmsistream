@@ -57,7 +57,7 @@ class OpenMSIStreamProducer(LogOwner) :
         # poll the producer at least every 5 calls to produce
         self.__poll_counter = 0
         # create an ID for the producer based on its location in memory
-        self.producerID = str(hex(id(self)))[2:]
+        self.producer_id = str(hex(id(self)))[2:]
 
     @staticmethod
     def get_producer_args_kwargs(config_file_path,logger=None,kafkacrypto=None,**kwargs) :
@@ -239,10 +239,10 @@ class OpenMSIStreamProducer(LogOwner) :
             self.logger.info(logmsg)
         #get the Producible's callback arguments and set the callback to use
         if callback is None :
-            callback_to_use = make_callback(default_producer_callback,self.producerID,logger=self.logger,
+            callback_to_use = make_callback(default_producer_callback,self.producer_id,logger=self.logger,
                                             **obj.callback_kwargs)
         else :
-            callback_to_use = make_callback(callback,self.producerID,**obj.callback_kwargs)
+            callback_to_use = make_callback(callback,self.producer_id,**obj.callback_kwargs)
         #produce the message to the topic
         success=False
         total_wait_secs=0
