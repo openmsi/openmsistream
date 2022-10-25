@@ -71,6 +71,13 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         return self.__filepath
 
+    @property
+    def n_entries(self) :
+        """
+        The number of entries in the file
+        """
+        return len(self._entry_objs)
+
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,dataclass_type,*,filepath=None,**kwargs) :
@@ -103,7 +110,7 @@ class DataclassTableBase(LogOwner,ABC) :
         else :
             msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} '
             msg+= f'to hold {self.__dataclass_type.__name__} entries'
-            self.logger.info(msg)
+            self.logger.debug(msg)
             self.dump_to_file()
 
     def __del__(self) :
@@ -214,7 +221,7 @@ class DataclassTableBase(LogOwner,ABC) :
             self._entry_objs[dkey] = obj
             self._entry_lines[dkey] = line
         msg = f'Found {len(self._entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
-        self.logger.info(msg)
+        self.logger.debug(msg)
 
     def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
         """
@@ -299,6 +306,31 @@ class DataclassTableBase(LogOwner,ABC) :
         errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
         self.logger.error(errmsg,ValueError)
         return None
+
+class DataclassTableReadOnly(DataclassTableBase) :
+    """
+    A class to read dataclass objects stored in a csv file
+    """
+
+    def __init__(self,dataclass_type,*,filepath=None,**kwargs) :
+        """
+        Signature duplicated here for documentation
+        """
+        super().__init__(dataclass_type,filepath=filepath,**kwargs)
+
+    @property
+    def objects(self) :
+        """
+        A list of all the dataclass objects in the file
+        """
+        return self._entry_objs.values()
+
+    @property
+    def lines(self) :
+        """
+        A list of all the text lines in the file
+        """
+        return self._entry_lines.values()
 
 class DataclassTableAppendOnly(DataclassTableBase) :
     """

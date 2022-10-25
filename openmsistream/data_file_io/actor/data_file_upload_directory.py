@@ -121,7 +121,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         #return a list of filepaths that have been uploaded
         return [fp for fp,datafile in self.data_files_by_path.items() if datafile.fully_produced]
 
-    def producer_callback(self,err,msg,filename,filepath,n_total_chunks,chunk_i) :
+    def producer_callback(self,err,msg,prodid,filename,filepath,n_total_chunks,chunk_i) :
         """
         A reference to this method is given as the callback for each call to :func:`confluent_kafka.Producer.produce`.
         It is called for every message upon acknowledgement by the broker, and it uses the file registries in the
@@ -149,27 +149,27 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             err = msg.error()
         if err is not None :
             if err.fatal() :
-                warnmsg =f'WARNING: fatally failed to deliver message for chunk {chunk_i} of {filepath}. '
-                warnmsg+=f'This message will be re-enqeued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: Producer with ID {prodid} fatally failed to deliver message for chunk '
+                warnmsg+=f'{chunk_i} of {filepath}. This message will be re-enqeued. Error reason: {err.str()}'
             elif not err.retriable() :
-                warnmsg =f'WARNING: Failed to deliver message for chunk {chunk_i} of {filepath} and cannot retry. '
-                warnmsg+= f'This message will be re-enqueued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: Producer with ID {prodid} failed to deliver message for chunk {chunk_i} of '
+                warnmsg+= f'{filepath} and cannot retry. This message will be re-enqueued. Error reason: {err.str()}'
             self.logger.warning(warnmsg)
             self.__add_chunks_for_filepath(filepath,[chunk_i])
         # Otherwise, register the chunk as successfully sent to the broker
         else :
-            with self.__lock :
-                fully_produced = self.__file_registry.register_chunk(filename,filepath,n_total_chunks,chunk_i)
-                #If the file has now been fully produced to the topic, set the variable for the file and log a line
-                if fully_produced :
+            fully_produced = self.__file_registry.register_chunk(filename,filepath,n_total_chunks,chunk_i,prodid)
+            #If the file has now been fully produced to the topic, set the variable for the file and log a line
+            if fully_produced :
+                with self.__lock :
                     self.data_files_by_path[filepath].fully_produced = True
-                    infomsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
-                    infomsg+= f'"{self.__topic_name}" topic as '
-                    if n_total_chunks==1 :
-                        infomsg+=f'{n_total_chunks} message'
-                    else :
-                        infomsg+=f'a set of {n_total_chunks} messages'
-                    self.logger.info(infomsg)
+                infomsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
+                infomsg+= f'"{self.__topic_name}" topic as '
+                if n_total_chunks==1 :
+                    infomsg+=f'{n_total_chunks} message'
+                else :
+                    infomsg+=f'a set of {n_total_chunks} messages'
+                self.logger.info(infomsg)
 
     def filepath_should_be_uploaded(self,filepath) :
         """
@@ -261,6 +261,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             producer.flush(timeout=-1) #don't move on until all enqueued messages have been sent/received
             producer.close()
         self.close()
+        self.__file_registry.consolidate_completed_files()
 
     def __find_new_files(self,to_upload=True) :
         """
