@@ -124,6 +124,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :param n_total_chunks: The total number of chunks in the file used to create this processing result message
         :type n_total_chunks: int
         """
+        prodid = prodid # temporary solution to appease pylint while I work on this known update soon
         # If no error occured, increment the counter for the number of messages produced
         if err is None and msg.error() is None :
             with self.lock :
