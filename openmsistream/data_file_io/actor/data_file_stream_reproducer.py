@@ -124,7 +124,6 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :param n_total_chunks: The total number of chunks in the file used to create this processing result message
         :type n_total_chunks: int
         """
-        prodid = prodid # temporary solution to appease pylint while I work on this known update soon
         # If no error occured, increment the counter for the number of messages produced
         if err is None and msg.error() is None :
             with self.lock :
@@ -150,7 +149,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         # Otherwise, register the associated file as having its processing result successfully produced
         else :
             with self.lock :
-                self.file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks)
+                self.file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks,prodid)
                 self.results_produced_filepaths.append(self._output_dir/rel_filepath)
                 #stop tracking the file
                 del self.files_in_progress_by_path[self._output_dir/rel_filepath]

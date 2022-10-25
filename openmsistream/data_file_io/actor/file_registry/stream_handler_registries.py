@@ -211,7 +211,7 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
         succeeded_filepath = dirpath / f'files_with_results_produced_to_{producer_topic_name}.csv'
         super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
-    def register_file_results_produced(self,filename,rel_filepath,n_total_chunks) :
+    def register_file_results_produced(self,filename,rel_filepath,n_total_chunks,prodid) :
         """
         Add/update a line in the table to show that a file has successfully been processed
         """
@@ -229,8 +229,9 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
                                                            n_total_chunks,
                                                            datetime.datetime.now(),
                                                            datetime.datetime.now())
-        self._succeeded_table.add_entries(new_entry)
-        self._succeeded_table.dump_to_file()
+        if prodid : # TO-DO: this is a PLACEHOLDER SOLUTION to an upcoming improvement
+            self._succeeded_table.add_entries(new_entry)
+            self._succeeded_table.dump_to_file()
         if existing_entry_addr is not None :
             self._in_progress_table.remove_entries(existing_entry_addr)
             self._in_progress_table.dump_to_file()
