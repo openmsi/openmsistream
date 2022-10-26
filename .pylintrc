@@ -159,7 +159,8 @@ disable=raw-checker-failed,
         raise-missing-from, # Sometimes eating Exceptions is okay
         exec-used, # Be careful about using exec() but don't disallow it (only used once)
         multiple-imports, # Makes for cleaner-looking (and definitely more concise and clear) code
-        duplicate-code # This checker is unfortunately just too enthusiastic
+        duplicate-code, # This checker is unfortunately just too enthusiastic
+        consider-using-with # Multiple instances where this is unnecessary
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
