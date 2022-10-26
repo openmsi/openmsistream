@@ -82,13 +82,15 @@ class TestMetadataReproducer(unittest.TestCase) :
                                             producer_topic_name=DEST_TOPIC_NAME,
                                             logger=LOGGER)
             self.assertEqual(len(srpr.filepaths_to_rerun),0)
-            in_prog_entries = srpr.in_progress_table.obj_addresses_by_key_attr('status')
-            succeeded_entries = srpr.succeeded_table.obj_addresses
+            in_prog_table = srpr.in_progress_table
+            in_prog_entries = in_prog_table.obj_addresses_by_key_attr('status')
+            succeeded_table = srpr.succeeded_table
+            succeeded_entries = succeeded_table.obj_addresses
             self.assertTrue(len(succeeded_entries)>=1)
             self.assertTrue(srpr.PRODUCING_MESSAGE_FAILED not in in_prog_entries.keys())
             self.assertTrue(srpr.COMPUTING_RESULT_FAILED not in in_prog_entries.keys())
             #get the attributes of the succeeded file to make sure its the one that was produced
-            succeeded_entry_attrs = srpr.succeeded_table.get_entry_attrs(succeeded_entries[0])
+            succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
             self.assertTrue(succeeded_entry_attrs['filename']==UPLOAD_FILE.name)
             #consume messages from the destination topic and make sure the metadata from the test file is there
             consumer_group = ConsumerGroup(TEST_CONST.TEST_METADATA_REPRODUCER_CONSUMER_CONFIG_FILE_PATH,
