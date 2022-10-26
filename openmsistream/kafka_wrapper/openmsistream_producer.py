@@ -236,7 +236,7 @@ class OpenMSIStreamProducer(LogOwner) :
         #log a line about this message if applicable
         logmsg = obj.get_log_msg(print_every)
         if logmsg is not None :
-            self.logger.info(logmsg)
+            self.logger.debug(logmsg)
         #get the Producible's callback arguments and set the callback to use
         if callback is None :
             callback_to_use = make_callback(default_producer_callback,self.producer_id,logger=self.logger,

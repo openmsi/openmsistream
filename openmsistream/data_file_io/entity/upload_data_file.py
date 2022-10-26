@@ -223,7 +223,7 @@ class UploadDataFile(DataFile,Runnable) :
                 fp.seek(file_offset)
                 chunk = fp.read(n_bytes_to_read)
         file_hash = file_hash.digest()
-        self.logger.info(f'File {self.filepath} has a total of {len(chunks)} chunks')
+        self.logger.debug(f'File {self.filepath} has a total of {len(chunks)} chunks')
         #set the hash for the file
         self.__file_hash = file_hash
         #set the total number of chunks for this file
