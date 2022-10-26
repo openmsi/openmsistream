@@ -165,13 +165,13 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             if fully_produced :
                 with self.__lock :
                     self.data_files_by_path[filepath].fully_produced = True
-                infomsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
-                infomsg+= f'"{self.__topic_name}" topic as '
+                debugmsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
+                debugmsg+= f'"{self.__topic_name}" topic as '
                 if n_total_chunks==1 :
-                    infomsg+=f'{n_total_chunks} message'
+                    debugmsg+=f'{n_total_chunks} message'
                 else :
-                    infomsg+=f'a set of {n_total_chunks} messages'
-                self.logger.info(infomsg)
+                    debugmsg+=f'a set of {n_total_chunks} messages'
+                self.logger.debug(debugmsg)
 
     def filepath_should_be_uploaded(self,filepath) :
         """
@@ -233,7 +233,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         for producer in self.__producers :
             producer.poll(0)
         #log progress so far
-        self.logger.debug(self.progress_msg)
+        self.logger.info(self.progress_msg)
         #reset the wait time
         self.__wait_time = self.MIN_WAIT_TIME
 
