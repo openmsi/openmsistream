@@ -4,7 +4,7 @@ in the process of being produced/have been fully produced
 """
 
 #imports
-import pathlib, datetime, time
+import pathlib, datetime
 from typing import Set
 from dataclasses import dataclass
 from ....utilities import DataclassTableReadOnly, DataclassTableAppendOnly, DataclassTable, LogOwner
