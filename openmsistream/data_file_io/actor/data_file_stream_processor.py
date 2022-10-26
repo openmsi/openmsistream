@@ -123,14 +123,14 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                 short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
             else :
                 short_filepath = self.files_in_progress_by_path[dfc.filepath].filepath
-            self.logger.info(f'Processing {short_filepath}...')
+            self.logger.debug(f'Processing {short_filepath}...')
             processing_retval = self._process_downloaded_data_file(self.files_in_progress_by_path[dfc.filepath],lock)
             to_return = None
             #if it was able to be processed
             if processing_retval is None :
-                self.logger.info(f'Fully-read file {short_filepath} successfully processed')
+                self.logger.debug(f'Fully-read file {short_filepath} successfully processed')
+                self.file_registry.register_file_successfully_processed(dfc)
                 with lock :
-                    self.file_registry.register_file_successfully_processed(dfc)
                     self.completely_processed_filepaths.append(dfc.filepath)
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
@@ -144,8 +144,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                 else :
                     errmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
                     self.logger.error(errmsg)
-                with lock :
-                    self.file_registry.register_file_processing_failed(dfc)
+                self.file_registry.register_file_processing_failed(dfc)
                 self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
                 to_return = False
             #stop tracking the file
@@ -193,9 +192,13 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
         msg+= f'{len(self.completely_processed_filepaths)} files completely processed so far'
-        self.logger.debug(msg)
+        self.logger.info(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
+
+    def _on_shutdown(self):
+        super()._on_shutdown()
+        self.file_registry.consolidate_succeeded_files()
 
     @classmethod
     def get_command_line_arguments(cls):

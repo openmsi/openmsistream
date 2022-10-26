@@ -81,6 +81,13 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         return len(self._entry_objs)
 
+    @property
+    def dataclass_type(self) :
+        """
+        The type of the Dataclass objects contained in the table
+        """
+        return self.__dataclass_type
+
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(self,dataclass_type,*,filepath=None,create_if_missing=True,**kwargs) :
@@ -380,6 +387,12 @@ class DataclassTableAppendOnly(DataclassTableBase) :
                 self.lock.release()
         if (datetime.datetime.now()-self._file_last_updated).total_seconds()>self.UPDATE_FILE_EVERY :
             self.dump_to_file()
+
+    def as_read_only(self) :
+        """
+        Returns a "read only" version of the table
+        """
+        return DataclassTableReadOnly(self.dataclass_type,filepath=self.filepath,logger=self.logger)
 
 class DataclassTable(DataclassTableAppendOnly) :
     """

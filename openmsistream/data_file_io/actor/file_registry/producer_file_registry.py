@@ -97,7 +97,6 @@ class ProducerFileRegistry(LogOwner) :
                     errmsg+= 'Individual files will be retained and should be manually concatenated. '
                     errmsg+= 'Duplicate entries may be present.'
                     raise RuntimeError(errmsg)
-            del added_file
             if fp in self.__completed_tables_by_path :
                 self.__completed_tables_by_path.pop(fp)
             fp.unlink()

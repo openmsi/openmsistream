@@ -82,7 +82,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
 
     def _on_shutdown(self) :
         self.logger.info('Will quit after all currently enqueued messages are received.')
-        self.logger.info(self.progress_msg)
+        self.logger.debug(self.progress_msg)
         super()._on_shutdown()
 
     @classmethod

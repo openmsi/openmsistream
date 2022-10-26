@@ -156,7 +156,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                 del self.locks_by_fp[self._output_dir/rel_filepath]
             infomsg = f'Processing result message for {rel_filepath} has been received by the broker for '
             infomsg+= f'the {self.producer_topic_name} topic'
-            self.logger.info(infomsg)
+            self.logger.debug(infomsg)
 
     def _process_message(self,lock,msg,rootdir_to_set=None):
         """
@@ -209,7 +209,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                 short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
             else :
                 short_filepath = self.files_in_progress_by_path[dfc.filepath].filepath
-            self.logger.info(f'Getting message to produce for {short_filepath}...')
+            self.logger.debug(f'Getting message to produce for {short_filepath}...')
             new_msg = self._get_processing_result_message_for_file(self.files_in_progress_by_path[dfc.filepath],lock)
             if new_msg is not None :
                 self.producer_message_queue.put(new_msg)
@@ -275,11 +275,15 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
         msg+= f'{len(self.completely_processed_filepaths)} files completely reconstructed, and '
         msg+= f'{len(self.results_produced_filepaths)} processing result messages produced so far'
-        self.logger.debug(msg)
+        self.logger.info(msg)
         if ( len(self.files_in_progress_by_path)>0 or
              len(self.completely_processed_filepaths)>0 or
              len(self.results_produced_filepaths)>0 ) :
             self.logger.debug(self.progress_msg)
+
+    def _on_shutdown(self):
+        super()._on_shutdown()
+        self.file_registry.consolidate_succeeded_files()
 
     @classmethod
     def get_command_line_arguments(cls):
