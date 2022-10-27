@@ -15,7 +15,7 @@ class RegistryLineInProgress :
     A line in the table listing files in progress
     """
     filename : str
-    filepath : pathlib.Path
+    rel_filepath : pathlib.Path
     n_chunks : int
     n_chunks_delivered : int
     n_chunks_to_send : int
@@ -29,7 +29,7 @@ class RegistryLineCompleted :
     A line in the table listing completed files
     """
     filename : str
-    filepath : pathlib.Path
+    rel_filepath : pathlib.Path
     n_chunks : int
     started : datetime.datetime
     completed : datetime.datetime
@@ -120,7 +120,7 @@ class ProducerFileRegistry(LogOwner) :
         for obj_address in completed.obj_addresses :
             yield completed.get_entry_attrs(obj_address,'filepath')
 
-    def register_chunk(self,filename,filepath,n_total_chunks,chunk_i,prodid) :
+    def register_chunk(self,filename,rel_filepath,n_total_chunks,chunk_i,prodid) :
         """
         Register a chunk as having been successfully produced by a particular producer
         Returns True if all chunks for the file have been produced
@@ -128,31 +128,31 @@ class ProducerFileRegistry(LogOwner) :
         #acquire the lock so no other threads can change the in progress file
         self.__in_prog.lock.acquire()
         #get a dictionary of the existing object addresses keyed by their filepaths
-        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('filepath')
+        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('rel_filepath')
         #if the file is already recognized as in progress
-        if filepath in existing_obj_addresses :
-            return self.__register_chunk_of_existing_file(filename,filepath,n_total_chunks,chunk_i,prodid)
+        if rel_filepath in existing_obj_addresses :
+            return self.__register_chunk_of_existing_file(filename,rel_filepath,n_total_chunks,chunk_i,prodid)
         #otherwise it's a new file to list somewhere
-        return self.__register_chunk_for_new_file(filename,filepath,n_total_chunks,chunk_i,prodid)
+        return self.__register_chunk_for_new_file(filename,rel_filepath,n_total_chunks,chunk_i,prodid)
 
-    def __register_chunk_of_existing_file(self,filename,filepath,n_total_chunks,chunk_i,prodid) :
+    def __register_chunk_of_existing_file(self,filename,rel_filepath,n_total_chunks,chunk_i,prodid) :
         """
         Register a chunk that belongs to an existing file.
         Returns True if all chunks for the file have been received by the broker.
         """
         #get a dictionary of the existing object addresses keyed by their filepaths
-        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('filepath')
+        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('rel_filepath')
         #make sure there's only one object with this filepath
-        if len(existing_obj_addresses[filepath])!=1 :
-            errmsg = f'ERROR: found {len(existing_obj_addresses[filepath])} files in the producer registry '
-            errmsg+= f'for filepath {filepath}'
+        if len(existing_obj_addresses[rel_filepath])!=1 :
+            errmsg = f'ERROR: found {len(existing_obj_addresses[rel_filepath])} files in the producer registry '
+            errmsg+= f'for filepath {rel_filepath}'
             self.__in_prog.lock.release()
             self.logger.error(errmsg,RuntimeError)
-        existing_addr = existing_obj_addresses[filepath][0]
+        existing_addr = existing_obj_addresses[rel_filepath][0]
         #make sure the total numbers of chunks match
         existing_n_chunks = self.__in_prog.get_entry_attrs(existing_addr,'n_chunks')
         if existing_n_chunks!=n_total_chunks :
-            errmsg = f'ERROR: {filepath} in {self.__class__.__name__} is listed as having '
+            errmsg = f'ERROR: {rel_filepath} in {self.__class__.__name__} is listed as having '
             errmsg+= f'{existing_n_chunks} total chunks, but the producer callback for this file '
             errmsg+= f'lists {n_total_chunks} chunks! Did the chunk size change?'
             self.__in_prog.lock.release()
@@ -182,7 +182,7 @@ class ProducerFileRegistry(LogOwner) :
         if ( self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_delivered')==n_total_chunks and
                 self.__in_prog.get_entry_attrs(existing_addr,'n_chunks_to_send')==0 ) :
             started = self.__in_prog.get_entry_attrs(existing_addr,'started')
-            completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
+            completed_entry = RegistryLineCompleted(filename,rel_filepath,n_total_chunks,
                                                     started,datetime.datetime.now())
             self.__add_completed_entry(completed_entry,prodid)
             self.__in_prog.remove_entries(existing_addr)
@@ -192,7 +192,7 @@ class ProducerFileRegistry(LogOwner) :
         self.__in_prog.lock.release()
         return False
 
-    def __register_chunk_for_new_file(self,filename,filepath,n_total_chunks,chunk_i,prodid) :
+    def __register_chunk_for_new_file(self,filename,rel_filepath,n_total_chunks,chunk_i,prodid) :
         """
         Register the first chunk for a file.
         Returns True if the file only had one chunk.
@@ -203,7 +203,7 @@ class ProducerFileRegistry(LogOwner) :
                 to_deliver.add(ichunk)
         #if there are other chunks to deliver, register it to "in_progress"
         if len(to_deliver)>0 :
-            in_prog_entry = RegistryLineInProgress(filename,filepath,n_total_chunks,
+            in_prog_entry = RegistryLineInProgress(filename,rel_filepath,n_total_chunks,
                                                     1,n_total_chunks-1,datetime.datetime.now(),
                                                     set([chunk_i]),to_deliver)
             self.__in_prog.add_entries(in_prog_entry)
@@ -212,7 +212,7 @@ class ProducerFileRegistry(LogOwner) :
             return False
         #otherwise register it as a completed file
         self.__in_prog.lock.release()
-        completed_entry = RegistryLineCompleted(filename,filepath,n_total_chunks,
+        completed_entry = RegistryLineCompleted(filename,rel_filepath,n_total_chunks,
                                                 datetime.datetime.now(),datetime.datetime.now())
         self.__add_completed_entry(completed_entry,prodid)
         return True

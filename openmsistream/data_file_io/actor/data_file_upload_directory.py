@@ -159,7 +159,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             self.__add_chunks_for_filepath(filepath,[chunk_i])
         # Otherwise, register the chunk as successfully sent to the broker
         else :
-            fully_produced = self.__file_registry.register_chunk(filename,filepath,n_total_chunks,chunk_i,prodid)
+            rel_filepath = filepath.relative_to(self.dirpath)
+            fully_produced = self.__file_registry.register_chunk(filename,rel_filepath,n_total_chunks,chunk_i,prodid)
             #If the file has now been fully produced to the topic, set the variable for the file and log a line
             if fully_produced :
                 with self.__lock :
