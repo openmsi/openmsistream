@@ -104,10 +104,9 @@ def logger_string_to_level(argval) :
     try :
         if int(argval)>=0 :
             return int(argval)
-        else :
-            raise ValueError(f'ERROR: logger argument {argval} is not valid!')
-    except ValueError as e :
-        raise e
+        raise ValueError(f'ERROR: logger argument {argval} is not valid!')
+    except ValueError as exc :
+        raise exc
 
 #################### MYARGUMENTPARSER CLASS ####################
 
