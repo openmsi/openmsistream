@@ -117,8 +117,8 @@ class TestDataFileDirectories(unittest.TestCase) :
             self.assertTrue(in_prog_table.obj_addresses_by_key_attr('filename')=={})
             self.assertTrue(completed_filepath.is_file())
             completed_table = DataclassTableReadOnly(RegistryLineCompleted,filepath=completed_filepath,logger=LOGGER)
-            addrs_by_fp = completed_table.obj_addresses_by_key_attr('filepath')
-            self.assertTrue(fp in addrs_by_fp.keys())
+            addrs_by_fp = completed_table.obj_addresses_by_key_attr('rel_filepath')
+            self.assertTrue(fp.relative_to(TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED) in addrs_by_fp.keys())
         except Exception as e :
             raise e
         finally :
