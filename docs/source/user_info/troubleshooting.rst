@@ -4,6 +4,11 @@ Troubleshooting
 
 This page describes some potential solutions to problems that users have run into when installing or working with OpenMSIStream. 
 
+Logging
+-------
+
+For quick debugging, it can be helpful to reduce programs' levels of logging output. The command line options ``--logger_stream_level`` and ``--logger_file_level`` will adjust the level of output sent to stdout and to the logger files on disk, respectively. The default stream level is "info" and the default file level is "warning", but both can be set to any of the standard Python options ("notset", "debug", "info", "warning", "error", and "critical", in order of increasing severity).
+
 Missing .dll files on Windows
 -----------------------------
 

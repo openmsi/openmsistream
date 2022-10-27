@@ -59,7 +59,7 @@ class S3Service(LogOwner) :
         try:
             self.s3_client.delete_object(Bucket=bucket_name, Key=object_key)
             msg = object_key + ' was deleted successfully from bucket: ' + bucket_name
-            self.logger.info(msg)
+            self.logger.debug(msg)
         except Exception:
             msg = 'Could not delete ' + object_key + ' from bucket: ' + bucket_name
             self.logger.error(msg)

@@ -4,30 +4,17 @@ Class defining the general OpenMSIStream workflow for running from the command l
 
 #imports
 from abc import ABC, abstractmethod
-from .argument_parsing import OpenMSIStreamArgumentParser
+from .has_arguments import HasArguments
 from .has_argument_parser import HasArgumentParser
+from .argument_parsing import OpenMSIStreamArgumentParser
 
-class Runnable(HasArgumentParser,ABC) :
+class Runnable(HasArguments,HasArgumentParser,ABC) :
     """
     Abstract base class for any child classes that want to define some behavior
     for running from the command line (i.e. as a module)
     """
 
     ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
-
-    @classmethod
-    @abstractmethod
-    def get_command_line_arguments(cls) :
-        """
-        Get the list of argument names and the dictionary of argument names/default values to add to the argument parser
-
-        :return: args, a list of argument names recognized by the argument parser
-        :rtype: list(str)
-        :return: kwargs, a dictionary of default argument values keyed by argument names
-            recognized by the argument parser
-        :rtype: dict
-        """
-        return [],{}
 
     @classmethod
     def get_argument_parser(cls,*args,**kwargs) :

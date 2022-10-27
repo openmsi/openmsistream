@@ -2,5 +2,5 @@
 ControlledProcessSingleThread
 =============================
 
-.. autoclass:: openmsistream.workflow.ControlledProcessSingleThread
+.. autoclass:: openmsistream.utilities.ControlledProcessSingleThread
    :private-members:

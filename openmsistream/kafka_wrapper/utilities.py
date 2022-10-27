@@ -20,7 +20,7 @@ def add_kwargs_to_configs(configs,logger,**kwargs) :
                 msg = f'A new value for the "{config_name}" config has been supplied '
                 msg+=  'by a keyword argument that will overwrite a previously-set value. '
                 msg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
-                logger.info(msg)
+                logger.debug(msg)
         new_configs[config_name]=arg
     return new_configs
 

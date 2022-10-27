@@ -16,12 +16,12 @@ class WindowsServiceManager(ServiceManagerBase) :
     :type service_name: str
     :param service_spec_string: A string specifying which code should be run as a Service.
         Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code.
-        Custom Services can also specify a :class:`~.workflow.Runnable` class name,
+        Custom Services can also specify a :class:`~.utilities.Runnable` class name,
         and/or a function in the file using special formatting like [class_name]=[path.to.file]:[function_name].
         Only needed to initially install the Service.
     :type service_spec_string: str, optional
     :param argslist: The list of arguments (as from the command line) to pass to the
-        :class:`~.workflow.Runnable` class.
+        :class:`~.utilities.Runnable` class.
         Only needed to initially install the Service.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do

@@ -8,7 +8,7 @@ import pathlib
 from confluent_kafka.serialization import DoubleSerializer, IntegerSerializer, StringSerializer
 from confluent_kafka.serialization import DoubleDeserializer, IntegerDeserializer, StringDeserializer
 from ..utilities.config_file_parser import ConfigFileParser
-from ..workflow.config import RUN_CONST
+from ..utilities.config import RUN_CONST
 from .serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 
 class KafkaConfigFileParser(ConfigFileParser) :

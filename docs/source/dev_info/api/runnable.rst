@@ -2,4 +2,4 @@
 Runnable
 ========
 
-.. autoclass:: openmsistream.workflow.Runnable
+.. autoclass:: openmsistream.utilities.Runnable

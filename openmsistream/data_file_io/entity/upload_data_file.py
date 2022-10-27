@@ -5,8 +5,8 @@ import time
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
+from ...utilities import Runnable
 from ...kafka_wrapper import ProducerGroup
-from ...workflow import Runnable
 from ..config import RUN_OPT_CONST
 from .. import DataFile
 from .data_file_chunk import DataFileChunk
@@ -92,7 +92,7 @@ class UploadDataFile(DataFile,Runnable) :
             producer.flush(timeout=-1) #don't leave the function until all messages have been sent/received
             producer.close()
         producer_group.close()
-        self.logger.info('Done!')
+        self.logger.info(f'Done uploading {self.filepath}')
 
     def add_chunks_to_upload(self,chunks_to_add=None,chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE) :
         """
@@ -256,12 +256,11 @@ class UploadDataFile(DataFile,Runnable) :
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         #make the DataFile for the single specified file
-        upload_file = cls(args.filepath)
+        upload_file = cls(args.filepath,streamlevel=args.logger_stream_level,filelevel=args.logger_file_level)
         #chunk and upload the file
         upload_file.upload_whole_file(args.config,args.topic_name,
                                       n_threads=args.n_threads,
                                       chunk_size=args.chunk_size)
-        upload_file.logger.info(f'Done uploading {args.filepath}')
 
     #################### PROPERTIES ####################
 

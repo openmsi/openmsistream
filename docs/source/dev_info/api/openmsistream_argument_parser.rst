@@ -2,4 +2,4 @@
 OpenMSIStreamArgumentParser
 ===========================
 
-.. autoclass:: openmsistream.workflow.OpenMSIStreamArgumentParser
+.. autoclass:: openmsistream.utilities.OpenMSIStreamArgumentParser

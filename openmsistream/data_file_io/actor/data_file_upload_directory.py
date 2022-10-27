@@ -5,8 +5,7 @@ import pathlib, datetime, time
 from threading import Lock
 from queue import Queue
 from ...kafka_wrapper import ProducerGroup
-from ...workflow import Runnable
-from ...workflow.controlled_process_single_thread import ControlledProcessSingleThread
+from ...utilities import Runnable, ControlledProcessSingleThread
 from ...utilities.misc import populated_kwargs
 from ...utilities.exception_tracking_thread import ExceptionTrackingThread
 from ..config import RUN_OPT_CONST
@@ -233,19 +232,20 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         for producer in self.__producers :
             producer.poll(0)
         #log progress so far
-        self.logger.info(self.progress_msg)
+        self.logger.info(self.status_msg)
+        self.logger.debug(self.progress_msg)
         #reset the wait time
         self.__wait_time = self.MIN_WAIT_TIME
 
     def _on_shutdown(self) :
         self.logger.info('Will quit after all currently enqueued files are done being transferred.')
-        self.logger.info(self.progress_msg)
+        self.logger.debug(self.progress_msg)
         #add the remainder of any files currently in progress
         if self.n_partially_done_files>0 :
             msg='Will finish queueing the remainder of the following files before flushing the producer and quitting:\n'
             for pdfp in self.partially_done_file_paths :
                 msg+=f'\t{pdfp}\n'
-            self.logger.info(msg)
+            self.logger.debug(msg)
         while self.n_partially_done_files>0 :
             for datafile in self.data_files_by_path.values() :
                 if datafile.upload_in_progress :
@@ -408,7 +408,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         args = parser.parse_args(args=args)
         #make the DataFileDirectory for the specified directory
         upload_file_directory = cls(args.upload_dir,args.config,
-                                    upload_regex=args.upload_regex,update_secs=args.update_seconds)
+                                    upload_regex=args.upload_regex,update_secs=args.update_seconds,
+                                    streamlevel=args.logger_stream_level,filelevel=args.logger_file_level)
         #listen for new files in the directory and run uploads as they come in until the process is shut down
         run_start = datetime.datetime.now()
         if not args.upload_existing :
@@ -422,14 +423,17 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                                                                          upload_existing=args.upload_existing)
         run_stop = datetime.datetime.now()
         upload_file_directory.logger.info(f'Done listening to {args.upload_dir} for files to upload')
-        final_msg = f'The following {len(uploaded_filepaths)} file'
-        if len(uploaded_filepaths)==1 :
-            final_msg+=' was'
+        if len(uploaded_filepaths)>0 :
+            final_msg = f'The following {len(uploaded_filepaths)} file'
+            if len(uploaded_filepaths)==1 :
+                final_msg+=' was'
+            else :
+                final_msg+='s were'
+            final_msg+=f' uploaded between {run_start} and {run_stop}:\n'
+            for fp in uploaded_filepaths :
+                final_msg+=f'\t{fp.relative_to(args.upload_dir)}\n'
         else :
-            final_msg+='s were'
-        final_msg+=f' uploaded between {run_start} and {run_stop}:\n'
-        for fp in uploaded_filepaths :
-            final_msg+=f'\t{fp.relative_to(args.upload_dir)}\n'
+            final_msg=f'No files were uploaded between {run_start} and {run_stop}'
         upload_file_directory.logger.info(final_msg)
 
     #################### PROPERTIES ####################
@@ -442,16 +446,56 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         """
         return {}
     @property
+    def status_msg(self) :
+        """
+        A message stating the number of files currently at each stage of progress
+        """
+        self.__find_new_files()
+        n_wont_be_uploaded = 0
+        n_waiting_to_upload = 0
+        n_upload_in_progress = 0
+        n_fully_enqueued = 0
+        n_fully_produced = 0
+        for datafile in self.data_files_by_path.values() :
+            if not datafile.to_upload :
+                n_wont_be_uploaded+=1
+            elif datafile.waiting_to_upload :
+                n_waiting_to_upload+=1
+            elif datafile.upload_in_progress :
+                n_upload_in_progress+=1
+            elif datafile.fully_enqueued :
+                n_fully_enqueued+=1
+            elif datafile.fully_produced :
+                n_fully_produced+=1
+        status_message = f'{len(self.data_files_by_path)} files found in {self.dirpath}'
+        if len(self.data_files_by_path)>0 :
+            status_message+='('
+            if n_wont_be_uploaded>0 :
+                status_message+=f'{n_wont_be_uploaded} will not be uploaded, '
+            if n_waiting_to_upload>0 :
+                status_message+=f'{n_waiting_to_upload} waiting to upload, '
+            if n_upload_in_progress>0 :
+                status_message+=f'{n_upload_in_progress} with upload in progress, '
+            if n_fully_enqueued>0 :
+                status_message+=f'{n_fully_enqueued} enqueued to be produced, '
+            if n_fully_produced>0 :
+                status_message+=f'{n_fully_produced} fully produced, '
+            status_message=f'{status_message[:-2]})'
+        return status_message
+    @property
     def progress_msg(self) :
         """
         A message describing the files that are currently recognized as part of the directory
         """
         self.__find_new_files()
-        progress_msg = 'The following files have been recognized so far:\n'
-        for datafile in self.data_files_by_path.values() :
-            if not datafile.to_upload :
-                continue
-            progress_msg+=f'\t{datafile.upload_status_msg}\n'
+        if len(self.data_files_by_path)>0 :
+            progress_msg = 'The following files have been recognized so far:\n'
+            for datafile in self.data_files_by_path.values() :
+                if not datafile.to_upload :
+                    continue
+                progress_msg+=f'\t{datafile.upload_status_msg}\n'
+        else :
+            progress_msg = f'No files found yet in {self.dirpath}'
         return progress_msg
     @property
     def have_file_to_upload(self) :
