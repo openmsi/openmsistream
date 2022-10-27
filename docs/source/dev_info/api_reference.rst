@@ -41,8 +41,8 @@ Services/daemons
    api/windows_service_manager
    api/linux_service_manager
 
-Workflow classes
-----------------
+Workflow utility classes
+------------------------
 
 .. toctree::
    :maxdepth: 1
@@ -52,6 +52,7 @@ Workflow classes
    api/controlled_process_single_thread
    api/controlled_process_multi_threaded
    api/openmsistream_argument_parser
+   api/has_arguments
    api/has_argument_parser
 
 Selected base + utility classes

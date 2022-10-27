@@ -7,7 +7,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto.message import KafkaCryptoMessage
 from ...utilities.misc import populated_kwargs
-from ...workflow import Runnable
+from ...utilities import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_timestamp_string
 from ..entity.download_data_file import DownloadDataFileToMemory
@@ -116,6 +116,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
 
     @classmethod
     def get_command_line_arguments(cls):
-        args = ['config','consumer_group_id','update_seconds']
-        kwargs = {'optional_output_dir': cls._get_auto_output_dir(),}
+        superargs, superkwargs = super().get_command_line_arguments()
+        args = [*superargs,'config','consumer_group_id','update_seconds']
+        kwargs = {**superkwargs,'optional_output_dir': cls._get_auto_output_dir(),}
         return args, kwargs

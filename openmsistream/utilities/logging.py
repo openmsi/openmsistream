@@ -2,6 +2,7 @@
 
 #imports
 import pathlib, logging, traceback
+from .has_arguments import HasArguments
 
 class OpenMSIStreamFormatter(logging.Formatter) :
     """
@@ -39,7 +40,7 @@ class Logger :
 
     FORMATTER = OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
-    def __init__(self,logger_name=None,streamlevel=logging.DEBUG,logger_filepath=None,filelevel=logging.INFO) :
+    def __init__(self,logger_name=None,streamlevel=logging.INFO,logger_filepath=None,filelevel=logging.WARNING) :
         """
         name = the name for this logger to use (probably something like the top module that owns it)
         """
@@ -184,7 +185,7 @@ class Logger :
             if reraise :
                 raise exc
 
-class LogOwner :
+class LogOwner(HasArguments) :
     """
     Any subclasses extending this one will have access to a Logger defined by the first class in the MRO to extend it
 
@@ -220,7 +221,7 @@ class LogOwner :
             self.__logger = logger
 
     def __init__(self,*args,
-                 logger=None,logger_name=None,streamlevel=logging.DEBUG,logger_file=None,filelevel=logging.INFO,
+                 logger=None,logger_name=None,streamlevel=logging.INFO,logger_file=None,filelevel=logging.WARNING,
                  **other_kwargs) :
         if logger is not None :
             self.__logger = logger
@@ -232,3 +233,11 @@ class LogOwner :
                 logger_filepath = logger_file / f'{self.__class__.__name__}.log'
             self.__logger = Logger(logger_name,streamlevel,logger_filepath,filelevel)
         super().__init__(*args,**other_kwargs)
+
+    @classmethod
+    def get_command_line_arguments(cls) :
+        """
+        Return the names of arguments for the logger stream and file levels.
+        """
+        superargs, superkwargs = super().get_command_line_arguments()
+        return [*superargs,'logger_stream_level','logger_file_level'], superkwargs

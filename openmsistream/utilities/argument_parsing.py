@@ -1,7 +1,7 @@
 """Custom argument parser and associated functions"""
 
 #imports
-import pathlib, math, re
+import pathlib, math, re, logging
 from argparse import ArgumentParser
 from ..data_file_io.config import RUN_OPT_CONST
 from .config import RUN_CONST
@@ -83,6 +83,24 @@ def positive_int(argval) :
     if (not isinstance(argval,int)) or (argval<1) :
         raise ValueError(f'ERROR: invalid argument: {argval} must be a positive integer!')
     return argval
+
+def logger_string_to_level(argval) :
+    """
+    converts a given string representing a logger level to its corresponding integer
+    """
+    if argval=='notset' :
+        return logging.NOTSET
+    if argval=='debug' :
+        return logging.DEBUG
+    if argval=='info' :
+        return logging.INFO
+    if argval=='warning' :
+        return logging.WARNING
+    if argval=='error' :
+        return logging.ERROR
+    if argval=='critical' :
+        return logging.CRITICAL
+    return logging.NOTSET
 
 #################### MYARGUMENTPARSER CLASS ####################
 
@@ -175,6 +193,16 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         'remove_nssm':
             ['optional',{'action':'store_true',
                          'help':'Add this flag to also remove the NSSM executable when removing a Service'}],
+        'logger_stream_level':
+            ['optional',{'choices':['notset','debug','info','warning','error','critical'],
+                         'type':logger_string_to_level,
+                         'default':'info',
+                         'help':"Messages below this level will not be processed by the logger's stream handler"}],
+        'logger_file_level':
+            ['optional',{'choices':['notset','debug','info','warning','error','critical'],
+                         'type':logger_string_to_level,
+                         'default':'warning',
+                         'help':"Messages below this level will not be processed by the logger's file handler"}],
     }
 
     #################### OVERLOADED FUNCTIONS ####################

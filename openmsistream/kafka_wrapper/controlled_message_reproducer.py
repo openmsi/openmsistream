@@ -7,8 +7,8 @@ is managed using the ControlledProcessInfrastructure
 import time
 from abc import ABC, abstractmethod
 from queue import Queue
-from ..workflow.config import RUN_CONST
-from ..workflow.controlled_process_multi_threaded import ControlledProcessMultiThreaded
+from ..utilities.config import RUN_CONST
+from ..utilities import ControlledProcessMultiThreaded
 from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 class ControlledMessageReproducer(ControlledProcessMultiThreaded,ConsumerAndProducerGroup,ABC) :

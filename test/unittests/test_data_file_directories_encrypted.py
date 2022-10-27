@@ -2,7 +2,7 @@
 import unittest, pathlib, time, logging, shutil, filecmp
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.utilities.dataclass_table import DataclassTable
+from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import RegistryLineInProgress, RegistryLineCompleted
 from openmsistream.data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
@@ -110,15 +110,15 @@ class TestDataFileDirectories(unittest.TestCase) :
                 raise RuntimeError(errmsg)
             #make sure that the ProducerFileRegistry files were created and list the file as completely uploaded
             log_subdir = TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED/DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f'files_to_upload_to_{TOPIC_NAME}.csv'
-            completed_filepath = log_subdir / f'files_fully_uploaded_to_{TOPIC_NAME}.csv'
+            in_prog_filepath = log_subdir / f'upload_to_{TOPIC_NAME}_in_progress.csv'
+            completed_filepath = log_subdir / f'uploaded_to_{TOPIC_NAME}.csv'
             self.assertTrue(in_prog_filepath.is_file())
-            in_prog_table = DataclassTable(RegistryLineInProgress,filepath=in_prog_filepath,logger=LOGGER)
+            in_prog_table = DataclassTableReadOnly(RegistryLineInProgress,filepath=in_prog_filepath,logger=LOGGER)
             self.assertTrue(in_prog_table.obj_addresses_by_key_attr('filename')=={})
             self.assertTrue(completed_filepath.is_file())
-            completed_table = DataclassTable(RegistryLineCompleted,filepath=completed_filepath,logger=LOGGER)
-            addrs_by_fp = completed_table.obj_addresses_by_key_attr('filepath')
-            self.assertTrue(fp in addrs_by_fp.keys())
+            completed_table = DataclassTableReadOnly(RegistryLineCompleted,filepath=completed_filepath,logger=LOGGER)
+            addrs_by_fp = completed_table.obj_addresses_by_key_attr('rel_filepath')
+            self.assertTrue(fp.relative_to(TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED) in addrs_by_fp.keys())
         except Exception as e :
             raise e
         finally :

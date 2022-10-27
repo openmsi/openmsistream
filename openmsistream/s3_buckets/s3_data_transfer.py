@@ -29,6 +29,6 @@ class S3DataTransfer(S3Service) :
                                       # GrantRead=self.grant_read
                                       )
             msg = f'{file_name} successfully transferred into {self.bucket_name}/{object_key}'
-            self.logger.info(msg)
+            self.logger.debug(msg)
         except ClientError as err :
             self.logger.error(f'{err.response}: failed to transfer {file_name} into {self.bucket_name}/{object_key}')

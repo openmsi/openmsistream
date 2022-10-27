@@ -10,7 +10,7 @@ import urllib.request
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import kafkacrypto
-from ..workflow.config import RUN_CONST
+from ..utilities.config import RUN_CONST
 from .logging import Logger
 from .config_file_parser import ConfigFileParser
 from .misc import change_dir

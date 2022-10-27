@@ -5,8 +5,7 @@ import pathlib, datetime, time
 from threading import Lock
 from queue import Queue
 from ...kafka_wrapper import ProducerGroup
-from ...workflow import Runnable
-from ...workflow.controlled_process_single_thread import ControlledProcessSingleThread
+from ...utilities import Runnable, ControlledProcessSingleThread
 from ...utilities.misc import populated_kwargs
 from ...utilities.exception_tracking_thread import ExceptionTrackingThread
 from ..config import RUN_OPT_CONST
@@ -121,7 +120,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         #return a list of filepaths that have been uploaded
         return [fp for fp,datafile in self.data_files_by_path.items() if datafile.fully_produced]
 
-    def producer_callback(self,err,msg,filename,filepath,n_total_chunks,chunk_i) :
+    def producer_callback(self,err,msg,prodid,filename,filepath,n_total_chunks,chunk_i) :
         """
         A reference to this method is given as the callback for each call to :func:`confluent_kafka.Producer.produce`.
         It is called for every message upon acknowledgement by the broker, and it uses the file registries in the
@@ -135,6 +134,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :type err: :class:`confluent_kafka.KafkaError`
         :param msg: The message object
         :type msg: :class:`confluent_kafka.Message`
+        :param prodid: The ID of the producer that produced the message (hex(id(producer)) in memory)
+        :type prodid: str
         :param filename: The name of the file the message is coming from
         :type filename: str
         :param filepath: The full path to the file the message is coming from
@@ -149,27 +150,28 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             err = msg.error()
         if err is not None :
             if err.fatal() :
-                warnmsg =f'WARNING: fatally failed to deliver message for chunk {chunk_i} of {filepath}. '
-                warnmsg+=f'This message will be re-enqeued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: Producer with ID {prodid} fatally failed to deliver message for chunk '
+                warnmsg+=f'{chunk_i} of {filepath}. This message will be re-enqeued. Error reason: {err.str()}'
             elif not err.retriable() :
-                warnmsg =f'WARNING: Failed to deliver message for chunk {chunk_i} of {filepath} and cannot retry. '
-                warnmsg+= f'This message will be re-enqueued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: Producer with ID {prodid} failed to deliver message for chunk {chunk_i} of '
+                warnmsg+= f'{filepath} and cannot retry. This message will be re-enqueued. Error reason: {err.str()}'
             self.logger.warning(warnmsg)
             self.__add_chunks_for_filepath(filepath,[chunk_i])
         # Otherwise, register the chunk as successfully sent to the broker
         else :
-            with self.__lock :
-                fully_produced = self.__file_registry.register_chunk(filename,filepath,n_total_chunks,chunk_i)
-                #If the file has now been fully produced to the topic, set the variable for the file and log a line
-                if fully_produced :
+            rel_filepath = filepath.relative_to(self.dirpath)
+            fully_produced = self.__file_registry.register_chunk(filename,rel_filepath,n_total_chunks,chunk_i,prodid)
+            #If the file has now been fully produced to the topic, set the variable for the file and log a line
+            if fully_produced :
+                with self.__lock :
                     self.data_files_by_path[filepath].fully_produced = True
-                    infomsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
-                    infomsg+= f'"{self.__topic_name}" topic as '
-                    if n_total_chunks==1 :
-                        infomsg+=f'{n_total_chunks} message'
-                    else :
-                        infomsg+=f'a set of {n_total_chunks} messages'
-                    self.logger.info(infomsg)
+                debugmsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
+                debugmsg+= f'"{self.__topic_name}" topic as '
+                if n_total_chunks==1 :
+                    debugmsg+=f'{n_total_chunks} message'
+                else :
+                    debugmsg+=f'a set of {n_total_chunks} messages'
+                self.logger.debug(debugmsg)
 
     def filepath_should_be_uploaded(self,filepath) :
         """
@@ -231,19 +233,20 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         for producer in self.__producers :
             producer.poll(0)
         #log progress so far
+        self.logger.info(self.status_msg)
         self.logger.debug(self.progress_msg)
         #reset the wait time
         self.__wait_time = self.MIN_WAIT_TIME
 
     def _on_shutdown(self) :
         self.logger.info('Will quit after all currently enqueued files are done being transferred.')
-        self.logger.info(self.progress_msg)
+        self.logger.debug(self.progress_msg)
         #add the remainder of any files currently in progress
         if self.n_partially_done_files>0 :
             msg='Will finish queueing the remainder of the following files before flushing the producer and quitting:\n'
             for pdfp in self.partially_done_file_paths :
                 msg+=f'\t{pdfp}\n'
-            self.logger.info(msg)
+            self.logger.debug(msg)
         while self.n_partially_done_files>0 :
             for datafile in self.data_files_by_path.values() :
                 if datafile.upload_in_progress :
@@ -261,6 +264,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             producer.flush(timeout=-1) #don't move on until all enqueued messages have been sent/received
             producer.close()
         self.close()
+        self.__file_registry.consolidate_completed_files()
 
     def __find_new_files(self,to_upload=True) :
         """
@@ -298,24 +302,44 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         any files that have previously been fuly uploaded
         """
         #make sure any files listed as "in progress" have their remaining chunks enqueued
+        n_files_to_resume = 0
+        n_chunks_resumed = 0
         for filepath,chunks in self.__file_registry.get_incomplete_filepaths_and_chunks() :
-            self.logger.info(f'Found {filepath} in progress from a previous run. Will re-enqueue {len(chunks)} chunks.')
+            self.logger.debug(f'Found {filepath} in progress from a previous run. Re-enqueuing {len(chunks)} chunks.')
             self.__add_chunks_for_filepath(filepath,chunks)
+            n_files_to_resume+=1
+            n_chunks_resumed+=len(chunks)
+        if n_files_to_resume>0 :
+            infomsg = f'Found {n_files_to_resume} file'
+            if n_files_to_resume!=1 :
+                infomsg+='s'
+            infomsg+= f' in progress from a previous run. Will re-enqueue {n_chunks_resumed} total chunk'
+            if n_chunks_resumed!=1 :
+                infomsg+='s'
+            self.logger.info(infomsg)
         #make sure any files listed as "completed" will not be uploaded again
+        n_files_already_uploaded = 0
         for filepath in self.__file_registry.get_completed_filepaths() :
             if filepath in self.data_files_by_path :
                 if self.data_files_by_path[filepath].to_upload :
                     msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
-                    self.logger.info(msg)
+                    self.logger.debug(msg)
                 self.data_files_by_path[filepath].to_upload=False
             elif filepath.is_file() :
                 msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
-                self.logger.info(msg)
+                self.logger.debug(msg)
                 self.data_files_by_path[filepath]=self.__datafile_type(filepath,
                                                                        to_upload=False,
                                                                        rootdir=self.dirpath,
                                                                        logger=self.logger,
                                                                        **self.other_datafile_kwargs)
+            n_files_already_uploaded+=1
+        if n_files_already_uploaded>0 :
+            infomsg = f'Found {n_files_already_uploaded} file'
+            if n_files_already_uploaded!=1 :
+                infomsg+='s'
+            infomsg+=' fully uploaded during a previous run that will not be produced again.'
+            self.logger.info(infomsg)
 
     def __add_chunks_for_filepath(self,filepath,chunks) :
         """
@@ -385,7 +409,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         args = parser.parse_args(args=args)
         #make the DataFileDirectory for the specified directory
         upload_file_directory = cls(args.upload_dir,args.config,
-                                    upload_regex=args.upload_regex,update_secs=args.update_seconds)
+                                    upload_regex=args.upload_regex,update_secs=args.update_seconds,
+                                    streamlevel=args.logger_stream_level,filelevel=args.logger_file_level)
         #listen for new files in the directory and run uploads as they come in until the process is shut down
         run_start = datetime.datetime.now()
         if not args.upload_existing :
@@ -399,14 +424,17 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                                                                          upload_existing=args.upload_existing)
         run_stop = datetime.datetime.now()
         upload_file_directory.logger.info(f'Done listening to {args.upload_dir} for files to upload')
-        final_msg = f'The following {len(uploaded_filepaths)} file'
-        if len(uploaded_filepaths)==1 :
-            final_msg+=' was'
+        if len(uploaded_filepaths)>0 :
+            final_msg = f'The following {len(uploaded_filepaths)} file'
+            if len(uploaded_filepaths)==1 :
+                final_msg+=' was'
+            else :
+                final_msg+='s were'
+            final_msg+=f' uploaded between {run_start} and {run_stop}:\n'
+            for fp in uploaded_filepaths :
+                final_msg+=f'\t{fp.relative_to(args.upload_dir)}\n'
         else :
-            final_msg+='s were'
-        final_msg+=f' uploaded between {run_start} and {run_stop}:\n'
-        for fp in uploaded_filepaths :
-            final_msg+=f'\t{fp.relative_to(args.upload_dir)}\n'
+            final_msg=f'No files were uploaded between {run_start} and {run_stop}'
         upload_file_directory.logger.info(final_msg)
 
     #################### PROPERTIES ####################
@@ -419,16 +447,56 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         """
         return {}
     @property
+    def status_msg(self) :
+        """
+        A message stating the number of files currently at each stage of progress
+        """
+        self.__find_new_files()
+        n_wont_be_uploaded = 0
+        n_waiting_to_upload = 0
+        n_upload_in_progress = 0
+        n_fully_enqueued = 0
+        n_fully_produced = 0
+        for datafile in self.data_files_by_path.values() :
+            if not datafile.to_upload :
+                n_wont_be_uploaded+=1
+            elif datafile.waiting_to_upload :
+                n_waiting_to_upload+=1
+            elif datafile.upload_in_progress :
+                n_upload_in_progress+=1
+            elif datafile.fully_enqueued :
+                n_fully_enqueued+=1
+            elif datafile.fully_produced :
+                n_fully_produced+=1
+        status_message = f'{len(self.data_files_by_path)} files found in {self.dirpath}'
+        if len(self.data_files_by_path)>0 :
+            status_message+='('
+            if n_wont_be_uploaded>0 :
+                status_message+=f'{n_wont_be_uploaded} will not be uploaded, '
+            if n_waiting_to_upload>0 :
+                status_message+=f'{n_waiting_to_upload} waiting to upload, '
+            if n_upload_in_progress>0 :
+                status_message+=f'{n_upload_in_progress} with upload in progress, '
+            if n_fully_enqueued>0 :
+                status_message+=f'{n_fully_enqueued} enqueued to be produced, '
+            if n_fully_produced>0 :
+                status_message+=f'{n_fully_produced} fully produced, '
+            status_message=f'{status_message[:-2]})'
+        return status_message
+    @property
     def progress_msg(self) :
         """
         A message describing the files that are currently recognized as part of the directory
         """
         self.__find_new_files()
-        progress_msg = 'The following files have been recognized so far:\n'
-        for datafile in self.data_files_by_path.values() :
-            if not datafile.to_upload :
-                continue
-            progress_msg+=f'\t{datafile.upload_status_msg}\n'
+        if len(self.data_files_by_path)>0 :
+            progress_msg = 'The following files have been recognized so far:\n'
+            for datafile in self.data_files_by_path.values() :
+                if not datafile.to_upload :
+                    continue
+                progress_msg+=f'\t{datafile.upload_status_msg}\n'
+        else :
+            progress_msg = f'No files found yet in {self.dirpath}'
         return progress_msg
     @property
     def have_file_to_upload(self) :

@@ -2,5 +2,5 @@
 ControlledProcessMultiThreaded
 ==============================
 
-.. autoclass:: openmsistream.workflow.ControlledProcessMultiThreaded
+.. autoclass:: openmsistream.utilities.ControlledProcessMultiThreaded
    :private-members:

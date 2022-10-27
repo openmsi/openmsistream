@@ -1,8 +1,7 @@
 #imports
 import unittest, time
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.workflow.controlled_process_single_thread import ControlledProcessSingleThread
-from openmsistream.workflow.controlled_process_multi_threaded import ControlledProcessMultiThreaded
+from openmsistream.utilities import ControlledProcessSingleThread, ControlledProcessMultiThreaded
 
 #some constants
 TIMEOUT_SECS = 10

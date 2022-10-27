@@ -2,7 +2,7 @@
 
 #imports
 import datetime, time
-from openmsistream.workflow import Runnable
+from openmsistream.utilities import Runnable
 
 class RunnableExample(Runnable) :
     """

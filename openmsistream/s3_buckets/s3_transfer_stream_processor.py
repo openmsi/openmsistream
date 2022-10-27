@@ -61,7 +61,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
             self.logger.error(f'ERROR: failed to transfer {datafile.filename} to the object store')
             return exc
         if self.s3d.compare_consumer_datafile_with_s3_object_stream(self.bucket_name, object_key, datafile):
-            self.logger.info(object_key + ' matched with consumer datafile')
+            self.logger.debug(object_key + ' matched with consumer datafile')
             # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
         else :
             warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
@@ -104,23 +104,23 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
                              output_dir=args.output_dir,
                              n_threads=args.n_threads,
                              update_secs=args.update_seconds,
-                             consumer_group_id=args.consumer_group_id)
+                             consumer_group_id=args.consumer_group_id,
+                             streamlevel=args.logger_stream_level,filelevel=args.logger_file_level)
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)
         n_read,n_processed,complete_filenames = s3_stream_proc.make_stream()
         s3_stream_proc.close()
-        msg = f'{n_read} total messages were consumed'
+        msg = f'{n_read} total messages were consumed, {n_processed} messages were successfully processed,'
+        msg+= f'and {len(complete_filenames)} files were transferred to the {args.bucket_name} bucket'
+        s3_stream_proc.logger.info(msg)
         if len(complete_filenames)>0 :
-            msg+=f', {n_processed} messages were successfully processed,'
-            msg+=f' and the following {len(complete_filenames)} file'
+            msg =f'The following {len(complete_filenames)} file'
             msg+=' was' if len(complete_filenames)==1 else 's were'
             msg+=f' successfully transferred to the {args.bucket_name} bucket'
             for fn in complete_filenames :
                 msg+=f'\n\t{fn}'
-        else :
-            msg+=f' and {n_processed} messages were successfully processed'
-        s3_stream_proc.logger.info(msg)
+            s3_stream_proc.logger.debug(msg)
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

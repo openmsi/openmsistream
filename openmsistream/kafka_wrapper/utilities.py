@@ -20,11 +20,11 @@ def add_kwargs_to_configs(configs,logger,**kwargs) :
                 msg = f'A new value for the "{config_name}" config has been supplied '
                 msg+=  'by a keyword argument that will overwrite a previously-set value. '
                 msg+= f'The value will be set to {arg} instead of {new_configs[config_name]}.'
-                logger.info(msg)
+                logger.debug(msg)
         new_configs[config_name]=arg
     return new_configs
 
-def default_producer_callback(err,msg,logger=None,**other_kwargs) :
+def default_producer_callback(err,msg,prodid,logger=None,**other_kwargs) :
     """
     Default callback function to use for testing whether a message has been successfully produced to the topic
     """
@@ -32,15 +32,15 @@ def default_producer_callback(err,msg,logger=None,**other_kwargs) :
         err = msg.error()
     if err is not None: #raise an error if the message wasn't sent successfully
         if err.fatal() :
-            logmsg =f'ERROR: fatally failed to deliver message with kwargs "{other_kwargs}". '
-            logmsg+=f'MESSAGE DROPPED. Error reason: {err.str()}'
+            logmsg =f'ERROR: Producer with ID {prodid} fatally failed to deliver message with kwargs '
+            logmsg+=f'"{other_kwargs}". MESSAGE DROPPED. Error reason: {err.str()}'
             if logger is not None :
                 logger.error(logmsg)
             else :
                 raise RuntimeError(logmsg)
         elif not err.retriable() :
-            logmsg =f'ERROR: Failed to deliver message with kwargs "{other_kwargs}" and cannot retry. '
-            logmsg+= f'MESSAGE DROPPED. Error reason: {err.str()}'
+            logmsg =f'ERROR: Producer with ID {prodid} failed to deliver message with kwargs "{other_kwargs}" '
+            logmsg+= f'and cannot retry. MESSAGE DROPPED. Error reason: {err.str()}'
             if logger is not None :
                 logger.error(logmsg)
             else :

@@ -2,4 +2,4 @@
 HasArgumentParser
 =================
 
-.. autoclass:: openmsistream.workflow.HasArgumentParser
+.. autoclass:: openmsistream.utilities.HasArgumentParser

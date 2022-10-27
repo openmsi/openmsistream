@@ -4,10 +4,10 @@ being reconstructed from the topic and files that have been fully handled
 """
 
 #imports
-import datetime, re
+import datetime, re, threading
 from abc import ABC
 from dataclasses import dataclass
-from ....utilities import DataclassTable, LogOwner
+from ....utilities import DataclassTableReadOnly, DataclassTableAppendOnly, DataclassTable, LogOwner
 from ...utilities import get_message_prepend
 
 @dataclass
@@ -44,16 +44,18 @@ class StreamHandlerRegistry(LogOwner,ABC) :
     @property
     def in_progress_table(self) :
         """
-        The table listing files in progress
+        A read-only version of the table listing files in progress
         """
-        return self._in_progress_table
+        return self._in_progress_table.as_read_only()
 
     @property
     def succeeded_table(self) :
         """
-        The table listing files that have been successfully handled
+        A read-only version of the table listing files that have been successfully handled
         """
-        return self._succeeded_table
+        self.consolidate_succeeded_files()
+        return DataclassTableReadOnly(StreamHandlerRegistryLineSucceeded,
+                                      filepath=self.succeeded_filepath,logger=self.logger)
 
     @property
     def filepaths_to_rerun(self) :
@@ -91,7 +93,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         """
         return len(self.filepaths_to_rerun)
 
-    def __init__(self,in_progress_filepath,succeeded_filepath,*args,**kwargs) :
+    def __init__(self,in_progress_filepath,succeeded_filepath,*args,max_succeeded_lines_per_file=1000,**kwargs) :
         """
         in_progress_filepath = path to the file that should hold the "in_progress" datatable
         succeeded_filepath = path to the file that should hole the "succeeded" datatable
@@ -99,8 +101,10 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         super().__init__(*args,**kwargs)
         self._in_progress_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineInProgress,
                                                   filepath=in_progress_filepath,logger=self.logger)
-        self._succeeded_table = DataclassTable(dataclass_type=StreamHandlerRegistryLineSucceeded,
-                                                  filepath=succeeded_filepath,logger=self.logger)
+        self.succeeded_filepath = succeeded_filepath
+        self.max_succeeded_lines_per_file = max_succeeded_lines_per_file
+        self.__succeeded_tables_by_id = {}
+        self.consolidate_succeeded_files()
 
     def register_file_in_progress(self,dfc) :
         """
@@ -114,22 +118,66 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         """
         self._add_or_modify_in_progress_entry(dfc,self.MISMATCHED_HASH)
 
+    def consolidate_succeeded_files(self) :
+        """
+        Search the directory holding the files for all "completed" file entries and write them into a single file
+        """
+        #add any lines from files in the directory to the one consolidated file at the expected path
+        globpattern = f'{self.succeeded_filepath.stem}*{self.succeeded_filepath.suffix}'
+        consolidated_file = None
+        for fp in self.succeeded_filepath.parent.glob(globpattern) :
+            if fp==self.succeeded_filepath :
+                continue
+            for table in self.__succeeded_tables_by_id.values() :
+                if fp==table.filepath :
+                    table.dump_to_file()
+            file_to_add = DataclassTableReadOnly(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                                 filepath=fp,logger=self.logger)
+            if consolidated_file is None :
+                consolidated_file = DataclassTableAppendOnly(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                                             filepath=self.succeeded_filepath,
+                                                             logger=self.logger)
+            consolidated_file.add_entries(file_to_add.objects)
+        if consolidated_file is None :
+            return
+        #dump out the consolidated file
+        consolidated_file.dump_to_file()
+        #make sure that all the lines from the individual files have been successfully copied
+        all_lines = (DataclassTableReadOnly(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                            filepath=self.succeeded_filepath,logger=self.logger)).lines
+        for fp in self.succeeded_filepath.parent.glob(globpattern) :
+            if fp==self.succeeded_filepath :
+                continue
+            added_file = DataclassTableReadOnly(dataclass_type=StreamHandlerRegistryLineSucceeded,
+                                                filepath=fp,logger=self.logger)
+            for entry_line in added_file.lines :
+                if entry_line not in all_lines :
+                    errmsg = f'ERROR: failed to consolidate individual files into {self.succeeded_filepath}. '
+                    errmsg+= 'Individual files will be retained and should be manually concatenated. '
+                    errmsg+= 'Duplicate entries may be present.'
+                    raise RuntimeError(errmsg)
+            to_pop = [table_id for table_id,table in self.__succeeded_tables_by_id.items() if fp==table.filepath]
+            for table_id in to_pop :
+                self.__succeeded_tables_by_id.pop(table_id)
+            fp.unlink()
+
     def _add_or_modify_in_progress_entry(self,dfc,new_status) :
         filename, rel_filepath = self._get_name_and_rel_filepath_for_data_file_chunk(dfc)
-        existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
-        if existing_entry_addr is None :
-            new_entry = StreamHandlerRegistryLineInProgress(filename,
-                                                              rel_filepath,
-                                                              new_status,
-                                                              dfc.n_total_chunks,
-                                                              datetime.datetime.now(),
-                                                              datetime.datetime.now())
-            self._in_progress_table.add_entries(new_entry)
-            self._in_progress_table.dump_to_file()
-        else :
-            self._in_progress_table.set_entry_attrs(existing_entry_addr,
-                                                    status=new_status,
-                                                    most_recent_message=datetime.datetime.now())
+        with self._in_progress_table.lock :
+            existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
+            if existing_entry_addr is None :
+                new_entry = StreamHandlerRegistryLineInProgress(filename,
+                                                                rel_filepath,
+                                                                new_status,
+                                                                dfc.n_total_chunks,
+                                                                datetime.datetime.now(),
+                                                                datetime.datetime.now())
+                self._in_progress_table.add_entries(new_entry)
+                self._in_progress_table.dump_to_file()
+            else :
+                self._in_progress_table.set_entry_attrs(existing_entry_addr,
+                                                        status=new_status,
+                                                        most_recent_message=datetime.datetime.now())
 
     def _get_name_and_rel_filepath_for_data_file_chunk(self,dfc) :
         filename = dfc.filename
@@ -146,6 +194,26 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             self.logger.error(errmsg,ValueError)
         return existing_obj_addresses[rel_filepath][0]
 
+    def _add_to_succeeded_table(self,new_entry,thread_identifier=None) :
+        if thread_identifier is None :
+            thread_identifier = f't{threading.get_ident()}'
+        if thread_identifier in self.__succeeded_tables_by_id :
+            if self.__succeeded_tables_by_id[thread_identifier].n_entries>=self.max_succeeded_lines_per_file :
+                old_fp = self.__succeeded_tables_by_id[thread_identifier].filepath
+                timestamp = str(datetime.datetime.now().timestamp()).replace('.','_')
+                new_fp = old_fp.with_stem(f'{old_fp.stem}_{timestamp}')
+                old_fp.rename(new_fp)
+                new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
+                                                     filepath=old_fp,logger=self.logger)
+                self.__succeeded_tables_by_id[thread_identifier] = new_table
+        else :
+            new_fp = self.succeeded_filepath.with_stem(f'{self.succeeded_filepath.stem}_{thread_identifier}')
+            new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
+                                                 filepath=new_fp,logger=self.logger)
+            self.__succeeded_tables_by_id[thread_identifier] = new_table
+        self.__succeeded_tables_by_id[thread_identifier].add_entries(new_entry)
+        self.__succeeded_tables_by_id[thread_identifier].dump_to_file()
+
 class StreamProcessorRegistry(StreamHandlerRegistry) :
     """
     A class to keep track of the status of files read during stream processing
@@ -158,8 +226,8 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
         dirpath    = path to the directory that should contain the csv files
         topic_name = the name of the topic that will be produced to (used in the filenames)
         """
-        in_progress_filepath = dirpath / f'files_consumed_from_{topic_name}_by_{consumer_group_id}.csv'
-        succeeded_filepath = dirpath / f'files_successfully_processed_from_{topic_name}_by_{consumer_group_id}.csv'
+        in_progress_filepath = dirpath / f'consuming_from_{topic_name}_in_progress_by_{consumer_group_id}.csv'
+        succeeded_filepath = dirpath / f'processed_from_{topic_name}_by_{consumer_group_id}.csv'
         super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
     def register_file_successfully_processed(self,dfc) :
@@ -167,25 +235,30 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
         Add/update a line in the table to show that a file has successfully been processed
         """
         filename, rel_filepath = self._get_name_and_rel_filepath_for_data_file_chunk(dfc)
+        self._in_progress_table.lock.acquire()
         existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
         if existing_entry_addr is not None :
             attrs = self._in_progress_table.get_entry_attrs(existing_entry_addr)
+            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(attrs['filename'],
                                                            attrs['rel_filepath'],
                                                            attrs['n_chunks'],
                                                            attrs['first_message'],
                                                            datetime.datetime.now())
         else :
+            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(filename,
                                                            rel_filepath,
                                                            dfc.n_total_chunks,
                                                            datetime.datetime.now(),
                                                            datetime.datetime.now())
-        self._succeeded_table.add_entries(new_entry)
-        self._succeeded_table.dump_to_file()
+        self._add_to_succeeded_table(new_entry)
         if existing_entry_addr is not None :
-            self._in_progress_table.remove_entries(existing_entry_addr)
-            self._in_progress_table.dump_to_file()
+            try :
+                self._in_progress_table.remove_entries(existing_entry_addr)
+                self._in_progress_table.dump_to_file()
+            except ValueError :
+                pass
 
     def register_file_processing_failed(self,dfc) :
         """
@@ -207,33 +280,38 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
         dirpath    = path to the directory that should contain the csv file
         topic_name = the name of the topic that will be produced to (used in the filename)
         """
-        in_progress_filepath = dirpath / f'files_consumed_from_{consumer_topic_name}_by_{consumer_group_id}.csv'
-        succeeded_filepath = dirpath / f'files_with_results_produced_to_{producer_topic_name}.csv'
+        in_progress_filepath = dirpath / f'consuming_from_{consumer_topic_name}_in_progress_by_{consumer_group_id}.csv'
+        succeeded_filepath = dirpath / f'results_produced_to_{producer_topic_name}.csv'
         super().__init__(in_progress_filepath,succeeded_filepath,*args,**kwargs)
 
-    def register_file_results_produced(self,filename,rel_filepath,n_total_chunks) :
+    def register_file_results_produced(self,filename,rel_filepath,n_total_chunks,prodid) :
         """
         Add/update a line in the table to show that a file has successfully been processed
         """
+        self._in_progress_table.lock.acquire()
         existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
         if existing_entry_addr is not None :
             attrs = self._in_progress_table.get_entry_attrs(existing_entry_addr)
+            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(attrs['filename'],
                                                            attrs['rel_filepath'],
                                                            attrs['n_chunks'],
                                                            attrs['first_message'],
                                                            datetime.datetime.now())
         else :
+            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(filename,
                                                            rel_filepath,
                                                            n_total_chunks,
                                                            datetime.datetime.now(),
                                                            datetime.datetime.now())
-        self._succeeded_table.add_entries(new_entry)
-        self._succeeded_table.dump_to_file()
+        self._add_to_succeeded_table(new_entry,f'p{prodid}')
         if existing_entry_addr is not None :
-            self._in_progress_table.remove_entries(existing_entry_addr)
-            self._in_progress_table.dump_to_file()
+            try :
+                self._in_progress_table.remove_entries(existing_entry_addr)
+                self._in_progress_table.dump_to_file()
+            except ValueError :
+                pass
 
     def register_file_computing_result_failed(self,filename,rel_filepath,n_total_chunks) :
         """
@@ -251,17 +329,18 @@ class StreamReproducerRegistry(StreamHandlerRegistry) :
                                                             self.PRODUCING_MESSAGE_FAILED)
 
     def _add_or_modify_in_progress_entry_without_chunk(self,filename,rel_filepath,n_total_chunks,new_status) :
-        existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
-        if existing_entry_addr is None :
-            new_entry = StreamHandlerRegistryLineInProgress(filename,
-                                                              rel_filepath,
-                                                              new_status,
-                                                              n_total_chunks,
-                                                              datetime.datetime.now(),
-                                                              datetime.datetime.now())
-            self._in_progress_table.add_entries(new_entry)
-            self._in_progress_table.dump_to_file()
-        else :
-            self._in_progress_table.set_entry_attrs(existing_entry_addr,
-                                                    status=new_status,
-                                                    most_recent_message=datetime.datetime.now())
+        with self._in_progress_table.lock :
+            existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
+            if existing_entry_addr is None :
+                new_entry = StreamHandlerRegistryLineInProgress(filename,
+                                                                rel_filepath,
+                                                                new_status,
+                                                                n_total_chunks,
+                                                                datetime.datetime.now(),
+                                                                datetime.datetime.now())
+                self._in_progress_table.add_entries(new_entry)
+                self._in_progress_table.dump_to_file()
+            else :
+                self._in_progress_table.set_entry_attrs(existing_entry_addr,
+                                                        status=new_status,
+                                                        most_recent_message=datetime.datetime.now())

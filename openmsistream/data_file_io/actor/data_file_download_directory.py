@@ -8,7 +8,7 @@ import datetime, warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto.message import KafkaCryptoMessage
-from ...workflow import Runnable
+from ...utilities import Runnable
 from ..config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
 from ..utilities import get_encrypted_message_key_and_value_filenames
 from .. import DataFileDirectory, DownloadDataFileToDisk
@@ -94,9 +94,9 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             dfc = msg.value #from KafkaCrypto
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            infomsg = f'File {self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)} '
-            infomsg+= 'successfully reconstructed from stream'
-            self.logger.info(infomsg)
+            debugmsg = f'File {self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)} '
+            debugmsg+= 'successfully reconstructed from stream'
+            self.logger.debug(debugmsg)
             self.completely_processed_filepaths.append(dfc.filepath)
             with lock :
                 del self.files_in_progress_by_path[dfc.filepath]
@@ -149,6 +149,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                                       n_threads=args.n_threads,
                                       consumer_group_id=args.consumer_group_id,
                                       update_secs=args.update_seconds,
+                                      streamlevel=args.logger_stream_level,filelevel=args.logger_file_level,
                                      )
         #start the reconstructor running
         run_start = datetime.datetime.now()

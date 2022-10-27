@@ -72,11 +72,11 @@ In addition to the main programs provided by OpenMSIStream, the infrastructure u
 Installing any class that extends Runnable
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
-First, if you've written your own new class that extends :class:`~.workflow.Runnable`, you can give the name of the class and the path to it as the specification string, like::
+First, if you've written your own new class that extends :class:`~.utilities.Runnable`, you can give the name of the class and the path to it as the specification string, like::
 
     InstallService [class_name]=[path.to.class.file] [command_line_options] --service_name [name_for_service_or_daemon]
 
-where ``[class_name]`` is the name of the class, and ``[path.to.class.file]`` is a Python path to the file containing it. You can find an example custom Runnable class in the OpenMSIStream repository, called ``runnable_example.py`` in the ``openmsipython/services/examples`` directory. The :func:`openmsistream.workflow.Runnable.run_from_command_line` function in that class can be run as a Service by installing it with the command::
+where ``[class_name]`` is the name of the class, and ``[path.to.class.file]`` is a Python path to the file containing it. You can find an example custom Runnable class in the OpenMSIStream repository, called ``runnable_example.py`` in the ``openmsipython/services/examples`` directory. The :func:`openmsistream.utilities.Runnable.run_from_command_line` function in that class can be run as a Service by installing it with the command::
 
     InstallService RunnableExample=openmsistream.services.examples.runnable_example [absolute_path_to_output_dir] --service_name RunnableExampleServiceTest
 
