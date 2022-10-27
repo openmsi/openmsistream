@@ -95,7 +95,7 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
                 ref_bytestring = fp.read()
             self.assertTrue((TEST_CONST.TEST_DATA_FILE_2_NAME,ref_bytestring) in dfsp.completed_filenames_bytestrings)
             #read the .csv table to make sure it registers one file each succeeded and failed
-            time.sleep(1.0)
+            time.sleep(5)
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
             spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
