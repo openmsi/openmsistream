@@ -88,6 +88,7 @@ def logger_string_to_level(argval) :
     """
     converts a given string representing a logger level to its corresponding integer
     """
+    argval=argval.lower()
     if argval=='notset' :
         return logging.NOTSET
     if argval=='debug' :
@@ -100,7 +101,12 @@ def logger_string_to_level(argval) :
         return logging.ERROR
     if argval=='critical' :
         return logging.CRITICAL
-    return logging.NOTSET
+    try :
+        if int(argval)>=0 :
+            return int(argval)
+        raise ValueError(f'ERROR: logger argument {argval} is not valid!')
+    except ValueError as exc :
+        raise exc
 
 #################### MYARGUMENTPARSER CLASS ####################
 
@@ -194,13 +200,11 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
             ['optional',{'action':'store_true',
                          'help':'Add this flag to also remove the NSSM executable when removing a Service'}],
         'logger_stream_level':
-            ['optional',{'choices':['notset','debug','info','warning','error','critical'],
-                         'type':logger_string_to_level,
+            ['optional',{'type':logger_string_to_level,
                          'default':'info',
                          'help':"Messages below this level will not be processed by the logger's stream handler"}],
         'logger_file_level':
-            ['optional',{'choices':['notset','debug','info','warning','error','critical'],
-                         'type':logger_string_to_level,
+            ['optional',{'type':logger_string_to_level,
                          'default':'warning',
                          'help':"Messages below this level will not be processed by the logger's file handler"}],
     }
