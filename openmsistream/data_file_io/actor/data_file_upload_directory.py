@@ -304,9 +304,10 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         #make sure any files listed as "in progress" have their remaining chunks enqueued
         n_files_to_resume = 0
         n_chunks_resumed = 0
-        for filepath,chunks in self.__file_registry.get_incomplete_filepaths_and_chunks() :
-            self.logger.debug(f'Found {filepath} in progress from a previous run. Re-enqueuing {len(chunks)} chunks.')
-            self.__add_chunks_for_filepath(filepath,chunks)
+        for rel_filepath,chunks in self.__file_registry.get_incomplete_filepaths_and_chunks() :
+            debugmsg = f'Found {rel_filepath} in progress from a previous run. Re-enqueuing {len(chunks)} chunks.'
+            self.logger.debug(debugmsg)
+            self.__add_chunks_for_filepath(self.dirpath/rel_filepath,chunks)
             n_files_to_resume+=1
             n_chunks_resumed+=len(chunks)
         if n_files_to_resume>0 :
@@ -319,7 +320,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             self.logger.info(infomsg)
         #make sure any files listed as "completed" will not be uploaded again
         n_files_already_uploaded = 0
-        for filepath in self.__file_registry.get_completed_filepaths() :
+        for rel_filepath in self.__file_registry.get_completed_filepaths() :
+            filepath = self.dirpath/rel_filepath
             if filepath in self.data_files_by_path :
                 if self.data_files_by_path[filepath].to_upload :
                     msg = f'Found {filepath} listed as fully uploaded during a previous run. Will not produce it again.'
