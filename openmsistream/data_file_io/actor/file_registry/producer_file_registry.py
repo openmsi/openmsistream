@@ -103,22 +103,22 @@ class ProducerFileRegistry(LogOwner) :
 
     def get_incomplete_filepaths_and_chunks(self) :
         """
-        Generate tuples of (filepath, chunks to upload) for each file that has not yet been completely uploaded
+        Generate tuples of (rel_filepath, chunks to upload) for each file that has not yet been completely uploaded
         """
         for obj_address in self.__in_prog.obj_addresses :
-            attr_dict = self.__in_prog.get_entry_attrs(obj_address,'filepath','chunks_to_send')
+            attr_dict = self.__in_prog.get_entry_attrs(obj_address,'rel_filepath','chunks_to_send')
             if len(attr_dict['chunks_to_send'])>0 :
-                yield attr_dict['filepath'],attr_dict['chunks_to_send']
+                yield attr_dict['rel_filepath'],attr_dict['chunks_to_send']
 
     def get_completed_filepaths(self) :
         """
-        Generate filepaths for each file that has been completely uploaded
+        Generate relative filepaths for each file that has been completely uploaded
         """
         self.consolidate_completed_files()
         completed = DataclassTableReadOnly(dataclass_type=RegistryLineCompleted,
                                            filepath=self.completed_filepath_pattern,logger=self.logger)
         for obj_address in completed.obj_addresses :
-            yield completed.get_entry_attrs(obj_address,'filepath')
+            yield completed.get_entry_attrs(obj_address,'rel_filepath')
 
     def register_chunk(self,filename,rel_filepath,n_total_chunks,chunk_i,prodid) :
         """
