@@ -9,7 +9,7 @@ class RunConstants :
     """
 
     CONFIG_FILE_EXT = '.config'
-    CONFIG_FILE_DIR = pathlib.Path(__file__).parent.parent / 'kafka_wrapper' / 'config_files'
+    CONFIG_FILE_DIR = (pathlib.Path(__file__).parent.parent / 'kafka_wrapper' / 'config_files').resolve()
     DEFAULT_N_THREADS = 2
     DEFAULT_UPDATE_SECONDS = 300
 

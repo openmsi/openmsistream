@@ -8,7 +8,6 @@ from openmsistream.kafka_wrapper.serialization import CompoundSerializer, Compou
 from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
-from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
 
 #constants
@@ -33,7 +32,7 @@ class TestSerialization(unittest.TestCase) :
         #make the dictionary of reference DataFileChunk objects
         data_file = UploadDataFile(TEST_CONST.TEST_DATA_FILE_PATH,
                                    rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,logger=LOGGER)
-        data_file._build_list_of_file_chunks(RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+        data_file._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
         data_file.add_chunks_to_upload()
         self.test_ul_chunk_objects = {}; self.test_dl_chunk_objects = {}
         for chunk_i in self.test_chunk_binaries.keys() :

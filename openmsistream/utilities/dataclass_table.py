@@ -275,7 +275,7 @@ class DataclassTableBase(LogOwner,ABC) :
                     errmsg+= f'after {retries-n_retries_left+1} attempts! Will reraise exception.'
                     self.logger.error(errmsg,exc_obj=caught_exc)
                 else :
-                    msg = f'WARNING: failed an {retries-n_retries_left+1} attempts to write to '
+                    msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
                     msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
                     msg+= f'Exception ({type(caught_exc)}): {caught_exc}'
                     self.logger.warning(msg)

@@ -2,7 +2,7 @@
 import unittest, pathlib, logging, filecmp, shutil
 from hashlib import sha512
 from openmsistream.utilities.logging import Logger
-from openmsistream.data_file_io.config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
+from openmsistream.data_file_io.config import DATA_FILE_HANDLING_CONST
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.download_data_file import DownloadDataFileToDisk, DownloadDataFileToMemory
@@ -19,7 +19,7 @@ class TestDownloadDataFile(unittest.TestCase) :
     def setUp(self) :
         self.ul_datafile = UploadDataFile(TEST_CONST.TEST_DATA_FILE_PATH,
                                           rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,logger=LOGGER)
-        self.ul_datafile._build_list_of_file_chunks(RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+        self.ul_datafile._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
         self.ul_datafile.add_chunks_to_upload()
 
     def run_download_chunks(self,disk_or_memory) :
