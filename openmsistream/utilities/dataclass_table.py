@@ -4,7 +4,7 @@ serialized to/deseralized from a corresponding CSV file in an atomic and (relati
 """
 
 #imports
-import pathlib, functools, datetime, typing, copy, os
+import pathlib, functools, datetime, typing, copy, os, time
 from abc import ABC
 from threading import Lock
 from dataclasses import fields, is_dataclass
@@ -38,55 +38,12 @@ class DataclassTableBase(LogOwner,ABC) :
     :type create_if_missing: bool
     """
 
-    #################### PROPERTIES AND CONSTANTS ####################
+    #################### CONSTANTS ####################
 
     DELIMETER = ';' #can't use a comma or containers would display incorrectly
     DATETIME_FORMAT = '%a %b %d, %Y at %H:%M:%S'
     UPDATE_FILE_EVERY = 5 #only update the .csv file automatically every 5 seconds to make updates less expensive
-
     NESTED_TYPES = get_nested_types()
-
-    @methodtools.lru_cache()
-    @property
-    def csv_header_line(self) :
-        """
-        The first line in the CSV file (OS-dependent)
-        """
-        header_line = ''
-        #add an extra line when running on Windows to seamlessly open the file in Excel
-        if os.name=='nt' :
-            header_line+=f'sep={self.DELIMETER}\n'
-        for fieldname in self.__field_names :
-            header_line+=f'{fieldname}{self.DELIMETER}'
-        return header_line[:-1]
-
-    @property
-    def obj_addresses(self) :
-        """
-        All recognized object hex addresses
-        """
-        return list(self._entry_objs.keys())
-
-    @property
-    def filepath(self) :
-        """
-        Path to the CSV file
-        """
-        return self.__filepath
-
-    @property
-    def n_entries(self) :
-        """
-        The number of entries in the file
-        """
-        return len(self._entry_objs)
-
-    @property
-    def dataclass_type(self) :
-        """
-        The type of the Dataclass objects contained in the table
-        """
-        return self.__dataclass_type
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -197,11 +154,16 @@ class DataclassTableBase(LogOwner,ABC) :
             self.lock.release()
         return to_return
 
-    def dump_to_file(self,reraise_exc=True) :
+    def dump_to_file(self,reraise_exc=True,retries=2) :
         """
         Dump the contents of the table to a csv file.
         Call this to force the file to update and reflect the current state of objects.
         Automatically called in several contexts.
+
+        :param reraise_exc: if True, Exceptions raised when writing out to the file will be re-raised
+        :type reraise_exc: bool, optional
+        :param retries: how many times to retry writing out the file
+        :type retries: int, optional
         """
         lines_to_write = [self.csv_header_line]
         if len(self._entry_lines)>0 :
@@ -210,9 +172,53 @@ class DataclassTableBase(LogOwner,ABC) :
         if not self.lock.locked() :
             locked_internally = True
             self.lock.acquire()
-        self.__write_lines(lines_to_write,reraise_exc=reraise_exc)
+        self.__write_lines(lines_to_write,reraise_exc=reraise_exc,retries=retries)
         if locked_internally :
             self.lock.release()
+
+    #################### PROPERTIES ####################
+
+    @methodtools.lru_cache()
+    @property
+    def csv_header_line(self) :
+        """
+        The first line in the CSV file (OS-dependent)
+        """
+        header_line = ''
+        #add an extra line when running on Windows to seamlessly open the file in Excel
+        if os.name=='nt' :
+            header_line+=f'sep={self.DELIMETER}\n'
+        for fieldname in self.__field_names :
+            header_line+=f'{fieldname}{self.DELIMETER}'
+        return header_line[:-1]
+
+    @property
+    def obj_addresses(self) :
+        """
+        All recognized object hex addresses
+        """
+        return list(self._entry_objs.keys())
+
+    @property
+    def filepath(self) :
+        """
+        Path to the CSV file
+        """
+        return self.__filepath
+
+    @property
+    def n_entries(self) :
+        """
+        The number of entries in the file
+        """
+        return len(self._entry_objs)
+
+    @property
+    def dataclass_type(self) :
+        """
+        The type of the Dataclass objects contained in the table
+        """
+        return self.__dataclass_type
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -240,7 +246,7 @@ class DataclassTableBase(LogOwner,ABC) :
         msg = f'Found {len(self._entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
         self.logger.debug(msg)
 
-    def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
+    def __write_lines(self,lines,overwrite=True,reraise_exc=True,retries=2) :
         """
         Write a line or container of lines to the csv file, in a thread-safe and atomic way
         """
@@ -249,20 +255,30 @@ class DataclassTableBase(LogOwner,ABC) :
         lines_string = ''
         for line in lines :
             lines_string+=f'{line.strip()}\n'
-        try :
-            with atomic_write(self.__filepath,overwrite=overwrite) as fp :
-                fp.write(lines_string)
-        except Exception as exc :
-            if not isinstance(exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
+        n_retries_left = retries
+        caught_exc = None
+        while n_retries_left>0 :
+            try :
+                with atomic_write(self.__filepath,overwrite=overwrite) as fp :
+                    fp.write(lines_string)
+                self._file_last_updated = datetime.datetime.now()
+                return
+            except Exception as exc :
+                caught_exc = exc
+                n_retries_left-=1
+                time.sleep(0.1)
+                continue
+        if caught_exc is not None :
+            if not isinstance(caught_exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
                 if reraise_exc :
-                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
-                    errmsg+=  'Will reraise exception.'
-                    self.logger.error(errmsg,exc_obj=exc)
+                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath} '
+                    errmsg+= f'after {retries-n_retries_left+1} attempts! Will reraise exception.'
+                    self.logger.error(errmsg,exc_obj=caught_exc)
                 else :
-                    msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at '
-                    msg+= f'{self.__filepath}! Exception ({type(exc)}): {exc}'
+                    msg = f'WARNING: failed an {retries-n_retries_left+1} attempts to write to '
+                    msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
+                    msg+= f'Exception ({type(caught_exc)}): {caught_exc}'
                     self.logger.warning(msg)
-        self._file_last_updated = datetime.datetime.now()
 
     def _line_from_obj(self,obj) :
         """
