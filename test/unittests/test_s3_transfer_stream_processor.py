@@ -28,12 +28,16 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                                        TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         # start upload_files_as_added in a separate thread so we can time it out
-        upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
-                                                args=(TOPIC_NAME,),
-                                                kwargs={'n_threads': RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                                        'chunk_size': TEST_CONST.TEST_CHUNK_SIZE,
-                                                        'max_queue_size': RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
-                                                        'upload_existing': True})
+        upload_thread = ExceptionTrackingThread(
+            target=dfud.upload_files_as_added,
+            args=(TOPIC_NAME,),
+            kwargs={
+                'n_threads': RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+                'chunk_size': TEST_CONST.TEST_CHUNK_SIZE,
+                'max_queue_size': RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+                'upload_existing': True,
+                }
+            )
         upload_thread.start()
         try:
             # wait a second, copy the test file into the watched directory, and wait another second

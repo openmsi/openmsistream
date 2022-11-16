@@ -163,9 +163,9 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
                          'help':'''Max size (in bytes) of chunks into which files should be broken
                                    as they are uploaded'''}],
         'queue_max_size':
-            ['optional',{'default':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,'type':int,
-                         'help':'''Maximum number of items to allow in the upload queue at a time.
-                                 Use to limit RAM usage or throttle production rate if necessary.'''}],
+            ['optional',{'default':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,'type':int,
+                         'help':'''Maximum allowed size in MB of the internal upload queue.
+                                 Use to adjust RAM usage if necessary.'''}],
         'update_seconds':
             ['optional',{'default':RUN_CONST.DEFAULT_UPDATE_SECONDS,'type':int,
                          'help':'''Number of seconds between printing a "." to the console

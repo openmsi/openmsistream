@@ -35,13 +35,16 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
                                        TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         #start upload_files_as_added in a separate thread so we can time it out
-        upload_thread = ExceptionTrackingThread(target=dfud.upload_files_as_added,
-                                                args=(TOPIC_NAME,),
-                                                kwargs={'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                                        'chunk_size':16*TEST_CONST.TEST_CHUNK_SIZE,
-                                                        'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
-                                                        'upload_existing':True}
-                                )
+        upload_thread = ExceptionTrackingThread(
+            target=dfud.upload_files_as_added,
+            args=(TOPIC_NAME,),
+            kwargs={
+                'n_threads':RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+                'chunk_size':16*TEST_CONST.TEST_CHUNK_SIZE,
+                'max_queue_size':RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+                'upload_existing':True,
+                }
+            )
         upload_thread.start()
         #wait a bit, copy the test files into the watched directory, and wait again
         time.sleep(5)

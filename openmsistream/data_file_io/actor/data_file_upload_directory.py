@@ -69,7 +69,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
     def upload_files_as_added(self,topic_name,
                               n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                               chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
-                              max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
+                              max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
                               upload_existing=False) :
         """
         Watch for new files to be added to the directory.
@@ -81,7 +81,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :type n_threads: int, optional
         :param chunk_size: The size of each file chunk in bytes
         :type chunk_size: int, optional
-        :param max_queue_size: The maximum number of items allowed to be placed in the internal upload queue at once
+        :param max_queue_size: The maximum size in MB of the internal upload queue
+            (this is distinct from the librdkafka buffering queue)
         :type max_queue_size: int, optional
         :param upload_existing: True if any files that already exist in the directory should be uploaded. If False
             (the default) then only files added to the directory after startup will be enqueued to the producer
@@ -105,7 +106,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             msg+='files in '
         msg+=f'{self.dirpath} to the {topic_name} topic using {n_threads} threads'
         self.logger.info(msg)
-        self.__upload_queue = Queue(max_queue_size)
+        n_max_queue_items = int((1000000*max_queue_size)/self.__chunk_size)
+        self.__upload_queue = Queue(n_max_queue_items)
         #start the producers and upload threads
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
