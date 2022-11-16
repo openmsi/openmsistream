@@ -1,7 +1,7 @@
 """Classes for OpenMSIStream logging infrastructure"""
 
 #imports
-import pathlib, logging, traceback
+import pathlib, logging
 from .has_arguments import HasArguments
 
 class OpenMSIStreamFormatter(logging.Formatter) :
