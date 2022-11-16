@@ -61,6 +61,8 @@ class WindowsServiceManager(ServiceManagerBase) :
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
             cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DisplayName {self.service_name}'
             run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
+            cmd = f'./{SERVICE_CONST.NSSM_PATH.name} set {self.service_name} DependOnService "Network Connections"'
+            run_cmd_in_subprocess(['powershell.exe',cmd],logger=self.logger)
         self.logger.info(f'Done installing {self.service_name}')
 
     def start_service(self) :
