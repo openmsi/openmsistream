@@ -78,12 +78,12 @@ class DataFileChunkHandler(LogOwner,ABC) :
         #make sure the chunk is of the right type
         if not isinstance(dfc,DataFileChunk) :
             errmsg = f'ERROR: expected DataFileChunk messages but received a message of type {type(dfc)}!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         #make sure the chunk doesn't already have a rootdir set
         if dfc.rootdir is not None :
-            errmsg = f'ERROR: message with key {dfc.message_key} has rootdir={dfc.rootdir} '
-            errmsg+= '(should be None as it was just consumed)! Will ignore this message and continue.'
-            self.logger.error(errmsg)
+            warnmsg = f'WARNING: message with key {dfc.message_key} has rootdir={dfc.rootdir} '
+            warnmsg+= '(should be None as it was just consumed)! Will ignore this message and continue.'
+            self.logger.warning(warnmsg)
         #set the chunk's root directory
         dfc.rootdir = rootdir_to_set
         #add the chunk's data to the file that's being reconstructed

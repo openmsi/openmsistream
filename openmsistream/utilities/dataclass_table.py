@@ -58,11 +58,11 @@ class DataclassTableBase(LogOwner,ABC) :
         #figure out what type of objects the table/file will be describing
         self.__dataclass_type = dataclass_type
         if not is_dataclass(self.__dataclass_type) :
-            self.logger.error(f'ERROR: "{self.__dataclass_type}" is not a dataclass!',TypeError)
+            self.logger.error(f'ERROR: "{self.__dataclass_type}" is not a dataclass!',exc_type=TypeError)
         if len(fields(self.__dataclass_type)) <= 0 :
             errmsg = f'ERROR: dataclass type {self.__dataclass_type} does not have any fields '
             errmsg+= f'and so cannot be used in a {self.__class__.__name__}!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.__field_names = [field.name for field in fields(self.__dataclass_type)]
         self.__field_types = [field.type for field in fields(self.__dataclass_type)]
         #figure out where the csv file should go
@@ -101,7 +101,7 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         if entry_obj_address not in self._entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         obj = self._entry_objs[entry_obj_address]
         if len(args)==1 :
             return copy.deepcopy(getattr(obj,args[0]))
@@ -139,7 +139,7 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         if key_attr_name not in self.__field_names :
             errmsg = f'ERROR: {key_attr_name} is not a name of a Field for {self.__dataclass_type} objects!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         to_return = {}
         locked_internally = False
         if not self.lock.locked() :
@@ -235,7 +235,7 @@ class DataclassTableBase(LogOwner,ABC) :
             if lines_as_read[ihl].strip()!=(self.csv_header_line.split('\n'))[ihl] :
                 errmsg = f'ERROR: header line in {self.__filepath} ({lines_as_read[0]}) does not match expectation for '
                 errmsg+= f'{self.__dataclass_type} ({self.csv_header_line})!'
-                self.logger.error(errmsg,RuntimeError)
+                self.logger.error(errmsg,exc_type=RuntimeError)
         #add entry lines and objects
         for line in lines_as_read[n_header_lines:] :
             obj = self.__obj_from_line(line)
@@ -273,7 +273,7 @@ class DataclassTableBase(LogOwner,ABC) :
                 if reraise_exc :
                     errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath} '
                     errmsg+= f'after {retries-n_retries_left+1} attempts! Will reraise exception.'
-                    self.logger.error(errmsg,exc_obj=caught_exc)
+                    self.logger.error(errmsg,exc_info=caught_exc,reraise=True)
                 else :
                     msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
                     msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
@@ -285,7 +285,7 @@ class DataclassTableBase(LogOwner,ABC) :
         Return the csv file line for a given object
         """
         if obj.__class__ != self.__dataclass_type :
-            self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',TypeError)
+            self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',exc_type=TypeError)
         obj_line = ''
         for fname,ftype in zip(self.__field_names,self.__field_types) :
             obj_line+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{self.DELIMETER}'
@@ -337,7 +337,7 @@ class DataclassTableBase(LogOwner,ABC) :
                 to_cast.append(self.NESTED_TYPES[attrtype][1](vstr))
             return self.NESTED_TYPES[attrtype][0](to_cast)
         errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
-        self.logger.error(errmsg,ValueError)
+        self.logger.error(errmsg,exc_type=ValueError)
         return None
 
 class DataclassTableReadOnly(DataclassTableBase) :
@@ -391,7 +391,8 @@ class DataclassTableAppendOnly(DataclassTableBase) :
         for entry in new_entries :
             entry_addr = hex(id(entry))
             if entry_addr in self._entry_objs or entry_addr in self._entry_lines :
-                self.logger.error('ERROR: address of object sent to add_entries is already registered!',ValueError)
+                errmsg = 'ERROR: address of object sent to add_entries is already registered!'
+                self.logger.error(errmsg,exc_type=ValueError)
             locked_internally = False
             if not self.lock.locked() :
                 locked_internally = True
@@ -444,7 +445,8 @@ class DataclassTable(DataclassTableAppendOnly) :
             entry_obj_addresses = [entry_obj_addresses]
         for entry_addr in entry_obj_addresses :
             if (entry_addr not in self._entry_objs) or (entry_addr not in self._entry_lines) :
-                self.logger.error(f'ERROR: address {entry_addr} sent to remove_entries is not registered!',ValueError)
+                errmsg = f'ERROR: address {entry_addr} sent to remove_entries is not registered!'
+                self.logger.error(errmsg,exc_type=ValueError)
             locked_internally = False
             if not self.lock.locked() :
                 locked_internally = True
@@ -470,7 +472,7 @@ class DataclassTable(DataclassTableAppendOnly) :
         """
         if entry_obj_address not in self._entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to set_entry_attrs is not registered!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         locked_internally = False
         if not self.lock.locked() :
             locked_internally = True

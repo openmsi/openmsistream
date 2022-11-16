@@ -49,9 +49,9 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         #make sure the necessary information was supplied
         if self.service_dict is None or self.argslist is None :
-            errmsg = 'ERROR: newly installing a Service requires that the specifying what to install '
+            errmsg = 'ERROR: newly installing a Service requires specifying what to install '
             errmsg+= 'and giving an argslist!'
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
         #set the environment variables
         must_rerun = set_env_vars(self.env_var_names,interactive=self.interactive)
         if must_rerun :
@@ -182,12 +182,12 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         if not self.install_args_filepath.is_file() :
             errmsg =  'ERROR: cannot reinstall service without an installation arguments file '
             errmsg+= f'at {self.install_args_filepath}!'
-            self.logger.error(errmsg,FileNotFoundError)
+            self.logger.error(errmsg,exc_type=FileNotFoundError)
         with open(self.install_args_filepath,'r') as fp :
             lines = fp.readlines()
         if not len(lines)>0 :
             errmsg = f'ERROR: installation arguments file {self.install_args_filepath} does not contain enough entries!'
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
         self.service_spec_string = lines[0].strip()
         self.__set_service_dict()
         self.argslist = [line.strip() for line in lines[1:]] if len(lines)>1 else []
@@ -226,7 +226,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         if self.service_spec_string is None or self.argslist is None :
             errmsg = "ERROR: can't write the installation arguments file without a service_spec_string and argslist!"
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
         with open(self.install_args_filepath,'w') as fp :
             for arg in [self.service_spec_string,*self.argslist] :
                 fp.write(f'{arg}\n')
@@ -284,7 +284,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             else :
                 errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
                 errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
-                self.logger.error(errmsg,RuntimeError)
+                self.logger.error(errmsg,exc_type=RuntimeError)
         else :
             self.service_dict = None
 
@@ -332,7 +332,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         except Exception as exc :
             errmsg = f'ERROR: service specification string {service_spec_string} is not valid! '
             errmsg+= 'Will re-raise specific Exception.'
-            logger.error(errmsg,exc_obj=exc)
+            logger.error(errmsg,exc_info=exc,reraise=True)
         return filepath, class_name, run_class, func_name
 
     #################### CLASS METHODS ####################

@@ -16,7 +16,7 @@ def raise_err_with_optional_logger(logger,errmsg,exc_type) :
     If logger is not None, log the error message with the given exception type, otherwise raise the error
     """
     if logger is not None :
-        logger.error(errmsg,exc_type)
+        logger.error(errmsg,exc_type=exc_type)
     else :
         raise exc_type(errmsg)
 

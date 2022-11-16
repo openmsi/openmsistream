@@ -46,14 +46,14 @@ class OpenMSIStreamProducer(LogOwner) :
         if producer_type==KafkaProducer :
             if kafkacrypto is None :
                 errmsg = 'ERROR: creating a KafkaProducer requires holding onto its KafkaCrypto objects!'
-                self.logger.error(errmsg,ValueError)
+                self.logger.error(errmsg,exc_type=ValueError)
             self.__kafkacrypto = kafkacrypto
             self._producer = producer_type(**configs)
         elif producer_type==SerializingProducer :
             self._producer = producer_type(configs)
         else :
             errmsg=f'ERROR: Unrecognized producer type {producer_type} for OpenMSIStreamProducer!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         # poll the producer at least every 5 calls to produce
         self.__poll_counter = 0
         # create an ID for the producer based on its location in memory
@@ -258,8 +258,8 @@ class OpenMSIStreamProducer(LogOwner) :
                 else :
                     total_wait_secs = 0
             except Exception as exc :
-                self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
-                                  exc_obj=exc)
+                errmsg = 'ERROR: failed during call to Producer.produce! Will log and re-raise Exception.'
+                self.logger.error(errmsg,exc_info=exc,reraise=True)
         self.__poll_counter+=1
         if self.__poll_counter%self.POLL_EVERY==0 :
             n_new_callbacks = self.poll(0)

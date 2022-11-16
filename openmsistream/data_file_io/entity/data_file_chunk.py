@@ -198,7 +198,7 @@ class DataFileChunk(Producible) :
             logger = Logger(self.__class__.__name__)
         #make sure the file exists
         if not self.filepath.is_file() :
-            logger.error(f'ERROR: file {self.filepath} does not exist!',FileNotFoundError)
+            logger.error(f'ERROR: file {self.filepath} does not exist!',exc_type=FileNotFoundError)
         #get the data from the file
         with open(self.filepath, "rb") as fp:
             fp.seek(self.chunk_offset_read)
@@ -207,7 +207,7 @@ class DataFileChunk(Producible) :
         if len(data) != self.chunk_size:
             msg = f'ERROR: chunk {self.chunk_hash} size {len(data)} != expected size {self.chunk_size} in file '
             msg+= f'{self.filepath}, offset {self.chunk_offset_read}'
-            logger.error(msg,ValueError)
+            logger.error(msg,exc_type=ValueError)
         #check that its hash matches what was found at the time of putting it in the queue
         check_chunk_hash = sha512()
         check_chunk_hash.update(data)
@@ -215,6 +215,6 @@ class DataFileChunk(Producible) :
         if self.chunk_hash != check_chunk_hash:
             msg = f'ERROR: chunk hash {check_chunk_hash} != expected hash {self.chunk_hash} in file {self.filepath}, '
             msg+= f'offset {self.chunk_offset_read}'
-            logger.error(msg,ValueError)
+            logger.error(msg,exc_type=ValueError)
         #set the chunk's data value
         self.data = data

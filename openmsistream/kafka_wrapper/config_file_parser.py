@@ -118,7 +118,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
                 if not pathlib.Path(path_as_str).is_file() :
                     errmsg = f'ERROR: KafkaCrypto config file {path_as_str} '
                     errmsg+= f'(from config file {self.filepath}) not found!'
-                    self.logger.error(errmsg,FileNotFoundError)
+                    self.logger.error(errmsg,exc_type=FileNotFoundError)
                 return path_as_str
             #option 2 above
             if 'node_id' in kc_configs :
@@ -128,7 +128,7 @@ class KafkaConfigFileParser(ConfigFileParser) :
                 if (not dirpath.is_dir()) or (not filepath.is_file()) :
                     errmsg = f'ERROR: no KafkaCrypto config file found in the default location ({filepath}) '
                     errmsg+= f'for node ID = {node_id}'
-                    self.logger.error(errmsg,FileNotFoundError)
+                    self.logger.error(errmsg,exc_type=FileNotFoundError)
                 return str(filepath)
         #no config file found
         return None

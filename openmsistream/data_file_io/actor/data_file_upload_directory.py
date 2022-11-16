@@ -54,7 +54,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         if not issubclass(datafile_type,UploadDataFile) :
             errmsg = 'ERROR: DataFileUploadDirectory requires a datafile_type that is a subclass of '
             errmsg+= f'UploadDataFile but {datafile_type} was given!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.__upload_regex = upload_regex
         self.__datafile_type = datafile_type
         self.__wait_time = self.MIN_WAIT_TIME
@@ -190,7 +190,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :raises TypeError: if `filepath` isn't a :class:`pathlib.Path` object
         """
         if not isinstance(filepath,pathlib.PurePath) :
-            self.logger.error(f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!',TypeError)
+            errmsg = f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!'
+            self.logger.error(errmsg,exc_type=TypeError)
         if not filepath.is_file() :
             return False
         if filepath.parent == self.__logs_subdir :

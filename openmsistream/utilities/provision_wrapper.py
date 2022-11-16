@@ -74,7 +74,7 @@ def get_script_location_and_code(args) :
             except Exception :
                 pass
     if p_loc is None or p_code is None :
-        LOGGER.error('ERROR: failed to find the provisioning script to use!',RuntimeError)
+        LOGGER.error('ERROR: failed to find the provisioning script to use!',exc_type=RuntimeError)
     return p_loc, p_code
 
 def move_files(p_loc) :
@@ -90,7 +90,7 @@ def move_files(p_loc) :
                 n_files+=1
                 new_files[ext] = fp.resolve()
             if n_files!=1 :
-                LOGGER.error(f'ERROR: found {n_files} new {ext} files in {TEMP_DIR_PATH}',RuntimeError)
+                LOGGER.error(f'ERROR: found {n_files} new {ext} files in {TEMP_DIR_PATH}',exc_type=RuntimeError)
         node_id = None
         for ext in exts :
             filename = new_files[ext].name
@@ -99,20 +99,21 @@ def move_files(p_loc) :
                 node_id = this_node_id
             elif node_id!=this_node_id :
                 errmsg = f'ERROR: found a file called {filename} that conflicts with node_id {node_id}!'
-                LOGGER.error(errmsg,RuntimeError)
+                LOGGER.error(errmsg,exc_type=RuntimeError)
         cfp = ConfigFileParser(new_files['.config'],logger=LOGGER)
         default_dict = cfp.get_config_dict_for_groups('DEFAULT')
         if 'node_id' not in default_dict :
-            LOGGER.error(f"ERROR: node_id not listed in {new_files['.config']}!")
+            LOGGER.error(f"ERROR: node_id not listed in {new_files['.config']}!",exc_type=ValueError)
         elif default_dict['node_id']!=node_id :
-            LOGGER.error(f"ERROR: node_id listed in {new_files['.config']} mismatched to filenames ({node_id})!")
+            errmsg = f"ERROR: node_id listed in {new_files['.config']} mismatched to filenames ({node_id})!"
+            LOGGER.error(errmsg,exc_type=ValueError)
         new_dirpath = TEMP_DIR_PATH.parent/node_id
         TEMP_DIR_PATH.rename(new_dirpath)
         LOGGER.info(f'Successfuly set up new KafkaCrypto node called "{node_id}"')
     except Exception as exc :
         errmsg = f'ERROR: Running {p_loc} did not produce the expected output! Temporary directories '
-        errmsg+= f'will be removed and you will need to try again. Exception: {exc}'
-        LOGGER.error(errmsg)
+        errmsg+= 'will be removed and you will need to try again. Exception will be logged and re-raised.'
+        LOGGER.error(errmsg,exc_info=exc,reraise=True)
     finally :
         if TEMP_DIR_PATH.is_dir() :
             shutil.rmtree(TEMP_DIR_PATH)
@@ -142,7 +143,8 @@ def main() :
         with change_dir(TEMP_DIR_PATH) :
             exec(p_code)
     except Exception as exc :
-        LOGGER.error(f'ERROR: failed to run provisioning using {p_loc}! Exception: {exc}',RuntimeError)
+        errmsg = f'ERROR: failed to run provisioning using {p_loc}! Exception will be logged and re-raised.'
+        LOGGER.error(errmsg,exc_info=exc,reraise=True)
     #make sure required files exist and move them into a new directory named for the node_ID
     move_files(p_loc)
 

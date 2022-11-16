@@ -32,7 +32,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         if not issubclass(datafile_type,DownloadDataFileToMemory) :
             errmsg = f'ERROR: {self.__class__.__name__} requires a datafile_type that is a subclass of '
             errmsg+= f'DownloadDataFileToMemory but {datafile_type} was given!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.file_registry = None # needs to be set in subclasses
 
     def _process_message(self,lock,msg,rootdir_to_set=None):
@@ -62,10 +62,10 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             return retval
         #if the file hashes didn't match, invoke the callback and return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            errmsg = f'ERROR: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
-            errmsg+= 'after being fully read! The messages for this file will need to be consumed again if the file '
-            errmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
-            self.logger.error(errmsg)
+            warnmsg = f'WARNING: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
+            warnmsg+= 'after being fully read! The messages for this file will need to be consumed again if the file '
+            warnmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
+            self.logger.warning(warnmsg)
             with lock :
                 self.file_registry.register_file_mismatched_hash(dfc)
             self._mismatched_hash_callback(self.files_in_progress_by_path[dfc.filepath],lock)
@@ -74,7 +74,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
                 del self.locks_by_fp[dfc.filepath]
             return False
         if retval!=DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',NotImplementedError)
+            self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',exc_type=NotImplementedError)
             return False
         return retval
 

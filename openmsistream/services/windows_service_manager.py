@@ -168,10 +168,10 @@ class WindowsServiceManager(ServiceManagerBase) :
                 try :
                     shutil.copy(current_env_dll_path,system32_path/current_env_dll_path.name)
                 except Exception as exc :
-                    errmsg = f'ERROR: failed to copy {pname} DLL file from {current_env_dll_path} to '
-                    errmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
-                    errmsg+=  'to crash. Exception will be logged below, but not reraised.'
-                    self.logger.error(errmsg,exc_obj=exc,reraise=False)
+                    warnmsg = f'WARNING: failed to copy {pname} DLL file from {current_env_dll_path} to '
+                    warnmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
+                    warnmsg+=  'to crash. Exception will be logged below, but not reraised.'
+                    self.logger.warning(warnmsg,exc_info=exc)
 
     def __find_install_nssm(self,move_local=True) :
         """

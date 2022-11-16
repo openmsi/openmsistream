@@ -191,7 +191,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         if len(existing_obj_addresses[rel_filepath])!=1 :
             errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '
             errmsg+= f'{rel_filepath} in file at {self._in_progress_table.filepath}'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         return existing_obj_addresses[rel_filepath][0]
 
     def _add_to_succeeded_table(self,new_entry,thread_identifier=None) :

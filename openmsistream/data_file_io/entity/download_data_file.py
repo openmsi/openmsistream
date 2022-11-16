@@ -82,7 +82,7 @@ class DownloadDataFile(DataFile,ABC) :
         if dfc.filepath!=self.filepath :
             errmsg = f'ERROR: filepath mismatch between data file chunk with {dfc.filepath} and '
             errmsg+= f'data file with {self.filepath}'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         #modify the filepath to include any append to the name
         full_filepath = self.__class__.get_full_filepath(dfc)
         if self.full_filepath is None :
@@ -92,13 +92,13 @@ class DownloadDataFile(DataFile,ABC) :
             errmsg = f'ERROR: filepath for data file chunk {dfc.chunk_i}/{dfc.n_total_chunks} with offset '
             errmsg+= f'{dfc.chunk_offset_write} is {full_filepath} but the file being reconstructed is '
             errmsg+= f'expected to have filepath {self.full_filepath}'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         #add the subdirectory string to this file
         if self.subdir_str is None :
             self.subdir_str = dfc.subdir_str
         elif self.subdir_str!=dfc.subdir_str :
             errmsg = f"Mismatched subdirectory strings! From file = {self.subdir_str}, from chunk = {dfc.subdir_str}"
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         #set or check the total number of chunks expected
         if self.n_total_chunks is None :
             with thread_lock :
@@ -107,7 +107,7 @@ class DownloadDataFile(DataFile,ABC) :
             errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.full_filepath} is expecting '
             errmsg+= f'{self.n_total_chunks} chunks but found a chunk from a split with '
             errmsg+= f'{dfc.n_total_chunks} total chunks.'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         #acquire the thread lock to make sure this process is the only one dealing with this particular file
         with thread_lock :
             #call the function to actually add the chunk

@@ -48,7 +48,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if not len(self.__args_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
                 errmsg+= f'{len(self.__args_per_thread)} entries, but was set up to use {self.n_threads} threads!'
-                self.logger.error(errmsg,ValueError)
+                self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__args_per_thread = self.n_threads*self.__args_per_thread
         #correct the keyword arguments for each thread
@@ -60,7 +60,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if not len(self.__kwargs_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
                 errmsg+= f'{len(self.__kwargs_per_thread)} entries, but was set up to use {self.n_threads} threads!'
-                self.logger.error(errmsg,ValueError)
+                self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__kwargs_per_thread = self.n_threads*self.__kwargs_per_thread
         #create and start the independent threads

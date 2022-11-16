@@ -58,7 +58,8 @@ class OpenMSIStreamConsumer(LogOwner) :
         super().__init__(**kwargs)
         if consumer_type==KafkaConsumer :
             if kafkacrypto is None :
-                self.logger.error('ERROR: creating a KafkaConsumer requires holding onto its KafkaCrypto objects!')
+                errmsg = 'ERROR: creating a KafkaConsumer requires holding onto its KafkaCrypto objects!'
+                self.logger.error(errmsg,exc_type=ValueError)
             self.__kafkacrypto = kafkacrypto
             self._consumer = consumer_type(**configs)
             self.__messages = []
@@ -66,7 +67,7 @@ class OpenMSIStreamConsumer(LogOwner) :
             self._consumer = consumer_type(configs)
         else :
             errmsg=f'ERROR: Unrecognized consumer type {consumer_type} for OpenMSIStreamConsumer!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.configs = configs
         self.message_key_regex=message_key_regex
         self.filter_new_messages=filter_new_messages
@@ -192,7 +193,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         except Exception as exc :
             errmsg = 'ERROR: encountered an error in a call to consumer.poll() and this message will be '
             errmsg+= 'skipped. Exception will be logged below and re-raised.'
-            self.logger.error(errmsg,exc_obj=exc)
+            self.logger.error(errmsg,exc_info=exc,reraise=True)
             return None
         if consumed_msg is not None and consumed_msg!={} :
             if consumed_msg.error() is not None or consumed_msg.value() is None :
@@ -240,7 +241,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         if offsets is None :
             return self._consumer.commit(message=message,asynchronous=asynchronous)
         errmsg = 'ERROR: "message" and "offset" arguments are exclusive for Consumer.commit. Nothing commited.'
-        self.logger.error(errmsg,ValueError)
+        self.logger.error(errmsg,exc_type=ValueError)
         return None
 
     def close(self,*args,**kwargs) :
@@ -293,7 +294,7 @@ class OpenMSIStreamConsumer(LogOwner) :
         if not (isinstance(msg_topic,str) and isinstance(msg_partition,int) and isinstance(msg_offset,int)) :
             errmsg =  'ERROR: failed to check whether a message has been consumed before '
             errmsg+= f'because its topic/partition/offset are {msg_topic}/{msg_partition}/{msg_offset}!'
-            self.logger.error(errmsg,TypeError)
+            self.logger.error(errmsg,exc_type=TypeError)
         starting_offset = None
         for tpo in self.__starting_offsets :
             if tpo.topic==msg_topic and tpo.partition==msg_partition :
@@ -301,5 +302,5 @@ class OpenMSIStreamConsumer(LogOwner) :
         if starting_offset is None :
             errmsg = 'ERROR: failed to check whether a message has been consumed before '
             errmsg+= 'because its topic/partition were not found in the list of starting offsets'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         return msg_offset<starting_offset

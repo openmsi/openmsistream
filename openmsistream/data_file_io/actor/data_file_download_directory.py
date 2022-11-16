@@ -43,7 +43,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         if not issubclass(self.datafile_type,DownloadDataFileToDisk) :
             errmsg = 'ERROR: DataFileDownloadDirectory requires a datafile_type that is a subclass of '
             errmsg+= f'DownloadDataFileToDisk but {self.datafile_type} was given!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.__encrypted_messages_subdir = self.dirpath/'ENCRYPTED_MESSAGES'
 
     def reconstruct(self) :
@@ -112,7 +112,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
                 del self.locks_by_fp[dfc.filepath]
             return False
         #if this is reached the return code was unrecognized
-        self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',NotImplementedError)
+        self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',exc_type=NotImplementedError)
         return False
 
     def _on_check(self) :

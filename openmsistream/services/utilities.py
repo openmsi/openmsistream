@@ -16,11 +16,11 @@ def get_os_name() :
     #MacOS is not supported
     if platform.system()=='Darwin' :
         errmsg = 'ERROR: Installing programs as Services is not supported on MacOS!'
-        SERVICE_CONST.logger.error(errmsg,NotImplementedError)
+        SERVICE_CONST.logger.error(errmsg,exc_type=NotImplementedError)
     #otherwise I don't know what happened
     else :
         errmsg = f'ERROR: could not determine operating system from platform.system() output "{platform.system()}"'
-        SERVICE_CONST.logger.error(errmsg,ValueError)
+        SERVICE_CONST.logger.error(errmsg,exc_type=ValueError)
     return None
 
 def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
@@ -41,9 +41,9 @@ def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
         if exc.stderr is not None and exc.stderr.strip()!='' :
             errmsg+= f'\nstderr:\n{exc.stderr.decode()}'
         if logger is not None :
-            logger.error(errmsg,exc_obj=exc)
+            logger.error(errmsg,exc_info=exc)
         else :
-            SERVICE_CONST.logger.error(errmsg,exc_obj=exc)
+            SERVICE_CONST.logger.error(errmsg,exc_info=exc)
         return None
 
 def set_env_var(var_name,var_val) :
