@@ -30,6 +30,6 @@ class RunOptionConstants :
     DEFAULT_UPLOAD_REGEX = re.compile(r'^((?!(\.|.*.log))).*$')
 
     DEFAULT_CHUNK_SIZE = 524288 # default size in bytes of each file upload chunk
-    DEFAULT_MAX_UPLOAD_QUEUE_SIZE = 3000 # default maximum number of items allowed in the upload Queue at once
+    DEFAULT_MAX_UPLOAD_QUEUE_SIZE = 1000 # default maximum number of items allowed in the upload Queue at once
 
 RUN_OPT_CONST = RunOptionConstants()
