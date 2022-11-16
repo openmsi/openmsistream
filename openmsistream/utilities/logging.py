@@ -152,38 +152,22 @@ class Logger :
         :type exception_type: :class:`BaseException`, optional
         :param exc_obj: An Exception object whose traceback should be logged at error level
         :type exc_obj: :class:`BaseException`, optional
-        :param reraise: if True, the given `exc_obj` will be reraised after it's logged.
+        :param reraise: if True, the given `exc_obj` will be reraised after its traceback is logged.
         :type reraise: bool
         """
         if not msg.startswith('ERROR:') :
             msg = f'ERROR: {msg}'
-        self._logger_obj.error(msg,**kwargs)
         if exc_obj is not None :
-            self.log_exception_as_error(exc_obj,reraise=reraise,**kwargs)
+            try :
+                raise exc_obj
+            except Exception :
+                self._logger_obj.exception(msg)
+            if reraise :
+                raise exc_obj
+            return
+        self._logger_obj.error(msg,**kwargs)
         if exception_type is not None :
             raise exception_type(msg)
-
-    def log_exception_as_error(self,exc,reraise=True,**kwargs) :
-        """
-        Log the traceback of a given Exception as an error and optionally reraise it
-
-        Additional kwargs are sent to the underlying logger object's error call.
-
-        :param exc: An Exception object whose traceback should be logged at error level
-        :type exc: :class:`BaseException`, optional
-        :param reraise: if True, the given `exc` will be reraised after it's logged.
-        :type reraise: bool
-        """
-        try :
-            raise exc
-        except Exception :
-            exc_to_log = 'ERROR: Exception: ['
-            for line in (traceback.format_exc()).split('\n') :
-                exc_to_log+=f'{line},'
-            exc_to_log+=']'
-            self._logger_obj.error(exc_to_log,**kwargs)
-            if reraise :
-                raise exc
 
 class LogOwner(HasArguments) :
     """

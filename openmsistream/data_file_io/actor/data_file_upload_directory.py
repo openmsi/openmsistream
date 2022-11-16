@@ -164,6 +164,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             #If the file has now been fully produced to the topic, set the variable for the file and log a line
             if fully_produced :
                 with self.__lock :
+                    self.data_files_by_path[filepath].fully_enqueued = False
                     self.data_files_by_path[filepath].fully_produced = True
                 debugmsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
                 debugmsg+= f'"{self.__topic_name}" topic as '
@@ -288,10 +289,10 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                         except PermissionError :
                             time.sleep(0.05)
                     self.data_files_by_path[filepath]=self.__datafile_type(filepath,
-                                                                          to_upload=to_upload,
-                                                                          rootdir=self.dirpath,
-                                                                          logger=self.logger,
-                                                                          **self.other_datafile_kwargs)
+                                                                           to_upload=to_upload,
+                                                                           rootdir=self.dirpath,
+                                                                           logger=self.logger,
+                                                                           **self.other_datafile_kwargs)
         except FileNotFoundError :
             return
 
@@ -366,9 +367,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             if upload_thread.caught_exception is not None :
                 #log the error
                 warnmsg = 'WARNING: an upload thread raised an Exception, which will be logged as an error below '
-                warnmsg = 'but not reraised. The Producer and upload thread that raised the error will be restarted.'
-                self.logger.warning(warnmsg)
-                self.logger.log_exception_as_error(upload_thread.caught_exception,reraise=False)
+                warnmsg = 'but not re-raised. The Producer and upload thread that raised the error will be restarted.'
+                self.logger.warning(warnmsg,exc_info=upload_thread.caught_exception)
                 #try to join the thread
                 try :
                     upload_thread.join()
@@ -380,8 +380,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 #recreate the producer and restart the thread
                 self.__producers[ti] = self.get_new_producer()
                 thread = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue_looped,
-                                            args=(self.__upload_queue,self.__topic_name),
-                                            kwargs={'callback': self.producer_callback},
+                                                 args=(self.__upload_queue,self.__topic_name),
+                                                 kwargs={'callback': self.producer_callback},
                             )
                 thread.start()
                 self.__upload_threads[ti] = thread
@@ -472,7 +472,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 n_fully_produced+=1
         status_message = f'{len(self.data_files_by_path)} files found in {self.dirpath}'
         if len(self.data_files_by_path)>0 :
-            status_message+='('
+            status_message+=' ('
             if n_wont_be_uploaded>0 :
                 status_message+=f'{n_wont_be_uploaded} will not be uploaded, '
             if n_waiting_to_upload>0 :

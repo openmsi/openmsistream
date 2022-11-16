@@ -286,6 +286,15 @@ class UploadDataFile(DataFile,Runnable) :
             self.logger.debug(f'Setting {self.filepath} to NOT be uploaded')
         self.__to_upload = to_upload
     @property
+    def fully_enqueued(self) :
+        """
+        True if this file has had all of its chunks added to an upload queue
+        """
+        return self.__fully_enqueued
+    @fully_enqueued.setter
+    def fully_enqueued(self,fully_enqueued) :
+        self.__fully_enqueued = fully_enqueued
+    @property
     def fully_produced(self) :
         """
         True if this file has had all of its chunks successfully sent to the broker
@@ -296,17 +305,11 @@ class UploadDataFile(DataFile,Runnable) :
     def fully_produced(self,fp) :
         self.__fully_produced = fp
     @property
-    def fully_enqueued(self) :
-        """
-        True if this file has had all of its chunks added to an upload queue
-        """
-        return self.__fully_enqueued
-    @property
     def waiting_to_upload(self) :
         """
         True if this file is waiting for its upload to begin
         """
-        if (not self.__to_upload) or self.__fully_enqueued :
+        if (not self.__to_upload) or self.__fully_enqueued or self.__fully_produced :
             return False
         if len(self.chunks_to_upload)>0 :
             return False
@@ -316,7 +319,7 @@ class UploadDataFile(DataFile,Runnable) :
         """
         True if this file is in the process of being enqueued to be uploaded
         """
-        if (not self.__to_upload) or self.__fully_enqueued :
+        if (not self.__to_upload) or self.__fully_enqueued or self.__fully_produced :
             return False
         if len(self.chunks_to_upload)==0 :
             return False

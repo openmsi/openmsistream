@@ -257,6 +257,9 @@ class OpenMSIStreamProducer(LogOwner) :
                     total_wait_secs+=retry_sleep
                 else :
                     total_wait_secs = 0
+            except Exception as exc :
+                self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
+                                  exc_obj=exc)
         self.__poll_counter+=1
         if self.__poll_counter%self.POLL_EVERY==0 :
             n_new_callbacks = self.poll(0)
@@ -275,15 +278,10 @@ class OpenMSIStreamProducer(LogOwner) :
         :param value: the value of the message
         :type value: depends on the serialization settings
         """
-        try :
-            if isinstance(self._producer,KafkaProducer) :
-                key = self._producer.ks(topic,key)
-                value = self._producer.vs(topic,value)
-            return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
-        except Exception as exc :
-            self.logger.error('ERROR: failed during call to Producer.produce! Will log and raise Exception.',
-                              exc_obj=exc)
-        return None
+        if isinstance(self._producer,KafkaProducer) :
+            key = self._producer.ks(topic,key)
+            value = self._producer.vs(topic,value)
+        return self._producer.produce(topic=topic,key=key,value=value,**kwargs)
 
     def poll(self,*args,**kwargs) :
         """

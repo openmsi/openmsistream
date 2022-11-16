@@ -155,9 +155,9 @@ class OpenMSIStreamConsumer(LogOwner) :
     def get_next_message(self,*poll_args,**poll_kwargs) :
         """
         Call poll() for the underlying consumer and return any successfully consumed message's value.
-        Log a warning if there's an error while calling poll().
 
-        If `message_key_regex` is not None this method may return None even though a message was consumed.
+        If this Consumer's `message_key_regex` is not None this method may return None even though a message
+        was consumed.
 
         For the case of encrypted messages, this may return a :class:`kafkacrypto.Message` object with
         :class:`kafkacrypto.KafkaCryptoMessages` for its key and/or value if the message fails to be
@@ -168,6 +168,9 @@ class OpenMSIStreamConsumer(LogOwner) :
         :return: a single consumed :class:`confluent_kafka.Message` object, an undecrypted
             :class:`kafkacrypto.Message` object, or None
         :rtype: :class:`confluent_kafka.Message`, :class:`kafkacrypto.Message`, or None
+
+        :raises Exception: for any error encountered in calling poll(). A special error-level message will be
+            logged, including the stack trace of the Exception.
         """
         #There's one version for the result of a KafkaConsumer.poll() call
         if isinstance(self._consumer,KafkaConsumer) :
@@ -187,10 +190,9 @@ class OpenMSIStreamConsumer(LogOwner) :
         try :
             consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
         except Exception as exc :
-            warnmsg = 'WARNING: encountered an error in a call to consumer.poll() and this message will be '
-            warnmsg+= 'skipped. Exception will be logged as an error below (but not re-raised).'
-            self.logger.warning(warnmsg)
-            self.logger.log_exception_as_error(exc,reraise=False)
+            errmsg = 'ERROR: encountered an error in a call to consumer.poll() and this message will be '
+            errmsg+= 'skipped. Exception will be logged below and re-raised.'
+            self.logger.error(errmsg,exc_obj=exc)
             return None
         if consumed_msg is not None and consumed_msg!={} :
             if consumed_msg.error() is not None or consumed_msg.value() is None :
