@@ -147,7 +147,7 @@ class ProducerFileRegistry(LogOwner) :
             errmsg = f'ERROR: found {len(existing_obj_addresses[rel_filepath])} files in the producer registry '
             errmsg+= f'for filepath {rel_filepath}'
             self.__in_prog.lock.release()
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
         existing_addr = existing_obj_addresses[rel_filepath][0]
         #make sure the total numbers of chunks match
         existing_n_chunks = self.__in_prog.get_entry_attrs(existing_addr,'n_chunks')
@@ -156,7 +156,7 @@ class ProducerFileRegistry(LogOwner) :
             errmsg+= f'{existing_n_chunks} total chunks, but the producer callback for this file '
             errmsg+= f'lists {n_total_chunks} chunks! Did the chunk size change?'
             self.__in_prog.lock.release()
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
         #get its current state
         attrs = self.__in_prog.get_entry_attrs(existing_addr,'chunks_delivered','chunks_to_send')
         #if the chunk is already registered, just return

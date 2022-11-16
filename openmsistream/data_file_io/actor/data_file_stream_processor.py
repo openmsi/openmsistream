@@ -136,14 +136,14 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             #warn if it wasn't processed correctly and invoke the callback
             else :
                 if isinstance(processing_retval,Exception) :
-                    errmsg = f'ERROR: Fully-read file {short_filepath} was not able to be processed. '
-                    errmsg+= 'The traceback of the Exception thrown during processing will be logged below, but not '
-                    errmsg+= 're-raised. The messages for this file will need to be consumed again if the file is to '
-                    errmsg+= 'be processed! Please rerun with the same consumer ID to try again.'
-                    self.logger.error(errmsg,exc_obj=processing_retval,reraise=False)
+                    warnmsg = f'WARNING: Fully-read file {short_filepath} was not able to be processed. '
+                    warnmsg+= 'The traceback of the Exception thrown during processing will be logged below, but not '
+                    warnmsg+= 're-raised. The messages for this file will need to be consumed again if the file is to '
+                    warnmsg+= 'be processed! Please rerun with the same consumer ID to try again.'
+                    self.logger.warning(warnmsg,exc_info=processing_retval)
                 else :
-                    errmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
-                    self.logger.error(errmsg)
+                    warnmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
+                    self.logger.warning(warnmsg)
                 self.file_registry.register_file_processing_failed(dfc)
                 self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
                 to_return = False

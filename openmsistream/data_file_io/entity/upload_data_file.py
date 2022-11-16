@@ -111,7 +111,7 @@ class UploadDataFile(DataFile,Runnable) :
                 fp = self.filepath.relative_to(self.rootdir) if self.rootdir is not None else self.filepath
                 errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
                 errmsg+= 'Check log lines below for details on what went wrong. File will not be uploaded.'
-                self.logger.error(errmsg,exc_obj=exc,reraise=False)
+                self.logger.error(errmsg,exc_info=exc)
                 self.__to_upload = False
                 return
         #add the chunks to the final list as DataFileChunk objects
@@ -182,14 +182,15 @@ class UploadDataFile(DataFile,Runnable) :
         #and sort them by their start byte to keep the file hash in order
         if self.select_bytes :
             if not isinstance(self.select_bytes,list) :
-                self.logger.error(f'ERROR: select_bytes={self.select_bytes} but is expected to be a list!',ValueError)
+                errmsg=f'ERROR: select_bytes={self.select_bytes} but is expected to be a list!'
+                self.logger.error(errmsg,exc_type=ValueError)
             for sbt in self.select_bytes :
                 if (not isinstance(sbt,tuple)) or len(sbt)!=2 :
                     errmsg = f'ERROR: found {sbt} in select_bytes but all elements are expected to be two-entry tuples!'
-                    self.logger.error(errmsg,ValueError)
+                    self.logger.error(errmsg,exc_type=ValueError)
                 elif sbt[0]>=sbt[1] :
                     errmsg = f'ERROR: found {sbt} in select_bytes but start byte cannot be >= stop byte!'
-                    self.logger.error(errmsg,ValueError)
+                    self.logger.error(errmsg,exc_type=ValueError)
             sorted_select_bytes = sorted(self.select_bytes,key=lambda x: x[0])
         #start a hash for the file and the lists of chunks
         file_hash = sha512()
@@ -286,6 +287,15 @@ class UploadDataFile(DataFile,Runnable) :
             self.logger.debug(f'Setting {self.filepath} to NOT be uploaded')
         self.__to_upload = to_upload
     @property
+    def fully_enqueued(self) :
+        """
+        True if this file has had all of its chunks added to an upload queue
+        """
+        return self.__fully_enqueued
+    @fully_enqueued.setter
+    def fully_enqueued(self,fully_enqueued) :
+        self.__fully_enqueued = fully_enqueued
+    @property
     def fully_produced(self) :
         """
         True if this file has had all of its chunks successfully sent to the broker
@@ -296,17 +306,11 @@ class UploadDataFile(DataFile,Runnable) :
     def fully_produced(self,fp) :
         self.__fully_produced = fp
     @property
-    def fully_enqueued(self) :
-        """
-        True if this file has had all of its chunks added to an upload queue
-        """
-        return self.__fully_enqueued
-    @property
     def waiting_to_upload(self) :
         """
         True if this file is waiting for its upload to begin
         """
-        if (not self.__to_upload) or self.__fully_enqueued :
+        if (not self.__to_upload) or self.__fully_enqueued or self.__fully_produced :
             return False
         if len(self.chunks_to_upload)>0 :
             return False
@@ -316,7 +320,7 @@ class UploadDataFile(DataFile,Runnable) :
         """
         True if this file is in the process of being enqueued to be uploaded
         """
-        if (not self.__to_upload) or self.__fully_enqueued :
+        if (not self.__to_upload) or self.__fully_enqueued or self.__fully_produced :
             return False
         if len(self.chunks_to_upload)==0 :
             return False

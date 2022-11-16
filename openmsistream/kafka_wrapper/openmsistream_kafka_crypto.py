@@ -1,7 +1,7 @@
 """Wrapper around the KafkaCrypto producer/consumer pair communicating with the key passing topics"""
 
 #imports
-import pathlib, uuid, warnings
+import pathlib, uuid, warnings, logging
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
@@ -59,11 +59,14 @@ class OpenMSIStreamKafkaCrypto :
         if 'group.id' not in consumer_configs.keys() :
             consumer_configs['group.id'] = str(uuid.uuid1())
         with change_dir(pathlib.Path(config_file).parent) :
+            kc_logger = logging.getLogger('kafkacrypto')
+            kc_logger.setLevel(logging.ERROR)
             #start up the producer and consumer
             self._kcp = KafkaProducer(**producer_configs)
             self._kcc = KafkaConsumer(**consumer_configs)
             #initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None,self._kcp,self._kcc,config_file)
+            kc_logger.setLevel(logging.WARNING)
         self.__config_file = config_file
 
     def close(self) :

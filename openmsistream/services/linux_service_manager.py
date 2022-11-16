@@ -137,7 +137,7 @@ class LinuxServiceManager(ServiceManagerBase) :
         if check.decode().rstrip()!='systemd' :
             errmsg = 'ERROR: Installing programs as Services ("daemons") on Linux requires systemd!'
             errmsg = 'You can install systemd with "sudo apt install systemd" (or similar) and try again.'
-            self.logger.error(errmsg,RuntimeError)
+            self.logger.error(errmsg,exc_type=RuntimeError)
 
     def __write_daemon_file(self) :
         """

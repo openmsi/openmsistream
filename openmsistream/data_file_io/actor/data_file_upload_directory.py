@@ -54,7 +54,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         if not issubclass(datafile_type,UploadDataFile) :
             errmsg = 'ERROR: DataFileUploadDirectory requires a datafile_type that is a subclass of '
             errmsg+= f'UploadDataFile but {datafile_type} was given!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         self.__upload_regex = upload_regex
         self.__datafile_type = datafile_type
         self.__wait_time = self.MIN_WAIT_TIME
@@ -69,7 +69,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
     def upload_files_as_added(self,topic_name,
                               n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                               chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
-                              max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_SIZE,
+                              max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
                               upload_existing=False) :
         """
         Watch for new files to be added to the directory.
@@ -81,7 +81,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :type n_threads: int, optional
         :param chunk_size: The size of each file chunk in bytes
         :type chunk_size: int, optional
-        :param max_queue_size: The maximum number of items allowed to be placed in the internal upload queue at once
+        :param max_queue_size: The maximum size in MB of the internal upload queue
+            (this is distinct from the librdkafka buffering queue)
         :type max_queue_size: int, optional
         :param upload_existing: True if any files that already exist in the directory should be uploaded. If False
             (the default) then only files added to the directory after startup will be enqueued to the producer
@@ -105,7 +106,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             msg+='files in '
         msg+=f'{self.dirpath} to the {topic_name} topic using {n_threads} threads'
         self.logger.info(msg)
-        self.__upload_queue = Queue(max_queue_size)
+        n_max_queue_items = int((1000000*max_queue_size)/self.__chunk_size)
+        self.__upload_queue = Queue(n_max_queue_items)
         #start the producers and upload threads
         for _ in range(n_threads) :
             self.__producers.append(self.get_new_producer())
@@ -164,6 +166,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             #If the file has now been fully produced to the topic, set the variable for the file and log a line
             if fully_produced :
                 with self.__lock :
+                    self.data_files_by_path[filepath].fully_enqueued = False
                     self.data_files_by_path[filepath].fully_produced = True
                 debugmsg = f'{filepath.relative_to(self.dirpath)} has been fully produced to the '
                 debugmsg+= f'"{self.__topic_name}" topic as '
@@ -187,7 +190,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         :raises TypeError: if `filepath` isn't a :class:`pathlib.Path` object
         """
         if not isinstance(filepath,pathlib.PurePath) :
-            self.logger.error(f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!',TypeError)
+            errmsg = f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!'
+            self.logger.error(errmsg,exc_type=TypeError)
         if not filepath.is_file() :
             return False
         if filepath.parent == self.__logs_subdir :
@@ -288,10 +292,10 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                         except PermissionError :
                             time.sleep(0.05)
                     self.data_files_by_path[filepath]=self.__datafile_type(filepath,
-                                                                          to_upload=to_upload,
-                                                                          rootdir=self.dirpath,
-                                                                          logger=self.logger,
-                                                                          **self.other_datafile_kwargs)
+                                                                           to_upload=to_upload,
+                                                                           rootdir=self.dirpath,
+                                                                           logger=self.logger,
+                                                                           **self.other_datafile_kwargs)
         except FileNotFoundError :
             return
 
@@ -366,9 +370,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             if upload_thread.caught_exception is not None :
                 #log the error
                 warnmsg = 'WARNING: an upload thread raised an Exception, which will be logged as an error below '
-                warnmsg = 'but not reraised. The Producer and upload thread that raised the error will be restarted.'
-                self.logger.warning(warnmsg)
-                self.logger.log_exception_as_error(upload_thread.caught_exception,reraise=False)
+                warnmsg = 'but not re-raised. The Producer and upload thread that raised the error will be restarted.'
+                self.logger.warning(warnmsg,exc_info=upload_thread.caught_exception)
                 #try to join the thread
                 try :
                     upload_thread.join()
@@ -380,8 +383,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 #recreate the producer and restart the thread
                 self.__producers[ti] = self.get_new_producer()
                 thread = ExceptionTrackingThread(target=self.__producers[ti].produce_from_queue_looped,
-                                            args=(self.__upload_queue,self.__topic_name),
-                                            kwargs={'callback': self.producer_callback},
+                                                 args=(self.__upload_queue,self.__topic_name),
+                                                 kwargs={'callback': self.producer_callback},
                             )
                 thread.start()
                 self.__upload_threads[ti] = thread
@@ -472,7 +475,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 n_fully_produced+=1
         status_message = f'{len(self.data_files_by_path)} files found in {self.dirpath}'
         if len(self.data_files_by_path)>0 :
-            status_message+='('
+            status_message+=' ('
             if n_wont_be_uploaded>0 :
                 status_message+=f'{n_wont_be_uploaded} will not be uploaded, '
             if n_waiting_to_upload>0 :

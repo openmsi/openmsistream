@@ -42,7 +42,7 @@ class ConfigFileParser(LogOwner) :
         super().__init__(*args,**kwargs)
         self.filepath = config_path
         if not config_path.is_file() :
-            self.logger.error(f'ERROR: configuration file {config_path} does not exist!',FileNotFoundError)
+            self.logger.error(f'ERROR: configuration file {config_path} does not exist!',exc_type=FileNotFoundError)
         self._config = configparser.ConfigParser()
         self._config.read(config_path)
 
@@ -57,7 +57,8 @@ class ConfigFileParser(LogOwner) :
         config_dict = {}
         for group_name in group_names :
             if group_name not in self._config :
-                self.logger.error(f'ERROR: {group_name} is not a recognized section in {self.filepath}!',ValueError)
+                errmsg = f'ERROR: {group_name} is not a recognized section in {self.filepath}!'
+                self.logger.error(errmsg,exc_type=ValueError)
             for key, value in self._config[group_name].items() :
                 #don't add the 'node_id' to groups for brokers, producers, or consumers
                 if key=='node_id' and group_name in ['broker','producer','consumer'] :
@@ -68,7 +69,7 @@ class ConfigFileParser(LogOwner) :
                     if exp_value == value :
                         errmsg = f'ERROR: Expanding {value} in {self.filepath} as an environment variable failed '
                         errmsg+= '(must be set on system)'
-                        self.logger.error(errmsg,ValueError)
+                        self.logger.error(errmsg,exc_type=ValueError)
                     else :
                         value = exp_value
                 config_dict[key] = value

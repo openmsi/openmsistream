@@ -1,7 +1,6 @@
 #imports
 import pathlib, logging, shutil, filecmp
 from openmsistream.utilities.logging import Logger
-from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
@@ -82,7 +81,7 @@ def rebuild_binary_file_chunks_for_serialization_reference() :
     #make the data file and build its list of chunks
     df = UploadDataFile(test_data_fp,rootdir=EXISTING_TEST_DATA_DIR/TEST_CONST.TEST_DATA_FILE_ROOT_DIR_NAME,
                         logger=LOGGER)
-    df._build_list_of_file_chunks(RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+    df._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
     df.add_chunks_to_upload()
     #populate and serialize a few chunks and save them as binary data
     dfcs = DataFileChunkSerializer()

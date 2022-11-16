@@ -1,7 +1,7 @@
 """Classes for OpenMSIStream logging infrastructure"""
 
 #imports
-import pathlib, logging, traceback
+import pathlib, logging
 from .has_arguments import HasArguments
 
 class OpenMSIStreamFormatter(logging.Formatter) :
@@ -97,7 +97,7 @@ class Logger :
         :type level: logging level int
         """
         if not isinstance(filepath,pathlib.PurePath) :
-            self.error(f'ERROR: {filepath} is a {type(filepath)} object, not a Path object!',TypeError)
+            self.error(f'ERROR: {filepath} is a {type(filepath)} object, not a Path object!',exc_type=TypeError)
         if not filepath.is_file() :
             if not filepath.parent.is_dir() :
                 filepath.parent.mkdir(parents=True)
@@ -139,51 +139,28 @@ class Logger :
         self._logger_obj.warning(msg,*args,**kwargs)
 
     #log an error message and optionally raise an exception with the same message, or raise a different exception
-    def error(self,msg,exception_type=None,exc_obj=None,reraise=True,**kwargs) :
+    def error(self,msg,*,exc_type=None,reraise=False,**kwargs) :
         """
-        Log a message at ERROR level. Optionally raise an exception of a given type with the same message.
-        Optionally log the traceback of a given Exception at ERROR level, reraising it afterward if desired.
+        Log a message at ERROR level. Optionally raise an exception of a given type with the same message, or
+        re-raise an Exception object passed through the `exc_info` kwarg (after logging its traceback).
 
-        Additional kwargs are sent to the underlying logger object's error call(s).
+        Additional kwargs are sent to the underlying logger object's error call.
 
         :param msg: the message to log
         :type msg: str
-        :param exception_type: The type of Exception to raise with the same message as `msg`
-        :type exception_type: :class:`BaseException`, optional
-        :param exc_obj: An Exception object whose traceback should be logged at error level
-        :type exc_obj: :class:`BaseException`, optional
-        :param reraise: if True, the given `exc_obj` will be reraised after it's logged.
-        :type reraise: bool
+        :param exc_type: The type of Exception to raise with the same message as `msg`
+        :type exc_type: :class:`Exception`, optional
+        :param reraise: if True, any :class:`Exception` object passed through the `exc_info` will be re-raised
+            after its traceback is logged.
+        :type reraise: bool, optional
         """
         if not msg.startswith('ERROR:') :
             msg = f'ERROR: {msg}'
         self._logger_obj.error(msg,**kwargs)
-        if exc_obj is not None :
-            self.log_exception_as_error(exc_obj,reraise=reraise,**kwargs)
-        if exception_type is not None :
-            raise exception_type(msg)
-
-    def log_exception_as_error(self,exc,reraise=True,**kwargs) :
-        """
-        Log the traceback of a given Exception as an error and optionally reraise it
-
-        Additional kwargs are sent to the underlying logger object's error call.
-
-        :param exc: An Exception object whose traceback should be logged at error level
-        :type exc: :class:`BaseException`, optional
-        :param reraise: if True, the given `exc` will be reraised after it's logged.
-        :type reraise: bool
-        """
-        try :
-            raise exc
-        except Exception :
-            exc_to_log = 'ERROR: Exception: ['
-            for line in (traceback.format_exc()).split('\n') :
-                exc_to_log+=f'{line},'
-            exc_to_log+=']'
-            self._logger_obj.error(exc_to_log,**kwargs)
-            if reraise :
-                raise exc
+        if reraise and ('exc_info' in kwargs) and isinstance(kwargs['exc_info'],Exception) :
+            raise kwargs['exc_info']
+        if exc_type is not None :
+            raise exc_type(msg)
 
 class LogOwner(HasArguments) :
     """
@@ -216,7 +193,7 @@ class LogOwner(HasArguments) :
              self.__logger is not None and
              (not isinstance(self.__logger,type(logger))) ) :
             errmsg = f'ERROR: tried to reset a logger of type {type(self.__logger)} to a new logger of type {logger}!'
-            self.__logger.error(errmsg,ValueError)
+            self.__logger.error(errmsg,exc_type=ValueError)
         else :
             self.__logger = logger
 

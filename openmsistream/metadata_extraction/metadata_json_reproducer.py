@@ -52,7 +52,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         except Exception as exc :
             errmsg = f'ERROR: failed to extract JSON metadata from {datafile.full_filepath}! '
             errmsg+= 'Error will be logged below, but not reraised.'
-            self.logger.error(errmsg,exc_obj=exc,reraise=False)
+            self.logger.error(errmsg,exc_info=exc)
             return None
         if not isinstance(json_content,dict) :
             errmsg = f'ERROR: JSON content found for {datafile.full_filepath} is of type {type(json_content)}, '

@@ -111,7 +111,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
                         warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
                         self.logger.warning(warnmsg)
         except Exception as exc :
-            errmsg = 'WARNING: failed to synchronously commit offset of last message received. '
-            errmsg+= 'Duplicate messages may be read the next time this Consumer is started. '
-            errmsg+= 'Error will be logged below but not re-raised.'
-            self.logger.error(errmsg,exc_obj=exc,reraise=False)
+            warnmsg = 'WARNING: failed to synchronously commit offset of last message received. '
+            warnmsg+= 'Duplicate messages may be read the next time this Consumer is started. '
+            warnmsg+= 'Error will be logged below but not re-raised.'
+            self.logger.warning(warnmsg,exc_info=exc)

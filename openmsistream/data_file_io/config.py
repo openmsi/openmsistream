@@ -29,7 +29,7 @@ class RunOptionConstants :
     #matches everything except something starting with a '.' or ending in '.log'
     DEFAULT_UPLOAD_REGEX = re.compile(r'^((?!(\.|.*.log))).*$')
 
-    DEFAULT_CHUNK_SIZE = 16384 # default size in bytes of each file upload chunk
-    DEFAULT_MAX_UPLOAD_QUEUE_SIZE = 3000 # default maximum number of items allowed in the upload Queue at once
+    DEFAULT_CHUNK_SIZE = 524288 # default size in bytes of each file upload chunk
+    DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES = 500 # default maximum size (in MB) of the internal upload Queue
 
 RUN_OPT_CONST = RunOptionConstants()

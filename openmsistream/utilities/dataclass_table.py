@@ -4,7 +4,7 @@ serialized to/deseralized from a corresponding CSV file in an atomic and (relati
 """
 
 #imports
-import pathlib, functools, datetime, typing, copy, os
+import pathlib, functools, datetime, typing, copy, os, time
 from abc import ABC
 from threading import Lock
 from dataclasses import fields, is_dataclass
@@ -38,13 +38,145 @@ class DataclassTableBase(LogOwner,ABC) :
     :type create_if_missing: bool
     """
 
-    #################### PROPERTIES AND CONSTANTS ####################
+    #################### CONSTANTS ####################
 
     DELIMETER = ';' #can't use a comma or containers would display incorrectly
     DATETIME_FORMAT = '%a %b %d, %Y at %H:%M:%S'
     UPDATE_FILE_EVERY = 5 #only update the .csv file automatically every 5 seconds to make updates less expensive
-
     NESTED_TYPES = get_nested_types()
+
+    #################### PUBLIC FUNCTIONS ####################
+
+    def __init__(self,dataclass_type,*,filepath=None,create_if_missing=True,**kwargs) :
+        """
+        Constructor method
+        """
+        #init the LogOwner
+        super().__init__(**kwargs)
+        #create the thread lock for the table
+        self.lock = Lock()
+        #figure out what type of objects the table/file will be describing
+        self.__dataclass_type = dataclass_type
+        if not is_dataclass(self.__dataclass_type) :
+            self.logger.error(f'ERROR: "{self.__dataclass_type}" is not a dataclass!',exc_type=TypeError)
+        if len(fields(self.__dataclass_type)) <= 0 :
+            errmsg = f'ERROR: dataclass type {self.__dataclass_type} does not have any fields '
+            errmsg+= f'and so cannot be used in a {self.__class__.__name__}!'
+            self.logger.error(errmsg,exc_type=ValueError)
+        self.__field_names = [field.name for field in fields(self.__dataclass_type)]
+        self.__field_types = [field.type for field in fields(self.__dataclass_type)]
+        #figure out where the csv file should go
+        self.__filepath = filepath if filepath is not None else pathlib.Path() / f'{self.__dataclass_type.__name__}.csv'
+        #set some other variables
+        self._entry_objs = {}
+        self._entry_lines = {}
+        #read or create the file to finish setting up the table
+        self._file_last_updated = datetime.datetime.now()
+        if self.__filepath.is_file() :
+            self.__read_csv_file()
+        elif create_if_missing :
+            msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} '
+            msg+= f'to hold {self.__dataclass_type.__name__} entries'
+            self.logger.debug(msg)
+            self.dump_to_file()
+
+    def get_entry_attrs(self,entry_obj_address,*args) :
+        """
+        Return copies of all or some of the current attributes of an entry in the table.
+        Returning copies ensures the original objects cannot be modified by accident.
+
+        Use `args` to get a dictionary of desired attribute values returned.
+        If only one arg is given the return value is just that single attribute.
+        The default (no additional arguments) returns a dictionary of all attributes for the entry
+
+        :param entry_obj_address: the address in memory of the object to return copies of attributes for
+        :type entry_obj_address: hex(id(object))
+        :param args: Add other arguments that are names of attributes to get only those specific attributes of the entry
+        :type args: str, optional
+
+        :return: copies of some or all attributes for an entry in the table
+        :rtype: depends on arguments, or dict
+
+        :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
+        """
+        if entry_obj_address not in self._entry_objs :
+            errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
+            self.logger.error(errmsg,exc_type=ValueError)
+        obj = self._entry_objs[entry_obj_address]
+        if len(args)==1 :
+            return copy.deepcopy(getattr(obj,args[0]))
+        to_return = {}
+        for fname in self.__field_names :
+            if (not args) or (fname in args) :
+                to_return[fname] = copy.deepcopy(getattr(obj,fname))
+        if args :
+            for arg in args :
+                if arg not in to_return :
+                    errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} '
+                    errmsg+= 'Field and will not be returned from get_entry_attrs!'
+                    self.logger.warning(errmsg)
+        return to_return
+
+    @functools.lru_cache(maxsize=8)
+    def obj_addresses_by_key_attr(self,key_attr_name) :
+        """
+        Return a dictionary whose keys are the values of some given attribute for each object
+        and whose values are lists of the addresses in memory of the objects in the table
+        that have each value of the requested attribute.
+
+        Useful to find objects in the table by attribute values so they can be efficiently updated
+        without compromising the integrity of the objects in the table and their attributes.
+
+        Up to five calls are cached so if nothing changes this happens a little faster.
+
+        :param key_attr_name: the name of the attribute whose values should be used as keys in the returned dictionary
+        :type key_attr_name: str
+
+        :return: A dictionary listing all objects in the table, keyed by their values of `key_attr_name`
+        :rtype: dict
+
+        :raises ValueError: if `key_attr_name` is not recognized as the name of an attribute for entries in the table
+        """
+        if key_attr_name not in self.__field_names :
+            errmsg = f'ERROR: {key_attr_name} is not a name of a Field for {self.__dataclass_type} objects!'
+            self.logger.error(errmsg,exc_type=ValueError)
+        to_return = {}
+        locked_internally = False
+        if not self.lock.locked() :
+            locked_internally = True
+            self.lock.acquire()
+        for addr,obj in self._entry_objs.items() :
+            rkey = getattr(obj,key_attr_name)
+            if rkey not in to_return :
+                to_return[rkey] = []
+            to_return[rkey].append(addr)
+        if locked_internally :
+            self.lock.release()
+        return to_return
+
+    def dump_to_file(self,reraise_exc=True,retries=2) :
+        """
+        Dump the contents of the table to a csv file.
+        Call this to force the file to update and reflect the current state of objects.
+        Automatically called in several contexts.
+
+        :param reraise_exc: if True, Exceptions raised when writing out to the file will be re-raised
+        :type reraise_exc: bool, optional
+        :param retries: how many times to retry writing out the file
+        :type retries: int, optional
+        """
+        lines_to_write = [self.csv_header_line]
+        if len(self._entry_lines)>0 :
+            lines_to_write+=list(self._entry_lines.values())
+        locked_internally = False
+        if not self.lock.locked() :
+            locked_internally = True
+            self.lock.acquire()
+        self.__write_lines(lines_to_write,reraise_exc=reraise_exc,retries=retries)
+        if locked_internally :
+            self.lock.release()
+
+    #################### PROPERTIES ####################
 
     @methodtools.lru_cache()
     @property
@@ -88,132 +220,6 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         return self.__dataclass_type
 
-    #################### PUBLIC FUNCTIONS ####################
-
-    def __init__(self,dataclass_type,*,filepath=None,create_if_missing=True,**kwargs) :
-        """
-        Constructor method
-        """
-        #init the LogOwner
-        super().__init__(**kwargs)
-        #create the thread lock for the table
-        self.lock = Lock()
-        #figure out what type of objects the table/file will be describing
-        self.__dataclass_type = dataclass_type
-        if not is_dataclass(self.__dataclass_type) :
-            self.logger.error(f'ERROR: "{self.__dataclass_type}" is not a dataclass!',TypeError)
-        if len(fields(self.__dataclass_type)) <= 0 :
-            errmsg = f'ERROR: dataclass type {self.__dataclass_type} does not have any fields '
-            errmsg+= f'and so cannot be used in a {self.__class__.__name__}!'
-            self.logger.error(errmsg,ValueError)
-        self.__field_names = [field.name for field in fields(self.__dataclass_type)]
-        self.__field_types = [field.type for field in fields(self.__dataclass_type)]
-        #figure out where the csv file should go
-        self.__filepath = filepath if filepath is not None else pathlib.Path() / f'{self.__dataclass_type.__name__}.csv'
-        #set some other variables
-        self._entry_objs = {}
-        self._entry_lines = {}
-        #read or create the file to finish setting up the table
-        self._file_last_updated = datetime.datetime.now()
-        if self.__filepath.is_file() :
-            self.__read_csv_file()
-        elif create_if_missing :
-            msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} '
-            msg+= f'to hold {self.__dataclass_type.__name__} entries'
-            self.logger.debug(msg)
-            self.dump_to_file()
-
-    def get_entry_attrs(self,entry_obj_address,*args) :
-        """
-        Return copies of all or some of the current attributes of an entry in the table.
-        Returning copies ensures the original objects cannot be modified by accident.
-
-        Use `args` to get a dictionary of desired attribute values returned.
-        If only one arg is given the return value is just that single attribute.
-        The default (no additional arguments) returns a dictionary of all attributes for the entry
-
-        :param entry_obj_address: the address in memory of the object to return copies of attributes for
-        :type entry_obj_address: hex(id(object))
-        :param args: Add other arguments that are names of attributes to get only those specific attributes of the entry
-        :type args: str, optional
-
-        :return: copies of some or all attributes for an entry in the table
-        :rtype: depends on arguments, or dict
-
-        :raises ValueError: if `entry_obj_address` doesn't correspond to an object listed in the table
-        """
-        if entry_obj_address not in self._entry_objs :
-            errmsg = f'ERROR: address {entry_obj_address} sent to get_entry_attrs is not registered!'
-            self.logger.error(errmsg,ValueError)
-        obj = self._entry_objs[entry_obj_address]
-        if len(args)==1 :
-            return copy.deepcopy(getattr(obj,args[0]))
-        to_return = {}
-        for fname in self.__field_names :
-            if (not args) or (fname in args) :
-                to_return[fname] = copy.deepcopy(getattr(obj,fname))
-        if args :
-            for arg in args :
-                if arg not in to_return :
-                    errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} '
-                    errmsg+= 'Field and will not be returned from get_entry_attrs!'
-                    self.logger.warning(errmsg)
-        return to_return
-
-    @functools.lru_cache(maxsize=8)
-    def obj_addresses_by_key_attr(self,key_attr_name) :
-        """
-        Return a dictionary whose keys are the values of some given attribute for each object
-        and whose values are lists of the addresses in memory of the objects in the table
-        that have each value of the requested attribute.
-
-        Useful to find objects in the table by attribute values so they can be efficiently updated
-        without compromising the integrity of the objects in the table and their attributes.
-
-        Up to five calls are cached so if nothing changes this happens a little faster.
-
-        :param key_attr_name: the name of the attribute whose values should be used as keys in the returned dictionary
-        :type key_attr_name: str
-
-        :return: A dictionary listing all objects in the table, keyed by their values of `key_attr_name`
-        :rtype: dict
-
-        :raises ValueError: if `key_attr_name` is not recognized as the name of an attribute for entries in the table
-        """
-        if key_attr_name not in self.__field_names :
-            errmsg = f'ERROR: {key_attr_name} is not a name of a Field for {self.__dataclass_type} objects!'
-            self.logger.error(errmsg,ValueError)
-        to_return = {}
-        locked_internally = False
-        if not self.lock.locked() :
-            locked_internally = True
-            self.lock.acquire()
-        for addr,obj in self._entry_objs.items() :
-            rkey = getattr(obj,key_attr_name)
-            if rkey not in to_return :
-                to_return[rkey] = []
-            to_return[rkey].append(addr)
-        if locked_internally :
-            self.lock.release()
-        return to_return
-
-    def dump_to_file(self,reraise_exc=True) :
-        """
-        Dump the contents of the table to a csv file.
-        Call this to force the file to update and reflect the current state of objects.
-        Automatically called in several contexts.
-        """
-        lines_to_write = [self.csv_header_line]
-        if len(self._entry_lines)>0 :
-            lines_to_write+=list(self._entry_lines.values())
-        locked_internally = False
-        if not self.lock.locked() :
-            locked_internally = True
-            self.lock.acquire()
-        self.__write_lines(lines_to_write,reraise_exc=reraise_exc)
-        if locked_internally :
-            self.lock.release()
-
     #################### PRIVATE HELPER FUNCTIONS ####################
 
     def __read_csv_file(self) :
@@ -229,7 +235,7 @@ class DataclassTableBase(LogOwner,ABC) :
             if lines_as_read[ihl].strip()!=(self.csv_header_line.split('\n'))[ihl] :
                 errmsg = f'ERROR: header line in {self.__filepath} ({lines_as_read[0]}) does not match expectation for '
                 errmsg+= f'{self.__dataclass_type} ({self.csv_header_line})!'
-                self.logger.error(errmsg,RuntimeError)
+                self.logger.error(errmsg,exc_type=RuntimeError)
         #add entry lines and objects
         for line in lines_as_read[n_header_lines:] :
             obj = self.__obj_from_line(line)
@@ -240,7 +246,7 @@ class DataclassTableBase(LogOwner,ABC) :
         msg = f'Found {len(self._entry_objs)} {self.__dataclass_type.__name__} entries in {self.__filepath}'
         self.logger.debug(msg)
 
-    def __write_lines(self,lines,overwrite=True,reraise_exc=True) :
+    def __write_lines(self,lines,overwrite=True,reraise_exc=True,retries=2) :
         """
         Write a line or container of lines to the csv file, in a thread-safe and atomic way
         """
@@ -249,27 +255,37 @@ class DataclassTableBase(LogOwner,ABC) :
         lines_string = ''
         for line in lines :
             lines_string+=f'{line.strip()}\n'
-        try :
-            with atomic_write(self.__filepath,overwrite=overwrite) as fp :
-                fp.write(lines_string)
-        except Exception as exc :
-            if not isinstance(exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
+        n_retries_left = retries
+        caught_exc = None
+        while n_retries_left>0 :
+            try :
+                with atomic_write(self.__filepath,overwrite=overwrite) as fp :
+                    fp.write(lines_string)
+                self._file_last_updated = datetime.datetime.now()
+                return
+            except Exception as exc :
+                caught_exc = exc
+                n_retries_left-=1
+                time.sleep(0.1)
+                continue
+        if caught_exc is not None :
+            if not isinstance(caught_exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
                 if reraise_exc :
-                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath}! '
-                    errmsg+=  'Will reraise exception.'
-                    self.logger.error(errmsg,exc_obj=exc)
+                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath} '
+                    errmsg+= f'after {retries-n_retries_left+1} attempts! Will reraise exception.'
+                    self.logger.error(errmsg,exc_info=caught_exc,reraise=True)
                 else :
-                    msg = f'WARNING: failed an attempt to write to {self.__class__.__name__} csv file at '
-                    msg+= f'{self.__filepath}! Exception ({type(exc)}): {exc}'
+                    msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
+                    msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
+                    msg+= f'Exception ({type(caught_exc)}): {caught_exc}'
                     self.logger.warning(msg)
-        self._file_last_updated = datetime.datetime.now()
 
     def _line_from_obj(self,obj) :
         """
         Return the csv file line for a given object
         """
         if obj.__class__ != self.__dataclass_type :
-            self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',TypeError)
+            self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',exc_type=TypeError)
         obj_line = ''
         for fname,ftype in zip(self.__field_names,self.__field_types) :
             obj_line+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{self.DELIMETER}'
@@ -321,7 +337,7 @@ class DataclassTableBase(LogOwner,ABC) :
                 to_cast.append(self.NESTED_TYPES[attrtype][1](vstr))
             return self.NESTED_TYPES[attrtype][0](to_cast)
         errmsg = f'ERROR: attribute type "{attrtype}" is not recognized for a {self.__class__.__name__}!'
-        self.logger.error(errmsg,ValueError)
+        self.logger.error(errmsg,exc_type=ValueError)
         return None
 
 class DataclassTableReadOnly(DataclassTableBase) :
@@ -375,7 +391,8 @@ class DataclassTableAppendOnly(DataclassTableBase) :
         for entry in new_entries :
             entry_addr = hex(id(entry))
             if entry_addr in self._entry_objs or entry_addr in self._entry_lines :
-                self.logger.error('ERROR: address of object sent to add_entries is already registered!',ValueError)
+                errmsg = 'ERROR: address of object sent to add_entries is already registered!'
+                self.logger.error(errmsg,exc_type=ValueError)
             locked_internally = False
             if not self.lock.locked() :
                 locked_internally = True
@@ -428,7 +445,8 @@ class DataclassTable(DataclassTableAppendOnly) :
             entry_obj_addresses = [entry_obj_addresses]
         for entry_addr in entry_obj_addresses :
             if (entry_addr not in self._entry_objs) or (entry_addr not in self._entry_lines) :
-                self.logger.error(f'ERROR: address {entry_addr} sent to remove_entries is not registered!',ValueError)
+                errmsg = f'ERROR: address {entry_addr} sent to remove_entries is not registered!'
+                self.logger.error(errmsg,exc_type=ValueError)
             locked_internally = False
             if not self.lock.locked() :
                 locked_internally = True
@@ -454,7 +472,7 @@ class DataclassTable(DataclassTableAppendOnly) :
         """
         if entry_obj_address not in self._entry_objs :
             errmsg = f'ERROR: address {entry_obj_address} sent to set_entry_attrs is not registered!'
-            self.logger.error(errmsg,ValueError)
+            self.logger.error(errmsg,exc_type=ValueError)
         locked_internally = False
         if not self.lock.locked() :
             locked_internally = True

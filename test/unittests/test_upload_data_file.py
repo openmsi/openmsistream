@@ -22,7 +22,7 @@ class TestUploadDataFile(unittest.TestCase) :
         #just need to make sure this function runs without throwing any errors
         self.datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                                         n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-                                        chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+                                        chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
 
     def test_initial_properties(self) :
         self.assertEqual(self.datafile.filename,TEST_CONST.TEST_DATA_FILE_NAME)

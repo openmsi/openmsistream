@@ -113,6 +113,7 @@ class TestArgumentParsing(unittest.TestCase) :
     #test the int_power_of_two argument parser callback
     def test_int_power_of_two(self) :
         self.assertEqual(int_power_of_two(RUN_OPT_CONST.DEFAULT_CHUNK_SIZE),RUN_OPT_CONST.DEFAULT_CHUNK_SIZE)
+        self.assertEqual(int_power_of_two(TEST_CONST.TEST_CHUNK_SIZE),TEST_CONST.TEST_CHUNK_SIZE)
         self.assertEqual(int_power_of_two(4),4)
         self.assertEqual(int_power_of_two('8'),8)
         self.assertEqual(int_power_of_two(16.0),16)

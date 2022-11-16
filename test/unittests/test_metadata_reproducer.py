@@ -93,7 +93,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
             self.assertTrue(succeeded_entry_attrs['filename']==UPLOAD_FILE.name)
             #consume messages from the destination topic and make sure the metadata from the test file is there
-            consumer_group = ConsumerGroup(TEST_CONST.TEST_METADATA_REPRODUCER_CONSUMER_CONFIG_FILE_PATH,
+            consumer_group = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_METADATA_CONSUMER,
                                         DEST_TOPIC_NAME,
                                         consumer_group_id=CONSUMER_GROUP_ID)
             consumer = consumer_group.get_new_subscribed_consumer()

@@ -48,7 +48,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if not len(self.__args_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
                 errmsg+= f'{len(self.__args_per_thread)} entries, but was set up to use {self.n_threads} threads!'
-                self.logger.error(errmsg,ValueError)
+                self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__args_per_thread = self.n_threads*self.__args_per_thread
         #correct the keyword arguments for each thread
@@ -60,7 +60,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if not len(self.__kwargs_per_thread)==1 :
                 errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
                 errmsg+= f'{len(self.__kwargs_per_thread)} entries, but was set up to use {self.n_threads} threads!'
-                self.logger.error(errmsg,ValueError)
+                self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__kwargs_per_thread = self.n_threads*self.__kwargs_per_thread
         #create and start the independent threads
@@ -104,9 +104,8 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             if thread.caught_exception is not None :
                 #log the error
                 warnmsg = 'WARNING: a thread raised an Exception, which will be logged as an error below but not '
-                warnmsg+= 'reraised. The thread that raised the error will be restarted.'
-                self.logger.warning(warnmsg)
-                self.logger.log_exception_as_error(thread.caught_exception,reraise=False)
+                warnmsg+= 're-raised. The thread that raised the error will be restarted.'
+                self.logger.warning(warnmsg,exc_info=thread.caught_exception)
                 #try to join the thread
                 try :
                     thread.join()

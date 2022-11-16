@@ -137,5 +137,5 @@ class ConsumerGroup(LogOwner) :
         except Exception as exc :
             errmsg = f'ERROR: encountered an exception when gathering initial "{topic_name}" topic offsets for '
             errmsg+= f'consumer group ID "{consumer_group_id}". The error will be logged below and re-raised.'
-            self.logger.error(errmsg,exc_obj=exc)
+            self.logger.error(errmsg,exc_info=exc,reraise=True)
             return None
