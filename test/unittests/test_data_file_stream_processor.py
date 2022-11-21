@@ -129,7 +129,8 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         """
         Test restarting a DataFileStreamProcessor from the beginning of the topic after failing to process a file
         """
-        self.assertFalse(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART.is_dir())
+        if TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART.is_dir() :
+            shutil.rmtree(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART)
         TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES['test_data_file_stream_processor_restart_kafka']
         CONSUMER_GROUP_ID = 'test_data_file_stream_processor_restart'
         #upload the data files
