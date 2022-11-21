@@ -132,7 +132,8 @@ class TestServices(unittest.TestCase) :
         test_file_path = TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST/'runnable_example_service_test.txt'
         error_log_path = pathlib.Path().resolve()/f'{service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
         service_path = SERVICE_CONST.DAEMON_SERVICE_DIR/f'{service_name}.service'
-        self.assertFalse(test_file_path.exists())
+        if test_file_path.exists() :
+            test_file_path.unlink()
         try :
             install_service_main(
                 ['RunnableExample=openmsistream.services.examples.runnable_example',
@@ -174,7 +175,8 @@ class TestServices(unittest.TestCase) :
         service_name = 'ScriptExampleServiceTest'
         test_file_path = TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST/'script_example_service_test.txt'
         error_log_path = pathlib.Path().resolve()/f'{service_name}{SERVICE_CONST.ERROR_LOG_STEM}'
-        self.assertFalse(test_file_path.exists())
+        if test_file_path.exists() :
+            test_file_path.unlink()
         try :
             install_service_main(
                 ['openmsistream.services.examples.script_example:main',

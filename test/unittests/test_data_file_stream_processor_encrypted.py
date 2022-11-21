@@ -23,12 +23,17 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
         """
         Test restarting an encrypted DataFileStreamProcessor after failing to process a file
         """
-        self.assertFalse(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED.is_dir())
+        to_remove = [
+            TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
+            TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED,
+            ]
+        for remove_dir in to_remove :
+            if remove_dir.is_dir() :
+                shutil.rmtree(remove_dir)
         TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES['test_data_file_stream_processor_restart_encrypted_kafka']
         CONSUMER_GROUP_ID = 'test_data_file_stream_processor_restart_encrypted'
         #make the directory to watch
         watched_subdir = TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
-        self.assertFalse(watched_subdir.parent.is_dir())
         watched_subdir.mkdir(parents=True)
         #start up the DataFileUploadDirectory
         dfud = DataFileUploadDirectory(TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED,
