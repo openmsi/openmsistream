@@ -26,11 +26,16 @@ class TestRoutineConstants :
     TEST_DATA_DIR_PATH = TEST_DIR_PATH / 'data'
     
     #S3 connection information
-    TEST_ENDPOINT_URL = os.environ['ENDPOINT_URL'] # the endpoint_url for s3 bucket connection
-    TEST_BUCKET_NAME = os.environ['BUCKET_NAME'] # the bucket name to upload data to (S3Client)
-    TEST_ACCESS_KEY_ID = os.environ['ACCESS_KEY_ID'] # the access_key_id for s3 Authentication
-    TEST_SECRET_KEY_ID = os.environ['SECRET_KEY_ID'] # the secret_key_id for s3 Authentication
-    TEST_REGION = os.environ['REGION'] # the region for the testing s3 bucket
+    # the endpoint_url for s3 bucket connection
+    TEST_ENDPOINT_URL = os.environ['ENDPOINT_URL'] if 'ENDPOINT_URL' in os.environ else 'ENDPOINT_URL'
+    # the bucket name to upload data to (S3Client)
+    TEST_BUCKET_NAME = os.environ['BUCKET_NAME'] if 'BUCKET_NAME' in os.environ else 'BUCKET_NAME'
+    # the access_key_id for s3 Authentication
+    TEST_ACCESS_KEY_ID = os.environ['ACCESS_KEY_ID'] if 'ACCESS_KEY_ID' in os.environ else 'ACCESS_KEY_ID'
+    # the secret_key_id for s3 Authentication
+    TEST_SECRET_KEY_ID = os.environ['SECRET_KEY_ID'] if 'SECRET_KEY_ID' in os.environ else 'SECRET_KEY_ID'
+    # the region for the testing s3 bucket
+    TEST_REGION = os.environ['REGION'] if 'REGION' in os.environ else 'REGION'
 
     #different config files used in tests
     TEST_CONFIG_FILE_PATH = RUN_CONST.CONFIG_FILE_DIR/f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
