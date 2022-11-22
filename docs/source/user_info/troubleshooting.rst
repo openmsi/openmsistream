@@ -46,3 +46,14 @@ and then adding the location of the CA file it installed to the ``[broker]`` sec
 
     >>> import certifi
     >>> certifi.where()
+
+Mac OS SSL "certificate verify failed" errors
+---------------------------------------------
+
+Some Python installations on Mac operating systems have trouble natively verifying SSL certificates. This problem may appear as an error message like "``[SSL: CERTIFICATE_VERIFY_FAILED] certificate verify failed``". In this case, the problem may be solved by adding the lines::
+
+    CERT_PATH=$(python -m certifi)
+    export SSL_CERT_FILE=${CERT_PATH}
+    export REQUESTS_CA_BUNDLE=${CERT_PATH}
+
+to your shell ``.profile`` or ``.rc`` file. More context on and solutions to this problem can be found in `this stackoverflow question <https://stackoverflow.com/questions/40684543/how-to-make-python-use-ca-certificates-from-mac-os-truststore>`_.
