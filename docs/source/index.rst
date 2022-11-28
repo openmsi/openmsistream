@@ -35,8 +35,9 @@ The development team can be reached at openmsistream@gmail.com. Please see :doc:
    :maxdepth: 2
    :caption: Intro to OpenMSIStream:
 
-   installation/introduction
-   installation/getting_started
+   introduction/introduction
+   introduction/installing_openmsistream
+   introduction/tutorials
 
 .. toctree::
    :maxdepth: 2

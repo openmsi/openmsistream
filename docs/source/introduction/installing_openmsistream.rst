@@ -1,6 +1,6 @@
-=============================
-Getting Started
-=============================
+========================
+Installing OpenMSIStream
+========================
 
 We recommend using a minimal installation of the conda open source package and environment management system. These instructions start with installation of conda and outline all the necessary steps to run OpenMSIStream programs. 
 
@@ -17,11 +17,11 @@ The pages below list specific installation instructions based on the operating s
 .. toctree::
    :maxdepth: 1
 
-   linux
-   older_windows
-   windows
-   mac_intel
-   mac_m1
+   installation/linux
+   installation/older_windows
+   installation/windows
+   installation/mac_intel
+   installation/mac_m1
 
 External requirements
 ---------------------
