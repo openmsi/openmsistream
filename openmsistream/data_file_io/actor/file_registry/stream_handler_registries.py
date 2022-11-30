@@ -76,13 +76,11 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             return None
         regex_str = r'^('
         for fp in self.filepaths_to_rerun :
-            if r'/' in fp :
-                subdir_str = f'{"/".join((fp.split("/"))[:-1])}'
-                filename = (fp.split("/"))[-1]
+            if fp!=fp.name :
+                subdir_str = str(fp.parent.as_posix())
             else :
                 subdir_str = None
-                filename = fp
-            regex_str+=f'{get_message_prepend(subdir_str,filename)}|'
+            regex_str+=f'{get_message_prepend(subdir_str,fp.name)}|'
         regex_str=f'{regex_str[:-1]})_.*$'
         return re.compile(regex_str)
 

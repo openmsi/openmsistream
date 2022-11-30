@@ -59,7 +59,7 @@ As files are recognized by the producer, you'll see the same files appear with t
 
 At that point you should also be able to see all of the test files listed in ``openmsistream_upload/LOGS/uploaded_to_openmsistream_tutorial_data.csv``. Both of the log files should be empty if everything proceeded normally, because they only log warnings or errors. 
 
-If you'd like to do this tutorial again you'll need to delete the ``LOGS`` subdirectory (otherwise the producer will skip files that have been uploaded previously). You can see more about what's going on under the hood by running either or both of the commands above with the flag ``--logger_stream_level debug``. You can also upload/download any files you'd like, but the test files were chosen for the advanced tutorials in the following pages.
+If you'd like to do this tutorial again you'll need to delete the ``LOGS`` subdirectory (otherwise the producer will skip files that have been uploaded previously). You can see more about what's going on under the hood by running either or both of the commands above with the flag ``--logger_stream_level debug``, in which case more messages will be printed as files are uploaded and downloaded. You can also upload/download any files you'd like, but the test files used here were chosen for the advanced tutorials in the following pages.
 
 More advanced tutorials
 =======================
