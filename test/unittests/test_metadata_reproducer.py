@@ -25,6 +25,9 @@ class TestMetadataReproducer(unittest.TestCase) :
     """
 
     def test_metadata_reproducer_kafka(self) :
+        #remove any old output
+        if TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR.is_dir() :
+            shutil.rmtree(TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR)
         #make note of the start time
         start_time = datetime.datetime.now()
         #start up the reproducer

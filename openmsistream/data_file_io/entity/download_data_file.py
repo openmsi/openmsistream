@@ -31,10 +31,7 @@ class DownloadDataFile(DataFile,ABC) :
         """
         if dfc.filename_append=='' :
             return dfc.filepath
-        new_name = dfc.filepath.name.split('.')[0]+dfc.filename_append
-        for suffix in dfc.filepath.suffixes :
-            new_name+=suffix
-        return dfc.filepath.with_name(new_name)
+        return dfc.filepath.with_name(dfc.filepath.stem+dfc.filename_append+dfc.filepath.suffix)
 
     @property
     @abstractmethod
