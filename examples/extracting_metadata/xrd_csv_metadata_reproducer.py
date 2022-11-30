@@ -2,7 +2,7 @@
 
 #imports
 from datetime import datetime
-from ..metadata_json_reproducer import MetadataJSONReproducer
+from openmsistream.metadata_extraction.metadata_json_reproducer import MetadataJSONReproducer
 
 class XRDCSVMetadataReproducer(MetadataJSONReproducer) :
     """

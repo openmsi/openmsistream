@@ -1,19 +1,25 @@
 #imports
-import unittest, pathlib, logging, time, datetime, json, pickle, shutil
+import unittest, pathlib, logging, time, datetime, json, pickle, shutil, urllib.request
+import importlib.machinery, importlib.util
 from openmsistream import UploadDataFile
 from openmsistream.utilities import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.kafka_wrapper import ConsumerGroup
 from openmsistream.data_file_io.actor.file_registry.stream_handler_registries import StreamReproducerRegistry
-from openmsistream.metadata_extraction.examples.xrd_csv_metadata_reproducer import XRDCSVMetadataReproducer
 from config import TEST_CONST
+
+#import the XRDCSVMetadataReproducer from the examples directory
+class_path = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'xrd_csv_metadata_reproducer.py'
+module_name = class_path.name[:-len('.py')]
+loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
+module = loader.load_module()
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 TIMEOUT_SECS = 90
 JOIN_TIMEOUT_SECS = 60
-REP_CONFIG_PATH = TEST_CONST.PACKAGE_ROOT_DIR/'metadata_extraction'/'examples'/'test_xrd_csv_metadata_reproducer.config'
-UPLOAD_FILE = TEST_CONST.PACKAGE_ROOT_DIR/'metadata_extraction'/'examples'/'SC001_XRR.csv'
+REP_CONFIG_PATH = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'test_xrd_csv_metadata_reproducer.config'
+UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'SC001_XRR.csv'
 SOURCE_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_source'
 DEST_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_dest'
 CONSUMER_GROUP_ID = 'test_metadata_reproducer'
@@ -24,6 +30,20 @@ class TestMetadataReproducer(unittest.TestCase) :
     successfully extracted and produced to another topic as a string of JSON
     """
 
+    def setUp(self) :
+        """
+        Download the test data file from its URL on the PARADIM website
+        """
+        urllib.request.urlretrieve(TEST_CONST.METADATA_EXTRACTION_TEST_FILE_URL,
+                                   UPLOAD_FILE)
+
+    def tearDown(self) :
+        """
+        Remove the test data file that was downloaded
+        """
+        if UPLOAD_FILE.is_file() :
+            UPLOAD_FILE.unlink()
+
     def test_metadata_reproducer_kafka(self) :
         #remove any old output
         if TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR.is_dir() :
@@ -31,10 +51,14 @@ class TestMetadataReproducer(unittest.TestCase) :
         #make note of the start time
         start_time = datetime.datetime.now()
         #start up the reproducer
-        metadata_reproducer = XRDCSVMetadataReproducer(REP_CONFIG_PATH,SOURCE_TOPIC_NAME,DEST_TOPIC_NAME,
-                                                       consumer_group_id=CONSUMER_GROUP_ID,
-                                                       output_dir=TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR,
-                                                       logger=LOGGER)
+        metadata_reproducer = module.XRDCSVMetadataReproducer(
+                                REP_CONFIG_PATH,
+                                SOURCE_TOPIC_NAME,
+                                DEST_TOPIC_NAME,
+                                consumer_group_id=CONSUMER_GROUP_ID,
+                                output_dir=TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR,
+                                logger=LOGGER
+                            )
         rep_thread = ExceptionTrackingThread(target=metadata_reproducer.produce_processing_results_for_files_as_read)
         rep_thread.start()
         try :

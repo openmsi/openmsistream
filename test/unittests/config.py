@@ -22,7 +22,7 @@ class TestRoutineConstants :
 
     #Paths to locations inside the code base
     TEST_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
-    PACKAGE_ROOT_DIR = TEST_DIR_PATH.parent / 'openmsistream'
+    EXAMPLES_DIR_PATH = TEST_DIR_PATH.parent / 'examples'
     TEST_DATA_DIR_PATH = TEST_DIR_PATH / 'data'
     
     #S3 connection information
@@ -77,5 +77,8 @@ class TestRoutineConstants :
     
     # size (in bytes) of chunks to use in tests
     TEST_CHUNK_SIZE = 16384 
+
+    # URL to download the example metadata extraction file from
+    METADATA_EXTRACTION_TEST_FILE_URL = 'https://data.paradim.org/194/XRD/SC001/SC001%20XRR.csv'
     
 TEST_CONST=TestRoutineConstants()
