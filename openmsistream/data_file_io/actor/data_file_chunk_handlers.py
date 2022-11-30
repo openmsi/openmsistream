@@ -88,12 +88,13 @@ class DataFileChunkHandler(LogOwner,ABC) :
         dfc.rootdir = rootdir_to_set
         #add the chunk's data to the file that's being reconstructed
         with lock :
-            if dfc.filepath not in self.files_in_progress_by_path :
-                self.files_in_progress_by_path[dfc.filepath] = self.datafile_type(dfc.filepath,
-                                                                                  logger=self.logger,
-                                                                                  **self.other_datafile_kwargs)
-                self.locks_by_fp[dfc.filepath] = Lock()
-        retval = self.files_in_progress_by_path[dfc.filepath].add_chunk(dfc,self.locks_by_fp[dfc.filepath])
+            if dfc.relative_filepath not in self.files_in_progress_by_path :
+                self.files_in_progress_by_path[dfc.relative_filepath] = self.datafile_type(dfc.filepath,
+                                                                                           logger=self.logger,
+                                                                                           **self.other_datafile_kwargs)
+                self.locks_by_fp[dfc.relative_filepath] = Lock()
+        retval = self.files_in_progress_by_path[dfc.relative_filepath].add_chunk(dfc,
+                                                                                self.locks_by_fp[dfc.relative_filepath])
         #If the file is just in progress, return True
         if retval in (DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS,
                             DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE) :
@@ -113,7 +114,7 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
         """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
-            progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
+            progress_msg+=f'\t{datafile.relative_filepath} (in progress)\n'
         for fp in self.completely_processed_filepaths :
             progress_msg+=f'\t{fp} (completed)\n'
         return progress_msg
@@ -131,8 +132,8 @@ class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) 
         """
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
-            if datafile.full_filepath not in self.completely_processed_filepaths :
-                progress_msg+=f'\t{datafile.full_filepath} (in progress)\n'
+            if datafile.relative_filepath not in self.completely_processed_filepaths :
+                progress_msg+=f'\t{datafile.relative_filepath} (in progress)\n'
         for fp in self.completely_processed_filepaths :
             if fp not in self.results_produced_filepaths :
                 progress_msg+=f'\t{fp} (fully read from topic)\n'

@@ -120,7 +120,8 @@ class TestDataFileDirectories(unittest.TestCase) :
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = TEST_CONST.TEST_RECO_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME/TEST_CONST.TEST_DATA_FILE_NAME
-            while (recofp not in dfdd.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
+            reco_rel_fp = recofp.relative_to(TEST_CONST.TEST_RECO_DIR_PATH)
+            while (reco_rel_fp not in dfdd.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = dfdd.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')

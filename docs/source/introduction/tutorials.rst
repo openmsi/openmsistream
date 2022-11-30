@@ -16,7 +16,7 @@ Access to a Kafka broker
 
 To begin, you'll need access to a Kafka broker. That broker can be running on a server that you have access to, or on `Confluent Cloud <https://confluent.cloud/>`_, which provides Kafka as a managed service. In either case you will need to be able to authenticate to that broker using plain SASL authentication (the default for Confluent Cloud). 
 
-You will also need to create a topic on that broker to use for testing, called "``openmsi_tutorial_data``" (if you use a different name just replace it in the commands shown below). The default settings are fine for a single test, but if you'd like you can adjust the retention times to be an hour or less so that the contents of the testing topics will get flushed out regularly and you can work through the tutorial repeatedly without reading previously-produced data.
+You will also need to create a topic on that broker to use for testing, called "``openmsistream_tutorial_data``" (if you use a different name just replace it in the commands shown below). The default settings are fine for a single test, but if you'd like you can adjust the retention times to be an hour or less so that the contents of the testing topics will get flushed out regularly and you can work through the tutorial repeatedly without reading previously-produced data.
 
 Setting environment variables
 -----------------------------
@@ -39,11 +39,27 @@ Each file contains a header block with some metadata, and then a block of XRD da
 "Round trip" tutorial
 =====================
 
-Producer (DataFileUploadDirectory)
-----------------------------------
+This simple tutorial will produce the data files you downloaded to a Kafka topic and then consume the messages in that topic to reconstruct copies of the files locally.
 
-Consumer (DataFileDownloadDirectory)
-------------------------------------
+Create a directory called "``openmsistream_upload``" that is initially empty. Then activate your ``openmsi`` Conda environment and type:: 
+    
+    DataFileUploadDirectory openmsistream_upload --topic_name openmsistream_tutorial_data 
+
+The terminal with that command in it will stay running, listening for files to be added to the ``openmsistream_upload`` directory. As soon as you run it, you can see that the "``LOGS``" subdirectory will be created inside the ``openmsistream_upload`` directory, and that subdirectory will have a log file and a .csv file in it.
+
+Leave that terminal running, and open another to run a local consumer. Activate the ``openmsi`` Conda environment in the new terminal, and type::
+
+    DataFileDownloadDirectory openmsistream_download --topic_name openmsistream_tutorial_data
+
+That terminal will also keep running, but in the meantime you'll see that a directory called ``openmsistream_download`` will be created, and it will have a log file in it.
+
+With both terminal windows running, you can then move the test files you downloaded into the ``openmsistream_upload`` directory. You can also create any subdirectory tree you'd like inside the ``openmsistream_upload`` directory, and add test files to any subdirectory (other than the ``LOGS`` subdirectory). 
+
+As files are recognized by the producer, you'll see the same files appear with the same subdirectory structure inside the ``openmsistream_download`` directory. At any time you can type "c" or "check" into either of the terminal windows and you'll get a message stating how many files have been uploaded, or how many messages have been received/files have been completely reconstructed. When you've added all of the test files you downloaded, type "q" or "quit" into both of the terminals to shut down the processes, and you'll get output messages listing which files were uploaded and downloaded. 
+
+At that point you should also be able to see all of the test files listed in ``openmsistream_upload/LOGS/uploaded_to_openmsistream_tutorial_data.csv``. Both of the log files should be empty if everything proceeded normally, because they only log warnings or errors. 
+
+If you'd like to do this tutorial again you'll need to delete the ``LOGS`` subdirectory (otherwise the producer will skip files that have been uploaded previously). You can see more about what's going on under the hood by running either or both of the commands above with the flag ``--logger_stream_level debug``. You can also upload/download any files you'd like, but the test files were chosen for the advanced tutorials in the following pages.
 
 More advanced tutorials
 =======================
@@ -52,6 +68,7 @@ The pages below contain some more hands-on examples of different ways to consume
 
 .. toctree::
    :maxdepth: 1
+   :caption: More tutorials:
 
    tutorials/creating_plots
    tutorials/extracting_metadata

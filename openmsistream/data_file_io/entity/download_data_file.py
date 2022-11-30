@@ -1,7 +1,7 @@
 """Various types of DataFiles that have been read back from messages in a topic"""
 
 #imports
-import os
+import pathlib, os
 from hashlib import sha512
 from contextlib import nullcontext
 from abc import ABC, abstractmethod
@@ -31,9 +31,10 @@ class DownloadDataFile(DataFile,ABC) :
         """
         if dfc.filename_append=='' :
             return dfc.filepath
-        filename_split = dfc.filepath.name.split('.')
-        full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
-        return full_fp
+        new_name = dfc.filepath.name.split('.')[0]+dfc.filename_append
+        for suffix in dfc.filepath.suffixes :
+            new_name+=suffix
+        return dfc.filepath.with_name(new_name)
 
     @property
     @abstractmethod
@@ -42,6 +43,16 @@ class DownloadDataFile(DataFile,ABC) :
         The hash of the data in the file after it was read. Not implemented in the base class.
         """
         raise NotImplementedError
+
+    @property
+    def relative_filepath(self) :
+        """
+        The path to the file, relative to its root directory
+        """
+        if self.subdir_str=='' :
+            return pathlib.Path(self.filename)
+        else :
+            return pathlib.Path(self.subdir_str+'/'+self.filename)
 
     #################### PUBLIC FUNCTIONS ####################
 

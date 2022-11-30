@@ -51,7 +51,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             msg+= f'test_metadata_reproducer (will timeout after {TIMEOUT_SECS} seconds)...'
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
-            recofp = TEST_CONST.TEST_METADATA_REPRODUCER_OUTPUT_DIR/UPLOAD_FILE.name
+            recofp = pathlib.Path(UPLOAD_FILE.name)
             while (recofp not in metadata_reproducer.results_produced_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = metadata_reproducer.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)

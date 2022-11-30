@@ -119,24 +119,23 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             dfc = msg.value #from KafkaCrypto
         #if the file has had all of its messages read successfully, send it to the processing function
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            if dfc.rootdir is not None :
-                short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
-            else :
-                short_filepath = self.files_in_progress_by_path[dfc.filepath].filepath
-            self.logger.debug(f'Processing {short_filepath}...')
-            processing_retval = self._process_downloaded_data_file(self.files_in_progress_by_path[dfc.filepath],lock)
+            self.logger.debug(f'Processing {dfc.relative_filepath}...')
+            processing_retval = self._process_downloaded_data_file(
+                                    self.files_in_progress_by_path[dfc.relative_filepath],
+                                    lock
+                                )
             to_return = None
             #if it was able to be processed
             if processing_retval is None :
-                self.logger.debug(f'Fully-read file {short_filepath} successfully processed')
+                self.logger.debug(f'Fully-read file {dfc.relative_filepath} successfully processed')
                 self.file_registry.register_file_successfully_processed(dfc)
                 with lock :
-                    self.completely_processed_filepaths.append(dfc.filepath)
+                    self.completely_processed_filepaths.append(dfc.relative_filepath)
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
             else :
                 if isinstance(processing_retval,Exception) :
-                    warnmsg = f'WARNING: Fully-read file {short_filepath} was not able to be processed. '
+                    warnmsg = f'WARNING: Fully-read file {dfc.relative_filepath} was not able to be processed. '
                     warnmsg+= 'The traceback of the Exception thrown during processing will be logged below, but not '
                     warnmsg+= 're-raised. The messages for this file will need to be consumed again if the file is to '
                     warnmsg+= 'be processed! Please rerun with the same consumer ID to try again.'
@@ -145,12 +144,12 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                     warnmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
                     self.logger.warning(warnmsg)
                 self.file_registry.register_file_processing_failed(dfc)
-                self._failed_processing_callback(self.files_in_progress_by_path[dfc.filepath],lock)
+                self._failed_processing_callback(self.files_in_progress_by_path[dfc.relative_filepath],lock)
                 to_return = False
             #stop tracking the file
             with lock :
-                del self.files_in_progress_by_path[dfc.filepath]
-                del self.locks_by_fp[dfc.filepath]
+                del self.files_in_progress_by_path[dfc.relative_filepath]
+                del self.locks_by_fp[dfc.relative_filepath]
             return to_return
         #otherwise the file is just in progress
         return True

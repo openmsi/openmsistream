@@ -51,6 +51,13 @@ class DataFileChunk(Producible) :
         return self.__filepath
 
     @property
+    def relative_filepath(self) :
+        """
+        The path to the file, relative to its root directory (if it has one)
+        """
+        return self.__relative_filepath
+
+    @property
     def rootdir(self) :
         """
         The path to the file's root directory (already set if chunk is to be produced,
@@ -70,6 +77,7 @@ class DataFileChunk(Producible) :
             except ValueError :
                 pass
             self.__filepath = self.__rootdir / self.__filepath
+            self.__relative_filepath = self.__filepath.relative_to(self.__rootdir)
 
     @property
     def subdir_str(self) :
@@ -129,6 +137,10 @@ class DataFileChunk(Producible) :
         self.chunk_i = chunk_i
         self.n_total_chunks = n_total_chunks
         self.__rootdir = rootdir
+        if self.__rootdir is not None :
+            self.__relative_filepath = self.__filepath.relative_to(self.__rootdir)
+        else :
+            self.__relative_filepath = self.__filepath
         self.filename_append = filename_append
         self.data = data
 
