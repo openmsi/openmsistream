@@ -51,8 +51,7 @@ class DownloadDataFile(DataFile,ABC) :
         """
         if self.subdir_str=='' :
             return pathlib.Path(self.filename)
-        else :
-            return pathlib.Path(self.subdir_str+'/'+self.filename)
+        return pathlib.Path(self.subdir_str+'/'+self.filename)
 
     #################### PUBLIC FUNCTIONS ####################
 
