@@ -2,6 +2,7 @@
 
 #imports
 from abc import ABC, abstractmethod
+from ...utilities.misc import populated_kwargs
 from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
 from .data_file_stream_handler import DataFileStreamHandler
@@ -32,10 +33,20 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         :class:`~.data_file_io.DownloadDataFileToMemory`
     """
 
-    def __init__(self,config_file,topic_name,**kwargs) :
+    LOG_SUBDIR_NAME = 'LOGS'
+
+    def __init__(self,config_file,topic_name,output_dir=None,**kwargs) :
         """
-        Constructor method signature duplicated above to display in Sphinx docs
+        Constructor method
         """
+        #set the output directory
+        self._output_dir = self._get_auto_output_dir() if output_dir is None else output_dir
+        #create a subdirectory for the logs
+        self.__logs_subdir = self._output_dir/self.LOG_SUBDIR_NAME
+        if not self.__logs_subdir.is_dir() :
+            self.__logs_subdir.mkdir(parents=True)
+        #put the log file in the subdirectory
+        kwargs = populated_kwargs(kwargs,{'output_dir':self._output_dir,'logger_file':self.__logs_subdir})
         super().__init__(config_file,topic_name,**kwargs)
 
     def process_files_as_read(self) :
@@ -56,7 +67,7 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         msg+= f'thread{"s" if self.n_threads>1 else ""}'
         self.logger.info(msg)
         #set up the stream processor registry
-        self.file_registry = StreamProcessorRegistry(dirpath=self._output_dir,
+        self.file_registry = StreamProcessorRegistry(dirpath=self.__logs_subdir,
                                                       topic_name=self.topic_name,
                                                       consumer_group_id=self.consumer_group_id,
                                                       logger=self.logger)
