@@ -192,10 +192,12 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             time.sleep(1.0)
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART/DataFileStreamProcessor.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             self.assertEqual(len(spr.filepaths_to_rerun),1)
             in_prog_table = spr.in_progress_table
             in_prog_entries = in_prog_table.obj_addresses_by_key_attr('status')
@@ -276,10 +278,12 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             #read the .csv table to make sure it registers three successful files
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART/DataFileStreamProcessor.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             succeeded_table = spr.succeeded_table
             succeeded_entries = succeeded_table.obj_addresses
             self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it
