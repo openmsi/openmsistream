@@ -1,3 +1,17 @@
 ====================================================
 Extracting metadata (example MetadataJSONReproducer)
 ====================================================
+
+This tutorial will walk through setting up a Consumer to read the test files uploaded to the ``openmsistream_tutorial_data`` topic, automatically extract the contents of their headers as JSON-formatted metadata strings, and produce those strings as messages to a new topic.
+
+To get set up, you'll first need to create a new topic on your broker called ``openmsistream_tutorial_metadata``. Next you'll need to download the example `Python code <https://github.com/openmsi/openmsistream/tree/main/examples/extracting_metadata/xrd_csv_metadata_reproducer.py>`_ and `configuration file <https://github.com/openmsi/openmsistream/tree/main/examples/extracting_metadata/test_xrd_csv_metadata_reproducer.config>`_ for this tutorial from the OpenMSIStream GitHub repository.
+
+Finally, if you haven't done the "round trip" :ref:`tutorial <"Round trip" tutorial>` yet or if the messages produced during that tutorial no longer exist on the ``openmsistream_tutorial_data`` topic, you should go back and produce the test files to that topic. Regardless of whether you run the producer again or not, though, keep the ``openmsi`` Conda environment activated.
+
+With the code and config file downloaded, and the test data produced, you can run the consumer with the following command::
+
+    python -m xrd_csv_metadata_reproducer --config test_xrd_csv_metadata_reproducer.config --consumer_topic_name openmsistream_tutorial_data --producer_topic_name openmsistream_tutorial_metadata
+
+Starting that process running will create a directory called ``XRDCSVMetadataReproducer_output``; inside that directory you'll find a log file and some :class:`~.utilities.DataclassTable` files. While the process runs, you can type ``c`` or ``check`` into the terminal to see how many messages have been received, how many of the test files have been reconstructed, and how many metadata messages have been produced to the ``openmsistream_tutorial_metadata`` topic. When you see that all five files have had their metadata produced, you can shut the process down by typing ``q`` or ``quit`` into the terminal. After the process quits you should see all five test files listed in ``XRDCSVMetadataReproducer_output/results_produced_to_openmsistream_tutorial_metadata.csv``, indicating that their JSON-formatted metadata strings have all been produced as messages to the ``openmsistream_tutorial_metadata`` topic.
+
+If you'd like to see the messages that have been produced, you can rerun the consumer with the flag ``--logger_stream_level debug``. You could also check the messages on the topic through an interface like Confluent Cloud, or you could write a small Consumer yourself to read the messages back from the topic (the CI test `here <https://github.com/openmsi/openmsistream/blob/main/test/unittests/test_metadata_reproducer.py>`_ might be helpful in that exercise; the script you write should create an :class:`~.kafka_wrapper.OpenMSIStreamConsumer` object with the configuration file `here <https://github.com/openmsi/openmsistream/blob/main/openmsistream/kafka_wrapper/config_files/test_metadata_reproducer_consumer.config>`_ and then repeatedly call its :func:`openmsistream.kafka_wrapper.OpenMSIStreamConsumer.get_next_message` function).

@@ -1,6 +1,7 @@
 """Example of how to extend a MetadataJSONReproducer for a real-world use case"""
 
 #imports
+import json
 from datetime import datetime
 from openmsistream.metadata_extraction.metadata_json_reproducer import MetadataJSONReproducer
 
@@ -56,6 +57,7 @@ class XRDCSVMetadataReproducer(MetadataJSONReproducer) :
         #add a timestamp
         metadata_dict['metadata_message_generated_at'] = datetime.now().strftime('%m/%d/%Y, %H:%M:%S')
         #return the dictionary of metadata
+        self.logger.debug(f'Producing JSON metadata message: {json.dumps(metadata_dict)}')
         return metadata_dict
 
 def main(args=None) :
