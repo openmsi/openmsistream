@@ -6,11 +6,13 @@ Working with any of the programs in OpenMSIStream requires creating at least one
 Location and Usage
 ^^^^^^^^^^^^^^^^^^
 
-Programs accept the "``--config``" command line argument to specify the configuration file they should use. The value of that argument can either be the path to the file to use, or the name of a file in the default location. The default location is the `openmsistream/kafka_wrapper/config directory <https://github.com/openmsi/openmsistream/tree/main/openmsistream/kafka_wrapper/config_files>`_ in the installed repository; you can find where this is located on your system by running, for example::
+Programs accept the "``--config``" command line argument to specify the configuration file they should use. The value of that argument can either be the path to the file to use, or the name of a file in the default location. The default location is initially set to the `openmsistream/kafka_wrapper/config directory <https://github.com/openmsi/openmsistream/tree/main/openmsistream/kafka_wrapper/config_files>`_ directory in the installed repository, but you can change its location by setting the ``OPENMSISTREAM_CONFIG_FILE_DIR`` environment variable on your system (note that setting this variable without copying the files from the default location will break the tutorials and CI tests on your system).
+
+You can see what the default config file location is at any time by running, for example::
 
     UploadDataFile -h
 
-and checking the output message for the "``--config``" argument if you'd like to put files there and reference them by name instead of by their path in some different location.
+and checking the output message for the "``--config``" argument, if you'd like to put files there and reference them by name instead of by their path in some different location.
 
 The default value of the "``--config``" argument is "``test``" which points to `the test.config file <https://github.com/openmsi/openmsistream/blob/main/openmsistream/kafka_wrapper/config_files/test.config>`_ that comes installed with OpenMSIStream. That file includes "``[broker]``", "``[producer]``", and "``[consumer]``" sections with reasonable all-around values in them, and environment variable references to specify the broker connection. If your broker has plaintext SASL authentication enabled and you set values for the "``KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS``", "``KAFKA_TEST_CLUSTER_USERNAME``", and "``KAFKA_TEST_CLUSTER_PASSWORD``" environment variables, then you can use the default configuration file to get started moving files right away (without encryption or interaction with an S3 bucket). 
 

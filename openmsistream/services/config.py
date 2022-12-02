@@ -11,8 +11,8 @@ class ServicesConstants :
     Constants for working with services
     """
 
-    WORKING_DIR = ( os.environ['OPENMSISTREAM_SERVICES_WORKING_DIR'] 
-                    if 'OPENMSISTREAM_SERVICES_WORKING_DIR' in os.environ else 
+    WORKING_DIR = ( os.environ['OPENMSISTREAM_SERVICES_WORKING_DIR']
+                    if 'OPENMSISTREAM_SERVICES_WORKING_DIR' in os.environ else
                     (pathlib.Path(__file__).parent/'working_dir').resolve() )
     NSSM_PATH = WORKING_DIR / 'nssm.exe'
     NSSM_DOWNLOAD_URL = 'https://nssm.cc/release/nssm-2.24.zip' # The URL to use for downloading NSSM when needed
