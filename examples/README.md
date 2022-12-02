@@ -1,0 +1,1 @@
+The subdirectories here contain files needed to run the tutorials described in the documentation [here](https://openmsistream.readthedocs.io/en/latest/introduction/tutorials.html).

@@ -1,0 +1,1 @@
+The Python file in this directory is an example of a custom DataFileStreamProcessor used in the tutorial for how to make plots from data files uploaded to a topic. You can find the tutorial that uses the file in the documentation [here](https://openmsistream.readthedocs.io/en/latest/introduction/tutorials/creating_plots.html).

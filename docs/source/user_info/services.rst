@@ -76,7 +76,7 @@ First, if you've written your own new class that extends :class:`~.utilities.Run
 
     InstallService [class_name]=[path.to.class.file] [command_line_options] --service_name [name_for_service_or_daemon]
 
-where ``[class_name]`` is the name of the class, and ``[path.to.class.file]`` is a Python path to the file containing it. You can find an example custom Runnable class in the OpenMSIStream repository, called ``runnable_example.py`` in the ``openmsipython/services/examples`` directory. The :func:`openmsistream.utilities.Runnable.run_from_command_line` function in that class can be run as a Service by installing it with the command::
+where ``[class_name]`` is the name of the class, and ``[path.to.class.file]`` is a Python path to the file containing it. You can find an example custom Runnable class in the OpenMSIStream repository, called ``runnable_example.py`` in the ``openmsistream/services/examples`` directory. The :func:`openmsistream.utilities.Runnable.run_from_command_line` function in that class can be run as a Service by installing it with the command::
 
     InstallService RunnableExample=openmsistream.services.examples.runnable_example [absolute_path_to_output_dir] --service_name RunnableExampleServiceTest
 
@@ -96,7 +96,7 @@ If instead of a custom Runnable class you've written just a Python script contai
 
 where ``[path.to.script.file]`` is a Python path to the file containing the function to run, and ``[func_name]`` is the name of the function in the file. **The function you write should accept one argument:** the ``command_line_options`` as a list.
 
-You can find an example custom Service/daemon script in the OpenMSIStream repository, called ``script_example.py`` in the ``openmsipython/services/examples`` directory. In this case the ``main`` function in the script can be run as a Service by installing it with the command::
+You can find an example custom Service/daemon script in the OpenMSIStream repository, called ``script_example.py`` in the ``openmsistream/services/examples`` directory. In this case the ``main`` function in the script can be run as a Service by installing it with the command::
 
     InstallService openmsistream.services.examples.script_example:main [absolute_path_to_output_dir] --service_name ScriptExampleServiceTest
 
