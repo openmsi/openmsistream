@@ -193,13 +193,14 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             if self.__succeeded_tables_by_id[thread_identifier].n_entries>=self.max_succeeded_lines_per_file :
                 old_fp = self.__succeeded_tables_by_id[thread_identifier].filepath
                 timestamp = str(datetime.datetime.now().timestamp()).replace('.','_')
-                new_fp = old_fp.with_stem(f'{old_fp.stem}_{timestamp}')
+                new_fp = old_fp.with_name(f'{old_fp.stem}_{timestamp}{old_fp.suffix}')
                 old_fp.rename(new_fp)
                 new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
                                                      filepath=old_fp,logger=self.logger)
                 self.__succeeded_tables_by_id[thread_identifier] = new_table
         else :
-            new_fp = self.succeeded_filepath.with_stem(f'{self.succeeded_filepath.stem}_{thread_identifier}')
+            new_name = f'{self.succeeded_filepath.stem}_{thread_identifier}{self.succeeded_filepath.suffix}'
+            new_fp = self.succeeded_filepath.with_name(new_name)
             new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
                                                  filepath=new_fp,logger=self.logger)
             self.__succeeded_tables_by_id[thread_identifier] = new_table

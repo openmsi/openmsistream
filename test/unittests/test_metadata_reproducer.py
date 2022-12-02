@@ -15,7 +15,7 @@ loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
 module = loader.load_module()
 
 #constants
-LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
+LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.DEBUG)#ERROR)
 TIMEOUT_SECS = 90
 JOIN_TIMEOUT_SECS = 60
 REP_CONFIG_PATH = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'test_xrd_csv_metadata_reproducer.config'
@@ -69,7 +69,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             LOGGER.set_stream_level(logging.ERROR)
             upload_file = UploadDataFile(UPLOAD_FILE,
                                         logger=LOGGER)
-            upload_file.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,SOURCE_TOPIC_NAME)
+            upload_file.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,SOURCE_TOPIC_NAME)
             #wait for the file to be processed
             current_messages_read = -1
             time_waited = 0
@@ -120,7 +120,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
             self.assertTrue(succeeded_entry_attrs['filename']==UPLOAD_FILE.name)
             #consume messages from the destination topic and make sure the metadata from the test file is there
-            consumer_group = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_METADATA_CONSUMER,
+            consumer_group = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH_MDC,
                                         DEST_TOPIC_NAME,
                                         consumer_group_id=CONSUMER_GROUP_ID)
             consumer = consumer_group.get_new_subscribed_consumer()

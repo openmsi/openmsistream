@@ -209,6 +209,14 @@ class DownloadDataFileToMemory(DownloadDataFile) :
             self.__create_bytestring()
         return self.__bytestring
 
+    @bytestring.setter
+    def bytestring(self,new_bytestring) :
+        if self.__bytestring is not None :
+            warnmsg = f'WARNING: resetting a non-None bytestring for {self.__class__.__name__} '
+            warnmsg+= f'with path {self.filepath}'
+            self.logger.warning(warnmsg)
+        self.__bytestring = new_bytestring
+
     @property
     def check_file_hash(self) :
         """

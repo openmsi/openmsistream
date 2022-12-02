@@ -14,16 +14,16 @@ class TestConfigFileParser(unittest.TestCase) :
     """
 
     def setUp(self) :
-        self.cfp = ConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        self.cfp = ConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         self.testconfigparser = configparser.ConfigParser()
-        self.testconfigparser.read(TEST_CONST.TEST_CONFIG_FILE_PATH)
+        self.testconfigparser.read(TEST_CONST.TEST_CFG_FILE_PATH)
 
     def test_available_group_names(self) :
         self.assertEqual(self.cfp.available_group_names,self.testconfigparser.sections())
 
     def test_get_config_dict_for_groups(self) :
         if len(self.testconfigparser.sections())<2 :
-            errmsg = f'ERROR: config file used for testing ({TEST_CONST.TEST_CONFIG_FILE_PATH}) '
+            errmsg = f'ERROR: config file used for testing ({TEST_CONST.TEST_CFG_FILE_PATH}) '
             errmsg+= 'does not contain enough sections to test with!'
             raise RuntimeError(errmsg)
         for group_name in self.testconfigparser.sections() :

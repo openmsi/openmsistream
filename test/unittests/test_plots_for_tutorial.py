@@ -47,7 +47,7 @@ class TestPlotsForTutorial(unittest.TestCase) :
             shutil.rmtree(TEST_CONST.TEST_TUTORIAL_PLOTS_OUTPUT_DIR)
         #start up the plot maker
         plot_maker = module.XRDCSVPlotter(
-                                TEST_CONST.TEST_CONFIG_FILE_PATH,
+                                TEST_CONST.TEST_CFG_FILE_PATH,
                                 TOPIC_NAME,
                                 consumer_group_id=CONSUMER_GROUP_ID,
                                 output_dir=TEST_CONST.TEST_TUTORIAL_PLOTS_OUTPUT_DIR,
@@ -63,7 +63,7 @@ class TestPlotsForTutorial(unittest.TestCase) :
             LOGGER.set_stream_level(logging.ERROR)
             upload_file = UploadDataFile(UPLOAD_FILE,
                                         logger=LOGGER)
-            upload_file.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME)
+            upload_file.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,TOPIC_NAME)
             #wait for the file to be processed
             current_messages_read = -1
             time_waited = 0

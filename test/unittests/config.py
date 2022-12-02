@@ -39,17 +39,17 @@ class TestRoutineConstants :
     TEST_REGION = os.environ['REGION'] if 'REGION' in os.environ else 'REGION'
 
     #different config files used in tests
-    TEST_CONFIG_FILE_PATH = RUN_CONST.CONFIG_FILE_DIR/f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
+    TEST_CFG_FILE_PATH = RUN_CONST.CONFIG_FILE_DIR/f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
     # Same as above except it includes a node_id to test encryption
-    TEST_CONFIG_FILE_PATH_ENCRYPTED = TEST_CONFIG_FILE_PATH.with_stem('test_encrypted')
-    TEST_CONFIG_FILE_PATH_ENCRYPTED_2 = TEST_CONFIG_FILE_PATH.with_stem('test_encrypted_2')
+    TEST_CFG_FILE_PATH_ENCRYPTED = TEST_CFG_FILE_PATH.with_name(f'test_encrypted{TEST_CFG_FILE_PATH.suffix}')
+    TEST_CFG_FILE_PATH_ENCRYPTED_2 = TEST_CFG_FILE_PATH.with_name(f'test_encrypted_2{TEST_CFG_FILE_PATH.suffix}')
     # Same as above except it includes S3 transfer configs
-    TEST_CONFIG_FILE_PATH_S3_TRANSFER = TEST_CONFIG_FILE_PATH.with_stem('test_s3_transfer')
+    TEST_CFG_FILE_PATH_S3_TRANSFER = TEST_CFG_FILE_PATH.with_name(f'test_s3_transfer{TEST_CFG_FILE_PATH.suffix}')
     # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
-    PROD_CONFIG_FILE_PATH = TEST_CONFIG_FILE_PATH.with_stem('prod')
+    PROD_CONFIG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(f'prod{TEST_CFG_FILE_PATH.suffix}')
     FAKE_PROD_CONFIG_FILE_PATH = TEST_DATA_DIR_PATH/f'fake_prod{RUN_CONST.CONFIG_FILE_EXT}'
     #the config file to use for the final consumer in the metadata reproducer test
-    TEST_CONFIG_FILE_PATH_METADATA_CONSUMER = TEST_CONFIG_FILE_PATH.with_stem('test_metadata_reproducer_consumer')
+    TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH.with_name(f'test_metadata_rep_consumer{TEST_CFG_FILE_PATH.suffix}')
 
     #Names of and paths to directories and files used in testing
     TEST_DATA_FILE_ROOT_DIR_NAME = 'test_file_root_dir'

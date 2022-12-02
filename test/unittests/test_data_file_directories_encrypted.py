@@ -29,7 +29,7 @@ class TestDataFileDirectories(unittest.TestCase) :
         TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED.mkdir()
         #start up the DataFileUploadDirectory
         dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED,
-                                       TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,
+                                       TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         #start upload_files_as_added in a separate thread so we can time it out
         upload_thread = ExceptionTrackingThread(
@@ -51,7 +51,7 @@ class TestDataFileDirectories(unittest.TestCase) :
         time.sleep(5)
         #start up the DataFileDownloadDirectory
         dfdd = DataFileDownloadDirectory(TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED,
-                                         TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,
+                                         TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,
                                          TOPIC_NAME,
                                          n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
                                          update_secs=UPDATE_SECS,
