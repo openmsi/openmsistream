@@ -62,16 +62,16 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             return retval
         #if the file hashes didn't match, invoke the callback and return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            warnmsg = f'WARNING: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
-            warnmsg+= 'after being fully read! The messages for this file will need to be consumed again if the file '
-            warnmsg+= 'is to be processed! Please rerun with the same consumer ID to try again.'
+            warnmsg = f'WARNING: hashes for file {dfc.filename} not matched after being fully read! '
+            warnmsg+= 'The messages for this file will need to be consumed again if the file is to be processed! '
+            warnmsg+= 'Please rerun with the same consumer ID to try again.'
             self.logger.warning(warnmsg)
             with lock :
                 self.file_registry.register_file_mismatched_hash(dfc)
             self._mismatched_hash_callback(self.files_in_progress_by_path[dfc.filepath],lock)
             with lock :
-                del self.files_in_progress_by_path[dfc.filepath]
-                del self.locks_by_fp[dfc.filepath]
+                del self.files_in_progress_by_path[dfc.relative_filepath]
+                del self.locks_by_fp[dfc.relative_filepath]
             return False
         if retval!=DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             self.logger.error(f'ERROR: unrecognized add_chunk return value: {retval}',exc_type=NotImplementedError)

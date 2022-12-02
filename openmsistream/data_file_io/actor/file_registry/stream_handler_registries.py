@@ -4,7 +4,7 @@ being reconstructed from the topic and files that have been fully handled
 """
 
 #imports
-import datetime, re, threading
+import pathlib, datetime, re, threading
 from abc import ABC
 from dataclasses import dataclass
 from ....utilities import DataclassTableReadOnly, DataclassTableAppendOnly, DataclassTable, LogOwner
@@ -16,7 +16,7 @@ class StreamHandlerRegistryLineInProgress :
     A line in the table listing files in progress
     """
     filename : str #the name of the file
-    rel_filepath : str #the (posix) path to the file, relative to its root directory
+    rel_filepath : pathlib.Path #the path to the file, relative to its root directory
     status : str #the status of the file, either "in_progress", "failed", or "mismatched_hash"
     n_chunks : int #the total number of chunks in the file
     first_message : datetime.datetime #timestamp of when the first message for the file was consumed
@@ -28,7 +28,7 @@ class StreamHandlerRegistryLineSucceeded :
     A line in the table listing files that have been successfully handled
     """
     filename : str #the name of the file
-    rel_filepath : str #the (posix) path to the file, relative to its root directory
+    rel_filepath : pathlib.Path #the path to the file, relative to its root directory
     n_chunks : int #the total number of chunks in the file
     first_message : datetime.datetime #timestamp of when the most recent chunk from the file was consumed
     processed_at : datetime.datetime #timestamp of when the file was processed
@@ -76,13 +76,11 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             return None
         regex_str = r'^('
         for fp in self.filepaths_to_rerun :
-            if r'/' in fp :
-                subdir_str = f'{"/".join((fp.split("/"))[:-1])}'
-                filename = (fp.split("/"))[-1]
+            if fp!=fp.name :
+                subdir_str = str(fp.parent.as_posix())
             else :
                 subdir_str = None
-                filename = fp
-            regex_str+=f'{get_message_prepend(subdir_str,filename)}|'
+            regex_str+=f'{get_message_prepend(subdir_str,fp.name)}|'
         regex_str=f'{regex_str[:-1]})_.*$'
         return re.compile(regex_str)
 
@@ -162,12 +160,11 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             fp.unlink()
 
     def _add_or_modify_in_progress_entry(self,dfc,new_status) :
-        filename, rel_filepath = self._get_name_and_rel_filepath_for_data_file_chunk(dfc)
         with self._in_progress_table.lock :
-            existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
+            existing_entry_addr = self._get_in_progress_address_for_rel_filepath(dfc.relative_filepath)
             if existing_entry_addr is None :
-                new_entry = StreamHandlerRegistryLineInProgress(filename,
-                                                                rel_filepath,
+                new_entry = StreamHandlerRegistryLineInProgress(dfc.filename,
+                                                                dfc.relative_filepath,
                                                                 new_status,
                                                                 dfc.n_total_chunks,
                                                                 datetime.datetime.now(),
@@ -178,11 +175,6 @@ class StreamHandlerRegistry(LogOwner,ABC) :
                 self._in_progress_table.set_entry_attrs(existing_entry_addr,
                                                         status=new_status,
                                                         most_recent_message=datetime.datetime.now())
-
-    def _get_name_and_rel_filepath_for_data_file_chunk(self,dfc) :
-        filename = dfc.filename
-        rel_filepath = f'{dfc.subdir_str}/{filename}' if dfc.subdir_str!='' else filename
-        return filename,rel_filepath
 
     def _get_in_progress_address_for_rel_filepath(self,rel_filepath) :
         existing_obj_addresses = self._in_progress_table.obj_addresses_by_key_attr('rel_filepath')
@@ -201,13 +193,14 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             if self.__succeeded_tables_by_id[thread_identifier].n_entries>=self.max_succeeded_lines_per_file :
                 old_fp = self.__succeeded_tables_by_id[thread_identifier].filepath
                 timestamp = str(datetime.datetime.now().timestamp()).replace('.','_')
-                new_fp = old_fp.with_stem(f'{old_fp.stem}_{timestamp}')
+                new_fp = old_fp.with_name(f'{old_fp.stem}_{timestamp}{old_fp.suffix}')
                 old_fp.rename(new_fp)
                 new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
                                                      filepath=old_fp,logger=self.logger)
                 self.__succeeded_tables_by_id[thread_identifier] = new_table
         else :
-            new_fp = self.succeeded_filepath.with_stem(f'{self.succeeded_filepath.stem}_{thread_identifier}')
+            new_name = f'{self.succeeded_filepath.stem}_{thread_identifier}{self.succeeded_filepath.suffix}'
+            new_fp = self.succeeded_filepath.with_name(new_name)
             new_table = DataclassTableAppendOnly(StreamHandlerRegistryLineSucceeded,
                                                  filepath=new_fp,logger=self.logger)
             self.__succeeded_tables_by_id[thread_identifier] = new_table
@@ -234,9 +227,8 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
         """
         Add/update a line in the table to show that a file has successfully been processed
         """
-        filename, rel_filepath = self._get_name_and_rel_filepath_for_data_file_chunk(dfc)
         self._in_progress_table.lock.acquire()
-        existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
+        existing_entry_addr = self._get_in_progress_address_for_rel_filepath(dfc.relative_filepath)
         if existing_entry_addr is not None :
             attrs = self._in_progress_table.get_entry_attrs(existing_entry_addr)
             self._in_progress_table.lock.release()
@@ -247,8 +239,8 @@ class StreamProcessorRegistry(StreamHandlerRegistry) :
                                                            datetime.datetime.now())
         else :
             self._in_progress_table.lock.release()
-            new_entry = StreamHandlerRegistryLineSucceeded(filename,
-                                                           rel_filepath,
+            new_entry = StreamHandlerRegistryLineSucceeded(dfc.filename,
+                                                           dfc.relative_filepath,
                                                            dfc.n_total_chunks,
                                                            datetime.datetime.now(),
                                                            datetime.datetime.now())

@@ -18,44 +18,44 @@ class TestCreateOpenMSIStreamKafkaObjects(unittest.TestCase) :
     """
 
     def test_create_openmsistream_producer(self) :
-        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         self.assertTrue(producer is not None)
         producer.close()
 
     def test_create_openmsistream_producer_encrypted(self) :
-        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,logger=LOGGER)
         self.assertTrue(producer is not None)
         producer.close()
 
     def test_create_openmsistream_consumer(self) :
-        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         self.assertTrue(consumer is not None)
         consumer.close()
     
     def test_create_openmsistream_consumer_encrypted(self) :
-        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
+        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
         self.assertTrue(consumer is not None)
         consumer.close()
 
     def test_create_producer_group(self) :
-        pg = ProducerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        pg = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         self.assertTrue(pg is not None)
         pg.close()
     
     def test_create_producer_group_encrypted(self) :
-        pg = ProducerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        pg = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,logger=LOGGER)
         self.assertTrue(pg is not None)
         pg.close()
     
     def test_create_consumer_group(self) :
-        cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+        cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_id='test_create_consumer_group',
                            logger=LOGGER)
         self.assertTrue(cg is not None)
         cg.close()
     
     def test_create_consumer_group_encrypted(self) :
-        cg = ConsumerGroup(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+        cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_id='test_create_consumer_group_encrypted',
                            logger=LOGGER)
         self.assertTrue(cg is not None)

@@ -1,7 +1,8 @@
 #imports
-import pathlib, logging, shutil, filecmp
+import pathlib, logging, shutil, filecmp, urllib, importlib, pickle
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
+from openmsistream.data_file_io.entity.download_data_file import DownloadDataFileToMemory
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.config import SERVICE_CONST
@@ -112,6 +113,41 @@ def rebuild_test_services_executable() :
     exec_fp.replace(NEW_TEST_DATA_DIR/exec_fp.name)
     compare_and_check_old_and_new_files(exec_fp.name)
 
+def rebuild_test_metadata_dict() :
+    """
+    Rebuild the pickle file used to test the metadata extraction/production
+    """
+    #download the test file
+    urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL,'metadata_test_file.csv')
+    #create a DownloadDataFile from the test file and set its bytestring
+    datafile = DownloadDataFileToMemory(pathlib.Path('metadata_test_file.csv'))
+    with open('metadata_test_file.csv','rb') as fp :
+        datafile.bytestring = fp.read()
+    #import the XRDCSVMetadataReproducer from the examples directory
+    class_path = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'xrd_csv_metadata_reproducer.py'
+    module_name = class_path.name[:-len('.py')]
+    loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
+    module = loader.load_module()
+    #get the metadata dictionary from the file
+    metadata_reproducer = module.XRDCSVMetadataReproducer(
+                    TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'test_xrd_csv_metadata_reproducer.config',
+                    TEST_CONST.TEST_TOPIC_NAMES['test_metadata_reproducer']+'_source',
+                    TEST_CONST.TEST_TOPIC_NAMES['test_metadata_reproducer']+'_dest',
+                    output_dir=pathlib.Path('./REMOVE_ME'),
+                )
+    metadata_dict = metadata_reproducer._get_metadata_dict_for_file(datafile)
+    metadata_dict.pop('metadata_message_generated_at') #get rid of the timestamp
+    #pickle up the file
+    with open(NEW_TEST_DATA_DIR/TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE.name,'wb') as fp :
+        pickle.dump(metadata_dict,fp,protocol=0)
+    #close and delete stuff
+    metadata_reproducer.close()
+    if pathlib.Path('./REMOVE_ME').is_dir() :
+        shutil.rmtree(pathlib.Path('./REMOVE_ME'))
+    if pathlib.Path('metadata_test_file.csv').is_file() :
+        pathlib.Path('metadata_test_file.csv').unlink()
+    compare_and_check_old_and_new_files(TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE.name)
+
 #################### MAIN SCRIPT ####################
 
 def main() :
@@ -123,6 +159,8 @@ def main() :
         rebuild_binary_file_chunks_for_serialization_reference()
         LOGGER.info('Rebuilding reference Service executable file....')
         rebuild_test_services_executable()
+        LOGGER.info('Rebuilding reference metadata message pickle file....')
+        rebuild_test_metadata_dict()
         LOGGER.info(f'Moving new files into {EXISTING_TEST_DATA_DIR}...')
         relocate_files(NEW_TEST_DATA_DIR)
     except Exception as e :

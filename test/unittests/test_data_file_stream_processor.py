@@ -62,11 +62,11 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         #upload the data file
         upload_datafile = UploadDataFile(TEST_CONST.TEST_DATA_FILE_2_PATH,
                                          rootdir=TEST_CONST.TEST_DATA_DIR_PATH,logger=LOGGER)
-        upload_datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME,
+        upload_datafile.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,TOPIC_NAME,
                                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                           chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
         #Use a stream processor to read its data back into memory
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH,
+        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH,
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -136,17 +136,17 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         #upload the data files
         upload_datafile = UploadDataFile(TEST_CONST.TEST_DATA_FILE_PATH,
                                          rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,logger=LOGGER)
-        upload_datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME,
+        upload_datafile.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,TOPIC_NAME,
                                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                           chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
         upload_datafile = UploadDataFile(TEST_CONST.TEST_DATA_FILE_2_PATH,
                                          rootdir=TEST_CONST.TEST_DATA_DIR_PATH,logger=LOGGER)
-        upload_datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME,
+        upload_datafile.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,TOPIC_NAME,
                                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                           chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
         #Use a stream processor to read their data back into memory one time, deliberately failing the first file
         time.sleep(1.0)
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH,
+        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH,
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -192,10 +192,12 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             time.sleep(1.0)
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART/DataFileStreamProcessor.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             self.assertEqual(len(spr.filepaths_to_rerun),1)
             in_prog_table = spr.in_progress_table
             in_prog_entries = in_prog_table.obj_addresses_by_key_attr('status')
@@ -221,12 +223,12 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
         upload_datafile = UploadDataFile(third_filepath,
                                          rootdir=TEST_CONST.TEST_DATA_DIR_PATH,logger=LOGGER)
-        upload_datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,TOPIC_NAME,
+        upload_datafile.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,TOPIC_NAME,
                                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                           chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
         #recreate and re-run the stream processor, allowing it to successfully process all files this time
         time.sleep(1.0)
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH,
+        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH,
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -276,10 +278,12 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             #read the .csv table to make sure it registers three successful files
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART/DataFileStreamProcessor.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             succeeded_table = spr.succeeded_table
             succeeded_entries = succeeded_table.obj_addresses
             self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it

@@ -37,7 +37,7 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
         watched_subdir.mkdir(parents=True)
         #start up the DataFileUploadDirectory
         dfud = DataFileUploadDirectory(TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED,
-                                       TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,
+                                       TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         #start upload_files_as_added in a separate thread so we can time it out
         upload_thread = ExceptionTrackingThread(
@@ -59,7 +59,7 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
         fp.write_bytes(TEST_CONST.TEST_DATA_FILE_2_PATH.read_bytes())
         time.sleep(5)
         #Use a stream processor to read their data back into memory one time, deliberately failing the first file
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,
+        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -106,10 +106,12 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
             time.sleep(5)
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED/DataFileStreamProcessorForTesting.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             self.assertEqual(len(spr.filepaths_to_rerun),1)
             in_prog_table = spr.in_progress_table
             in_prog_entries = in_prog_table.obj_addresses_by_key_attr('status')
@@ -150,7 +152,7 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
         time.sleep(1)
         #recreate and re-run the stream processor, allowing it to successfully process all files this time
         time.sleep(1.0)
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,
+        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,
                                                  TOPIC_NAME,
                                                  output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
                                                  n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -209,10 +211,12 @@ class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
             #read the .csv table to make sure it registers three successful files
             dfsp.file_registry.in_progress_table.dump_to_file()
             dfsp.file_registry.succeeded_table.dump_to_file()
-            spr = StreamProcessorRegistry(dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                        topic_name=TOPIC_NAME,
-                                        consumer_group_id=CONSUMER_GROUP_ID,
-                                        logger=LOGGER)
+            spr = StreamProcessorRegistry(
+                dirpath=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED/DataFileStreamProcessorForTesting.LOG_SUBDIR_NAME,
+                topic_name=TOPIC_NAME,
+                consumer_group_id=CONSUMER_GROUP_ID,
+                logger=LOGGER
+            )
             succeeded_table = spr.succeeded_table
             succeeded_entries = succeeded_table.obj_addresses
             self.assertTrue(len(succeeded_entries)>=3) #>3 if the topic has files from previous runs in it

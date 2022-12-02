@@ -194,7 +194,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             self.logger.error(errmsg,exc_type=TypeError)
         if not filepath.is_file() :
             return False
-        if filepath.parent == self.__logs_subdir :
+        if self.__logs_subdir in filepath.parents :
             return False
         if self.__upload_regex.match(filepath.name) :
             return True

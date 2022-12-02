@@ -28,12 +28,8 @@ class ReproducerMessage(Producible,ABC) :
         The callback kwargs defined for these messages are the original datafile name, its relative filepath,
         and the total number of chunks into which the file was broken.
         """
-        if self.__datafile.subdir_str!='' :
-            rel_filepath = f'{self.__datafile.subdir_str}/{self.__datafile.filename}'
-        else :
-            rel_filepath = self.__datafile.filename
         return {'filename':self.__datafile.filename,
-                'rel_filepath':rel_filepath,
+                'rel_filepath':self.__datafile.relative_filepath,
                 'n_total_chunks':self.__datafile.n_total_chunks}
 
     def get_log_msg(self,print_every=None) :

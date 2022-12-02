@@ -223,8 +223,8 @@ class ProducerFileRegistry(LogOwner) :
         if they're getting too large
         """
         #create the path to the table file that should be added to
-        prod_stem = f'{self.completed_filepath_pattern.stem}_p{prodid}'
-        table_path = self.completed_filepath_pattern.with_stem(prod_stem)
+        prod_name = f'{self.completed_filepath_pattern.stem}_p{prodid}{self.completed_filepath_pattern.suffix}'
+        table_path = self.completed_filepath_pattern.with_name(prod_name)
         create_new_table_at_path = False
         #if the table already exists
         if table_path in self.__completed_tables_by_path :
@@ -234,7 +234,7 @@ class ProducerFileRegistry(LogOwner) :
                 self.__completed_tables_by_path[table_path].dump_to_file()
                 #rename the dumped file with a timestamp
                 timestamp = str(datetime.datetime.now().timestamp()).replace('.','_')
-                new_path = table_path.with_stem(f'{table_path.stem}_{timestamp}')
+                new_path = table_path.with_name(f'{table_path.stem}_{timestamp}{table_path.suffix}')
                 table_path.rename(new_path)
                 #reset the table associated with the filepath for this producer
                 create_new_table_at_path = True

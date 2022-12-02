@@ -1,7 +1,7 @@
 #imports
 import setuptools, site
 
-version = '1.1.6'
+version = '1.2.0'
 
 site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
 
@@ -39,6 +39,7 @@ setupkwargs = dict(
                       'boto3>=1.23.0',
                       'confluent-kafka>=1.9.0',
                       'kafkacrypto>=0.9.10.0',
+                      'matplotlib',
                       'methodtools',
                       'msgpack',
                      ],

@@ -1,7 +1,7 @@
 """Various types of DataFiles that have been read back from messages in a topic"""
 
 #imports
-import os
+import pathlib, os
 from hashlib import sha512
 from contextlib import nullcontext
 from abc import ABC, abstractmethod
@@ -31,9 +31,7 @@ class DownloadDataFile(DataFile,ABC) :
         """
         if dfc.filename_append=='' :
             return dfc.filepath
-        filename_split = dfc.filepath.name.split('.')
-        full_fp = dfc.filepath.parent/(filename_split[0]+dfc.filename_append+'.'+('.'.join(filename_split[1:])))
-        return full_fp
+        return dfc.filepath.with_name(dfc.filepath.stem+dfc.filename_append+dfc.filepath.suffix)
 
     @property
     @abstractmethod
@@ -42,6 +40,15 @@ class DownloadDataFile(DataFile,ABC) :
         The hash of the data in the file after it was read. Not implemented in the base class.
         """
         raise NotImplementedError
+
+    @property
+    def relative_filepath(self) :
+        """
+        The path to the file, relative to its root directory
+        """
+        if self.subdir_str=='' :
+            return pathlib.Path(self.filename)
+        return pathlib.Path(self.subdir_str+'/'+self.filename)
 
     #################### PUBLIC FUNCTIONS ####################
 
@@ -201,6 +208,14 @@ class DownloadDataFileToMemory(DownloadDataFile) :
         if self.__bytestring is None :
             self.__create_bytestring()
         return self.__bytestring
+
+    @bytestring.setter
+    def bytestring(self,new_bytestring) :
+        if self.__bytestring is not None :
+            warnmsg = f'WARNING: resetting a non-None bytestring for {self.__class__.__name__} '
+            warnmsg+= f'with path {self.filepath}'
+            self.logger.warning(warnmsg)
+        self.__bytestring = new_bytestring
 
     @property
     def check_file_hash(self) :

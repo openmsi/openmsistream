@@ -140,7 +140,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                 warnmsg =f'WARNING: Failed to deliver processing result message for {rel_filepath} and cannot retry. '
                 warnmsg+= f'This message will be re-enqueued. Error reason: {err.str()}'
             self.logger.warning(warnmsg)
-            datafile = self.files_in_progress_by_path[self._output_dir/rel_filepath]
+            datafile = self.files_in_progress_by_path[rel_filepath]
             new_msg = self._get_processing_result_message_for_file(datafile,self.lock)
             if new_msg is not None :
                 self.producer_message_queue.put(new_msg)
@@ -150,10 +150,10 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         else :
             with self.lock :
                 self.file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks,prodid)
-                self.results_produced_filepaths.append(self._output_dir/rel_filepath)
+                self.results_produced_filepaths.append(rel_filepath)
                 #stop tracking the file
-                del self.files_in_progress_by_path[self._output_dir/rel_filepath]
-                del self.locks_by_fp[self._output_dir/rel_filepath]
+                del self.files_in_progress_by_path[rel_filepath]
+                del self.locks_by_fp[rel_filepath]
             infomsg = f'Processing result message for {rel_filepath} has been received by the broker for '
             infomsg+= f'the {self.producer_topic_name} topic'
             self.logger.debug(infomsg)
@@ -204,17 +204,16 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         #if the file has had all of its messages read successfully, try to enqueue its processing result to produce
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             with lock :
-                self.completely_processed_filepaths.append(dfc.filepath)
-            if dfc.rootdir is not None :
-                short_filepath = self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)
-            else :
-                short_filepath = self.files_in_progress_by_path[dfc.filepath].filepath
-            self.logger.debug(f'Getting message to produce for {short_filepath}...')
-            new_msg = self._get_processing_result_message_for_file(self.files_in_progress_by_path[dfc.filepath],lock)
+                self.completely_processed_filepaths.append(dfc.relative_filepath)
+            self.logger.debug(f'Getting message to produce for {dfc.relative_filepath}...')
+            new_msg = self._get_processing_result_message_for_file(
+                        self.files_in_progress_by_path[dfc.relative_filepath],
+                        lock
+                    )
             if new_msg is not None :
                 self.producer_message_queue.put(new_msg)
                 return True
-            self._failed_computing_processing_result(self.files_in_progress_by_path[dfc.filepath],self.lock)
+            self._failed_computing_processing_result(self.files_in_progress_by_path[dfc.relative_filepath],self.lock)
             return False
         #otherwise the file is just in progress
         return True
@@ -268,8 +267,8 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         self.logger.warning(warnmsg)
         #stop tracking the file
         with self.lock :
-            del self.files_in_progress_by_path[datafile.filepath]
-            del self.locks_by_fp[datafile.filepath]
+            del self.files_in_progress_by_path[datafile.relative_filepath]
+            del self.locks_by_fp[datafile.relative_filepath]
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '

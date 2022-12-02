@@ -20,7 +20,7 @@ class TestUploadDataFile(unittest.TestCase) :
 
     def test_upload_whole_file_kafka(self) :
         #just need to make sure this function runs without throwing any errors
-        self.datafile.upload_whole_file(TEST_CONST.TEST_CONFIG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+        self.datafile.upload_whole_file(TEST_CONST.TEST_CFG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                                         n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
                                         chunk_size=TEST_CONST.TEST_CHUNK_SIZE)
 

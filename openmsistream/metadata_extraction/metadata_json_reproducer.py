@@ -94,20 +94,20 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         # make the argument parser
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
-        xrd_csv_metadata_reproducer = cls(args.config,args.consumer_topic_name,args.producer_topic_name,
-                                          consumer_group_id=args.consumer_group_id,
-                                          n_consumer_threads=args.n_consumer_threads,
-                                          n_producer_threads=args.n_producer_threads,
-                                          output_dir=args.output_dir,
-                                          update_secs=args.update_seconds,
-                                          streamlevel=args.logger_stream_level,filelevel=args.logger_file_level,
-                                          )
+        metadata_reproducer = cls(args.config,args.consumer_topic_name,args.producer_topic_name,
+                                  consumer_group_id=args.consumer_group_id,
+                                  n_consumer_threads=args.n_consumer_threads,
+                                  n_producer_threads=args.n_producer_threads,
+                                  output_dir=args.output_dir,
+                                  update_secs=args.update_seconds,
+                                  streamlevel=args.logger_stream_level,filelevel=args.logger_file_level,
+                                  )
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.consumer_topic_name} topic for XRD CSV files to send their metadata to the '
         msg+= f'{args.producer_topic_name} topic....'
-        xrd_csv_metadata_reproducer.logger.info(msg)
-        n_r,n_p,f_r_fns,m_p_fns = xrd_csv_metadata_reproducer.produce_processing_results_for_files_as_read()
-        xrd_csv_metadata_reproducer.close()
+        metadata_reproducer.logger.info(msg)
+        n_r,n_p,f_r_fns,m_p_fns = metadata_reproducer.produce_processing_results_for_files_as_read()
+        metadata_reproducer.close()
         msg = ''
         if n_r>0 :
             msg+= f'{n_r} total message{"s were" if n_r!=1 else " was"} consumed, '
@@ -118,11 +118,11 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         if len(m_p_fns)>0 :
             msg+=f'{len(m_p_fns)} file{"s were" if len(m_p_fns)!=1 else " was"} files had json metadata produced'
             msg+=f' to the "{args.producer_topic_name}" topic, '
-        xrd_csv_metadata_reproducer.logger.info(msg[:-2])
+        metadata_reproducer.logger.info(msg[:-2])
         if len(m_p_fns)>0 :
             msg=f'the following {len(m_p_fns)} file'
             msg+=' had' if len(m_p_fns)==1 else 's had'
             msg+=f' json metadata produced to the {args.producer_topic_name} topic:'
             for fn in m_p_fns :
                 msg+=f'\n\t{fn}'
-            xrd_csv_metadata_reproducer.logger.debug(msg)
+            metadata_reproducer.logger.debug(msg)

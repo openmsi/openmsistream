@@ -25,7 +25,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
     def run_data_file_upload_directory(self):
         # make the directory to watch
         dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH_S3_TRANSFER,
-                                       TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
+                                       TEST_CONST.TEST_CFG_FILE_PATH_S3_TRANSFER,
                                        update_secs=UPDATE_SECS,logger=LOGGER)
         # start upload_files_as_added in a separate thread so we can time it out
         upload_thread = ExceptionTrackingThread(
@@ -82,7 +82,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
     def run_s3_tranfer_data(self):
         s3tsp = S3TransferStreamProcessor(
             TEST_CONST.TEST_BUCKET_NAME,
-            TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
+            TEST_CONST.TEST_CFG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
             output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
@@ -133,7 +133,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
     def validate_s3_data_transfer(self):
         s3tsp = S3TransferStreamProcessor(
             TEST_CONST.TEST_BUCKET_NAME,
-            TEST_CONST.TEST_CONFIG_FILE_PATH_S3_TRANSFER,
+            TEST_CONST.TEST_CFG_FILE_PATH_S3_TRANSFER,
             TOPIC_NAME,
             output_dir=TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR,
             n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,

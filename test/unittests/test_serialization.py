@@ -66,9 +66,9 @@ class TestSerialization(unittest.TestCase) :
             self.assertEqual(self.test_dl_chunk_objects[chunk_i],dfcds(self.test_chunk_binaries[chunk_i]))
 
     def test_encrypted_compound_serdes_kafka(self) :
-        parser1 = KafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        parser1 = KafkaConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,logger=LOGGER)
         kc1 = OpenMSIStreamKafkaCrypto(parser1.broker_configs,parser1.kc_config_file_str)
-        parser2 = KafkaConfigFileParser(TEST_CONST.TEST_CONFIG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
+        parser2 = KafkaConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
         kc2 = OpenMSIStreamKafkaCrypto(parser2.broker_configs,parser2.kc_config_file_str)
         dfcs = DataFileChunkSerializer()
         dfcds = DataFileChunkDeserializer()

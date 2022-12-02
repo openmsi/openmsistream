@@ -94,22 +94,20 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             dfc = msg.value #from KafkaCrypto
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            debugmsg = f'File {self.files_in_progress_by_path[dfc.filepath].full_filepath.relative_to(dfc.rootdir)} '
-            debugmsg+= 'successfully reconstructed from stream'
-            self.logger.debug(debugmsg)
-            self.completely_processed_filepaths.append(dfc.filepath)
+            self.logger.debug(f'File {dfc.relative_filepath} successfully reconstructed from stream')
+            self.completely_processed_filepaths.append(dfc.relative_filepath)
             with lock :
-                del self.files_in_progress_by_path[dfc.filepath]
-                del self.locks_by_fp[dfc.filepath]
+                del self.files_in_progress_by_path[dfc.relative_filepath]
+                del self.locks_by_fp[dfc.relative_filepath]
             return True
         #If the file hash was mismatched after reconstruction, return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            warnmsg = f'WARNING: hashes for file {self.files_in_progress_by_path[dfc.filepath].filename} not matched '
-            warnmsg+= 'after reconstruction! All data have been written to disk, but not as they were uploaded.'
+            warnmsg = f'WARNING: hashes for file {dfc.relative_filepath} not matched after reconstruction! '
+            warnmsg+= 'All data have been written to disk, but not as they were uploaded.'
             self.logger.warning(warnmsg)
             with lock :
-                del self.files_in_progress_by_path[dfc.filepath]
-                del self.locks_by_fp[dfc.filepath]
+                del self.files_in_progress_by_path[dfc.relative_filepath]
+                del self.locks_by_fp[dfc.relative_filepath]
             return False
         #if this is reached the return code was unrecognized
         self.logger.error(f'ERROR: unrecognized add_chunk return value ({retval})!',exc_type=NotImplementedError)
@@ -118,7 +116,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
         msg+= f'{len(self.completely_processed_filepaths)} files completely reconstructed so far'
-        self.logger.debug(msg)
+        self.logger.info(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
@@ -154,22 +152,22 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #start the reconstructor running
         run_start = datetime.datetime.now()
         reconstructor_directory.logger.info(f'Listening for files to reconstruct in {args.output_dir}')
-        n_read,n_processed,complete_filenames = reconstructor_directory.reconstruct()
+        n_read,n_processed,complete_filepaths = reconstructor_directory.reconstruct()
         reconstructor_directory.close()
         run_stop = datetime.datetime.now()
         #shut down when that function returns
         reconstructor_directory.logger.info(f'File reconstructor writing to {args.output_dir} shut down')
         msg = f'{n_read} total messages were consumed'
-        if len(complete_filenames)>0 :
+        if len(complete_filepaths)>0 :
             msg+=f', {n_processed} messages were successfully processed,'
-            msg+=f' and the following {len(complete_filenames)} file'
-            msg+=' was' if len(complete_filenames)==1 else 's were'
+            msg+=f' and the following {len(complete_filepaths)} file'
+            msg+=' was' if len(complete_filepaths)==1 else 's were'
             msg+=' successfully reconstructed'
-            for fn in complete_filenames :
-                msg+=f'\n\t{fn}'
         else :
             msg+=f' and {n_processed} messages were successfully processed'
         msg+=f' from {run_start} to {run_stop}'
+        for fn in complete_filepaths :
+            msg+=f'\n\t{fn}'
         reconstructor_directory.logger.info(msg)
 
 def main(args=None) :

@@ -28,7 +28,7 @@ class TestDataFileChunk(unittest.TestCase) :
         self.test_chunk_2.populate_with_file_data(logger=LOGGER)
 
     def test_produce_to_topic_kafka(self) :
-        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         producer.produce(topic=RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                          key=self.test_chunk_1.msg_key,value=self.test_chunk_1.msg_value)
         producer.flush()
@@ -49,7 +49,7 @@ class TestDataFileChunk(unittest.TestCase) :
         LOGGER.set_stream_level(logging.ERROR)
         with self.assertRaises(FileNotFoundError) :
             chunk_to_fail.populate_with_file_data(logger=LOGGER)
-        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CONFIG_FILE_PATH,logger=LOGGER)
+        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
         with self.assertRaises(SerializationError) :
             producer.produce(topic=RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                              key=chunk_to_fail.msg_key,value=chunk_to_fail.msg_value)

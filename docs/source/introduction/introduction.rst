@@ -50,7 +50,9 @@ Because it is written in Python, OpenMSIStream interfaces seamlessly with other 
 Next steps
 ----------
 
-Users can proceed next to the :doc:`installation instructions <getting_started>` to start working with OpenMSIStream. The :doc:`page on the main OpenMSIStream programs <../user_info/main_programs>` provides links to the documents describing the functionality of each program with specific instructions for how to run them, as well as descriptions of the extensible base classes and instructions for how to write adaptations of them. 
+Users can proceed next to the :doc:`installation instructions <installing_openmsistream>` to start working with OpenMSIStream. The :doc:`tutorial section <tutorials>` walks through some simple, local examples using test data and is a great place to continue on from there.
+
+The :doc:`page on the main OpenMSIStream programs <../user_info/main_programs>` provides links to the documents describing the functionality of each program with specific instructions for how to run them, as well as descriptions of the extensible base classes and instructions for how to write adaptations of them. 
 
 The :doc:`page here <../user_info/services>` describes how to easily install programs as Windows Services or Linux daemons, and the :doc:`page here <../user_info/encryption>` describes how to encrypt messages stored on the broker using KafkaCrypto. Some solutions to common troubleshooting issues are discussed on the :doc:`page here <../user_info/troubleshooting>`.
 
