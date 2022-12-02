@@ -64,14 +64,14 @@ If you'd like to do this tutorial again you'll need to delete the ``LOGS`` subdi
 More advanced tutorials
 =======================
 
-The pages below contain some more hands-on examples of different ways to consume the data you've produced to the topic using base classes provided by OpenMSIStream, as well as an example of transfering the contents of the data files to an S3 bucket instead of just reconstructing them locally.
+The pages below contain some more hands-on examples of different ways to consume the data you've produced to the topic to demonstrate other functionality available in OpenMSIStream.
 
 .. toctree::
    :maxdepth: 1
 
+   tutorials/s3_transfer
    tutorials/creating_plots
    tutorials/extracting_metadata
-   tutorials/s3_transfer
 
 You can work through these examples as well, if you'd like, or you can skip to the :doc:`documentation on the main OpenMSIStream programs <../user_info/main_programs>` if you'd like more detailed information about the programs you've run above or the base classes provided by OpenMSIStream. The pages about :doc:`services/daemons <../user_info/services>` and :doc:`encryption <../user_info/encryption>` describe more options for setup and deployment.
 
