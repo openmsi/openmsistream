@@ -34,7 +34,7 @@ class TestMetadataReproducer(unittest.TestCase) :
         """
         Download the test data file from its URL on the PARADIM website
         """
-        urllib.request.urlretrieve(TEST_CONST.METADATA_EXTRACTION_TEST_FILE_URL,
+        urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL,
                                    UPLOAD_FILE)
 
     def tearDown(self) :

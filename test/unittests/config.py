@@ -15,6 +15,7 @@ class TestRoutineConstants :
             'test_data_file_stream_processor_kafka':'test_data_file_stream_processor',
             'test_data_file_stream_processor_restart_kafka':'test_data_file_stream_processor_2',
             'test_data_file_stream_processor_restart_encrypted_kafka':'test_data_file_stream_processor_encrypted',
+            'test_plots_for_tutorial':'test_plots_for_tutorial',
             'test_s3_transfer_stream_processor':'test_s3_transfer_stream_processor',
             'test_serialization':'test_oms_encrypted',
             'test_metadata_reproducer':'test_metadata_extractor',
@@ -74,11 +75,12 @@ class TestRoutineConstants :
     TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR = TEST_DIR_PATH / 'test_s3_transfer_stream_processor_output_dir'
     TEST_METADATA_REPRODUCER_OUTPUT_DIR = TEST_DIR_PATH / 'test_metadata_reproducer_output_dir'
     TEST_METADATA_DICT_PICKLE_FILE = TEST_DATA_DIR_PATH / 'test_metadata_dict.pickle'
+    TEST_TUTORIAL_PLOTS_OUTPUT_DIR = TEST_DIR_PATH / 'test_plots_for_tutorial'
     
     # size (in bytes) of chunks to use in tests
     TEST_CHUNK_SIZE = 16384 
 
-    # URL to download the example metadata extraction file from
-    METADATA_EXTRACTION_TEST_FILE_URL = 'https://data.paradim.org/194/XRD/SC001/SC001%20XRR.csv'
+    # URL to download the example metadata extraction/tutorial plots file from
+    TUTORIAL_TEST_FILE_URL = 'https://data.paradim.org/194/XRD/SC001/SC001%20XRR.csv'
     
 TEST_CONST=TestRoutineConstants()
