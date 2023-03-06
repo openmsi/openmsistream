@@ -41,15 +41,23 @@ class TestRoutineConstants :
     #different config files used in tests
     TEST_CFG_FILE_PATH = RUN_CONST.CONFIG_FILE_DIR/f'{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}'
     # Same as above except it includes a node_id to test encryption
-    TEST_CFG_FILE_PATH_ENCRYPTED = TEST_CFG_FILE_PATH.with_name(f'test_encrypted{TEST_CFG_FILE_PATH.suffix}')
-    TEST_CFG_FILE_PATH_ENCRYPTED_2 = TEST_CFG_FILE_PATH.with_name(f'test_encrypted_2{TEST_CFG_FILE_PATH.suffix}')
+    TEST_CFG_FILE_PATH_ENC = TEST_CFG_FILE_PATH.with_name(f'test_encrypted{TEST_CFG_FILE_PATH.suffix}')
+    TEST_CFG_FILE_PATH_ENC_2 = TEST_CFG_FILE_PATH.with_name(f'test_encrypted_2{TEST_CFG_FILE_PATH.suffix}')
     # Same as above except it includes S3 transfer configs
-    TEST_CFG_FILE_PATH_S3_TRANSFER = TEST_CFG_FILE_PATH.with_name(f'test_s3_transfer{TEST_CFG_FILE_PATH.suffix}')
+    TEST_CFG_FILE_PATH_S3 = TEST_CFG_FILE_PATH.with_name(f'test_s3_transfer{TEST_CFG_FILE_PATH.suffix}')
+    #the config file to use for the final consumer in the metadata reproducer test
+    TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH.with_name(f'test_metadata_rep_consumer{TEST_CFG_FILE_PATH.suffix}')
+    # If an environment variable indicates that a local broker is being used, 
+    # prepend "local_broker_" to the names of the above config files used in tests
+    if os.environ.get('LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS') and os.environ.get('USE_LOCAL_KAFKA_BROKER_IN_TESTS') :
+        TEST_CFG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(f'local_broker_{TEST_CFG_FILE_PATH.name}')
+        TEST_CFG_FILE_PATH_ENC = TEST_CFG_FILE_PATH_ENC.with_name(f'local_broker_{TEST_CFG_FILE_PATH_ENC.name}')
+        TEST_CFG_FILE_PATH_ENC_2 = TEST_CFG_FILE_PATH_ENC_2.with_name(f'local_broker_{TEST_CFG_FILE_PATH_ENC_2.name}')
+        TEST_CFG_FILE_PATH_S3 = TEST_CFG_FILE_PATH_S3.with_name(f'local_broker_{TEST_CFG_FILE_PATH_S3.name}')
+        TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH_MDC.with_name(f'local_broker_{TEST_CFG_FILE_PATH_MDC.name}')
     # The path to the "prod" Kafka config file to use in making sure that the prod environment variables are not set
     PROD_CONFIG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(f'prod{TEST_CFG_FILE_PATH.suffix}')
     FAKE_PROD_CONFIG_FILE_PATH = TEST_DATA_DIR_PATH/f'fake_prod{RUN_CONST.CONFIG_FILE_EXT}'
-    #the config file to use for the final consumer in the metadata reproducer test
-    TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH.with_name(f'test_metadata_rep_consumer{TEST_CFG_FILE_PATH.suffix}')
 
     #Names of and paths to directories and files used in testing
     TEST_DATA_FILE_ROOT_DIR_NAME = 'test_file_root_dir'

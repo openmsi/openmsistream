@@ -14,14 +14,18 @@ To get started, you'll need to get access to a Kafka broker, create at least two
 Access to a Kafka broker
 ------------------------
 
-To begin, you'll need access to a Kafka broker. That broker can be running on a server that you have access to, or on `Confluent Cloud <https://confluent.cloud/>`_, which provides Kafka as a managed service. In either case you will need to be able to authenticate to that broker using plain SASL authentication (the default for Confluent Cloud). 
+To begin, you'll need access to a Kafka broker. That broker can be running locally or on a server that you have access to (possibly in Docker), or on `Confluent Cloud <https://confluent.cloud/>`_, which provides Kafka as a managed service. If ACLs are defined for your broker, you will need to be able to authenticate to it using plaintext SASL authentication (the default for Confluent Cloud). 
 
 You will also need to create a topic on that broker to use for testing, called "``openmsistream_tutorial_data``" (if you use a different name just replace it in the commands shown below). The default settings are fine for a single test, but if you'd like you can adjust the retention times to be an hour or less so that the contents of the testing topics will get flushed out regularly and you can work through the tutorial repeatedly without reading previously-produced data.
+
+The OpenMSIStream GitHub repository includes a `Docker compose .yaml file <https://github.com/openmsi/openmsistream/blob/main/test/local-kafka-broker-docker-compose.yml>`_ that you can use to set up a very simple single-node broker on your local machine (if you have Docker installed). To start up the broker, run `the command shown in the "start broker" shell script <https://github.com/openmsi/openmsistream/blob/main/test/start_local_broker.sh#L5>`_. After starting the local broker, you can add topics using the Kafka CLI, like what's shown in the `"create topics" shell script <https://github.com/openmsi/openmsistream/blob/main/test/create_local_testing_topics.sh#L5>`_. You can stop and delete the broker using `the command in the "stop broker" shell script <https://github.com/openmsi/openmsistream/blob/33-use-local-kafka-broker/test/stop_local_broker.sh#L5>`_.
 
 Setting environment variables
 -----------------------------
 
-Next you'll need to set some environment variables needed to connect to the Kafka broker. You'll need the "Bootstrap server" for the cluster, as well as an API key username and password. If you're using Confluent Cloud, you can find the bootstrap server on the "Cluster settings" page from the left hand menu, and you can create a new API key using the "API keys" page also on the left hand menu. Set the corresponding values for the "``KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS``", "``KAFKA_TEST_CLUSTER_USERNAME``" and "``KAFKA_TEST_CLUSTER_PASSWORD``" environment variables on your system [#]_.
+Next you'll need to set some environment variables needed to connect to the Kafka broker. You'll need the "Bootstrap server" for the cluster, and a username and password if your broker requires authentication. If you're using the example local broker (or another broker with no authentication required), you should set the "``LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS``" environment variable to the broker's server (in the case of the example local broker this is ``localhost:9092``).
+
+If you're using Confluent Cloud, you can find the bootstrap server on the "Cluster settings" page from the left hand menu, and you can create a new API key using the "API keys" page also on the left hand menu. Set the corresponding values for the "``KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS``", "``KAFKA_TEST_CLUSTER_USERNAME``" and "``KAFKA_TEST_CLUSTER_PASSWORD``" environment variables on your system [#]_.
 
 Downloading test data
 ---------------------
@@ -45,11 +49,15 @@ Create a directory called "``openmsistream_upload``" that is initially empty. Th
     
     DataFileUploadDirectory openmsistream_upload --topic_name openmsistream_tutorial_data 
 
+If you're using the local example broker (or another unauthenticated broker), add ``--config local_broker_test.config`` to the command.
+
 The terminal with that command in it will stay running, listening for files to be added to the ``openmsistream_upload`` directory. As soon as you run it, you can see that the "``LOGS``" subdirectory will be created inside the ``openmsistream_upload`` directory, and that subdirectory will have a log file and a .csv file in it.
 
 Leave that terminal running, and open another to run a local consumer. Activate the ``openmsi`` Conda environment in the new terminal, and type::
 
     DataFileDownloadDirectory openmsistream_download --topic_name openmsistream_tutorial_data
+
+If you're using the local example broker (or another unauthenticated broker), add ``--config local_broker_test.config`` to the command.
 
 That terminal will also keep running, but in the meantime you'll see that a directory called ``openmsistream_download`` will be created, and it will have a log file in it.
 

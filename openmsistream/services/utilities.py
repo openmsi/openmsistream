@@ -23,14 +23,14 @@ def get_os_name() :
         SERVICE_CONST.logger.error(errmsg,exc_type=ValueError)
     return None
 
-def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
+def run_cmd_in_subprocess(args,*,logger=None,reraise=False,**other_kwargs) :
     """
     run a command in a subprocess and return its result, printing and re-throwing any exceptions it causes
     """
     if isinstance(args,str) :
         args = [args]
     try :
-        result = check_output(args,shell=shell,env=os.environ)
+        result = check_output(args,env=os.environ,**other_kwargs)
         return result
     except CalledProcessError as exc :
         errmsg = 'ERROR: failed to run a command! '
@@ -41,9 +41,9 @@ def run_cmd_in_subprocess(args,*,shell=False,logger=None) :
         if exc.stderr is not None and exc.stderr.strip()!='' :
             errmsg+= f'\nstderr:\n{exc.stderr.decode()}'
         if logger is not None :
-            logger.error(errmsg,exc_info=exc)
+            logger.error(errmsg,exc_info=exc,reraise=reraise)
         else :
-            SERVICE_CONST.logger.error(errmsg,exc_info=exc)
+            SERVICE_CONST.logger.error(errmsg,exc_info=exc,reraise=reraise)
         return None
 
 def set_env_var(var_name,var_val) :

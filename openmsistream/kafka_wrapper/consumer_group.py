@@ -102,40 +102,47 @@ class ConsumerGroup(LogOwner) :
         finally :
             self.__c_kwargs['kafkacrypto'] = None
 
-    def __get_group_starting_offsets(self,config_path,topic_name,consumer_group_id) :
+    def __get_group_starting_offsets(self,config_path,topic_name,consumer_group_id,n_retries=10) :
         """
         Return a list of TopicPartitions listing the starting offsets for each partition
         in the topic for the given consumer group ID
 
+        Retries a configurable number of times if it fails at first, since there can be some lag involved
+
         Re-raises any errors encountered in getting the necessary metadata,
         returning None if that happens
         """
-        cfp = KafkaConfigFileParser(config_path)
-        starting_offsets = []
-        try :
-            cluster_metadata = AdminClient(cfp.broker_configs).list_topics(topic=topic_name)
-            n_partitions = len(cluster_metadata.topics[topic_name].partitions)
-            if n_partitions<=0 :
-                raise RuntimeError(f'ERROR: number of partitions for topic {topic_name} is {n_partitions}')
-            kac_kwargs = {}
-            for k,v in cfp.broker_configs.items() :
-                if k in ('sasl.username','sasl.password') :
-                    key = k.replace('.','_plain_')
-                else :
-                    key = k.replace('.','_')
-                kac_kwargs[key]=v
-            parts = [kafka.TopicPartition(topic_name,p_i) for p_i in range(n_partitions)]
-            tp_offsets=kafka.KafkaAdminClient(**kac_kwargs).list_consumer_group_offsets(group_id=consumer_group_id,
-                                                                                        partitions=parts)
-            if len(tp_offsets)!=n_partitions :
-                errmsg = f'Found {n_partitions} partitions for topic {topic_name} but got {len(tp_offsets)} '
-                errmsg+= 'TopicPartitions listing current consumer group offsets'
-                raise RuntimeError(errmsg)
-            for t_p,offset_metadata in tp_offsets.items() :
-                starting_offsets.append(TopicPartition(t_p.topic,t_p.partition,offset_metadata.offset))
-            return starting_offsets
-        except Exception as exc :
+        caught_exc = None
+        while n_retries>0 :
+            cfp = KafkaConfigFileParser(config_path)
+            starting_offsets = []
+            try :
+                cluster_metadata = AdminClient(cfp.broker_configs).list_topics(topic=topic_name)
+                n_partitions = len(cluster_metadata.topics[topic_name].partitions)
+                if n_partitions<=0 :
+                    raise RuntimeError(f'ERROR: number of partitions for topic {topic_name} is {n_partitions}')
+                kac_kwargs = {}
+                for k,v in cfp.broker_configs.items() :
+                    if k in ('sasl.username','sasl.password') :
+                        key = k.replace('.','_plain_')
+                    else :
+                        key = k.replace('.','_')
+                    kac_kwargs[key]=v
+                parts = [kafka.TopicPartition(topic_name,p_i) for p_i in range(n_partitions)]
+                tp_offsets=kafka.KafkaAdminClient(**kac_kwargs).list_consumer_group_offsets(group_id=consumer_group_id,
+                                                                                            partitions=parts)
+                if len(tp_offsets)!=n_partitions :
+                    errmsg = f'Found {n_partitions} partitions for topic {topic_name} but got {len(tp_offsets)} '
+                    errmsg+= 'TopicPartitions listing current consumer group offsets'
+                    raise RuntimeError(errmsg)
+                for t_p,offset_metadata in tp_offsets.items() :
+                    starting_offsets.append(TopicPartition(t_p.topic,t_p.partition,offset_metadata.offset))
+                return starting_offsets
+            except Exception as exc :
+                caught_exc = exc
+                n_retries-=1
+        if caught_exc :
             errmsg = f'ERROR: encountered an exception when gathering initial "{topic_name}" topic offsets for '
             errmsg+= f'consumer group ID "{consumer_group_id}". The error will be logged below and re-raised.'
-            self.logger.error(errmsg,exc_info=exc,reraise=True)
+            self.logger.error(errmsg,exc_info=caught_exc,reraise=True)
             return None

@@ -10,6 +10,8 @@ With the code downloaded and the test data produced, you can run the consumer wi
 
     python -m xrd_csv_plotter --topic_name openmsistream_tutorial_data
 
+If you're using the local example broker (or another unauthenticated broker), add ``--config local_broker_test.config`` to the command.
+
 Starting that process running will create a directory called ``XRDCSVPlotter_output``; inside that directory you'll find a ``LOGS`` subdirectory containing a log file and some :class:`~.utilities.DataclassTable` files. While the process runs, you can type ``c`` or ``check`` into the terminal to see how many messages have been received, how many of the test files have been reconstructed, and how many plots have been made. You can shut the process down by typing ``q`` or ``quit`` into the terminal. 
 
 After the process quits, you should see all five test files listed in the ``XRDCSVPlotter_output/LOGS/processed_from_openmsistream_tutorial_data_by_[consumerID].csv`` file, and you'll see the same subdirectory structure from your upload run reproduced inside the ``XRDCSVPlotter_output`` directory with the original data files replaced by images showing simple scatter plots of their data.
