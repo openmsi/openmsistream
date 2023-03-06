@@ -1,6 +1,8 @@
 #imports
 import unittest, subprocess, pathlib, re
 from argparse import ArgumentParser
+from tempenv import TemporaryEnvironment
+from unittests.placeholder_env_vars import ENV_VAR_NAMES
 
 #constants
 TOP_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
@@ -61,7 +63,14 @@ def main(args=None) :
             for error in loader.errors :
                 print(f'\t{error}')
             return
+        temp_env = None
         if args.no_kafka :
+            #temporarily un-set any environment variables that are covered by the "no_kafka tests"
+            temp_env_var_dict = {}
+            for env_var_name in ENV_VAR_NAMES :
+                temp_env_var_dict[env_var_name]=None
+            temp_env = TemporaryEnvironment(temp_env_var_dict)
+            temp_env.__enter__()
             for suite in suites :
                 for test_group in suite._tests :
                     for test in test_group :
@@ -84,6 +93,8 @@ def main(args=None) :
             runner_kwargs['failfast'] = True
         runner = unittest.TextTestRunner(**runner_kwargs)
         result = runner.run(suites)
+        if temp_env :
+            temp_env.__exit__()
         if len(result.errors)>0 or len(result.failures)>0 :
             raise RuntimeError('ERROR: some unittest(s) failed! See output above for details.')
             return
