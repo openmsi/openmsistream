@@ -1,14 +1,20 @@
 #imports
-import os, unittest, logging, configparser, string, pathlib
+import os, logging, configparser, string, pathlib
 from random import choices
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
+from placeholder_env_vars import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
+ENV_VAR_NAMES = [
+    'KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS',
+    'KAFKA_TEST_CLUSTER_USERNAME',
+    'KAFKA_TEST_CLUSTER_PASSWORD'
+]
 
-class TestConfigFileParser(unittest.TestCase) :
+class TestConfigFileParser(TestWithEnvVars) :
     """
     Class for testing ConfigFileParser functions
     """
