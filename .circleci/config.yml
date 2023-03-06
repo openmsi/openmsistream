@@ -3,7 +3,7 @@ version: 2.1
 ################# ORB #################
 orbs:
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
-  python: circleci/python@2.0.3
+  python: circleci/python@2.1.1
 
 ################# WORKFLOWS #################
 workflows:
@@ -11,9 +11,12 @@ workflows:
     # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
     jobs:
       - build-and-code-check
-      - run-tests:
+      - run-tests-no-kafka:
           requires:
             - build-and-code-check
+      - run-tests:
+          requires:
+            - run-tests-no-kafka
       - check-repo:
           requires:
             - run-tests
@@ -31,7 +34,7 @@ jobs:
       - checkout
       - python/install-packages:
           pkg-manager: pip
-          args: .[all]
+          args: .[test]
       - run:
           name: code check
           command: cd ~/project; python -m pyflakes .; python -m pylint openmsistream; cd -
@@ -39,25 +42,45 @@ jobs:
           root: .
           paths:
             - .
-  # Run unittests 
+  # Run non-Kafka tests, without the environment variables set
+  run-tests-no-kafka:
+    docker:
+      - image: containers.repo.sciserver.org/openmsistream:1.3
+        auth:
+          username: $IDIESDOCKER_USERNAME
+          password: $IDIESDOCKER_PASSWORD
+    steps:
+      - attach_workspace:
+          at: .
+      - python/install-packages:
+          pkg-manager: pip
+          args: .[test]
+      - run:
+          name: run "no Kafka" tests
+          command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_pylint --no_kafka
+      - persist_to_workspace:
+          root: .
+          paths:
+              - .
+  # Run all tests, including those that send messages to the Kafka cluster
   run-tests:
     docker:
       - image: containers.repo.sciserver.org/openmsistream:1.3
         auth:
           username: $IDIESDOCKER_USERNAME
           password: $IDIESDOCKER_PASSWORD
-    parallelism: 12
+    parallelism: 15
     resource_class: large
     steps:
       - attach_workspace:
           at: .
       - python/install-packages:
           pkg-manager: pip
-          args: .[all]
+          args: .[test]
       - run:
           name: run tests
           command: |
-            cd test/unittests
+            cd test/test_scripts
             TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
             python -m unittest $TESTCLASSES -v
       - persist_to_workspace:

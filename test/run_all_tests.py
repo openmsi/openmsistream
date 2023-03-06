@@ -1,10 +1,12 @@
 #imports
 import unittest, subprocess, pathlib, re
 from argparse import ArgumentParser
+from tempenv import TemporaryEnvironment
+from test_scripts.placeholder_env_vars import ENV_VAR_NAMES
 
 #constants
 TOP_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
-UNITTEST_DIR_PATH = (pathlib.Path(__file__).parent / 'unittests').resolve()
+TEST_SCRIPT_DIR_PATH = (pathlib.Path(__file__).parent / 'test_scripts').resolve()
 TEST_REPO_STATUS_SCRIPT_PATH = (pathlib.Path(__file__).parent / 'test_repo_status.sh').resolve()
 CWD = pathlib.Path().resolve()
 
@@ -15,13 +17,13 @@ def main(args=None) :
                         help='Add this flag to skip running the pyflakes check')
     parser.add_argument('--no_pylint', action='store_true',
                         help='Add this flag to skip running the pylint checks')
-    unittest_opts = parser.add_mutually_exclusive_group()
-    unittest_opts.add_argument('--no_unittests', action='store_true',
-                               help='Add this flag to skip running the unittest checks')
-    unittest_opts.add_argument('--no_kafka', action='store_true',
-                               help='Add this flag to skip running the unittest checks')
-    unittest_opts.add_argument('--unittest_regex',type=re.compile,default=None,
-                               help='Only unittests whose function names match this regex will be run')
+    script_test_opts = parser.add_mutually_exclusive_group()
+    script_test_opts.add_argument('--no_script_tests', action='store_true',
+                                  help=f'Add this flag to skip running the tests in {TEST_SCRIPT_DIR_PATH.name}')
+    script_test_opts.add_argument('--no_kafka', action='store_true',
+                                  help=f'Add this flag to skip running the tests in {TEST_SCRIPT_DIR_PATH.name}')
+    script_test_opts.add_argument('--test_regex',type=re.compile,default=None,
+                                  help='Only tests whose function names match this regex will be run')
     parser.add_argument('--no_repo', action='store_true',
                         help='Add this flag to skip running the Git repository checks')
     parser.add_argument('--failfast', action='store_true',
@@ -49,19 +51,26 @@ def main(args=None) :
         if stdout!='' :
             raise RuntimeError(f'ERROR: pylint checks failed with output:\n{stdout}')
         print('Passed pylint checks : )')
-    #perform all the unittests
-    if args.no_unittests :
-        print('SKIPPING UNITTESTS')
+    #perform all the script tests
+    if args.no_script_tests :
+        print('SKIPPING SCRIPT TESTS')
     else :
-        print(f'Running unittests in {UNITTEST_DIR_PATH}...')
+        print(f'Running tests in {TEST_SCRIPT_DIR_PATH}...')
         loader = unittest.TestLoader()
-        suites = loader.discover(UNITTEST_DIR_PATH)
+        suites = loader.discover(TEST_SCRIPT_DIR_PATH)
         if len(loader.errors)>0 :
             print('ERROR: encountered the following errors in loading tests:')
             for error in loader.errors :
                 print(f'\t{error}')
             return
+        temp_env = None
         if args.no_kafka :
+            #temporarily un-set any environment variables that are covered by the "no_kafka tests"
+            temp_env_var_dict = {}
+            for env_var_name in ENV_VAR_NAMES :
+                temp_env_var_dict[env_var_name]=None
+            temp_env = TemporaryEnvironment(temp_env_var_dict)
+            temp_env.__enter__()
             for suite in suites :
                 for test_group in suite._tests :
                     for test in test_group :
@@ -70,13 +79,13 @@ def main(args=None) :
                             msg = 'tests that interact with the kafka broker are being skipped'
                             setattr(test, test_name, 
                                     unittest.skip(msg)(getattr(test, test_name)))
-        elif args.unittest_regex is not None :
+        elif args.test_regex is not None :
             for suite in suites :
                 for test_group in suite._tests :
                     for test in test_group :
-                        if not args.unittest_regex.match(test._testMethodName) :
+                        if not args.test_regex.match(test._testMethodName) :
                             test_name = test._testMethodName
-                            msg = f"tests that don't match the regex '{args.unittest_regex}' are being skipped"
+                            msg = f"tests that don't match the regex '{args.test_regex}' are being skipped"
                             setattr(test, test_name, 
                                     unittest.skip(msg)(getattr(test, test_name)))
         runner_kwargs = {'verbosity':3}
@@ -84,10 +93,11 @@ def main(args=None) :
             runner_kwargs['failfast'] = True
         runner = unittest.TextTestRunner(**runner_kwargs)
         result = runner.run(suites)
+        if temp_env :
+            temp_env.__exit__()
         if len(result.errors)>0 or len(result.failures)>0 :
-            raise RuntimeError('ERROR: some unittest(s) failed! See output above for details.')
-            return
-        print('All unittest checks complete : )')
+            raise RuntimeError('ERROR: some test(s) failed! See output above for details.')
+        print('All script tests complete : )')
     if args.no_repo :
         print('SKIPPING GIT REPOSITORY CHECKS')
     else :
@@ -108,7 +118,7 @@ def main(args=None) :
         #print('Repo is good : )')
     #If we've made it here all the (requested) tests passed!
     msg = 'All '
-    if args.no_pyflakes or args.no_unittests or args.no_repo :
+    if args.no_pyflakes or args.no_pylint or args.no_script_tests or args.no_kafka or args.test_regex or args.no_repo :
         msg+='requested '
     msg+='tests passed!'
     print(msg)

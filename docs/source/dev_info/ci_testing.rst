@@ -11,7 +11,7 @@ If you're editing the code, you can make sure it doesn't break anything currentl
     
     python test/run_all_tests.py
     
-from just inside the directory of the repo. If you'd like to add more tests, you can include any classes that extend :class:`unittest.TestCase` in the `test/unittests subdirectory <https://github.com/openmsi/openmsistream/tree/main/test/unittests>`_. If you name their files anything that starts with "test", the ``run_all_tests.py`` script will run them automatically. 
+from just inside the directory of the repo. If you'd like to add more tests, you can include any classes that extend :class:`unittest.TestCase` in the `test/test_scripts subdirectory <https://github.com/openmsi/openmsistream/tree/main/test/test_scripts>`_. If you name their files anything that starts with "test", the ``run_all_tests.py`` script will run them automatically. 
 
 If any new test methods interact with the Kafka broker, you should end their names with "kafka" so that ``run_all_tests.py`` can exclude them if requested. Running the tests also requires that ``pyflakes``, ``pylint``, and a few other dependencies be installed, which you can get right from this repo by running ``pip install openmsistream[test]`` (with or without the ``--editable`` or ``-e`` flag(s)).
 
@@ -19,9 +19,9 @@ There are also a few options you can add to ``run_all_tests.py`` if you only wan
 
 #. Add the ``--no_pyflakes`` flag to skip the pyflakes test
 #. Add the ``--no_pylint`` flag to skip the pylint checks
-#. Add the ``--no_unittests`` flag to skip the unittests entirely, OR
-#. Add the ``--no_kafka`` flag to skip running tests that need to communicate with the Kafka broker. Adding this flag automatically **skips any test methods whose names end with "kafka"**; you will see that they were skipped at the end of the output.
-#. Add the ``--unittest_regex [regex]`` option to skip any tests whose function names aren't matched to the ``[regex]`` regular expression
+#. Add the ``--no_script_tests`` flag to skip the tests in "test_scripts" entirely, OR
+#. Add the ``--no_kafka`` flag to skip running tests that need to communicate with the Kafka broker. Adding this flag automatically **skips any test methods whose names end with "kafka"**; you will see that they were skipped at the end of the output. Adding this flag also runs tests with some environment variables un-set to ensure that these tests are truly independent of communication with a Kafka broker.
+#. Add the ``--test_regex [regex]`` option to skip any tests whose function names aren't matched to the ``[regex]`` regular expression
 #. Add the ``--failfast`` flag to stop executing the script early if any individual test(s) fail. Normally all tests are run regardless of how many fail, but including this flag will stop the run as soon as any test fails.
 
 **NOTE:** If you are running the ``run_all_tests.py`` script interactively on a Linux system with ``systemd`` installed, some of the tests will temporarily install code as daemons. You should therefore activate sudo privileges before running the script, with::

@@ -1,5 +1,5 @@
 #imports
-import unittest, pathlib, time, logging, shutil, filecmp
+import pathlib, time, logging, shutil, filecmp
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
@@ -8,6 +8,7 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
 from openmsistream.data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
 from config import TEST_CONST
+from placeholder_env_vars import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
@@ -16,7 +17,7 @@ TIMEOUT_SECS = 90
 JOIN_TIMEOUT_SECS = 60
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]
 
-class TestDataFileDirectories(unittest.TestCase) :
+class TestDataFileDirectories(TestWithEnvVars) :
     """
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """

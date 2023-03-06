@@ -1,5 +1,5 @@
 #imports
-import unittest, pathlib, logging
+import pathlib, logging
 from openmsistream.utilities.logging import Logger
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
@@ -7,11 +7,12 @@ from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamCons
 from openmsistream.kafka_wrapper.producer_group import ProducerGroup
 from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST
+from placeholder_env_vars import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
 
-class TestCreateOpenMSIStreamKafkaObjects(unittest.TestCase) :
+class TestCreateOpenMSIStreamKafkaObjects(TestWithEnvVars) :
     """
     Class for testing that objects in openmsistream.kafka_wrapper can 
     be instantiated using default configs
@@ -47,14 +48,14 @@ class TestCreateOpenMSIStreamKafkaObjects(unittest.TestCase) :
         self.assertTrue(pg is not None)
         pg.close()
     
-    def test_create_consumer_group(self) :
+    def test_create_consumer_group_kafka(self) :
         cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_id='test_create_consumer_group',
                            logger=LOGGER)
         self.assertTrue(cg is not None)
         cg.close()
     
-    def test_create_consumer_group_encrypted(self) :
+    def test_create_consumer_group_encrypted_kafka(self) :
         cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_id='test_create_consumer_group_encrypted',
                            logger=LOGGER)

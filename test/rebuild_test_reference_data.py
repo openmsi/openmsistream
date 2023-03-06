@@ -6,7 +6,7 @@ from openmsistream.data_file_io.entity.download_data_file import DownloadDataFil
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.config import SERVICE_CONST
-from unittests.config import TEST_CONST
+from test_scripts.config import TEST_CONST
 
 #constants
 EXISTING_TEST_DATA_DIR = (pathlib.Path(__file__).parent / 'data').resolve()

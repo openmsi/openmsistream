@@ -247,9 +247,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.logger.debug(self.progress_msg)
         #add the remainder of any files currently in progress
         if self.n_partially_done_files>0 :
-            msg='Will finish queueing the remainder of the following files before flushing the producer and quitting:\n'
-            for pdfp in self.partially_done_file_paths :
-                msg+=f'\t{pdfp}\n'
+            msg='Will finish queueing the following files before flushing the producer and quitting:\n\t'
+            msg+='\n\t'.join([str(_) for _ in self.partially_done_file_paths])
             self.logger.debug(msg)
         while self.n_partially_done_files>0 :
             for datafile in self.data_files_by_path.values() :

@@ -1,9 +1,8 @@
 #imports
-import setuptools, site
+import setuptools
 
-version = '1.2.0'
-
-site.ENABLE_USER_SITE = True #https://www.scivision.dev/python-pip-devel-user-install/
+#version tag
+version = '1.2.1'
 
 long_description = ''
 with open('README.md', 'r') as readme :
@@ -36,8 +35,8 @@ setupkwargs = dict(
     },
     python_requires='>=3.7,<3.10',
     install_requires=['atomicwrites>=1.4.1',
-                      'boto3>=1.23.0',
-                      'confluent-kafka>=1.9.0',
+                      'boto3>=1.26.84',
+                      'confluent-kafka>=2.0.2',
                       'kafkacrypto>=0.9.10.0',
                       'matplotlib',
                       'methodtools',
@@ -47,11 +46,12 @@ setupkwargs = dict(
                                'gitpython',
                                'lxml',
                                'marko[toc]',
-                               'pyflakes>=2.2.0',
-                               'pylint>=2.15.2',
+                               'pyflakes>=3.0.1',
+                               'pylint>=2.16.3',
+                               'tempenv>=2.0.0',
                                ],
-                      'docs': ['sphinx>=5.0.2',
-                               'sphinx_rtd_theme>=1.0.0',
+                      'docs': ['sphinx>=6.1.3',
+                               'sphinx_rtd_theme>=1.2.0',
                                 ],
                       'dev': ['twine',
                                 ],
