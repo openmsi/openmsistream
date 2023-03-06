@@ -1,6 +1,7 @@
 #imports
-import setuptools, site
+import setuptools
 
+#version tag
 version = '1.2.0'
 
 long_description = ''
