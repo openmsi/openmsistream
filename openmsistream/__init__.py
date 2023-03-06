@@ -43,9 +43,8 @@ if os.name=='nt' :
             import confluent_kafka
         except Exception as e :
             errmsg = 'ERROR: Preloading librdkafka DLLs ('
-            for fp in fps :
-                errmsg+=f'{fp}, '
-            errmsg = f'{errmsg[:-2]}) did not allow confluent_kafka to be imported! Exception (will be re-raised): '
+            errmsg+=', '.join([str(_) for _ in fps])
+            errmsg = f'{errmsg}) did not allow confluent_kafka to be imported! Exception (will be re-raised): '
             errmsg+= f'{traceback.format_exc()}'
             print(errmsg)
             raise e
