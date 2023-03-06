@@ -179,18 +179,18 @@ def run_script_tests(args) :
         #exit the "local broker" TemporaryEnvironment and stop the local broker
         if temp_env_local_broker :
             temp_env_local_broker.__exit__()
-        try :
-            run_cmd_in_subprocess(
-                ['sh',str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
-                logger=LOGGER,
-                reraise=True,
-                cwd=pathlib.Path(__file__).parent,
-            )
-            LOGGER.info('Local broker stopped')
-        except Exception as exc :
-            errmsg = 'ERROR: failed to stop the local testing broker, and it may need to be stopped manually. '
-            errmsg+= 'Exception will be re-raised.'
-            LOGGER.error(errmsg,exc_info=exc,reraise=True)
+            try :
+                run_cmd_in_subprocess(
+                    ['sh',str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
+                    logger=LOGGER,
+                    reraise=True,
+                    cwd=pathlib.Path(__file__).parent,
+                )
+                LOGGER.info('Local broker stopped')
+            except Exception as exc :
+                errmsg = 'ERROR: failed to stop the local testing broker, and it may need to be stopped manually. '
+                errmsg+= 'Exception will be re-raised.'
+                LOGGER.error(errmsg,exc_info=exc,reraise=True)
         #check for any errors or failures
         if len(result.errors)>0 or len(result.failures)>0 :
             raise RuntimeError('ERROR: some test(s) failed! See output above for details.')
