@@ -1,5 +1,8 @@
 #!/bin/sh
 #Bash script to check the status of the git repo after all other tests are completed
+
+set -euxo pipefail
+
 #Check for uncommitted changes
 if ! [ -z "$(git status --porcelain)" ]
 	then echo "tests created uncommitted changes"

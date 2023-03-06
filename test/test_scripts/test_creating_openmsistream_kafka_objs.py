@@ -24,7 +24,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithEnvVars) :
         producer.close()
 
     def test_create_openmsistream_producer_encrypted(self) :
-        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        producer = OpenMSIStreamProducer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENC,logger=LOGGER)
         self.assertTrue(producer is not None)
         producer.close()
 
@@ -34,7 +34,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithEnvVars) :
         consumer.close()
     
     def test_create_openmsistream_consumer_encrypted(self) :
-        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,logger=LOGGER)
+        consumer = OpenMSIStreamConsumer.from_file(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,logger=LOGGER)
         self.assertTrue(consumer is not None)
         consumer.close()
 
@@ -44,7 +44,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithEnvVars) :
         pg.close()
     
     def test_create_producer_group_encrypted(self) :
-        pg = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED,logger=LOGGER)
+        pg = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENC,logger=LOGGER)
         self.assertTrue(pg is not None)
         pg.close()
     
@@ -56,7 +56,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithEnvVars) :
         cg.close()
     
     def test_create_consumer_group_encrypted_kafka(self) :
-        cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENCRYPTED_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+        cg = ConsumerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
                            consumer_group_id='test_create_consumer_group_encrypted',
                            logger=LOGGER)
         self.assertTrue(cg is not None)

@@ -51,8 +51,9 @@ First, you'll need access to a Kafka cluster. The easiest way to start working w
 
 Next you'll need to add an environment variable to your local system called ``KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS``, whose value is the one shown under "Bootstrap server" on the Confluent Cloud website page for your cluster (under "Cluster settings"). Then create a new API key under "API keys" on the website, and add the username and password of the api key to your local system as environment variables called ``KAFKA_TEST_CLUSTER_USERNAME`` and ``KAFKA_TEST_CLUSTER_PASSWORD``, respectively.
 
-Then, you'll need to create the topics used in running the tests. You can add topics under the ``Topics`` section for your cluster on the Confluent Cloud website. The following topics should be created with at least 4 partitions each (if your Confluent Cloud plan allows that many partitions), and it's recommended to set the cleanup policy to "delete" with a max retention time of 1 hour to keep the topics mostly empty for testing purposes.
+Then, you'll need to create the topics used in running the tests. You can add topics under the ``Topics`` section for your cluster on the Confluent Cloud website. The following topics should be created with 4 partitions each (if your Confluent Cloud plan allows that many partitions), and it's recommended to set the cleanup policy to "delete" with a max retention time of 1 hour to keep the topics mostly empty for testing purposes.
 
+    #. ``test``
     #. ``test_data_file_directories``
     #. ``test_oms_encrypted``
     #. ``test_data_file_stream_processor``
@@ -61,6 +62,7 @@ Then, you'll need to create the topics used in running the tests. You can add to
     #. ``test_s3_transfer_stream_processor``
     #. ``test_metadata_extractor_source``
     #. ``test_metadata_extractor_dest``
+    #. ``test_plots_for_tutorial``
 
 The ``test_oms_encrypted`` and ``test_data_file_stream_processor_encrypted`` topics hold messages encrypted with KafkaCrypto; those topics each need three additional "key-passing" topics called ``[topic_name].keys``, ``[topic_name].reqs``, and ``[topic_name].subs``. These additional topics can have only one partition each, but they should use the "compact" cleanup policy, with infinite max retention times and sizes (they will not end up storing a huge amount of data). 
 

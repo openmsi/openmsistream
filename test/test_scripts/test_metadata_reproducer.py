@@ -1,5 +1,5 @@
 #imports
-import unittest, pathlib, logging, time, datetime, json, pickle, shutil, urllib.request
+import unittest, pathlib, logging, time, datetime, json, pickle, shutil, urllib.request, os
 import importlib.machinery, importlib.util
 from openmsistream import UploadDataFile
 from openmsistream.utilities import Logger
@@ -19,6 +19,8 @@ LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.DEBUG)#ERROR)
 TIMEOUT_SECS = 90
 JOIN_TIMEOUT_SECS = 60
 REP_CONFIG_PATH = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'test_xrd_csv_metadata_reproducer.config'
+if os.environ.get('LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS') and os.environ.get('USE_LOCAL_KAFKA_BROKER_IN_TESTS') :
+    REP_CONFIG_PATH = REP_CONFIG_PATH.with_name(f'local_broker_{REP_CONFIG_PATH.name}')
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / 'extracting_metadata' / 'SC001_XRR.csv'
 SOURCE_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_source'
 DEST_TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]+'_dest'
