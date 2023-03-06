@@ -10,7 +10,7 @@ With the environment variables set on your system and the test data produced, yo
 
     S3TransferStreamProcessor [bucket_name] --topic_name openmsistream_tutorial_data
 
-where ``[bucket_name]`` is the name of your S3 bucket.
+where ``[bucket_name]`` is the name of your S3 bucket. If you're using the local example broker (or another unauthenticated broker), add ``--config local_broker_test_s3_transfer.config`` to the command.
 
 Starting that process running will create a directory called ``S3TransferStreamProcessor_output``; inside that directory you'll find a ``LOGS`` subdirectory containing a log file and some :class:`~.utilities.DataclassTable` files. While the process runs, you can type ``c`` or ``check`` into the terminal to see how many messages have been received and how many files have been transferred to the S3 bucket. You can shut the process down by typing ``q`` or ``quit`` into the terminal. 
 
