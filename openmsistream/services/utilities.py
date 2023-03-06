@@ -111,7 +111,7 @@ def test_python_code() :
         SERVICE_CONST.logger.info(msg)
         sys.exit(0)
     SERVICE_CONST.logger.debug('Testing code to check for errors...')
-    unittest_dir_path = pathlib.Path(__file__).parent.parent.parent / 'test' / 'unittests'
-    SERVICE_CONST.logger.debug(f'Running all unittests in {unittest_dir_path}...')
-    run_cmd_in_subprocess([f'{sys.executable}','-m','unittest','discover','-s',f'{unittest_dir_path}','-vf'])
-    SERVICE_CONST.logger.debug('All unittest checks complete : )')
+    test_script_dir_path = pathlib.Path(__file__).parent.parent.parent / 'test' / 'test_scripts'
+    SERVICE_CONST.logger.debug(f'Running all tests in {test_script_dir_path}...')
+    run_cmd_in_subprocess([f'{sys.executable}','-m','unittest','discover','-s',f'{test_script_dir_path}','-vf'])
+    SERVICE_CONST.logger.debug('All tests complete : )')

@@ -3,7 +3,7 @@ version: 2.1
 ################# ORB #################
 orbs:
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
-  python: circleci/python@2.0.3
+  python: circleci/python@2.1.1
 
 ################# WORKFLOWS #################
 workflows:
@@ -69,7 +69,7 @@ jobs:
         auth:
           username: $IDIESDOCKER_USERNAME
           password: $IDIESDOCKER_PASSWORD
-    parallelism: 12
+    parallelism: 15
     resource_class: large
     steps:
       - attach_workspace:
@@ -80,7 +80,7 @@ jobs:
       - run:
           name: run tests
           command: |
-            cd test/unittests
+            cd test/test_scripts
             TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
             python -m unittest $TESTCLASSES -v
       - persist_to_workspace:
