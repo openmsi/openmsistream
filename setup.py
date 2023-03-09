@@ -2,7 +2,7 @@
 import setuptools
 
 #version tag
-version = '1.3.0'
+version = '1.3.1'
 
 long_description = ''
 with open('README.md', 'r') as readme :
