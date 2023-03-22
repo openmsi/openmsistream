@@ -24,4 +24,4 @@ Available on PyPI at https://pypi.org/project/openmsistream and GitHub at https:
 
 Official documentation at https://openmsistream.readthedocs.io/en/latest/
 
-Developed for Open MSI (NSF DMREF award #1921959)
+Developed for Open MSI (NSF DMREF award #1921959); published in the [Journal of Open Source Software](https://doi.org/10.21105/joss.04896)
