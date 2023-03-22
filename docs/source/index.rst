@@ -6,12 +6,15 @@ OpenMSIStream
    :alt: Open MSI
    :scale: 10 %
 
-OpenMSIStream provides Python applications for generalized laboratory, analysis, and computational materials data streaming using `Apache Kafka <https://kafka.apache.org/>`_. More information is available on :doc:`the Introduction page <installation/introduction>` for new users. OpenMSIStream is maintained as part of the Open Materials Semantic Infrastructure (Open MSI), under NSF award #1921959.
+OpenMSIStream provides Python applications for generalized laboratory, analysis, and computational materials data streaming using `Apache Kafka <https://kafka.apache.org/>`_. More information is available on :doc:`the Introduction page <installation/introduction>` for new users. OpenMSIStream is maintained as part of the Open Materials Semantic Infrastructure (Open MSI), under NSF award #1921959, and has been published in the `Journal of Open Source Software <https://doi.org/10.21105/joss.04896>`_.
 
+.. image:: https://joss.theoj.org/papers/10.21105/joss.04896/status.svg
+   :target: https://doi.org/10.21105/joss.04896
+   :alt: JOSS DOI
 .. image:: https://img.shields.io/pypi/v/openmsistream
    :alt: PyPI 
 .. image:: https://img.shields.io/github/license/openmsi/openmsistream
-   :alt: GitHub 
+   :alt: License 
 .. image:: https://img.shields.io/pypi/pyversions/openmsistream
    :alt: PyPI - Python Version 
 .. image:: https://img.shields.io/github/release-date/openmsi/openmsistream
