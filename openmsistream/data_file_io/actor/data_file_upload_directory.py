@@ -64,6 +64,11 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.__wait_time = self.MIN_WAIT_TIME
         self.__lock = Lock()
         self.__observer = Observer(timeout=self.WATCHDOG_OBSERVER_TIMEOUT)
+        self.__event_handler = UploadDirectoryEventHandler(
+            upload_regex=self.__upload_regex,
+            logs_subdir=self.__logs_subdir,
+            logger=self.logger,
+        )
         self.__active_files_by_path = {}
         self.__status_message_files = {}
         self.__topic_name = None
@@ -72,7 +77,6 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         self.__upload_queue = None
         self.__producers = []
         self.__upload_threads = []
-        self.__event_handler = None
 
     def upload_files_as_added(self,topic_name,
                               n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
@@ -125,12 +129,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             self.__scrape_dir_for_files()
         # add or modify datafiles to upload based on the contents of the file registry
         self.__startup_from_file_registry()
-        # define the event handler and start the observer
-        self.__event_handler = UploadDirectoryEventHandler(
-            regexes=[str(self.__upload_regex)],
-            ignore_directories=True,
-            logger=self.logger,
-        )
+        # schedule and start the observer
         self.__observer.schedule(self.__event_handler,self.dirpath,recursive=True)
         self.__observer.start()
         #loop until the user inputs a command to stop
@@ -207,16 +206,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
 
         :raises TypeError: if `filepath` isn't a :class:`pathlib.Path` object
         """
-        if not isinstance(filepath,pathlib.PurePath) :
-            errmsg = f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!'
-            self.logger.error(errmsg,exc_type=TypeError)
-        if not filepath.is_file() :
-            return False
-        if self.__logs_subdir in filepath.parents :
-            return False
-        if self.__upload_regex.match(str(filepath.relative_to(self.dirpath))) :
-            return True
-        return False
+        return self.__event_handler.filepath_should_be_uploaded(filepath)
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
