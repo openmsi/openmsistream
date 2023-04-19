@@ -38,7 +38,7 @@ class Logger :
     :type filelevel: logging level int, optional
     """
 
-    FORMATTER = OpenMSIStreamFormatter('[%(name)s at %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
+    FORMATTER = OpenMSIStreamFormatter('[%(name)s %(asctime)s] %(message)s','%Y-%m-%d %H:%M:%S')
 
     def __init__(self,logger_name=None,streamlevel=logging.INFO,logger_filepath=None,filelevel=logging.WARNING) :
         """

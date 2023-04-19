@@ -259,7 +259,7 @@ class DataclassTableBase(LogOwner,ABC) :
         caught_exc = None
         while n_retries_left>0 :
             try :
-                with atomic_write(self.__filepath,overwrite=overwrite) as fp :
+                with atomic_write(self.__filepath,overwrite=overwrite,encoding='utf8') as fp :
                     fp.write(lines_string)
                 self._file_last_updated = datetime.datetime.now()
                 return
@@ -277,8 +277,8 @@ class DataclassTableBase(LogOwner,ABC) :
                 else :
                     msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
                     msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
-                    msg+= f'Exception ({type(caught_exc)}): {caught_exc}'
-                    self.logger.warning(msg)
+                    msg+= f'Exception info below'
+                    self.logger.warning(msg,exc_info=caught_exc)
 
     def _line_from_obj(self,obj) :
         """

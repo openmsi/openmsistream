@@ -1,7 +1,7 @@
 """A DataFile that will be broken into chunks and uploaded to a topic"""
 
 #imports
-import time
+import time, datetime
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
@@ -50,6 +50,7 @@ class UploadDataFile(DataFile,Runnable) :
         self.__n_total_chunks = 0
         self.__chunk_infos = None
         self.__file_hash = None
+        self.__chunked_at_timestamp = None
 
     def upload_whole_file(self,config_path,topic_name,
                           n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
@@ -109,19 +110,31 @@ class UploadDataFile(DataFile,Runnable) :
                 self._build_list_of_file_chunks(chunk_size)
             except Exception as exc :
                 fp = self.filepath.relative_to(self.rootdir) if self.rootdir is not None else self.filepath
-                errmsg = f'ERROR: was not able to break {fp} into chunks for uploading. '
-                errmsg+= 'Check log lines below for details on what went wrong. File will not be uploaded.'
+                errmsg = (
+                    f'ERROR: was not able to break {fp} into chunks for uploading. '
+                    'Check log lines below for details. File will not be uploaded.'
+                )
                 self.logger.error(errmsg,exc_info=exc)
                 self.__to_upload = False
                 return
         #add the chunks to the final list as DataFileChunk objects
         for ichunk,chunk in enumerate(self.__chunk_infos,start=1) :
             if chunks_to_add is None or ichunk in chunks_to_add :
-                self.chunks_to_upload.append(DataFileChunk(self.filepath,self.filename,self.__file_hash,
-                                                            chunk[0],chunk[1],chunk[2],chunk[3],ichunk,
-                                                            self.__n_total_chunks,
-                                                            rootdir=self.rootdir,
-                                                            filename_append=self.__filename_append))
+                self.chunks_to_upload.append(
+                    DataFileChunk(
+                        self.filepath,
+                        self.filename,
+                        self.__file_hash,
+                        chunk[0],
+                        chunk[1],
+                        chunk[2],
+                        chunk[3],
+                        ichunk,
+                        self.__n_total_chunks,
+                        rootdir=self.rootdir,
+                        filename_append=self.__filename_append
+                    )
+                )
         if len(self.chunks_to_upload)>0 and self.__fully_enqueued :
             self.__fully_enqueued = False
 
@@ -148,8 +161,10 @@ class UploadDataFile(DataFile,Runnable) :
         :type queue_full_timeout: float, optional
         """
         if self.__fully_enqueued :
-            warnmsg = f'WARNING: enqueue_chunks_for_upload called for fully enqueued file {self.filepath}, '
-            warnmsg+= 'nothing else will be added.'
+            warnmsg = (
+                'WARNING: enqueue_chunks_for_upload called for fully enqueued file '
+                f'{self.filepath}, nothing else will be added.'
+            )
             self.logger.warning(warnmsg)
             return
         if queue.full() :
@@ -224,6 +239,7 @@ class UploadDataFile(DataFile,Runnable) :
                 fp.seek(file_offset)
                 chunk = fp.read(n_bytes_to_read)
         file_hash = file_hash.digest()
+        self.__chunked_at_timestamp = datetime.datetime.now()
         self.logger.debug(f'File {self.filepath} has a total of {len(chunks)} chunks')
         #set the hash for the file
         self.__file_hash = file_hash
@@ -354,6 +370,12 @@ class UploadDataFile(DataFile,Runnable) :
         else :
             msg+='(status unknown)'
         return msg
+    @property
+    def chunked_at_timestamp(self) :
+        """
+        A datetime object representing a timestamp of when the list of chunks was built
+        """
+        return self.__chunked_at_timestamp
 
 def main(args=None) :
     """

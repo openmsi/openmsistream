@@ -117,8 +117,12 @@ class ProducerFileRegistry(LogOwner) :
         self.consolidate_completed_files()
         completed = DataclassTableReadOnly(dataclass_type=RegistryLineCompleted,
                                            filepath=self.completed_filepath_pattern,logger=self.logger)
+        seen = set()
         for obj_address in completed.obj_addresses :
-            yield completed.get_entry_attrs(obj_address,'rel_filepath')
+            rel_filepath = completed.get_entry_attrs(obj_address,'rel_filepath')
+            if rel_filepath not in seen :
+                seen.add(rel_filepath)
+                yield rel_filepath
 
     def register_chunk(self,filename,rel_filepath,n_total_chunks,chunk_i,prodid) :
         """

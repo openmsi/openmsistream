@@ -41,6 +41,7 @@ setupkwargs = dict(
                       'matplotlib',
                       'methodtools',
                       'msgpack',
+                      'watchdog>=3.0.0',
                      ],
     extras_require = {'test': ['beautifulsoup4',
                                'gitpython',

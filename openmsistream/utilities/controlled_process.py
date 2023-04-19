@@ -65,7 +65,7 @@ class ControlledProcess(LogOwner,ABC) :
     def _check_control_command_queue(self) :
         #if anything exists in the control command queue
         try :
-            cmd = self.control_command_queue.get(block=True,timeout=0.5)
+            cmd = self.control_command_queue.get(block=True,timeout=0.05)
         except Empty :
             cmd = None
         if cmd is not None :
