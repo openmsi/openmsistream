@@ -277,7 +277,7 @@ class DataclassTableBase(LogOwner,ABC) :
                 else :
                     msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
                     msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
-                    msg+= f'Exception info below'
+                    msg+= 'Exception info below'
                     self.logger.warning(msg,exc_info=caught_exc)
 
     def _line_from_obj(self,obj) :

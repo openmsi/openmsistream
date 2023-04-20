@@ -100,7 +100,8 @@ class UploadDataFile(DataFile,Runnable) :
         Add chunks from this file to the internal list of chunks to upload,
         possibly with some selection defined by :attr:`~select_bytes`
 
-        :param chunks_to_add: a list of chunk indices to add to the list to be uploaded (Default=None adds all chunks)
+        :param chunks_to_add: a list of chunk indices to add to the list to be uploaded
+            (Default=None adds all chunks)
         :type chunks_to_add: None or list[int], optional
         :param chunk_size: The size of the file chunk in each message in bytes
         :type chunk_size: int, optional
@@ -366,7 +367,11 @@ class UploadDataFile(DataFile,Runnable) :
             msg+=f'(in progress with {self.__n_total_chunks-len(self.chunks_to_upload)}'
             msg+=f'/{self.__n_total_chunks} messages enqueued)'
         elif self.waiting_to_upload :
-            msg+=f'({self.__n_total_chunks} messages waiting to be enqueued)'
+            if self.__n_total_chunks==0 :
+                msg+='(all '
+            else :
+                msg+=f'({self.__n_total_chunks} '
+            msg+='messages waiting to be enqueued)'
         else :
             msg+='(status unknown)'
         return msg

@@ -1,7 +1,7 @@
 """A directory holding files that may or may not be marked for uploading. Updates when new files are added."""
 
 #imports
-import pathlib, datetime, time
+import datetime, time
 from threading import Lock
 from queue import Queue
 from watchdog.observers import Observer
@@ -176,7 +176,8 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 f'This message will be re-enqeued. Error reason: {err.str()}'
             )
             self.logger.warning(warnmsg)
-            self.__add_chunks_for_filepath(filepath,[chunk_i])
+            with self.__lock :
+                self.__add_chunks_for_filepath(filepath,[chunk_i])
         # Otherwise, register the chunk as successfully sent to the broker
         else :
             rel_filepath = filepath.relative_to(self.dirpath)
@@ -206,7 +207,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
 
         :raises TypeError: if `filepath` isn't a :class:`pathlib.Path` object
         """
-        return self.__event_handler.filepath_should_be_uploaded(filepath)
+        return self.__event_handler.filepath_matched(filepath)
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -220,7 +221,10 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         """
         #pull any new files from the event handler and poll the producers
         if not self.have_file_to_upload :
-            self.__pull_from_handler(timeout=self.__wait_time)
+            # wait here so that this loop isn't constantly consuming CPU if nothing
+            # is happening
+            time.sleep(self.__wait_time)
+            self.__pull_from_handler()
             n_new_callbacks = 0
             for producer in self.__producers :
                 new_callbacks = producer.poll(0)
@@ -240,6 +244,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     n_threads=len(self.__upload_threads),
                     chunk_size=self.__chunk_size,
                 )
+                break
         #restart any crashed threads
         self.__restart_crashed_threads()
 
@@ -290,7 +295,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         )
         for producer in self.__producers :
             #don't move on until all enqueued messages have been sent/received
-            producer.flush(timeout=-1) 
+            producer.flush(timeout=-1)
             producer.close()
         self.close()
         self.__file_registry.consolidate_completed_files()
@@ -316,7 +321,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
             for key in keys_to_remove :
                 _ = self.__status_message_files.pop(key)
         self.__status_message_files[filepath] = new_datafile
-    
+
     def __scrape_dir_for_files(self,retries_left=10) :
         """
         Search the directory for any unrecognized files and add them as active datafiles
@@ -340,21 +345,59 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                     self.__add_active_datafile_for_path(filepath)
         except FileNotFoundError as exc :
             if retries_left>0 :
-                return self.__scrape_dir_for_files(retries_left=retries_left-1)
+                self.__scrape_dir_for_files(retries_left=retries_left-1)
             warnmsg=(
                 f'WARNING: exhausted retries finding new files in {self.dirpath}. '
                 'Check log messages below for the error encountered.'
             )
             self.logger.warning(warnmsg,exc_info=exc)
 
-    def __pull_from_handler(self,timeout=MIN_WAIT_TIME) :
+    def __pull_from_handler(self) :
         """
-        Pull and process items from the watchdog event handler queue
-        to get more files that should be uploaded
-
-        timeout : passed to event handler queue.get function
+        Call the watchdog EventHandler to get paths to files that should be uploaded
         """
-        pass
+        to_kick_back = set()
+        # get all the new files for which events have occurred
+        for handler_file in self.__event_handler.get_new_files() :
+            new_filepath = handler_file.filepath
+            # if the file isn't active yet, add it and move on
+            if new_filepath not in self.__active_files_by_path :
+                with self.__lock :
+                    self.__add_active_datafile_for_path(new_filepath)
+                continue
+            # otherwise, if the file is already active in the directory
+            updated_at = handler_file.last_updated
+            extant_datafile = self.__active_files_by_path[new_filepath]
+            # if it wasn't going to be uploaded, set it to upload
+            if not extant_datafile.to_upload :
+                extant_datafile.to_upload = True
+            # if it's been fully produced, remove and replace it with the new version
+            elif extant_datafile.fully_produced :
+                with self.__lock :
+                    self.__forget_inactive_files()
+                    self.__add_active_datafile_for_path(new_filepath)
+            # if it's been fully enqueued, or is being uploaded, send it back
+            elif extant_datafile.fully_enqueued or extant_datafile.upload_in_progress:
+                to_kick_back.add(handler_file)
+            # if it's been waiting to upload
+            elif extant_datafile.waiting_to_upload :
+                # if it has been chunked before its updated time, send it back
+                # otherwise nothing needs to happen
+                if ( extant_datafile.chunked_at_timestamp and
+                    extant_datafile.chunked_at_timestamp<updated_at ):
+                    to_kick_back.add(handler_file)
+            else :
+                warnmsg = (
+                    'WARNING: unknown status for active upload file! Will reset file to '
+                    f'produce again (status message = {extant_datafile.upload_status_message})'
+                )
+                self.logger.warning(warnmsg)
+                with self.__lock :
+                    self.__forget_inactive_files()
+                    self.__add_active_datafile_for_path(new_filepath)
+        # send back any files that will need to be handled later
+        for handler_file in to_kick_back :
+            self.__event_handler.kick_back(handler_file)
 
     def __forget_inactive_files(self) :
         """
@@ -565,16 +608,16 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 f'Of the {len(self.__status_message_files)} most recent files '
                 f'found in {self.dirpath}, '
             )
-            if n_wont_be_uploaded>0 :
-                status_message+=f'{n_wont_be_uploaded} will not be uploaded, '
-            if n_waiting_to_upload>0 :
-                status_message+=f'{n_waiting_to_upload} are waiting to upload, '
-            if n_upload_in_progress>0 :
-                status_message+=f'{n_upload_in_progress} have uploads in progress, '
-            if n_fully_enqueued>0 :
-                status_message+=f'{n_fully_enqueued} are enqueued to be produced, '
-            if n_fully_produced>0 :
-                status_message+=f'{n_fully_produced} are fully produced, '
+            ns_msgs = [
+                (n_wont_be_uploaded,'will not be uploaded'),
+                (n_waiting_to_upload,'are waiting to upload'),
+                (n_upload_in_progress,'have uploads in progress'),
+                (n_fully_enqueued,'are enqueued to be produced'),
+                (n_fully_produced,'are fully produced'),
+            ]
+            for nvar,msg in ns_msgs :
+                if nvar>0 :
+                    status_message+=f'{nvar} {msg}, '
             status_message=f'{status_message[:-2]}'
         else :
             status_message = f'No files to be uploaded found yet in {self.dirpath}'
