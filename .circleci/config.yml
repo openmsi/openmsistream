@@ -26,7 +26,7 @@ jobs:
   # Build the repo and check the code using pyflakes and pylint
   build-and-code-check:
     docker:
-      - image: openmsi/openmsistream-ci:latest
+      - image: openmsi/openmsistream-ci:1.4
     steps:
       - checkout
       - python/install-packages:
@@ -42,7 +42,7 @@ jobs:
   # Run non-Kafka tests, without the environment variables set
   run-tests-no-kafka:
     docker:
-      - image: openmsi/openmsistream-ci:latest
+      - image: openmsi/openmsistream-ci:1.4
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -62,7 +62,7 @@ jobs:
   # Run all tests, including those that send messages to the Kafka cluster
   run-tests:
     docker:
-      - image: openmsi/openmsistream-ci:latest
+      - image: openmsi/openmsistream-ci:1.4
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
@@ -87,7 +87,7 @@ jobs:
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:
-      - image: openmsi/openmsistream-ci:latest
+      - image: openmsi/openmsistream-ci:1.4
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
