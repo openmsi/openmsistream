@@ -1,15 +1,17 @@
-# CircleCI image from https://hub.docker.com/r/cimg/python
-FROM cimg/python:3.9
+# base image is official "slim" Python 3.9 on Debian 11 ("bullseye")
+FROM python:3.9-slim-bullseye
 
-# Switch to root user
-USER root
+# Install libsodium and timezone data
+RUN apt-get update && \
+    apt-get upgrade -y && \
+    apt-get install -y --no-install-recommends libsodium-dev tzdata && \
+    apt-get autoremove -y
 
-#start in the default area
-WORKDIR /
+# Install OpenMSIStream
+RUN pip install --upgrade pip && \
+    pip install openmsistream && \
+    pip cache purge
 
-#install libsodium
-RUN apt-get update -y && \
-    apt-get install -y libsodium-dev
-
-#clone the openmsistream repo and install it
-RUN pip install openmsistream[all]
+# Set the timezone
+ARG TZ="America/New_York"
+ENV TZ=$TZ
