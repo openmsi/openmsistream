@@ -35,6 +35,10 @@ RUN pip install --upgrade pip && \
     pip install openmsistream && \
     pip cache purge
 
+# Upgrade to latest version
+RUN pip install --upgrade openmsistream && \
+    pip cache purge
+
 # Set the timezone
 ARG TZ="America/New_York"
 ENV TZ=$TZ
