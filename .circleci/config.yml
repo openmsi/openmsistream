@@ -26,10 +26,7 @@ jobs:
   # Build the repo and check the code using pyflakes and pylint
   build-and-code-check:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.3
-        auth:
-          username: $IDIESDOCKER_USERNAME
-          password: $IDIESDOCKER_PASSWORD
+      - image: openmsi/openmsistream-ci:1.5
     steps:
       - checkout
       - python/install-packages:
@@ -45,10 +42,10 @@ jobs:
   # Run non-Kafka tests, without the environment variables set
   run-tests-no-kafka:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.3
+      - image: openmsi/openmsistream-ci:1.5
         auth:
-          username: $IDIESDOCKER_USERNAME
-          password: $IDIESDOCKER_PASSWORD
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     steps:
       - attach_workspace:
           at: .
@@ -65,10 +62,10 @@ jobs:
   # Run all tests, including those that send messages to the Kafka cluster
   run-tests:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.3
+      - image: openmsi/openmsistream-ci:1.5
         auth:
-          username: $IDIESDOCKER_USERNAME
-          password: $IDIESDOCKER_PASSWORD
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     parallelism: 15
     resource_class: large
     steps:
@@ -90,10 +87,10 @@ jobs:
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:
-      - image: containers.repo.sciserver.org/openmsistream:1.3
+      - image: openmsi/openmsistream-ci:1.5
         auth:
-          username: $IDIESDOCKER_USERNAME
-          password: $IDIESDOCKER_PASSWORD
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     steps:
       - attach_workspace:
           at: .
