@@ -47,7 +47,7 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             if not fp.parent.is_dir():
                 fp.parent.mkdir(parents=True)
             fp.write_bytes(TEST_CONST.TEST_DATA_FILE_PATH.read_bytes())
-            time.sleep(1)
+            time.sleep(5)
             # put the "check" command into the input queue a couple times to test it
             dfud.control_command_queue.put('c')
             dfud.control_command_queue.put('check')

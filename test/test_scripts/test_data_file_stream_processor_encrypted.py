@@ -14,7 +14,7 @@ UPDATE_SECS = 5
 TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 30
 
-class TestDataFileStreamProcessorEncyrpted(unittest.TestCase) :
+class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
     """
     Class for testing behavior of an encrypted DataFileStreamProcessor
     """

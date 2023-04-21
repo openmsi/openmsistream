@@ -16,7 +16,7 @@ TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 60
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]
 
-class TestDataFileDirectories(unittest.TestCase) :
+class TestDataFileDirectoriesEncrypted(unittest.TestCase) :
     """
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """
