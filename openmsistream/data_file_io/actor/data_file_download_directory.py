@@ -55,14 +55,21 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         :rtype: int
         :return: the total number of message processed (written to disk)
         :rtype: int
-        :return: the number of files whose reconstruction was completed during the run
+        :return: the total number of completely reconstructed files
         :rtype: int
+        :return: paths of up to 50 most recent files whose reconstruction was completed during the run
+        :rtype: list
         """
         msg = f'Will reconstruct files from messages in the {self.topic_name} topic using {self.n_threads} '
         msg+= f'thread{"s" if self.n_threads!=1 else ""}'
         self.logger.info(msg)
         self.run()
-        return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths
+        return (
+            self.n_msgs_read,
+            self.n_msgs_processed,
+            self.n_processed_files,
+            self.recent_processed_filepaths
+        )
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -95,8 +102,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             self.logger.debug(f'File {dfc.relative_filepath} successfully reconstructed from stream')
-            self.completely_processed_filepaths.append(dfc.relative_filepath)
             with lock :
+                self.recent_processed_filepaths.append(dfc.relative_filepath)
+                while len(self.recent_processed_filepaths)>self.N_RECENT_FILES :
+                    _ = self.recent_processed_filepaths.pop(0)
+                self.n_processed_files+=1
                 del self.files_in_progress_by_path[dfc.relative_filepath]
                 del self.locks_by_fp[dfc.relative_filepath]
             return True
@@ -115,9 +125,9 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{len(self.completely_processed_filepaths)} files completely reconstructed so far'
+        msg+= f'{self.n_processed_files} files completely reconstructed so far'
         self.logger.info(msg)
-        if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
+        if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
     #################### CLASS METHODS ####################
@@ -152,7 +162,7 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         #start the reconstructor running
         run_start = datetime.datetime.now()
         reconstructor_directory.logger.info(f'Listening for files to reconstruct in {args.output_dir}')
-        n_read,n_processed,complete_filepaths = reconstructor_directory.reconstruct()
+        n_read,n_processed,n_complete_files,complete_filepaths = reconstructor_directory.reconstruct()
         reconstructor_directory.close()
         run_stop = datetime.datetime.now()
         #shut down when that function returns
@@ -160,14 +170,14 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         msg = f'{n_read} total messages were consumed'
         if len(complete_filepaths)>0 :
             msg+=f', {n_processed} messages were successfully processed,'
-            msg+=f' and the following {len(complete_filepaths)} file'
-            msg+=' was' if len(complete_filepaths)==1 else 's were'
+            msg+=f' and {n_complete_files} file'
+            msg+=' was' if n_complete_files==1 else 's were'
             msg+=' successfully reconstructed'
         else :
             msg+=f' and {n_processed} messages were successfully processed'
-        msg+=f' from {run_start} to {run_stop}'
-        for fn in complete_filepaths :
-            msg+=f'\n\t{fn}'
+        msg+=f' from {run_start} to {run_stop}\n'
+        msg+=f'Most recent completed files (up to {cls.N_RECENT_FILES}):'
+        msg+='\n\t'.join(complete_filepaths)
         reconstructor_directory.logger.info(msg)
 
 def main(args=None) :

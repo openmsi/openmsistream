@@ -14,6 +14,5 @@ class DataFileDirectory(LogOwner) :
 
     def __init__(self,dirpath,*args,**kwargs) :
         self.dirpath = dirpath.resolve()
-        self.data_files_by_path = {}
         kwargs = populated_kwargs(kwargs,{'logger_file':self.dirpath})
         super().__init__(*args,**kwargs)

@@ -81,7 +81,7 @@ class TestMetadataReproducer(unittest.TestCase) :
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = pathlib.Path(UPLOAD_FILE.name)
-            while (recofp not in metadata_reproducer.results_produced_filepaths) and time_waited<TIMEOUT_SECS :
+            while (recofp not in metadata_reproducer.recent_results_produced) and time_waited<TIMEOUT_SECS :
                 current_messages_read = metadata_reproducer.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')

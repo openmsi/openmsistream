@@ -73,7 +73,7 @@ class TestPlotsForTutorial(unittest.TestCase) :
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = pathlib.Path(UPLOAD_FILE.name)
-            while (recofp not in plot_maker.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
+            while (recofp not in plot_maker.recent_processed_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = plot_maker.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')

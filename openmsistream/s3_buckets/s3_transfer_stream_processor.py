@@ -109,24 +109,24 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         # cls.bucket_name = args.bucket_name
         msg = f'Listening to the {args.topic_name} topic for files to add to the {args.bucket_name} bucket....'
         s3_stream_proc.logger.info(msg)
-        n_read,n_processed,complete_filenames = s3_stream_proc.make_stream()
+        n_read,n_processed,n_complete,complete_filenames = s3_stream_proc.make_stream()
         s3_stream_proc.close()
         msg = f'{n_read} total messages were consumed, {n_processed} messages were successfully processed,'
         msg+= f'and {len(complete_filenames)} files were transferred to the {args.bucket_name} bucket'
         s3_stream_proc.logger.info(msg)
         if len(complete_filenames)>0 :
-            msg =f'The following {len(complete_filenames)} file'
-            msg+=' was' if len(complete_filenames)==1 else 's were'
-            msg+=f' successfully transferred to the {args.bucket_name} bucket'
-            for fn in complete_filenames :
-                msg+=f'\n\t{fn}'
+            msg =f'{n_complete} file'
+            msg+=' was' if n_complete==1 else 's were'
+            msg+=f' successfully transferred to the {args.bucket_name} bucket.\n'
+            msg+=f'Transferred filepaths (up to {cls.N_RECENT_FILES} most recent):\n\t'
+            msg+='\n\t'.join(complete_filenames)
             s3_stream_proc.logger.debug(msg)
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{len(self.completely_processed_filepaths)} files transferred so far'
+        msg+= f'{self.n_processed_files} files transferred so far'
         self.logger.info(msg)
-        if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
+        if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
 def main(args=None):

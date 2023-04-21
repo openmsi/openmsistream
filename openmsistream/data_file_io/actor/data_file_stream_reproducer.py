@@ -59,10 +59,16 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :rtype: int
         :return: the total number of messages processed (registered in memory)
         :rtype: int
-        :return: the paths of files successfully reconstructed from the Consumer topic during the run
+        :return: the number of files reconstructed from the topic
+        :rtype: int
+        :return: the paths of up to 50 most recent files successfully reconstructed
+            from the Consumer topic during the run
         :rtype: list
-        :return: the paths of files whose processing results were successfully produced to the Producer topic
-            during the run
+        :return: the number of files whose processing results were successfully produced
+            to the Producer topic
+        :rtype: int
+        :return: the paths of up to 50 most recent files whose processing results were
+            successfully produced to the Producer topic during the run
         :rtype: list
         """
         #startup message
@@ -93,8 +99,14 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         #call the run loop
         self.run(args_per_thread=run_worker_args_per_thread,kwargs_per_thread=run_worker_kwargs_per_thread)
         #return the results of the processing
-        return ( self.n_msgs_read, self.n_msgs_processed,
-                 self.completely_processed_filepaths, self.results_produced_filepaths )
+        return (
+            self.n_msgs_read,
+            self.n_msgs_processed,
+            self.n_processed_files,
+            self.recent_processed_filepaths,
+            self.n_results_produced_files,
+            self.recent_results_produced,
+        )
 
     def producer_callback(self,err,msg,prodid,filename,rel_filepath,n_total_chunks) :
         """
@@ -150,7 +162,10 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         else :
             with self.lock :
                 self.file_registry.register_file_results_produced(filename,rel_filepath,n_total_chunks,prodid)
-                self.results_produced_filepaths.append(rel_filepath)
+                self.recent_results_produced.append(rel_filepath)
+                while len(self.recent_results_produced)>self.N_RECENT_FILES :
+                    _ = self.recent_results_produced.pop(0)
+                self.n_results_produced_files+=1
                 #stop tracking the file
                 del self.files_in_progress_by_path[rel_filepath]
                 del self.locks_by_fp[rel_filepath]
@@ -204,7 +219,10 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         #if the file has had all of its messages read successfully, try to enqueue its processing result to produce
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
             with lock :
-                self.completely_processed_filepaths.append(dfc.relative_filepath)
+                self.recent_processed_filepaths.append(dfc.relative_filepath)
+                while len(self.recent_processed_filepaths)>self.N_RECENT_FILES :
+                    _ = self.recent_processed_filepaths.pop(0)
+                self.n_processed_files+=1
             self.logger.debug(f'Getting message to produce for {dfc.relative_filepath}...')
             new_msg = self._get_processing_result_message_for_file(
                         self.files_in_progress_by_path[dfc.relative_filepath],
@@ -272,12 +290,12 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{len(self.completely_processed_filepaths)} files completely reconstructed, and '
-        msg+= f'{len(self.results_produced_filepaths)} processing result messages produced so far'
+        msg+= f'{self.n_processed_files} files completely reconstructed, and '
+        msg+= f'{self.n_results_produced_files} processing result messages produced so far'
         self.logger.info(msg)
         if ( len(self.files_in_progress_by_path)>0 or
-             len(self.completely_processed_filepaths)>0 or
-             len(self.results_produced_filepaths)>0 ) :
+             len(self.recent_processed_filepaths)>0 or
+             len(self.recent_results_produced)>0 ) :
             self.logger.debug(self.progress_msg)
 
     def _on_shutdown(self):

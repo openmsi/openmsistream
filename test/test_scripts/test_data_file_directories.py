@@ -27,8 +27,12 @@ class TestDataFileDirectories(TestWithEnvVars) :
         #make the directory to watch
         (TEST_CONST.TEST_WATCHED_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME).mkdir(parents=True)
         #start up the DataFileUploadDirectory
-        dfud = DataFileUploadDirectory(TEST_CONST.TEST_WATCHED_DIR_PATH,TEST_CONST.TEST_CFG_FILE_PATH,
-                                       update_secs=UPDATE_SECS,logger=LOGGER)
+        dfud = DataFileUploadDirectory(
+            TEST_CONST.TEST_WATCHED_DIR_PATH,
+            TEST_CONST.TEST_CFG_FILE_PATH,
+            update_secs=UPDATE_SECS,
+            logger=LOGGER
+        )
         #start upload_files_as_added in a separate thread so we can time it out
         upload_thread = ExceptionTrackingThread(
             target=dfud.upload_files_as_added,
@@ -46,7 +50,7 @@ class TestDataFileDirectories(TestWithEnvVars) :
             time.sleep(1)
             fp = TEST_CONST.TEST_WATCHED_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME/TEST_CONST.TEST_DATA_FILE_NAME
             fp.write_bytes(TEST_CONST.TEST_DATA_FILE_PATH.read_bytes())
-            time.sleep(1)
+            time.sleep(5)
             #put the "check" command into the input queue a couple times to test it
             dfud.control_command_queue.put('c')
             dfud.control_command_queue.put('check')
@@ -122,7 +126,7 @@ class TestDataFileDirectories(TestWithEnvVars) :
             LOGGER.set_stream_level(logging.ERROR)
             recofp = TEST_CONST.TEST_RECO_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME/TEST_CONST.TEST_DATA_FILE_NAME
             reco_rel_fp = recofp.relative_to(TEST_CONST.TEST_RECO_DIR_PATH)
-            while (reco_rel_fp not in dfdd.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
+            while (reco_rel_fp not in dfdd.recent_processed_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = dfdd.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')

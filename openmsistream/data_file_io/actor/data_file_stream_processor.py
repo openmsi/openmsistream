@@ -59,7 +59,9 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         :rtype: int
         :return: the total number of messages processed (registered in memory)
         :rtype: int
-        :return: the paths of files successfully processed during the run
+        :return: the number of files successfully processed during the run
+        :rtype: int
+        :return: the paths of up to 50 most recent files successfully processed during the run
         :rtype: List
         """
         #startup message
@@ -82,7 +84,12 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         #call the run loop
         self.run()
         #return the results of the processing
-        return self.n_msgs_read, self.n_msgs_processed, self.completely_processed_filepaths
+        return (
+            self.n_msgs_read,
+            self.n_msgs_processed,
+            self.n_processed_files,
+            self.recent_processed_filepaths
+        )
 
     def _process_message(self,lock,msg,rootdir_to_set=None):
         """
@@ -141,7 +148,10 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                 self.logger.debug(f'Fully-read file {dfc.relative_filepath} successfully processed')
                 self.file_registry.register_file_successfully_processed(dfc)
                 with lock :
-                    self.completely_processed_filepaths.append(dfc.relative_filepath)
+                    self.recent_processed_filepaths.append(dfc.relative_filepath)
+                    while len(self.recent_processed_filepaths)>self.N_RECENT_FILES :
+                        self.recent_processed_filepaths.pop(0)
+                    self.n_processed_files+=1
                 to_return = True
             #warn if it wasn't processed correctly and invoke the callback
             else :
@@ -201,9 +211,9 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
 
     def _on_check(self) :
         msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{len(self.completely_processed_filepaths)} files completely processed so far'
+        msg+= f'{self.n_processed_files} files completely processed so far'
         self.logger.info(msg)
-        if len(self.files_in_progress_by_path)>0 or len(self.completely_processed_filepaths)>0 :
+        if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
 
     def _on_shutdown(self):

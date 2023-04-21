@@ -19,6 +19,11 @@ class DataFileChunkHandler(LogOwner,ABC) :
     A base class to perform some handling of DataFileChunk objects read from a topic.
     """
 
+    #################### CONSTANTS ####################
+
+    # Up to this many filepaths will be held onto after they've been processed
+    N_RECENT_FILES = 50
+
     #################### PROPERTIES ####################
 
     @property
@@ -44,7 +49,8 @@ class DataFileChunkHandler(LogOwner,ABC) :
             raise ValueError(errmsg)
         self.files_in_progress_by_path = {}
         self.locks_by_fp = {}
-        self.completely_processed_filepaths = []
+        self.recent_processed_filepaths = []
+        self.n_processed_files = 0
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -89,12 +95,17 @@ class DataFileChunkHandler(LogOwner,ABC) :
         #add the chunk's data to the file that's being reconstructed
         with lock :
             if dfc.relative_filepath not in self.files_in_progress_by_path :
-                self.files_in_progress_by_path[dfc.relative_filepath] = self.datafile_type(dfc.filepath,
-                                                                                           logger=self.logger,
-                                                                                           **self.other_datafile_kwargs)
+                new_datafile = self.datafile_type(
+                    dfc.filepath,
+                    logger=self.logger,
+                    **self.other_datafile_kwargs,
+                )
+                self.files_in_progress_by_path[dfc.relative_filepath] = new_datafile
                 self.locks_by_fp[dfc.relative_filepath] = Lock()
-        retval = self.files_in_progress_by_path[dfc.relative_filepath].add_chunk(dfc,
-                                                                                self.locks_by_fp[dfc.relative_filepath])
+        retval = self.files_in_progress_by_path[dfc.relative_filepath].add_chunk(
+            dfc,
+            self.locks_by_fp[dfc.relative_filepath],
+        )
         #If the file is just in progress, return True
         if retval in (DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS,
                             DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE) :
@@ -112,10 +123,13 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
         """
         A string message describing the files that have had some chunks read
         """
-        progress_msg = 'The following files have been recognized so far:\n'
+        progress_msg = (
+            f'Files recognized so far (up to {self.N_RECENT_FILES} most recent '
+            'completed files shown):\n\t'
+        )
         for datafile in self.files_in_progress_by_path.values() :
             progress_msg+=f'\t{datafile.relative_filepath} (in progress)\n'
-        for fp in self.completely_processed_filepaths :
+        for fp in self.recent_processed_filepaths :
             progress_msg+=f'\t{fp} (completed)\n'
         return progress_msg
 
@@ -130,17 +144,22 @@ class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) 
         """
         A string message describing the files that have had some chunks read
         """
+        progress_msg = (
+            f'Files recognized so far (up to {self.N_RECENT_FILES} most recent '
+            'completed files shown):\n\t'
+        )
         progress_msg = 'The following files have been recognized so far:\n'
         for datafile in self.files_in_progress_by_path.values() :
-            if datafile.relative_filepath not in self.completely_processed_filepaths :
+            if datafile.relative_filepath not in self.recent_processed_filepaths :
                 progress_msg+=f'\t{datafile.relative_filepath} (in progress)\n'
-        for fp in self.completely_processed_filepaths :
-            if fp not in self.results_produced_filepaths :
+        for fp in self.recent_processed_filepaths :
+            if fp not in self.recent_results_produced :
                 progress_msg+=f'\t{fp} (fully read from topic)\n'
-        for fp in self.results_produced_filepaths :
+        for fp in self.recent_results_produced :
             progress_msg+=f'\t{fp} (processing results produced)\n'
         return progress_msg
 
     def __init__(self,*args,**kwargs) :
         super().__init__(*args,**kwargs)
-        self.results_produced_filepaths = []
+        self.recent_results_produced = []
+        self.n_results_produced_files = 0
