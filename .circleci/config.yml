@@ -43,6 +43,9 @@ jobs:
   run-tests-no-kafka:
     docker:
       - image: openmsi/openmsistream-ci:latest
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     steps:
       - attach_workspace:
           at: .
@@ -60,6 +63,9 @@ jobs:
   run-tests:
     docker:
       - image: openmsi/openmsistream-ci:latest
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     parallelism: 15
     resource_class: large
     steps:
@@ -82,6 +88,9 @@ jobs:
   check-repo:
     docker:
       - image: openmsi/openmsistream-ci:latest
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
     steps:
       - attach_workspace:
           at: .
