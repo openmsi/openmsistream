@@ -59,13 +59,14 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
         fp.write_bytes(TEST_CONST.TEST_DATA_FILE_2_PATH.read_bytes())
         time.sleep(5)
         #Use a stream processor to read their data back into memory one time, deliberately failing the first file
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-                                                 TOPIC_NAME,
-                                                 output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                                 n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_id=CONSUMER_GROUP_ID,
-                                                 logger=LOGGER,
-                                                )
+        dfsp = DataFileStreamProcessorForTesting(
+            TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
+            TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
+            n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+            consumer_group_id=CONSUMER_GROUP_ID,
+            logger=LOGGER,
+        )
         dfsp.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
         stream_thread.start()

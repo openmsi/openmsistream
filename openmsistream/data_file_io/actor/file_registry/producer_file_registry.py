@@ -123,7 +123,7 @@ class ProducerFileRegistry(LogOwner):
             for entry_line in added_file.lines:
                 if entry_line not in all_lines:
                     warnmsg = (
-                        "ERROR: failed to consolidate individual files into "
+                        "WARNING: failed to consolidate individual files into "
                         f"{self.completed_filepath_pattern}. Individual files will be "
                         "retained and should be manually concatenated. "
                         "Duplicate entries may be present."

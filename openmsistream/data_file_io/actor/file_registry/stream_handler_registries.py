@@ -185,13 +185,13 @@ class StreamHandlerRegistry(LogOwner, ABC):
             )
             for entry_line in added_file.lines:
                 if entry_line not in all_lines:
-                    errmsg = (
-                        "ERROR: failed to consolidate individual files into "
+                    warnmsg = (
+                        "WARNING: failed to consolidate individual files into "
                         f"{self.succeeded_filepath}. Individual files will be retained "
                         "and should be manually concatenated. "
                         "Duplicate entries may be present."
                     )
-                    raise RuntimeError(errmsg)
+                    raise RuntimeError(warnmsg)
             to_pop = [
                 table_id
                 for table_id, table in self.__succeeded_tables_by_id.items()
