@@ -7,16 +7,19 @@ from threading import RLock
 from watchdog.events import FileSystemEventHandler
 from ...utilities import LogOwner
 
+
 @dataclass
 class EventHandlerActiveFile:
     """
     A small dataclass to hold active files recognized by the event handler,
     along with a timestamp
     """
+
     filepath: pathlib.Path
     last_updated: datetime.datetime
 
-class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
+
+class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
     """
     An extension of a watchdog FileSystemEventHandler to handle file events used by
     :class:`~DataFileUploadDirectory` objects. Keeps a dictionary of files with
@@ -36,7 +39,7 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
 
     #################### NEW PUBLIC FUNCTIONS ####################
 
-    def __init__(self,upload_regex,logs_subdir,**other_kwargs) :
+    def __init__(self, upload_regex, logs_subdir, **other_kwargs):
         """
         Constructor method
         """
@@ -50,7 +53,7 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
         # all currently active files
         self.__active_files_by_path = {}
 
-    def get_new_files(self) :
+    def get_new_files(self):
         """
         A generator of any new EventHandlerActiveFile objects that have persisted
         for at least a small amount of time. Called by the upload directory to get
@@ -58,14 +61,16 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
         """
         keys_to_pop = []
         ref_timestamp = datetime.datetime.now()
-        with self.__lock :
-            for filepath,active_file in self.__active_files_by_path.items() :
-                if (ref_timestamp-active_file.last_updated).total_seconds()>self.PERSISTENCE_SECS :
+        with self.__lock:
+            for filepath, active_file in self.__active_files_by_path.items():
+                if (
+                    ref_timestamp - active_file.last_updated
+                ).total_seconds() > self.PERSISTENCE_SECS:
                     keys_to_pop.append(filepath)
-            for key in keys_to_pop :
+            for key in keys_to_pop:
                 yield self.__active_files_by_path.pop(key)
 
-    def kick_back(self,handler_file) :
+    def kick_back(self, handler_file):
         """
         Give back an :class:`EventHandlerActiveFile` so it can be processed later
 
@@ -74,7 +79,7 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
         """
         self.__add_active_file(handler_file)
 
-    def filepath_matched(self,filepath) :
+    def filepath_matched(self, filepath):
         """
         Returns True if a given filepath should be considered for event dispatch
         (or, eventually, upload). Only returns True for paths to files relative
@@ -86,25 +91,25 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
 
         :raises TypeError: if `filepath` is not a path
         """
-        if not isinstance(filepath,pathlib.PurePath) :
+        if not isinstance(filepath, pathlib.PurePath):
             self.logger.error(
-                f'ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!',
-                exc_type=TypeError
+                f"ERROR: {filepath} passed to filepath_should_be_uploaded is not a Path!",
+                exc_type=TypeError,
             )
         # only files count
-        if not filepath.is_file() :
+        if not filepath.is_file():
             return False
         # must be relative to the upload directory
-        if not filepath.is_relative_to(self.__rootdir) :
+        if not filepath.is_relative_to(self.__rootdir):
             return False
         # must be outside the logs subdirectory
-        if self.__logs_subdir in filepath.parents :
+        if self.__logs_subdir in filepath.parents:
             return False
         # name shouldn't start with '.'
-        if filepath.name.startswith('.') :
+        if filepath.name.startswith("."):
             return False
         # must match the given regex
-        if self.__upload_regex.match(str(filepath.relative_to(self.__rootdir))) :
+        if self.__upload_regex.match(str(filepath.relative_to(self.__rootdir))):
             return True
         return False
 
@@ -128,7 +133,7 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
         super().on_moved(event)
         src_path = pathlib.Path(event.src_path)
         dest_path = pathlib.Path(event.dest_path)
-        with self.__lock :
+        with self.__lock:
             self.__remove_active_file(src_path)
             self.__add_active_file(dest_path)
 
@@ -149,23 +154,26 @@ class UploadDirectoryEventHandler(LogOwner,FileSystemEventHandler) :
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
-    def __add_active_file(self,filepath_or_handler_file) :
-        if isinstance(filepath_or_handler_file,pathlib.PurePath) :
-            with self.__lock :
-                self.__active_files_by_path[filepath_or_handler_file] = EventHandlerActiveFile(
-                    filepath_or_handler_file,
-                    datetime.datetime.now()
+    def __add_active_file(self, filepath_or_handler_file):
+        if isinstance(filepath_or_handler_file, pathlib.PurePath):
+            with self.__lock:
+                self.__active_files_by_path[
+                    filepath_or_handler_file
+                ] = EventHandlerActiveFile(
+                    filepath_or_handler_file, datetime.datetime.now()
                 )
-        elif isinstance(filepath_or_handler_file,EventHandlerActiveFile) :
-            with self.__lock :
-                self.__active_files_by_path[filepath_or_handler_file.filepath] = filepath_or_handler_file
-        else :
+        elif isinstance(filepath_or_handler_file, EventHandlerActiveFile):
+            with self.__lock:
+                self.__active_files_by_path[
+                    filepath_or_handler_file.filepath
+                ] = filepath_or_handler_file
+        else:
             self.logger.error(
-                f'ERROR: unrecognized type {type(filepath_or_handler_file)}',
+                f"ERROR: unrecognized type {type(filepath_or_handler_file)}",
                 exc_type=TypeError,
             )
 
-    def __remove_active_file(self,filepath) :
-        with self.__lock :
-            if filepath in self.__active_files_by_path :
+    def __remove_active_file(self, filepath):
+        with self.__lock:
+            if filepath in self.__active_files_by_path:
                 _ = self.__active_files_by_path.pop(filepath)
