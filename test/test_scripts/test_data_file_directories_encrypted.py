@@ -16,7 +16,7 @@ TIMEOUT_SECS = 300
 JOIN_TIMEOUT_SECS = 60
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[:-len('.py')]]
 
-class TestDataFileDirectories(unittest.TestCase) :
+class TestDataFileDirectoriesEncrypted(unittest.TestCase) :
     """
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """
@@ -71,46 +71,52 @@ class TestDataFileDirectories(unittest.TestCase) :
             #wait for the timeout for the test file to be completely reconstructed 
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to reconstruct test file from the "{TOPIC_NAME}" topic in '
-            msg+= f'test_encrypted_upload_and_download (will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to reconstruct test file from the "{TOPIC_NAME}" topic '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             reco_fp = TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
             reco_fp = reco_fp/TEST_CONST.TEST_DATA_FILE_NAME
             reco_rel_fp = reco_fp.relative_to(TEST_CONST.TEST_RECO_DIR_PATH_ENCRYPTED)
-            while (reco_rel_fp not in dfdd.completely_processed_filepaths) and time_waited<TIMEOUT_SECS :
+            while (reco_rel_fp not in dfdd.recent_processed_filepaths) and time_waited<TIMEOUT_SECS :
                 current_messages_read = dfdd.n_msgs_read
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
                 time.sleep(5)
                 time_waited+=5
             #After timing out, stalling, or completely reconstructing the test file, 
             #put the "quit" command into the input queue, which SHOULD stop the method running
-            msg = f'Quitting download thread in test_encrypted_upload_and_download after reading {dfdd.n_msgs_read} '
-            msg+= f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after reading {dfdd.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfdd.control_command_queue.put('q')
             #wait for the download thread to finish
             download_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if download_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_encrypted_upload_and_download timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             dfdd.close()
             #put the quit command in the upload directory's command queue to stop the process running
-            msg = '\nQuitting upload thread in test_encrypted_upload_and_download; '
-            msg+= f'will timeout after {TIMEOUT_SECS} seconds....'
-            LOGGER.info(msg)
+            LOGGER.info(
+                f'Quitting upload thread; will timeout after {TIMEOUT_SECS} seconds....'
+            )
             dfud.control_command_queue.put('q')
             #wait for the uploading thread to complete
             upload_thread.join(timeout=TIMEOUT_SECS)
             if upload_thread.is_alive() :
-                errmsg = 'ERROR: upload thread in test_encrypted_upload_and_download '
-                errmsg+= f'timed out after {TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: upload thread timed out after {TIMEOUT_SECS} seconds!'
+                )
             #make sure the reconstructed file exists with the same name and content as the original
             self.assertTrue(reco_fp.is_file())
             if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH,reco_fp,shallow=False) :
-                errmsg = 'ERROR: files are not the same after reconstruction! '
-                errmsg+= f'(This may also be due to the timeout at {TIMEOUT_SECS} seconds)'
+                errmsg = (
+                    'ERROR: files are not the same after reconstruction! '
+                    f'(This may also be due to the timeout at {TIMEOUT_SECS} seconds)'
+                )
                 raise RuntimeError(errmsg)
             #make sure that the ProducerFileRegistry files were created and list the file as completely uploaded
             log_subdir = TEST_CONST.TEST_WATCHED_DIR_PATH_ENCRYPTED/DataFileUploadDirectory.LOG_SUBDIR_NAME
@@ -131,9 +137,9 @@ class TestDataFileDirectories(unittest.TestCase) :
                     dfdd.control_command_queue.put('q')
                     download_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if download_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_encrypted_upload_and_download timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :
@@ -145,9 +151,9 @@ class TestDataFileDirectories(unittest.TestCase) :
                     dfud.shutdown()
                     upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if upload_thread.is_alive() :
-                        errmsg = 'ERROR: upload thread in test_encrypted_upload_and_download timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Upload thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :

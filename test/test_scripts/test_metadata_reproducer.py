@@ -76,12 +76,14 @@ class TestMetadataReproducer(unittest.TestCase) :
             current_messages_read = -1
             time_waited = 0
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Waiting to extract and reproduce test file metadata from the "{SOURCE_TOPIC_NAME}" topic in '
-            msg+= f'test_metadata_reproducer (will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to reproduce test file metadata from the "{SOURCE_TOPIC_NAME}" '
+                f'topic (will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = pathlib.Path(UPLOAD_FILE.name)
-            while (recofp not in metadata_reproducer.results_produced_filepaths) and time_waited<TIMEOUT_SECS :
+            while (recofp not in metadata_reproducer.recent_results_produced) and time_waited<TIMEOUT_SECS :
                 current_messages_read = metadata_reproducer.n_msgs_read
                 LOGGER.set_stream_level(logging.INFO)
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
@@ -90,17 +92,19 @@ class TestMetadataReproducer(unittest.TestCase) :
                 time_waited+=5
             #put the "quit" command into the input queue, which should stop the thread and clean it up also
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Quitting reproducer thread in test_metadata_reproducer after reading {metadata_reproducer.n_msgs_read} '
-            msg+= f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting reproducer thread after reading {metadata_reproducer.n_msgs_read} '
+                f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             metadata_reproducer.control_command_queue.put('q')
             #wait for the reproducer thread to finish
             rep_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if rep_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_metadata_reproducer timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             #make sure the file is listed in the 'results_produced' file
             time.sleep(1.0)
             metadata_reproducer.file_registry.in_progress_table.dump_to_file()
@@ -127,9 +131,9 @@ class TestMetadataReproducer(unittest.TestCase) :
                                         consumer_group_id=CONSUMER_GROUP_ID)
             consumer = consumer_group.get_new_subscribed_consumer()
             LOGGER.set_stream_level(logging.INFO)
-            msg =  'Consuming metadata message in test_metadata_reproducer; '
-            msg+= f'will timeout after {TIMEOUT_SECS} seconds....'
-            LOGGER.info(msg)
+            LOGGER.info(
+                f'Consuming metadata message; will timeout after {TIMEOUT_SECS} seconds'
+            )
             LOGGER.set_stream_level(logging.ERROR)
             success = False; consume_start_time = datetime.datetime.now()
             while (not success) and (datetime.datetime.now()-consume_start_time).total_seconds()<TIMEOUT_SECS :
@@ -164,9 +168,9 @@ class TestMetadataReproducer(unittest.TestCase) :
                     metadata_reproducer.control_command_queue.put('q')
                     rep_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if rep_thread.is_alive() :
-                        errmsg = 'ERROR: reproducer thread in test_metadata_reproducer timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Reproducer thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :

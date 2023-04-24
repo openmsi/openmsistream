@@ -2,14 +2,14 @@
 Installing OpenMSIStream
 ========================
 
-We recommend using a minimal installation of the conda open source package and environment management system. These instructions start with installation of conda and outline all the necessary steps to run OpenMSIStream programs. 
-
 Official Docker image
 ---------------------
 
 The quickest way to deploy OpenMSIStream programs is to use the official public `Docker image <https://hub.docker.com/repository/docker/openmsi/openmsistream/general>`_: ``openmsi/openmsistream``. Version tags there are synchronized with published releases, and "latest" is regularly updated.
 
 The image is built off of the `python:3.9-slim-bullseye <https://hub.docker.com/layers/library/python/3.9-slim-bullseye/images/sha256-78740d6c888f2e6cb466760b3373eb35bb3f1059cf1f1b5ab0fbec9a0331a03d?context=explore>`_ (Debian Linux) base image, and contains a complete install of OpenMSIStream. Running the Docker image as-is will drop you into a bash terminal as the "openmsi" user (who has sudo privileges) in their home area. By default, the timezone is set to "America/New York" but you can change this by setting the value of the "``TZ``" environment variable inside the container.
+
+If you want to install OpenMSIStream on your own system instead of running a Docker container, though, we recommend using a minimal installation of the conda open source package and environment management system. The instructions below start with installation of conda and outline all the necessary steps to run OpenMSIStream programs. 
 
 Quick start with miniconda3 
 ---------------------------

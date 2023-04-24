@@ -1,10 +1,11 @@
 """A single data file"""
 
-#imports
+# imports
 from ...utilities import LogOwner
 from ...utilities.misc import populated_kwargs
 
-class DataFile(LogOwner) :
+
+class DataFile(LogOwner):
     """
     Base class for representing a single data file
 
@@ -12,8 +13,8 @@ class DataFile(LogOwner) :
     :type filepath: :class:`pathlib.Path`
     """
 
-    def __init__(self,filepath,*args,**kwargs) :
+    def __init__(self, filepath, *args, **kwargs):
         self.filepath = filepath
         self.filename = self.filepath.name
-        kwargs = populated_kwargs(kwargs,{'logger_file':self.filepath.parent})
-        super().__init__(*args,**kwargs)
+        kwargs = populated_kwargs(kwargs, {"logger_file": self.filepath.parent})
+        super().__init__(*args, **kwargs)

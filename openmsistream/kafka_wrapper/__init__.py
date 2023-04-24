@@ -12,11 +12,11 @@ from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .producible import Producible
 
 __all__ = [
-    'OpenMSIStreamProducer',
-    'OpenMSIStreamConsumer',
-    'ProducerGroup',
-    'ConsumerGroup',
-    'ConsumerAndProducerGroup',
-    'OpenMSIStreamKafkaCrypto',
-    'Producible',
+    "OpenMSIStreamProducer",
+    "OpenMSIStreamConsumer",
+    "ProducerGroup",
+    "ConsumerGroup",
+    "ConsumerAndProducerGroup",
+    "OpenMSIStreamKafkaCrypto",
+    "Producible",
 ]

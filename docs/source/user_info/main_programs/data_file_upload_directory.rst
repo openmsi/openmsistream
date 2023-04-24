@@ -21,7 +21,7 @@ Running the code will automatically enqueue any files added to the directory dur
 Other options for running the code include:
 
 #. Changing the number of parallel threads: add the ``--n_threads [threads]`` argument where ``[threads]`` is the desired number of parallel threads to use. The default is 2 threads.
-#. Changing which files in the directory get uploaded: add the ``--upload_regex [regex]`` argument where ``[regex]`` is a regular expression. Only files whose names match ``[regex]`` will be uploaded. The default excludes any hidden files (names start with '.') and log files (names end with '.log').
+#. Changing which files in the directory get uploaded: add the ``--upload_regex [regex]`` argument where ``[regex]`` is a regular expression. Only files whose paths match ``[regex]`` will be uploaded. The default excludes any hidden files (names start with '.') and log files (names end with '.log'). Hidden files and files in the "LOGS" subdirectory will never be uploaded.
 #. Uploading existing files as well as newly-added files: add the ``--upload_existing`` flag (see above).
 #. Changing the size of the individual file chunks: add the ``--chunk_size [n_bytes]`` argument where ``[n_bytes]`` is the desired chunk size in bytes. ``[n_bytes]`` must be a nonzero power of two (the default is 16384). It may be necessary to reconfigure the topic you're using as well as some of the Producer configurations to allow particularly large messages.
 #. Changing the size of the internal message queue: add the ``--queue_max_size [n_megabytes]`` argument where ``[n_megabytes]`` is the maximum allowed size of the internal queue in megabytes (the default is 500MB). This internal queue is used to make sure that there's some buffer between recognizing a file exists to be uploaded and producing all of its associated messages to the topic; its size should be set somewhere between a few batches of messages ("``batch.size``" in the producer config) and the maximum memory footprint you would like the program to have. The default value is 500MB. If possible, it's preferable to set this value at least as large as the librdkafka buffering queue ("``queue.buffering.max.kbytes``" in the producer config) to minimize latency, but the total memory footprint is approximately the sum of both queues, and the default librdkafka queue size is about 1GB.
@@ -31,9 +31,18 @@ To see other optional command line arguments, run ``DataFileUploadDirectory -h``
 Interacting with the program
 ----------------------------
 
-While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total files have been enqueued or are in progress. Messages will be printed to the console showing how many chunks each file is broken into, and the progress of actually producing those chunks to the topic. 
+While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total files have been enqueued or are in progress. Debug-level logging messages show how many chunks each file is broken into, and the progress of actually producing those chunks to the topic. 
 
 The processes can be shut down by typing "quit" or "q" into the console. Note that the process won't actually shut down until all currently enqueued messages have been delivered to the broker (or return unrecoverable errors). Also note that the files will have all of their chunks enqueued almost immediately, but actually producing the chunks to the broker may take slightly more time depending on how many files are being uploaded at once.
+
+Directory monitoring with watchdog
+----------------------------------
+
+The upload directory uses a Python library called `watchdog <https://pypi.org/project/watchdog/>`_ to monitor the filesystem for events that would trigger files to be uploaded. The implementation is purposefully minimal to reflect the limitations of using sub/pub messaging systems to reconstruct directories on disparate machines: specifically, ``DataFileUploadDirectory`` programs are "append-only" in that they will never send messages to delete certain files.
+
+For example, if you move a bunch of files to a new subdirectory while the program is running, the consumer side will get new messages for the files in the subdirectory, but any reconstructed files in the original location will remain. Any files that are modified will be produced again; deleting files does not send any new messages. Because many common editing programs (such as vim) use short-lived temporary files to maintain atomicity of their outputs, files are not be marked to be produced until they have existed unmodified for 3 seconds. Files that are created and deleted within those three seconds will not be produced.
+
+Users who would like to test a particular workflow's interaction with watchdog can use the `testing script <https://github.com/openmsi/openmsistream/blob/main/test/watchdog_testing.py>`_ in the repository to see what events get triggered when. Running that script pointed to a directory will log messages for each recognized watchdog event. Only events for files are relevant for OpenMSIStream.
 
 Restarting the program
 ----------------------

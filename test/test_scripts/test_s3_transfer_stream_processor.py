@@ -47,23 +47,23 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             if not fp.parent.is_dir():
                 fp.parent.mkdir(parents=True)
             fp.write_bytes(TEST_CONST.TEST_DATA_FILE_PATH.read_bytes())
-            time.sleep(1)
+            time.sleep(5)
             # put the "check" command into the input queue a couple times to test it
             dfud.control_command_queue.put('c')
             dfud.control_command_queue.put('check')
             # put the quit command in the command queue to stop the process running
             LOGGER.set_stream_level(logging.INFO)
-            msg = '\nQuitting upload thread in run_data_file_upload_directory; '
-            msg += f'will timeout after {TIMEOUT_SECS} seconds....'
-            LOGGER.info(msg)
+            LOGGER.info(
+                f'\nQuitting upload thread; will timeout after {TIMEOUT_SECS} seconds....'
+            )
             LOGGER.set_stream_level(logging.ERROR)
             dfud.control_command_queue.put('q')
             # wait for the uploading thread to complete
             upload_thread.join(timeout=TIMEOUT_SECS)
             if upload_thread.is_alive():
-                errmsg = 'ERROR: upload thread in run_data_file_upload_directory '
-                errmsg += f'timed out after {TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: upload thread timed out after {TIMEOUT_SECS} seconds!'
+                )
         except Exception as e:
             raise e
         finally:
@@ -72,9 +72,9 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                     dfud.shutdown()
                     upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if upload_thread.is_alive():
-                        errmsg = 'ERROR: upload thread in run_data_file_upload_directory timed out after '
-                        errmsg += f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Upload thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e:
                     raise e
 
@@ -100,17 +100,19 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             s3tsp.control_command_queue.put('check')
             # put the quit command in the command queue to stop the process running
             LOGGER.set_stream_level(logging.INFO)
-            msg = '\nQuitting S3TransferStreamProcessor; '
-            msg += f'will timeout after {TIMEOUT_SECS} seconds....'
+            msg = (
+                '\nQuitting S3TransferStreamProcessor; '
+                f'will timeout after {TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             s3tsp.control_command_queue.put('q')
             # wait for the uploading thread to complete
             s3tsp_thread.join(timeout=TIMEOUT_SECS)
             if s3tsp_thread.is_alive():
-                errmsg = 'ERROR: s3 transfer thread in S3TransferStreamProcessor '
-                errmsg += f'timed out after {TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: s3 transfer thread timed out after {TIMEOUT_SECS} seconds!'
+                )
         except Exception as e:
             raise e
         finally:
@@ -119,9 +121,9 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                     s3tsp.shutdown()
                     s3tsp_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if s3tsp_thread.is_alive():
-                        errmsg = 'ERROR: s3 transfer thread in S3TransferStreamProcessor timed out after '
-                        errmsg += f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f's3 transfer thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                        )
                 except Exception as e:
                     raise e
                 finally:
@@ -151,17 +153,19 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
             s3tsp.control_command_queue.put('check')
             # put the quit command in the command queue to stop the process running
             LOGGER.set_stream_level(logging.INFO)
-            msg = '\nQuitting validate_s3_data_transfer; '
-            msg += f'will timeout after {TIMEOUT_SECS} seconds....'
+            msg = (
+                '\nQuitting validate_s3_data_transfer; '
+                f'will timeout after {TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             s3tsp.control_command_queue.put('q')
             # wait for the uploading thread to complete
             validate_thread.join(timeout=TIMEOUT_SECS)
             if validate_thread.is_alive():
-                errmsg = 'ERROR: s3 transfer thread in validate_s3_data_transfer '
-                errmsg += f'timed out after {TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: s3 transfer thread timed out after {TIMEOUT_SECS} seconds!'
+                )
         except Exception as e:
             raise e
         finally:
@@ -170,9 +174,9 @@ class TestS3TransferStreamProcessor(unittest.TestCase):
                     s3tsp.shutdown()
                     validate_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if validate_thread.is_alive():
-                        errmsg = 'ERROR: s3 transfer thread in validate_s3_data_transfer timed out after '
-                        errmsg += f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f's3 transfer thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e:
                     raise e
         if TEST_CONST.TEST_S3_TRANSFER_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
