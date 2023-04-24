@@ -1,4 +1,7 @@
-"""Transfer contents of DataFiles read from chunks in a topic to an S3 bucket when complete files become available"""
+"""
+Transfer contents of DataFiles read from chunks in a topic to an S3 bucket
+when complete files become available
+"""
 
 # imports
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
@@ -13,7 +16,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
     :type bucket_name: str
-    :param config_path: Path to the config file to use in defining the Broker connection and Consumers
+    :param config_path: Path to the config file to use in defining the Broker connection
+        and Consumers
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
@@ -30,7 +34,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
     def make_stream(self):
         """
         Runs :func:`~DataFileStreamProcessor.process_files_as_read` to reconstruct files in memory
-        and transfer completed files to the S3 bucket. Runs until the user inputs a command to shut it down.
+        and transfer completed files to the S3 bucket.
+        Runs until the user inputs a command to shut it down.
 
         :return: the total number of messages consumed
         :rtype: int
@@ -43,13 +48,14 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
 
     def _process_downloaded_data_file(self, datafile, lock):
         """
-        Transfer a fully-reconstructed file to the S3 bucket and verify that its contents in the bucket
-        match its original hash from disk. Logs a warning if the file hashes don't match.
+        Transfer a fully-reconstructed file to the S3 bucket and verify that its contents
+        in the bucket match its original hash from disk.
+        Logs a warning if the file hashes don't match.
 
         :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
             all of its messages from the topic
         :type datafile: :class:`~DownloadDataFileToMemory`
-        :param lock: Acquiring this :class:`threading.Lock` object would ensure that only one instance
+        :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance
             of :func:`~_process_downloaded_data_file` is running at once
         :type lock: :class:`threading.Lock`
 
@@ -69,7 +75,10 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
             self.logger.debug(object_key + " matched with consumer datafile")
             # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
         else:
-            warnmsg = f"WARNING: {object_key} transferred to bucket but the file on the bucket does not match the file originally read from disk!"
+            warnmsg = (
+                f"WARNING: {object_key} transferred to bucket but the file in the bucket "
+                "does not match the file originally read from disk!"
+            )
             self.logger.warning(warnmsg)
         return None
 
