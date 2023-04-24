@@ -191,7 +191,7 @@ class StreamHandlerRegistry(LogOwner, ABC):
                         "and should be manually concatenated. "
                         "Duplicate entries may be present."
                     )
-                    raise RuntimeError(warnmsg)
+                    self.logger.warning(warnmsg)
             to_pop = [
                 table_id
                 for table_id, table in self.__succeeded_tables_by_id.items()
