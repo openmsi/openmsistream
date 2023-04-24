@@ -34,7 +34,7 @@ jobs:
           args: .[test]
       - run:
           name: code check
-          command: cd ~/project; python -m pyflakes .; python -m pylint openmsistream; cd -
+          command: cd ~/project; python -m pyflakes .; black openmsistream --check; python -m pylint openmsistream; cd -
       - persist_to_workspace:
           root: .
           paths:
