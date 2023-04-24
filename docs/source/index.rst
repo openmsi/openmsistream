@@ -17,10 +17,6 @@ OpenMSIStream provides Python applications for generalized laboratory, analysis,
    :alt: License 
 .. image:: https://img.shields.io/pypi/pyversions/openmsistream
    :alt: PyPI - Python Version 
-.. image:: https://img.shields.io/github/release-date/openmsi/openmsistream
-   :alt: GitHub Release Date 
-.. image:: https://img.shields.io/github/last-commit/openmsi/openmsistream
-   :alt: GitHub last commit 
 .. image:: https://img.shields.io/circleci/build/github/openmsi/openmsistream/main
    :alt: CircleCI
 .. image:: https://readthedocs.org/projects/openmsistream/badge/?version=latest
