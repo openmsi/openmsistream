@@ -76,10 +76,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
             return None
         regex_str = r'^('
         for fp in self.filepaths_to_rerun :
-            if fp!=fp.name :
-                subdir_str = str(fp.parent.as_posix())
-            else :
-                subdir_str = None
+            subdir_str = str(fp.parent.as_posix()) if fp!=fp.name else None
             regex_str+=f'{get_message_prepend(subdir_str,fp.name)}|'
         regex_str=f'{regex_str[:-1]})_.*$'
         return re.compile(regex_str)
@@ -150,9 +147,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
                                                 filepath=fp,logger=self.logger)
             for entry_line in added_file.lines :
                 if entry_line not in all_lines :
-                    errmsg = f'ERROR: failed to consolidate individual files into {self.succeeded_filepath}. '
-                    errmsg+= 'Individual files will be retained and should be manually concatenated. '
-                    errmsg+= 'Duplicate entries may be present.'
+                    errmsg = f'ERROR: failed to consolidate individual files into {self.succeeded_filepath}. Individual files will be retained and should be manually concatenated. Duplicate entries may be present.'
                     raise RuntimeError(errmsg)
             to_pop = [table_id for table_id,table in self.__succeeded_tables_by_id.items() if fp==table.filepath]
             for table_id in to_pop :
@@ -181,8 +176,7 @@ class StreamHandlerRegistry(LogOwner,ABC) :
         if rel_filepath not in existing_obj_addresses :
             return None
         if len(existing_obj_addresses[rel_filepath])!=1 :
-            errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath '
-            errmsg+= f'{rel_filepath} in file at {self._in_progress_table.filepath}'
+            errmsg = f'ERROR: found more than one {self.__class__.__name__} entry for relative filepath {rel_filepath} in file at {self._in_progress_table.filepath}'
             self.logger.error(errmsg,exc_type=ValueError)
         return existing_obj_addresses[rel_filepath][0]
 

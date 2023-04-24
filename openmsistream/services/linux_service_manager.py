@@ -110,8 +110,7 @@ class LinuxServiceManager(ServiceManagerBase) :
         run_cmd_in_subprocess(['sudo','systemctl','reset-failed'],logger=self.logger)
         self.logger.info('Service removed')
         if remove_nssm :
-            warnmsg = "WARNING: requested to remove NSSM along with the Service, "
-            warnmsg+= "but Linux Services don't install NSSM so nothing was done."
+            warnmsg = "WARNING: requested to remove NSSM along with the Service, but Linux Services don't install NSSM so nothing was done."
             self.logger.warning(warnmsg)
         super().remove_service(remove_env_vars=remove_env_vars,remove_install_args=remove_install_args)
 

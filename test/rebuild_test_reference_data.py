@@ -46,8 +46,7 @@ def compare_and_check_old_and_new_files(filename,subdir_path='') :
     old_size = (EXISTING_TEST_DATA_DIR/rel_filepath).stat().st_size
     new_size = (NEW_TEST_DATA_DIR/rel_filepath).stat().st_size
     if old_size!=new_size :
-        msg = f'File {rel_filepath} has {new_size} bytes but the existing file has {old_size} bytes. '
-        msg+= 'Is that alright? [(y)/n]: '
+        msg = f'File {rel_filepath} has {new_size} bytes but the existing file has {old_size} bytes. Is that alright? [(y)/n]: '
         prompt_to_remove(rel_filepath,msg)
         return
     #if it's different than what exists

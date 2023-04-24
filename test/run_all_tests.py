@@ -188,8 +188,7 @@ def run_script_tests(args) :
                 )
                 LOGGER.info('Local broker stopped')
             except Exception as exc :
-                errmsg = 'ERROR: failed to stop the local testing broker, and it may need to be stopped manually. '
-                errmsg+= 'Exception will be re-raised.'
+                errmsg = 'ERROR: failed to stop the local testing broker, and it may need to be stopped manually. Exception will be re-raised.'
                 LOGGER.error(errmsg,exc_info=exc,reraise=True)
         #check for any errors or failures
         if len(result.errors)>0 or len(result.failures)>0 :

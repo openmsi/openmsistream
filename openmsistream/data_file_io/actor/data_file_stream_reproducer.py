@@ -61,9 +61,6 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :rtype: int
         :return: the number of files reconstructed from the topic
         :rtype: int
-        :return: the paths of up to 50 most recent files successfully reconstructed
-            from the Consumer topic during the run
-        :rtype: list
         :return: the number of files whose processing results were successfully produced
             to the Producer topic
         :rtype: int
@@ -72,10 +69,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         :rtype: list
         """
         #startup message
-        msg = f'Will process files from messages in the {self.consumer_topic_name} topic using '
-        msg+= f'{self.n_consumer_threads} thread{"s" if self.n_consumer_threads>1 else ""} and produce their '
-        msg+= f'processing results to the {self.producer_topic_name} topic using {self.n_producer_threads} '
-        msg+= f'thread{"s" if self.n_producer_threads>1 else ""}'
+        msg = f'Will process files from messages in the {self.consumer_topic_name} topic using {self.n_consumer_threads} thread{"s" if self.n_consumer_threads>1 else ""} and produce their processing results to the {self.producer_topic_name} topic using {self.n_producer_threads} thread{"s" if self.n_producer_threads>1 else ""}'
         self.logger.info(msg)
         #set up the stream reproducer registry
         self.file_registry = StreamReproducerRegistry(dirpath=self._output_dir,
@@ -85,9 +79,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                                                        logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self.file_registry.rerun_file_key_regex is not None :
-            msg = f'Consumer{"s" if self.n_consumer_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self.file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
+            msg = f'Consumer{"s" if self.n_consumer_threads>1 else ""} will start from the beginning of the topic to re-read messages for {self.file_registry.n_files_to_rerun} previously-failed file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
             self.logger.info(msg)
             self.restart_at_beginning=True
             self.message_key_regex=self.file_registry.rerun_file_key_regex
@@ -146,11 +138,9 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
         if err is not None :
             self.file_registry.register_file_result_production_failed(filename,rel_filepath,n_total_chunks)
             if err.fatal() :
-                warnmsg =f'WARNING: fatally failed to deliver processing result message for {rel_filepath}. '
-                warnmsg+=f'This message will be re-enqueued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: fatally failed to deliver processing result message for {rel_filepath}. This message will be re-enqueued. Error reason: {err.str()}'
             elif not err.retriable() :
-                warnmsg =f'WARNING: Failed to deliver processing result message for {rel_filepath} and cannot retry. '
-                warnmsg+= f'This message will be re-enqueued. Error reason: {err.str()}'
+                warnmsg =f'WARNING: Failed to deliver processing result message for {rel_filepath} and cannot retry. This message will be re-enqueued. Error reason: {err.str()}'
             self.logger.warning(warnmsg)
             datafile = self.files_in_progress_by_path[rel_filepath]
             new_msg = self._get_processing_result_message_for_file(datafile,self.lock)
@@ -169,8 +159,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                 #stop tracking the file
                 del self.files_in_progress_by_path[rel_filepath]
                 del self.locks_by_fp[rel_filepath]
-            infomsg = f'Processing result message for {rel_filepath} has been received by the broker for '
-            infomsg+= f'the {self.producer_topic_name} topic'
+            infomsg = f'Processing result message for {rel_filepath} has been received by the broker for the {self.producer_topic_name} topic'
             self.logger.debug(infomsg)
 
     def _process_message(self,lock,msg,rootdir_to_set=None):
@@ -280,8 +269,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
                                                                       datafile.filepath.relative_to(self._output_dir),
                                                                       datafile.n_total_chunks)
         #log the warning
-        warnmsg = f'WARNING: Failed to compute the message to produce from {datafile.filepath}. Messages for this file '
-        warnmsg+= 'will need to be re-consumed to try again. Check logs above for specific error messages.'
+        warnmsg = f'WARNING: Failed to compute the message to produce from {datafile.filepath}. Messages for this file will need to be re-consumed to try again. Check logs above for specific error messages.'
         self.logger.warning(warnmsg)
         #stop tracking the file
         with self.lock :
@@ -289,9 +277,7 @@ class DataFileStreamReproducer(DataFileStreamHandler,DataFileChunkReproducer,ABC
             del self.locks_by_fp[datafile.relative_filepath]
 
     def _on_check(self) :
-        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{self.n_processed_files} files completely reconstructed, and '
-        msg+= f'{self.n_results_produced_files} processing result messages produced so far'
+        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, {self.n_processed_files} files completely reconstructed, and {self.n_results_produced_files} processing result messages produced so far'
         self.logger.info(msg)
         if ( len(self.files_in_progress_by_path)>0 or
              len(self.recent_processed_filepaths)>0 or

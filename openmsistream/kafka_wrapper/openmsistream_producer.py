@@ -157,8 +157,7 @@ class OpenMSIStreamProducer(LogOwner) :
         if isinstance(obj,Producible) :
             success = self.produce_object(obj,topic_name,**kwargs)
             if not success :
-                warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than '
-                warnmsg+=  'the timeout with no new callbacks served. This message will be re-enqueued.'
+                warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than the timeout with no new callbacks served. This message will be re-enqueued.'
                 self.logger.warning(warnmsg)
                 queue.put(obj)
             self.__poll_counter+=1
@@ -166,8 +165,7 @@ class OpenMSIStreamProducer(LogOwner) :
                 _ = self.poll(0)
                 self.__poll_counter = 0
         else :
-            warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain '
-            warnmsg+= 'Producible objects. This object will be skipped!'
+            warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain Producible objects. This object will be skipped!'
             self.logger.warning(warnmsg)
 
     def produce_from_queue_looped(self,queue,topic_name,**kwargs) :
@@ -192,8 +190,7 @@ class OpenMSIStreamProducer(LogOwner) :
             if isinstance(obj,Producible) :
                 success = self.produce_object(obj,topic_name,**kwargs)
                 if not success :
-                    warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than '
-                    warnmsg+=  'the timeout with no new callbacks served. This message will be re-enqueued.'
+                    warnmsg = f'WARNING: message with key {obj.msg_key} failed to buffer for longer than the timeout with no new callbacks served. This message will be re-enqueued.'
                     self.logger.warning(warnmsg)
                     queue.put(obj)
                 self.__poll_counter+=1
@@ -201,8 +198,7 @@ class OpenMSIStreamProducer(LogOwner) :
                     _ = self.poll(0)
                     self.__poll_counter = 0
             else :
-                warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain '
-                warnmsg+= 'Producible objects. This object will be skipped!'
+                warnmsg = f'WARNING: found an object of type {type(obj)} in a Producer queue that should only contain Producible objects. This object will be skipped!'
                 self.logger.warning(warnmsg)
             #get the next object in the Queue
             obj = queue.get()

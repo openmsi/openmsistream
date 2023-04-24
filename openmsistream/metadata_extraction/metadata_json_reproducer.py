@@ -50,13 +50,11 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
         try :
             json_content = self._get_metadata_dict_for_file(datafile)
         except Exception as exc :
-            errmsg = f'ERROR: failed to extract JSON metadata from {datafile.full_filepath}! '
-            errmsg+= 'Error will be logged below, but not reraised.'
+            errmsg = f'ERROR: failed to extract JSON metadata from {datafile.full_filepath}! Error will be logged below, but not reraised.'
             self.logger.error(errmsg,exc_info=exc)
             return None
         if not isinstance(json_content,dict) :
-            errmsg = f'ERROR: JSON content found for {datafile.full_filepath} is of type {type(json_content)}, '
-            errmsg+= 'not a dictionary! This file will be skipped.'
+            errmsg = f'ERROR: JSON content found for {datafile.full_filepath} is of type {type(json_content)}, not a dictionary! This file will be skipped.'
             self.logger.error(errmsg)
             return None
         return MetadataJSONMessage(datafile,json_content=json_content)
@@ -103,26 +101,28 @@ class MetadataJSONReproducer(DataFileStreamReproducer,ABC) :
                                   streamlevel=args.logger_stream_level,filelevel=args.logger_file_level,
                                   )
         # cls.bucket_name = args.bucket_name
-        msg = f'Listening to the {args.consumer_topic_name} topic for XRD CSV files to send their metadata to the '
-        msg+= f'{args.producer_topic_name} topic....'
+        msg = f'Listening to the {args.consumer_topic_name} topic for XRD CSV files to send their metadata to the {args.producer_topic_name} topic....'
         metadata_reproducer.logger.info(msg)
-        n_r,n_p,f_r_fns,m_p_fns = metadata_reproducer.produce_processing_results_for_files_as_read()
+        n_m_r,n_m_p,n_f_r,n_f_mp,m_p_fns = metadata_reproducer.produce_processing_results_for_files_as_read()
         metadata_reproducer.close()
         msg = ''
-        if n_r>0 :
-            msg+= f'{n_r} total message{"s were" if n_r!=1 else " was"} consumed, '
-        if n_p>0 :
-            msg+=f'{n_p} message{"s were" if n_p!=1 else " was"} successfully processed, '
-        if len(f_r_fns)>0 :
-            msg+=f'{len(f_r_fns)} file{"s were" if len(f_r_fns)!=1 else " was"} fully read, '
-        if len(m_p_fns)>0 :
-            msg+=f'{len(m_p_fns)} file{"s were" if len(m_p_fns)!=1 else " was"} files had json metadata produced'
-            msg+=f' to the "{args.producer_topic_name}" topic, '
+        if n_m_r>0 :
+            msg+= f'{n_m_r} total message{"s were" if n_m_r!=1 else " was"} consumed, '
+        if n_m_p>0 :
+            msg+=f'{n_m_p} message{"s were" if n_m_p!=1 else " was"} successfully processed, '
+        if n_f_r>0 :
+            msg+=f'{n_f_r} file{"s were" if n_f_r!=1 else " was"} fully read, '
+        if n_f_mp>0 :
+            msg+=(
+                f'{n_f_mp} file{"s" if n_f_mp!=1 else ""} had json metadata produced '
+                f'to the "{args.producer_topic_name}" topic, '
+            )
         metadata_reproducer.logger.info(msg[:-2])
-        if len(m_p_fns)>0 :
-            msg=f'the following {len(m_p_fns)} file'
-            msg+=' had' if len(m_p_fns)==1 else 's had'
-            msg+=f' json metadata produced to the {args.producer_topic_name} topic:'
-            for fn in m_p_fns :
-                msg+=f'\n\t{fn}'
+        if n_f_mp>0 :
+            msg=(
+                f'{n_f_mp} file{"" if n_f_mp==1 else "s"} had json metadata produced '
+                f'to the {args.producer_topic_name} topic. '
+                f'Up to {cls.N_RECENT_FILES} most recent:\n\t'
+            )
+            msg+='\n\t'.join(m_p_fns)
             metadata_reproducer.logger.debug(msg)

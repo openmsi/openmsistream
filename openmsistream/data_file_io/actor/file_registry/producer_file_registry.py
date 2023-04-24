@@ -93,9 +93,7 @@ class ProducerFileRegistry(LogOwner) :
             added_file = DataclassTableReadOnly(dataclass_type=RegistryLineCompleted,filepath=fp,logger=self.logger)
             for entry_line in added_file.lines :
                 if entry_line not in all_lines :
-                    errmsg = f'ERROR: failed to consolidate individual files into {self.completed_filepath_pattern}. '
-                    errmsg+= 'Individual files will be retained and should be manually concatenated. '
-                    errmsg+= 'Duplicate entries may be present.'
+                    errmsg = f'ERROR: failed to consolidate individual files into {self.completed_filepath_pattern}. Individual files will be retained and should be manually concatenated. Duplicate entries may be present.'
                     raise RuntimeError(errmsg)
             if fp in self.__completed_tables_by_path :
                 self.__completed_tables_by_path.pop(fp)
@@ -148,17 +146,14 @@ class ProducerFileRegistry(LogOwner) :
         existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr('rel_filepath')
         #make sure there's only one object with this filepath
         if len(existing_obj_addresses[rel_filepath])!=1 :
-            errmsg = f'ERROR: found {len(existing_obj_addresses[rel_filepath])} files in the producer registry '
-            errmsg+= f'for filepath {rel_filepath}'
+            errmsg = f'ERROR: found {len(existing_obj_addresses[rel_filepath])} files in the producer registry for filepath {rel_filepath}'
             self.__in_prog.lock.release()
             self.logger.error(errmsg,exc_type=RuntimeError)
         existing_addr = existing_obj_addresses[rel_filepath][0]
         #make sure the total numbers of chunks match
         existing_n_chunks = self.__in_prog.get_entry_attrs(existing_addr,'n_chunks')
         if existing_n_chunks!=n_total_chunks :
-            errmsg = f'ERROR: {rel_filepath} in {self.__class__.__name__} is listed as having '
-            errmsg+= f'{existing_n_chunks} total chunks, but the producer callback for this file '
-            errmsg+= f'lists {n_total_chunks} chunks! Did the chunk size change?'
+            errmsg = f'ERROR: {rel_filepath} in {self.__class__.__name__} is listed as having {existing_n_chunks} total chunks, but the producer callback for this file lists {n_total_chunks} chunks! Did the chunk size change?'
             self.__in_prog.lock.release()
             self.logger.error(errmsg,exc_type=RuntimeError)
         #get its current state

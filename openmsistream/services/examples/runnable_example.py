@@ -21,8 +21,7 @@ class RunnableExample(Runnable) :
         test_file_name = 'runnable_example_service_test.txt'
         if not (args.output_dir/test_file_name).is_file() :
             with open(args.output_dir/test_file_name,'w') as fp :
-                msg = "This file was created to test running a generic Runnable's 'run_from_command_line' "
-                msg+= "method as a Service/daemon"
+                msg = "This file was created to test running a generic Runnable's 'run_from_command_line' method as a Service/daemon"
                 fp.write(msg)
         with open(args.output_dir/test_file_name,'a') as fp :
             fp.write(f'\nService rerun {(datetime.datetime.now()).strftime("on %Y-%m-%d at %H:%M:%S")}')

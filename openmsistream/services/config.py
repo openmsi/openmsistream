@@ -42,8 +42,7 @@ class ServicesConstants :
                 run_classes = [getattr(module,x) for x in dir(module)
                                if isclass(getattr(module,x)) and getattr(module,x).__name__==script.name]
                 if len(run_classes)!=1 :
-                    errmsg = f'ERROR: could not determine class for script {cmd} in file {path}! '
-                    errmsg+= f'Possibilities found: {run_classes}'
+                    errmsg = f'ERROR: could not determine class for script {cmd} in file {path}! Possibilities found: {run_classes}'
                     raise RuntimeError(errmsg)
                 self.service_dicts.append({'class_name':cmd,
                                            'class':run_classes[0],

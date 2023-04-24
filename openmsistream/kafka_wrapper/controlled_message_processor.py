@@ -38,9 +38,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
                                                         message_key_regex=self.message_key_regex,
                                                         filter_new_messages=self.filter_new_messages)
         if ('enable.auto.commit' not in consumer.configs.keys()) or (consumer.configs['enable.auto.commit'] is True) :
-            warnmsg = 'WARNING: enable.auto.commit has not been set to False for a Consumer that will manually commit '
-            warnmsg+= 'offsets. Missed or duplicate messages could result. You can set "enable.auto.commit"=False in '
-            warnmsg+= 'the "consumer" section of the config file to re-enable manual offset commits (recommended).'
+            warnmsg = 'WARNING: enable.auto.commit has not been set to False for a Consumer that will manually commit offsets. Missed or duplicate messages could result. You can set "enable.auto.commit"=False in the "consumer" section of the config file to re-enable manual offset commits (recommended).'
             self.logger.warning(warnmsg)
         #start the loop for while the controlled process is alive
         while self.alive :
@@ -92,9 +90,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
                     return
                 for t_p in tps :
                     if t_p.error is not None :
-                        warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
-                        warnmsg+= f'"{t_p.topic}" partition {t_p.partition}. Duplicate messages may result '
-                        warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
+                        warnmsg = f'WARNING: failed to synchronously commit offset of last message received on "{t_p.topic}" partition {t_p.partition}. Duplicate messages may result when this Consumer is restarted. Error reason: {t_p.error.str()}'
                         self.logger.warning(warnmsg)
 
     def __commit_last_message_offset(self,consumer) :
@@ -106,12 +102,8 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded,ConsumerGroup,AB
             if tps is not None :
                 for t_p in tps :
                     if t_p.error is not None :
-                        warnmsg = 'WARNING: failed to synchronously commit offset of last message received on '
-                        warnmsg+= f'"{t_p.topic}" partition {t_p.partition}. Duplicate messages may result '
-                        warnmsg+= f'when this Consumer is restarted. Error reason: {t_p.error.str()}'
+                        warnmsg = f'WARNING: failed to synchronously commit offset of last message received on "{t_p.topic}" partition {t_p.partition}. Duplicate messages may result when this Consumer is restarted. Error reason: {t_p.error.str()}'
                         self.logger.warning(warnmsg)
         except Exception as exc :
-            warnmsg = 'WARNING: failed to synchronously commit offset of last message received. '
-            warnmsg+= 'Duplicate messages may be read the next time this Consumer is started. '
-            warnmsg+= 'Error will be logged below but not re-raised.'
+            warnmsg = 'WARNING: failed to synchronously commit offset of last message received. Duplicate messages may be read the next time this Consumer is started. Error will be logged below but not re-raised.'
             self.logger.warning(warnmsg,exc_info=exc)

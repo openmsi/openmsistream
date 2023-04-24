@@ -67,8 +67,7 @@ class ConfigFileParser(LogOwner) :
                 if value.startswith('$') :
                     exp_value = os.path.expandvars(value)
                     if exp_value == value :
-                        errmsg = f'ERROR: Expanding {value} in {self.filepath} as an environment variable failed '
-                        errmsg+= '(must be set on system)'
+                        errmsg = f'ERROR: Expanding {value} in {self.filepath} as an environment variable failed (must be set on system)'
                         self.logger.error(errmsg,exc_type=ValueError)
                     else :
                         value = exp_value

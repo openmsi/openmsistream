@@ -51,8 +51,7 @@ def set_env_var(var_name,var_val) :
     set an environment variable given its name and value
     """
     if get_os_name()=='Windows' :
-        pwrsh_cmd = f'[Environment]::SetEnvironmentVariable("{var_name}","{var_val}"'
-        pwrsh_cmd+= ',[EnvironmentVariableTarget]::Machine)'
+        pwrsh_cmd = f'[Environment]::SetEnvironmentVariable("{var_name}","{var_val}",[EnvironmentVariableTarget]::Machine)'
         run_cmd_in_subprocess(['powershell.exe',pwrsh_cmd])
     elif get_os_name()=='Linux' :
         run_cmd_in_subprocess(['export',f'{var_name}={var_val}'],shell=True)
@@ -106,8 +105,7 @@ def test_python_code() :
     """
     must_rerun = set_env_vars(['KAFKA_TEST_CLUSTER_USERNAME','KAFKA_TEST_CLUSTER_PASSWORD'])
     if must_rerun :
-        msg = 'New values for environment variables have been set. '
-        msg+= 'Please close this window and rerun InstallService so that their values get picked up.'
+        msg = 'New values for environment variables have been set. Please close this window and rerun InstallService so that their values get picked up.'
         SERVICE_CONST.logger.info(msg)
         sys.exit(0)
     SERVICE_CONST.logger.debug('Testing code to check for errors...')

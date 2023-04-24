@@ -60,8 +60,7 @@ class DataclassTableBase(LogOwner,ABC) :
         if not is_dataclass(self.__dataclass_type) :
             self.logger.error(f'ERROR: "{self.__dataclass_type}" is not a dataclass!',exc_type=TypeError)
         if len(fields(self.__dataclass_type)) <= 0 :
-            errmsg = f'ERROR: dataclass type {self.__dataclass_type} does not have any fields '
-            errmsg+= f'and so cannot be used in a {self.__class__.__name__}!'
+            errmsg = f'ERROR: dataclass type {self.__dataclass_type} does not have any fields and so cannot be used in a {self.__class__.__name__}!'
             self.logger.error(errmsg,exc_type=ValueError)
         self.__field_names = [field.name for field in fields(self.__dataclass_type)]
         self.__field_types = [field.type for field in fields(self.__dataclass_type)]
@@ -75,8 +74,7 @@ class DataclassTableBase(LogOwner,ABC) :
         if self.__filepath.is_file() :
             self.__read_csv_file()
         elif create_if_missing :
-            msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} '
-            msg+= f'to hold {self.__dataclass_type.__name__} entries'
+            msg = f'Creating new {self.__class__.__name__} csv file at {self.__filepath} to hold {self.__dataclass_type.__name__} entries'
             self.logger.debug(msg)
             self.dump_to_file()
 
@@ -112,8 +110,7 @@ class DataclassTableBase(LogOwner,ABC) :
         if args :
             for arg in args :
                 if arg not in to_return :
-                    errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} '
-                    errmsg+= 'Field and will not be returned from get_entry_attrs!'
+                    errmsg = f'WARNING: attribute name {arg} is not a name of a {self.__dataclass_type} Field and will not be returned from get_entry_attrs!'
                     self.logger.warning(errmsg)
         return to_return
 
@@ -233,8 +230,7 @@ class DataclassTableBase(LogOwner,ABC) :
         n_header_lines = len(self.csv_header_line.split('\n'))
         for ihl in range(n_header_lines) :
             if lines_as_read[ihl].strip()!=(self.csv_header_line.split('\n'))[ihl] :
-                errmsg = f'ERROR: header line in {self.__filepath} ({lines_as_read[0]}) does not match expectation for '
-                errmsg+= f'{self.__dataclass_type} ({self.csv_header_line})!'
+                errmsg = f'ERROR: header line in {self.__filepath} ({lines_as_read[0]}) does not match expectation for {self.__dataclass_type} ({self.csv_header_line})!'
                 self.logger.error(errmsg,exc_type=RuntimeError)
         #add entry lines and objects
         for line in lines_as_read[n_header_lines:] :
@@ -252,9 +248,7 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         if isinstance(lines,str) :
             lines = [lines]
-        lines_string = ''
-        for line in lines :
-            lines_string+=f'{line.strip()}\n'
+        lines_string='\n'.join([line.strip() for line in lines])
         n_retries_left = retries
         caught_exc = None
         while n_retries_left>0 :
@@ -271,13 +265,10 @@ class DataclassTableBase(LogOwner,ABC) :
         if caught_exc is not None :
             if not isinstance(caught_exc,FileNotFoundError) : #This is common to see and okay when running multithreaded
                 if reraise_exc :
-                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath} '
-                    errmsg+= f'after {retries-n_retries_left+1} attempts! Will reraise exception.'
+                    errmsg = f'ERROR: failed to write to {self.__class__.__name__} csv file at {self.__filepath} after {retries-n_retries_left+1} attempts! Will reraise exception.'
                     self.logger.error(errmsg,exc_info=caught_exc,reraise=True)
                 else :
-                    msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to '
-                    msg+= f'{self.__class__.__name__} csv file at {self.__filepath}! '
-                    msg+= 'Exception info below'
+                    msg = f'WARNING: failed in {retries-n_retries_left+1} attempts to write to {self.__class__.__name__} csv file at {self.__filepath}! Exception info below'
                     self.logger.warning(msg,exc_info=caught_exc)
 
     def _line_from_obj(self,obj) :
@@ -286,10 +277,7 @@ class DataclassTableBase(LogOwner,ABC) :
         """
         if obj.__class__ != self.__dataclass_type :
             self.logger.error(f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',exc_type=TypeError)
-        obj_line = ''
-        for fname,ftype in zip(self.__field_names,self.__field_types) :
-            obj_line+=f'{self.__get_str_from_attribute(getattr(obj,fname),ftype)}{self.DELIMETER}'
-        return obj_line[:-1]
+        return self.DELIMETER.join([self.__get_str_from_attribute(getattr(obj,fname),ftype) for fname,ftype in zip(self.__field_names,self.__field_types)])
 
     def __obj_from_line(self,line) :
         """

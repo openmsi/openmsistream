@@ -30,8 +30,10 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         super().__init__(*args,datafile_type=datafile_type,**kwargs)
         self.logger.info(f'Log files and output will be in {self._output_dir}')
         if not issubclass(datafile_type,DownloadDataFileToMemory) :
-            errmsg = f'ERROR: {self.__class__.__name__} requires a datafile_type that is a subclass of '
-            errmsg+= f'DownloadDataFileToMemory but {datafile_type} was given!'
+            errmsg = (
+                f'ERROR: {self.__class__.__name__} requires a datafile_type that is a '
+                f'subclass of DownloadDataFileToMemory but {datafile_type} was given!'
+            )
             self.logger.error(errmsg,exc_type=ValueError)
         self.file_registry = None # needs to be set in subclasses
 
@@ -62,9 +64,11 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
             return retval
         #if the file hashes didn't match, invoke the callback and return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            warnmsg = f'WARNING: hashes for file {dfc.filename} not matched after being fully read! '
-            warnmsg+= 'The messages for this file will need to be consumed again if the file is to be processed! '
-            warnmsg+= 'Please rerun with the same consumer ID to try again.'
+            warnmsg = (
+                f'WARNING: hashes for file {dfc.filename} not matched after being read! '
+                'The messages for this file will need to be consumed again if the file '
+                'is to be processed! Please rerun with the same consumer ID to try again.'
+            )
             self.logger.warning(warnmsg)
             with lock :
                 self.file_registry.register_file_mismatched_hash(dfc)
@@ -90,9 +94,7 @@ class DataFileStreamHandler(DataFileChunkHandler,Runnable,ABC) :
         :type msg: :class:`kafkacrypto.Message`
         """
         timestamp_string = get_encrypted_message_timestamp_string(msg)
-        warnmsg = f'WARNING: encountered a message that failed to be decrypted (timestamp = {timestamp_string}). '
-        warnmsg+= 'This message will be skipped, and the file it came from cannot be processed from the stream '
-        warnmsg+= 'until it is decryptable. Please rerun with a new Consumer ID to consume these messages again.'
+        warnmsg = f'WARNING: encountered a message that failed to be decrypted (timestamp = {timestamp_string}). This message will be skipped, and the file it came from cannot be processed from the stream until it is decryptable. Please rerun with a new Consumer ID to consume these messages again.'
         self.logger.warning(warnmsg)
 
     def _mismatched_hash_callback(self,datafile,lock) :

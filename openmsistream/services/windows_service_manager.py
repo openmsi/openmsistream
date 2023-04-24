@@ -123,8 +123,7 @@ class WindowsServiceManager(ServiceManagerBase) :
                 try :
                     run_cmd_in_subprocess(['powershell.exe',f'del "{SERVICE_CONST.NSSM_PATH}"'],logger=self.logger)
                 except CalledProcessError :
-                    msg = f'WARNING: failed to delete {SERVICE_CONST.NSSM_PATH}. '
-                    msg+= 'You are free to delete it manually if you would like.'
+                    msg = f'WARNING: failed to delete {SERVICE_CONST.NSSM_PATH}. You are free to delete it manually if you would like.'
                     self.logger.info(msg)
             else :
                 msg = f'NSSM does not exist at {SERVICE_CONST.NSSM_PATH} so it will not be removed'
@@ -168,9 +167,7 @@ class WindowsServiceManager(ServiceManagerBase) :
                 try :
                     shutil.copy(current_env_dll_path,system32_path/current_env_dll_path.name)
                 except Exception as exc :
-                    warnmsg = f'WARNING: failed to copy {pname} DLL file from {current_env_dll_path} to '
-                    warnmsg+= f'{system32_path}. This will likely cause the Python code running as a Service '
-                    warnmsg+=  'to crash. Exception will be logged below, but not reraised.'
+                    warnmsg = f'WARNING: failed to copy {pname} DLL file from {current_env_dll_path} to {system32_path}. This will likely cause the Python code running as a Service to crash. Exception will be logged below, but not reraised.'
                     self.logger.warning(warnmsg,exc_info=exc)
 
     def __find_install_nssm(self,move_local=True) :
@@ -214,7 +211,5 @@ class WindowsServiceManager(ServiceManagerBase) :
         if SERVICE_CONST.NSSM_PATH.is_file() :
             SERVICE_CONST.logger.debug('Done installing NSSM')
         else :
-            errmsg =  'ERROR: failed to install NSSM automatically. Please download NSSM from '
-            errmsg+= f'{SERVICE_CONST.NSSM_DOWNLOAD_URL}, put the executable in the current directory '
-            errmsg+= f'or in {SERVICE_CONST.NSSM_PATH.parent}, and try again.'
+            errmsg = f'ERROR: failed to install NSSM automatically. Please download NSSM from {SERVICE_CONST.NSSM_DOWNLOAD_URL}, put the executable in the current directory or in {SERVICE_CONST.NSSM_PATH.parent}, and try again.'
             SERVICE_CONST.logger.error(errmsg)

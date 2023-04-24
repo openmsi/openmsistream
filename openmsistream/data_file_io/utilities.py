@@ -40,9 +40,5 @@ def get_message_prepend(subdir_str,filename) :
     """
     Return the prepend for each message key, based on the filepath
     """
-    key_pp = ''
-    if subdir_str is not None :
-        key_pp = f'{"_".join(subdir_str.split("/"))}'
-    if key_pp!='' :
-        key_pp+='_'
+    key_pp = f'{"_".join(subdir_str.split("/"))}_' if subdir_str is not None else ''
     return f'{key_pp}{filename}_chunk'

@@ -56,16 +56,17 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         kwargs = populated_kwargs(kwargs,{'logger_file':self.__logs_subdir})
         super().__init__(dirpath,config_path,**kwargs)
         if not issubclass(datafile_type,UploadDataFile) :
-            errmsg = 'ERROR: DataFileUploadDirectory requires a datafile_type that is a subclass of '
-            errmsg+= f'UploadDataFile but {datafile_type} was given!'
+            errmsg = (
+                'ERROR: DataFileUploadDirectory requires a datafile_type that is a '
+                f'subclass of UploadDataFile but {datafile_type} was given!'
+            )
             self.logger.error(errmsg,exc_type=ValueError)
-        self.__upload_regex = upload_regex
         self.__datafile_type = datafile_type
         self.__wait_time = self.MIN_WAIT_TIME
         self.__lock = Lock()
         self.__observer = Observer(timeout=self.WATCHDOG_OBSERVER_TIMEOUT)
         self.__event_handler = UploadDirectoryEventHandler(
-            upload_regex=self.__upload_regex,
+            upload_regex=upload_regex,
             logs_subdir=self.__logs_subdir,
             logger=self.logger,
         )
@@ -564,8 +565,7 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
                 f'{" was" if len(uploaded_filepaths)==1 else "s were"}'
                 f' uploaded between {run_start} and {run_stop}:\n\t'
             )
-            append = '\n\t'.join([str(ufp) for ufp in uploaded_filepaths])
-            final_msg+=append
+            final_msg+='\n\t'.join([str(ufp) for ufp in uploaded_filepaths])
         else :
             final_msg=f'No files were uploaded between {run_start} and {run_stop}'
         upload_file_directory.logger.info(final_msg)
@@ -629,15 +629,16 @@ class DataFileUploadDirectory(DataFileDirectory,ControlledProcessSingleThread,Pr
         """
         self.__forget_inactive_files()
         if len(self.__status_message_files)>0 :
-            progress_msg = (
+            msg = (
                 'The following files have been recognized so far '
-                f'(up to {self.N_STATUS_MESSAGE_FILES} most recent):\n'
+                f'(up to {self.N_STATUS_MESSAGE_FILES} most recent):\n\t'
             )
-            for datafile in self.__status_message_files.values() :
-                progress_msg+=f'\t{datafile.upload_status_msg}\n'
+            msg+='\n\t'.join(
+                [df.upload_status_msg for df in self.__status_message_files.values()]
+            )
         else :
-            progress_msg = f'No files to be uploaded found yet in {self.dirpath}'
-        return progress_msg
+            msg = f'No files to be uploaded found yet in {self.dirpath}'
+        return msg
     @property
     def have_file_to_upload(self) :
         """

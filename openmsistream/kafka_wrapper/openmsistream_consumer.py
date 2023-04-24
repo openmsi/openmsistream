@@ -191,15 +191,12 @@ class OpenMSIStreamConsumer(LogOwner) :
         try :
             consumed_msg = self._consumer.poll(*poll_args,**poll_kwargs)
         except Exception as exc :
-            errmsg = 'ERROR: encountered an error in a call to consumer.poll() and this message will be '
-            errmsg+= 'skipped. Exception will be logged below and re-raised.'
+            errmsg = 'ERROR: encountered an error in a call to consumer.poll() and this message will be skipped. Exception will be logged below and re-raised.'
             self.logger.error(errmsg,exc_info=exc,reraise=True)
             return None
         if consumed_msg is not None and consumed_msg!={} :
             if consumed_msg.error() is not None or consumed_msg.value() is None :
-                warnmsg = f'WARNING: unexpected consumed message, consumed_msg = {consumed_msg}'
-                warnmsg+= f', consumed_msg.error() = {consumed_msg.error()}, '
-                warnmsg+= f'consumed_msg.value() = {consumed_msg.value()}'
+                warnmsg = f'WARNING: unexpected consumed message, consumed_msg = {consumed_msg}, consumed_msg.error() = {consumed_msg.error()}, consumed_msg.value() = {consumed_msg.value()}'
                 self.logger.warning(warnmsg)
             return self._filter_message(consumed_msg)
         return None
@@ -268,9 +265,7 @@ class OpenMSIStreamConsumer(LogOwner) :
             except TypeError :
                 msg_key = msg.key #from KafkaCrypto
             if not isinstance(msg_key,str) :
-                warnmsg = f'WARNING: found a message whose key ({msg_key}) is not a string, but which should be '
-                warnmsg+= 'filtered using the key regex. This message will be consumed as though it successfully '
-                warnmsg+= 'passed the filter.'
+                warnmsg = f'WARNING: found a message whose key ({msg_key}) is not a string, but which should be filtered using the key regex. This message will be consumed as though it successfully passed the filter.'
                 self.logger.warning(warnmsg)
                 return msg
             if self.message_key_regex.match(msg_key) :
@@ -292,15 +287,13 @@ class OpenMSIStreamConsumer(LogOwner) :
             msg_partition = msg.partition
             msg_offset = msg.offset
         if not (isinstance(msg_topic,str) and isinstance(msg_partition,int) and isinstance(msg_offset,int)) :
-            errmsg =  'ERROR: failed to check whether a message has been consumed before '
-            errmsg+= f'because its topic/partition/offset are {msg_topic}/{msg_partition}/{msg_offset}!'
+            errmsg = f'ERROR: failed to check whether a message has been consumed before because its topic/partition/offset are {msg_topic}/{msg_partition}/{msg_offset}!'
             self.logger.error(errmsg,exc_type=TypeError)
         starting_offset = None
         for tpo in self.__starting_offsets :
             if tpo.topic==msg_topic and tpo.partition==msg_partition :
                 starting_offset = tpo.offset
         if starting_offset is None :
-            errmsg = 'ERROR: failed to check whether a message has been consumed before '
-            errmsg+= 'because its topic/partition were not found in the list of starting offsets'
+            errmsg = 'ERROR: failed to check whether a message has been consumed before because its topic/partition were not found in the list of starting offsets'
             self.logger.error(errmsg,exc_type=ValueError)
         return msg_offset<starting_offset

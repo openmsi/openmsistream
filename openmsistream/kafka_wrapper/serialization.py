@@ -31,8 +31,7 @@ class CompoundSerDes(Serializer, Deserializer):
             try :
                 data = serdes(data)
             except Exception as exc :
-                errmsg = f'ERROR: failed to (de)serialize at step {istep} (of {len(self.__steps)}) in CompoundSerDes! '
-                errmsg+= f'Callable = {serdes}, exception = {exc}'
+                errmsg = f'ERROR: failed to (de)serialize at step {istep} (of {len(self.__steps)}) in CompoundSerDes! Callable = {serdes}, exception = {exc}'
                 raise SerializationError(errmsg)
         return data
 
@@ -56,8 +55,7 @@ class CompoundSerializer(Serializer):
                 else :
                     data = ser(data,ctx=None)
             except Exception as exc :
-                errmsg = f'ERROR: failed to serialize at step {istep} (of {len(self.__steps)}) in '
-                errmsg+= f'{self.__class__.__name__}! Callable = {ser}, exception = {exc}'
+                errmsg = f'ERROR: failed to serialize at step {istep} (of {len(self.__steps)}) in {self.__class__.__name__}! Callable = {ser}, exception = {exc}'
                 raise SerializationError(errmsg)
         return data
 
@@ -85,9 +83,7 @@ class CompoundDeserializer(Deserializer):
             try :
                 data = self.__deserialize_message(des,topic,data)
             except Exception as exc :
-                errmsg = f'ERROR: failed to deserialize at step {istep} (of {len(self.__steps)})'
-                errmsg+= f' in {self.__class__.__name__}! Callable = {des}, exception = {exc}'
-                raise SerializationError(errmsg)
+                raise SerializationError(f'ERROR: failed to deserialize at step {istep} (of {len(self.__steps)}) in {self.__class__.__name__}! Callable = {des}, exception = {exc}')
         return data
 
     def __call__(self,data,ctx=None) :
@@ -165,8 +161,7 @@ class DataFileChunkDeserializer(Deserializer) :
             #unpack the byte array
             ordered_properties = msgpack.unpackb(byte_array,raw=True)
             if len(ordered_properties)!=9 :
-                errmsg = 'ERROR: unrecognized token passed to DataFileChunkDeserializer. Expected 9 properties'
-                errmsg+= f' but found {len(ordered_properties)}'
+                errmsg = f'ERROR: unrecognized token passed to DataFileChunkDeserializer. Expected 9 properties but found {len(ordered_properties)}'
                 raise ValueError(errmsg)
             try :
                 filename = str(ordered_properties[0].decode())
@@ -187,8 +182,7 @@ class DataFileChunkDeserializer(Deserializer) :
             check_chunk_hash.update(data)
             check_chunk_hash = check_chunk_hash.digest()
             if check_chunk_hash!=chunk_hash :
-                errmsg = f'ERROR: chunk hash {check_chunk_hash} != expected hash {chunk_hash} in file {filename}, '
-                errmsg+= f'offset {chunk_offset_write}'
+                errmsg = f'ERROR: chunk hash {check_chunk_hash} != expected hash {chunk_hash} in file {filename}, offset {chunk_offset_write}'
                 raise RuntimeError(errmsg)
             #set the filepath based on the subdirectory string
             if subdir_str=='' :

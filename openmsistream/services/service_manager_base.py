@@ -49,14 +49,12 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         """
         #make sure the necessary information was supplied
         if self.service_dict is None or self.argslist is None :
-            errmsg = 'ERROR: newly installing a Service requires specifying what to install '
-            errmsg+= 'and giving an argslist!'
+            errmsg = 'ERROR: newly installing a Service requires specifying what to install and giving an argslist!'
             self.logger.error(errmsg,exc_type=RuntimeError)
         #set the environment variables
         must_rerun = set_env_vars(self.env_var_names,interactive=self.interactive)
         if must_rerun :
-            msg = 'New values for environment variables have been set. '
-            msg+= 'Please close this window and rerun InstallService so that their values get picked up.'
+            msg = 'New values for environment variables have been set. Please close this window and rerun InstallService so that their values get picked up.'
             self.logger.info(msg)
             sys.exit(0)
         #write out the environment variable file
@@ -156,8 +154,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                     remove_env_var(env_var_name)
                     self.logger.info(f'{env_var_name} environment variable successfully removed')
             except CalledProcessError :
-                warnmsg = 'WARNING: failed to remove environment variables. You should remove any username/password '
-                warnmsg+= 'environment variables manually even though the service is uninstalled!'
+                warnmsg = 'WARNING: failed to remove environment variables. You should remove any username/password environment variables manually even though the service is uninstalled!'
                 self.logger.info(warnmsg)
         else :
             self.logger.info('Environment variables will be retained')
@@ -180,8 +177,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         Install the service using the arguments defined in the service arguments file
         """
         if not self.install_args_filepath.is_file() :
-            errmsg =  'ERROR: cannot reinstall service without an installation arguments file '
-            errmsg+= f'at {self.install_args_filepath}!'
+            errmsg = f'ERROR: cannot reinstall service without an installation arguments file at {self.install_args_filepath}!'
             self.logger.error(errmsg,exc_type=FileNotFoundError)
         with open(self.install_args_filepath,'r') as fp :
             lines = fp.readlines()
@@ -192,16 +188,12 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         self.__set_service_dict()
         self.argslist = [line.strip() for line in lines[1:]] if len(lines)>1 else []
         if self.interactive :
-            msg = 'Running this reinstall would be like running the following from the command line:\n'
-            msg+= f'InstallService {self.service_spec_string} '
-            for arg in self.argslist :
-                msg+=f'{arg} '
-            msg+=f'--service_name {self.service_name}\n'
-            msg+='Does everything above look right? [(y)/n]: '
+            msg = f'Running this reinstall would be like running the following from the command line:\nInstallService {self.service_spec_string} '
+            msg+=' '.join(self.argslist)
+            msg+=f' --service_name {self.service_name}\nDoes everything above look right? [(y)/n]: '
             check = input(msg)
             if check.lower().startswith('n') :
-                msg = f'{self.service_name} will NOT be reinstalled. You can install it again by rerunning '
-                msg+= 'InstallService on its own.'
+                msg = f'{self.service_name} will NOT be reinstalled. You can install it again by rerunning InstallService on its own.'
                 self.logger.info(msg)
                 sys.exit(0)
             else :
@@ -282,8 +274,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
                                      'class':r_c,
                                      'func_name':f_n}
             else :
-                errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} '
-                errmsg+= f'(a {self.service_spec_string} program)! service_dict = {service_dict}'
+                errmsg = f'ERROR: could not find the Service dictionary for {self.service_name} (a {self.service_spec_string} program)! service_dict = {service_dict}'
                 self.logger.error(errmsg,exc_type=RuntimeError)
         else :
             self.service_dict = None
@@ -330,8 +321,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
             #make sure at least one of the function/class names was given
             assert ((func_name is not None) or ((class_name is not None) and (run_class is not None)))
         except Exception as exc :
-            errmsg = f'ERROR: service specification string {service_spec_string} is not valid! '
-            errmsg+= 'Will re-raise specific Exception.'
+            errmsg = f'ERROR: service specification string {service_spec_string} is not valid! Will re-raise specific Exception.'
             logger.error(errmsg,exc_info=exc,reraise=True)
         return filepath, class_name, run_class, func_name
 
@@ -382,8 +372,7 @@ class ServiceManagerBase(LogOwner,HasArgumentParser) :
         elif install_or_manage=='manage' :
             parser.add_arguments('service_name','run_mode','remove_env_vars','remove_install_args','remove_nssm')
         else :
-            errmsg =  'ERROR: must call get_argument_parser with either "install" or "manage", '
-            errmsg+= f'not "{install_or_manage}"!'
+            errmsg = f'ERROR: must call get_argument_parser with either "install" or "manage", not "{install_or_manage}"!'
             raise ValueError(errmsg)
         return parser
 

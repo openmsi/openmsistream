@@ -23,8 +23,10 @@ class XRDCSVMetadataReproducer(MetadataJSONReproducer) :
         while line!='[Measurement conditions]' :
             iline+=1
             if iline>=len(lines) or line=='[Scan points]':
-                errmsg = f'ERROR: could not find a [Measurement Conditions] block in the "{datafile.full_filepath}" '
-                errmsg+=  'file from which to extract metadata!'
+                errmsg = (
+                    'ERROR: could not find a [Measurement Conditions] block in the '
+                    f'"{datafile.full_filepath}" file from which to extract metadata!'
+                )
                 raise RuntimeError(errmsg)
             line = lines[iline].strip()
         #read lines up to the "[Scan points]" block and add each key/value to the dictionary
@@ -51,8 +53,10 @@ class XRDCSVMetadataReproducer(MetadataJSONReproducer) :
             iline+=1
             line=lines[iline].strip()
         if not metadata_dict :
-            warnmsg = f'WARNING: [Measurement Conditions] block in the "{datafile.full_filepath}" file did not contain '
-            warnmsg+=  'any metadata keys/values!'
+            warnmsg = (
+                f'WARNING: [Measurement Conditions] block in the "{datafile.full_filepath}"'
+                ' file did not contain any metadata keys/values!'
+            )
             self.logger.warning(warnmsg)
         #add a timestamp
         metadata_dict['metadata_message_generated_at'] = datetime.now().strftime('%m/%d/%Y, %H:%M:%S')

@@ -44,8 +44,10 @@ class DataFileChunkHandler(LogOwner,ABC) :
         super().__init__(*args,**kwargs)
         self.datafile_type = datafile_type
         if not issubclass(self.datafile_type,DownloadDataFile) :
-            errmsg = 'ERROR: DataFileChunkProcessor requires a datafile_type that is a subclass of '
-            errmsg+= f'DownloadDataFile but {self.datafile_type} was given!'
+            errmsg = (
+                'ERROR: DataFileChunkProcessor requires a datafile_type that is a subclass'
+                f' of DownloadDataFile but {self.datafile_type} was given!'
+            )
             raise ValueError(errmsg)
         self.files_in_progress_by_path = {}
         self.locks_by_fp = {}
@@ -87,8 +89,11 @@ class DataFileChunkHandler(LogOwner,ABC) :
             self.logger.error(errmsg,exc_type=ValueError)
         #make sure the chunk doesn't already have a rootdir set
         if dfc.rootdir is not None :
-            warnmsg = f'WARNING: message with key {dfc.message_key} has rootdir={dfc.rootdir} '
-            warnmsg+= '(should be None as it was just consumed)! Will ignore this message and continue.'
+            warnmsg = (
+                f'WARNING: message with key {dfc.message_key} has rootdir={dfc.rootdir} '
+                '(should be None as it was just consumed)! '
+                'Will ignore this message and continue.'
+            )
             self.logger.warning(warnmsg)
         #set the chunk's root directory
         dfc.rootdir = rootdir_to_set
@@ -127,10 +132,10 @@ class DataFileChunkProcessor(DataFileChunkHandler,ControlledMessageProcessor) :
             f'Files recognized so far (up to {self.N_RECENT_FILES} most recent '
             'completed files shown):\n\t'
         )
-        for datafile in self.files_in_progress_by_path.values() :
-            progress_msg+=f'\t{datafile.relative_filepath} (in progress)\n'
-        for fp in self.recent_processed_filepaths :
-            progress_msg+=f'\t{fp} (completed)\n'
+        progress_msg+='\n\t'.join([f'{df.relative_filepath} (in progress)' for df in self.files_in_progress_by_path.values()])
+        if len(self.files_in_progress_by_path)>0 :
+            progress_msg+='\n\t'
+        progress_msg+='\n\t'.join([f'{fp} (completed)' for fp in self.recent_processed_filepaths])
         return progress_msg
 
 class DataFileChunkReproducer(DataFileChunkHandler,ControlledMessageReproducer) :

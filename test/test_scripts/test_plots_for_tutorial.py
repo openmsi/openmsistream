@@ -68,8 +68,10 @@ class TestPlotsForTutorial(unittest.TestCase) :
             current_messages_read = -1
             time_waited = 0
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Waiting to create plots from the "{TOPIC_NAME}" topic in '
-            msg+= f'test_plots_for_tutorial (will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to create plots from the "{TOPIC_NAME}" topic '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = pathlib.Path(UPLOAD_FILE.name)
@@ -82,17 +84,19 @@ class TestPlotsForTutorial(unittest.TestCase) :
                 time_waited+=5
             #put the "quit" command into the input queue, which should stop the thread and clean it up also
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Quitting plotting thread in test_plots_for_tutorial after reading {plot_maker.n_msgs_read} '
-            msg+= f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting plotting thread after reading {plot_maker.n_msgs_read} '
+                f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             plot_maker.control_command_queue.put('q')
             #wait for the reproducer thread to finish
             plotting_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if plotting_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_plots_for_tutorial timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             #make sure the file is listed in the 'results_produced' file
             time.sleep(1.0)
             plot_maker.file_registry.in_progress_table.dump_to_file()
@@ -123,9 +127,9 @@ class TestPlotsForTutorial(unittest.TestCase) :
                     plot_maker.control_command_queue.put('q')
                     plotting_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if plotting_thread.is_alive() :
-                        errmsg = 'ERROR: plotting thread in test_plots_for_tutorial timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Plotting thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :

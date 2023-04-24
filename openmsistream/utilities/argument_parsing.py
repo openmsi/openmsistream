@@ -292,8 +292,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
         :raises ValueError: like in :func:`~OpenMSIStreamArgumentParser.add_arguments`
         """
         if self.__subparsers_action_obj is None :
-            errmsg = 'ERROR: add_subparser_arguments called for an argument parser that '
-            errmsg+= 'has not added subparsers!'
+            errmsg = 'ERROR: add_subparser_arguments called for an argument parser that has not added subparsers!'
             raise RuntimeError(errmsg)
         if subp_name in self.__subparsers :
             errmsg = f'ERROR: subparser arguments for {subp_name} have already been added to this argument parser!'
@@ -360,8 +359,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser) :
             kwargs = self.ARGUMENTS[argname][1].copy()
             if new_default is not None :
                 if 'default' in kwargs.keys() and not isinstance(new_default,type(kwargs['default'])) :
-                    errmsg = f'ERROR: new default value {new_default} for argument {argname} is of a different type '
-                    errmsg+= f'than expected based on the old default ({self.ARGUMENTS[argname]["kwargs"]["default"]})!'
+                    errmsg = f'ERROR: new default value {new_default} for argument {argname} is of a different type than expected based on the old default ({self.ARGUMENTS[argname]["kwargs"]["default"]})!'
                     raise ValueError(errmsg)
                 kwargs['default'] = new_default
             if 'default' in kwargs.keys() :

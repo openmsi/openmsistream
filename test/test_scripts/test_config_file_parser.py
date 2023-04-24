@@ -29,8 +29,10 @@ class TestConfigFileParser(TestWithEnvVars) :
 
     def test_get_config_dict_for_groups(self) :
         if len(self.testconfigparser.sections())<2 :
-            errmsg = f'ERROR: config file used for testing ({TEST_CONST.TEST_CFG_FILE_PATH}) '
-            errmsg+= 'does not contain enough sections to test with!'
+            errmsg = (
+                f'ERROR: config file used for testing ({TEST_CONST.TEST_CFG_FILE_PATH}) '
+                'does not contain enough sections to test with!'
+            )
             raise RuntimeError(errmsg)
         for group_name in self.testconfigparser.sections() :
             group_ref_dict = dict(self.testconfigparser[group_name])

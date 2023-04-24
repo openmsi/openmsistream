@@ -46,8 +46,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             self.__args_per_thread = [self.__args_per_thread]
         if not len(self.__args_per_thread)==self.n_threads :
             if not len(self.__args_per_thread)==1 :
-                errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
-                errmsg+= f'{len(self.__args_per_thread)} entries, but was set up to use {self.n_threads} threads!'
+                errmsg = f'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with {len(self.__args_per_thread)} entries, but was set up to use {self.n_threads} threads!'
                 self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__args_per_thread = self.n_threads*self.__args_per_thread
@@ -58,8 +57,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
             self.__kwargs_per_thread = [self.__kwargs_per_thread]
         if not len(self.__kwargs_per_thread)==self.n_threads :
             if not len(self.__kwargs_per_thread)==1 :
-                errmsg = 'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with '
-                errmsg+= f'{len(self.__kwargs_per_thread)} entries, but was set up to use {self.n_threads} threads!'
+                errmsg = f'ERROR: ControlledProcessMultiThreaded.run was given a list of arguments with {len(self.__kwargs_per_thread)} entries, but was set up to use {self.n_threads} threads!'
                 self.logger.error(errmsg,exc_type=ValueError)
             else :
                 self.__kwargs_per_thread = self.n_threads*self.__kwargs_per_thread
@@ -103,8 +101,7 @@ class ControlledProcessMultiThreaded(ControlledProcess,ABC) :
         for ti,thread in enumerate(self.__threads) :
             if thread.caught_exception is not None :
                 #log the error
-                warnmsg = 'WARNING: a thread raised an Exception, which will be logged as an error below but not '
-                warnmsg+= 're-raised. The thread that raised the error will be restarted.'
+                warnmsg = 'WARNING: a thread raised an Exception, which will be logged as an error below but not re-raised. The thread that raised the error will be restarted.'
                 self.logger.warning(warnmsg,exc_info=thread.caught_exception)
                 #try to join the thread
                 try :

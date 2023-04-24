@@ -42,15 +42,13 @@ def _ensure_classes_or_types_match_for_key(key,test,options,logger=None) :
             raise_err_with_optional_logger(logger,errmsg,RuntimeError)
         #make sure the test argument is a subtype of any of the classes specified in the defaults
         if not issubclass(test,options[1:] if isinstance(options,tuple) else options) :
-            errmsg = f'ERROR: Class type mismatch for argument "{key}", got {test} '
-            errmsg+= f'but expected {options[1:] if isinstance(options,tuple) else options}'
+            errmsg = f'ERROR: Class type mismatch for argument "{key}", got {test} but expected {options[1:] if isinstance(options,tuple) else options}'
             raise_err_with_optional_logger(logger,errmsg,RuntimeError)
     #if the options are objects instead, make sure the type of the test argument matches
     #one of the possible types in the defaults
     elif ( (isinstance(options,tuple) and type(test) not in options[1:]) or
            (not isinstance(options,tuple) and not isinstance(test,type(options))) ) :
-        errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {test} '
-        errmsg+= '(expected '
+        errmsg = f'ERROR: Type mismatch replacing argument "{key}" with {test} (expected '
         if isinstance(options,tuple) :
             for typestring in options[1:] :
                 errmsg+=f'{typestring}, '

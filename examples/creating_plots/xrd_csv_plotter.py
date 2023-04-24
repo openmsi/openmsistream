@@ -33,8 +33,11 @@ class XRDCSVPlotter(DataFileStreamProcessor) :
             start_index+=1
             angle_heading, intensity_heading = data_lines[start_index].split(',')
             if angle_heading!='Angle' or intensity_heading!='Intensity' :
-                errmsg = 'ERROR: expecting "Angle" and "Intensity" column headings in the "[Scan points]" block, '
-                errmsg+=f'but found {angle_heading} and {intensity_heading}!'
+                errmsg = (
+                    'ERROR: expecting "Angle" and "Intensity" column headings in the '
+                    f'"[Scan points]" block, but found {angle_heading} and '
+                    f'{intensity_heading}!'
+                )
                 raise ValueError(errmsg)
             start_index+=1
             #read the rest of the lines in the file into lists of data points
@@ -61,13 +64,18 @@ class XRDCSVPlotter(DataFileStreamProcessor) :
         return None
 
     def _failed_processing_callback(self, datafile, lock):
-        warnmsg = f'WARNING: failed to make plots for {datafile.full_filepath}! The consumer will need to be rerun '
-        warnmsg+= 'to re-read data from this file.'
+        warnmsg = (
+            f'WARNING: failed to make plots for {datafile.full_filepath}! '
+            'The consumer will need to be rerun to re-read data from this file.'
+        )
         self.logger.warning(warnmsg)
 
     def _mismatched_hash_callback(self, datafile, lock):
-        warnmsg = f'WARNING: hash of content for {datafile.full_filepath} is not matched to what was originally '
-        warnmsg+= 'uploaded! The consumer will need to be rerun to re-read data from this file.'
+        warnmsg = (
+            f'WARNING: hash of content for {datafile.full_filepath} is not matched '
+            'to what was originally uploaded! The consumer will need to be rerun '
+            'to re-read data from this file.'
+        )
         self.logger.warning(warnmsg)
 
     @classmethod
@@ -88,21 +96,26 @@ class XRDCSVPlotter(DataFileStreamProcessor) :
         run_start = datetime.datetime.now()
         msg = f'Listening to the {args.topic_name} topic to find XRD .csv files and create plots'
         plot_maker.logger.info(msg)
-        n_read,n_processed,processed_filepaths = plot_maker.process_files_as_read()
+        n_msgs_read,n_msgs_proc,n_files_proc,proc_filepaths = plot_maker.process_files_as_read()
         plot_maker.close()
         run_stop = datetime.datetime.now()
         #shut down when that function returns
-        msg = f'XRD CSV plot maker writing to {plot_maker._output_dir} shut down'
-        plot_maker.logger.info(msg)
-        msg = f'{n_read} total messages were consumed'
-        if len(processed_filepaths)>0 :
-            msg+=f', {n_processed} messages were successfully processed,'
-            msg+=f' and plots were made for the following {len(processed_filepaths)} files'
+        plot_maker.logger.info(
+            f'XRD CSV plot maker writing to {plot_maker._output_dir} shut down'
+        )
+        msg = f'{n_msgs_read} total messages were consumed'
+        if n_files_proc>0 :
+            msg+=(
+                f', {n_msgs_proc} messages were successfully processed,'
+                f' and plots were made for {n_files_proc} files'
+            )
         else :
-            msg+=f' and {n_processed} messages were successfully processed'
-        msg+=f' from {run_start} to {run_stop}'
-        for fn in processed_filepaths :
-            msg+=f'\n\t{fn}'
+            msg+=f' and {n_msgs_proc} messages were successfully processed'
+        msg+=(
+            f' from {run_start} to {run_stop}. Up to {cls.N_RECENT_FILES} most recently '
+            'processed files:\n\t'
+        )
+        msg+='\n\t'.join(proc_filepaths)
         plot_maker.logger.info(msg)
 
 if __name__=='__main__' :

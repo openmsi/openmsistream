@@ -56,17 +56,19 @@ class TestDataFileDirectories(TestWithEnvVars) :
             dfud.control_command_queue.put('check')
             #put the quit command in the command queue to stop the process running
             LOGGER.set_stream_level(logging.INFO)
-            msg = '\nQuitting upload thread in run_data_file_upload_directory; '
-            msg+= f'will timeout after {TIMEOUT_SECS} seconds....'
+            msg = (
+                '\nQuitting upload thread in run_data_file_upload_directory; '
+                f'will timeout after {TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             dfud.control_command_queue.put('q')
             #wait for the uploading thread to complete
             upload_thread.join(timeout=TIMEOUT_SECS)
             if upload_thread.is_alive() :
-                errmsg = 'ERROR: upload thread in run_data_file_upload_directory '
-                errmsg+= f'timed out after {TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: upload thread timed out after {TIMEOUT_SECS} seconds!'
+                )
             #make sure that the ProducerFileRegistry files were created and list the file as completely uploaded
             log_subdir = TEST_CONST.TEST_WATCHED_DIR_PATH/DataFileUploadDirectory.LOG_SUBDIR_NAME
             in_prog_filepath = log_subdir / f'upload_to_{TOPIC_NAME}_in_progress.csv'
@@ -86,9 +88,9 @@ class TestDataFileDirectories(TestWithEnvVars) :
                     dfud.shutdown()
                     upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if upload_thread.is_alive() :
-                        errmsg = 'ERROR: upload thread in run_data_file_upload_directory timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Upload thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :
@@ -101,14 +103,15 @@ class TestDataFileDirectories(TestWithEnvVars) :
         #make the directory to reconstruct files into
         TEST_CONST.TEST_RECO_DIR_PATH.mkdir()
         #start up the DataFileDownloadDirectory
-        dfdd = DataFileDownloadDirectory(TEST_CONST.TEST_RECO_DIR_PATH,
-                                         TEST_CONST.TEST_CFG_FILE_PATH,
-                                         TOPIC_NAME,
-                                         n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                         update_secs=UPDATE_SECS,
-                                         consumer_group_id='run_data_file_download_directory',
-                                         logger=LOGGER,
-                                         )
+        dfdd = DataFileDownloadDirectory(
+            TEST_CONST.TEST_RECO_DIR_PATH,
+            TEST_CONST.TEST_CFG_FILE_PATH,
+            TOPIC_NAME,
+            n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+            update_secs=UPDATE_SECS,
+            consumer_group_id='run_data_file_download_directory',
+            logger=LOGGER,
+        )
         #start reconstruct in a separate thread so we can time it out
         download_thread = ExceptionTrackingThread(target=dfdd.reconstruct)
         download_thread.start()
@@ -120,8 +123,10 @@ class TestDataFileDirectories(TestWithEnvVars) :
             current_messages_read = -1
             time_waited = 0
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Waiting to reconstruct test file from the "{TOPIC_NAME}" topic in run_data_file_download_directory '
-            msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to reconstruct test file from the "{TOPIC_NAME}" topic '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             recofp = TEST_CONST.TEST_RECO_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME/TEST_CONST.TEST_DATA_FILE_NAME
@@ -136,23 +141,27 @@ class TestDataFileDirectories(TestWithEnvVars) :
             #After timing out, stalling, or completely reconstructing the test file, 
             #put the "quit" command into the input queue, which SHOULD stop the method running
             LOGGER.set_stream_level(logging.INFO)
-            msg = f'Quitting download thread in run_data_file_download_directory after reading {dfdd.n_msgs_read} '
-            msg+= f'messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after reading {dfdd.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             LOGGER.set_stream_level(logging.ERROR)
             dfdd.control_command_queue.put('q')
             #wait for the download thread to finish
             download_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if download_thread.is_alive() :
-                errmsg = 'ERROR: download thread in run_data_file_download_directory timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             #make sure the reconstructed file exists with the same name and content as the original
             fp = TEST_CONST.TEST_RECO_DIR_PATH/TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME/TEST_CONST.TEST_DATA_FILE_NAME
             self.assertTrue(fp.is_file())
             if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH,fp,shallow=False) :
-                errmsg = 'ERROR: files are not the same after reconstruction! '
-                errmsg+= f'(This may also be due to the timeout at {TIMEOUT_SECS} seconds)'
+                errmsg = (
+                    'ERROR: files are not the same after reconstruction! '
+                    f'(This may also be due to the timeout at {TIMEOUT_SECS} seconds)'
+                )
                 raise RuntimeError(errmsg)
         except Exception as e :
             raise e
@@ -162,9 +171,9 @@ class TestDataFileDirectories(TestWithEnvVars) :
                     dfdd.control_command_queue.put('q')
                     download_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     if download_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in run_data_file_download_directory timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
                 finally :

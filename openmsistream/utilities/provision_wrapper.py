@@ -111,8 +111,7 @@ def move_files(p_loc) :
         TEMP_DIR_PATH.rename(new_dirpath)
         LOGGER.info(f'Successfuly set up new KafkaCrypto node called "{node_id}"')
     except Exception as exc :
-        errmsg = f'ERROR: Running {p_loc} did not produce the expected output! Temporary directories '
-        errmsg+= 'will be removed and you will need to try again. Exception will be logged and re-raised.'
+        errmsg = f'ERROR: Running {p_loc} did not produce the expected output! Temporary directories will be removed and you will need to try again. Exception will be logged and re-raised.'
         LOGGER.error(errmsg,exc_info=exc,reraise=True)
     finally :
         if TEMP_DIR_PATH.is_dir() :

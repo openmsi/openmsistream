@@ -41,8 +41,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         """
         super().__init__(dirpath,config_path,topic_name,datafile_type=datafile_type,**kwargs)
         if not issubclass(self.datafile_type,DownloadDataFileToDisk) :
-            errmsg = 'ERROR: DataFileDownloadDirectory requires a datafile_type that is a subclass of '
-            errmsg+= f'DownloadDataFileToDisk but {self.datafile_type} was given!'
+            errmsg = (
+                'ERROR: DataFileDownloadDirectory requires a datafile_type that is a '
+                f'subclass of DownloadDataFileToDisk but {self.datafile_type} was given!'
+            )
             self.logger.error(errmsg,exc_type=ValueError)
         self.__encrypted_messages_subdir = self.dirpath/'ENCRYPTED_MESSAGES'
 
@@ -60,8 +62,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         :return: paths of up to 50 most recent files whose reconstruction was completed during the run
         :rtype: list
         """
-        msg = f'Will reconstruct files from messages in the {self.topic_name} topic using {self.n_threads} '
-        msg+= f'thread{"s" if self.n_threads!=1 else ""}'
+        msg = (
+            f'Will reconstruct files from messages in the {self.topic_name} topic using '
+            f'{self.n_threads} thread{"s" if self.n_threads!=1 else ""}'
+        )
         self.logger.info(msg)
         self.run()
         return (
@@ -83,9 +87,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             key_fn, value_fn = get_encrypted_message_key_and_value_filenames(retval,self.topic_name)
             key_fp = self.__encrypted_messages_subdir/key_fn
             value_fp = self.__encrypted_messages_subdir/value_fn
-            warnmsg = 'WARNING: encountered a message that failed to be decrypted. Key bytes will be written to '
-            warnmsg+= f'{key_fp.relative_to(self.dirpath)} and value bytes will be written to '
-            warnmsg+= f'{value_fp.relative_to(self.dirpath)}'
+            warnmsg = (
+                'WARNING: encountered a message that failed to be decrypted. Key bytes '
+                f'will be written to {key_fp.relative_to(self.dirpath)} and value bytes '
+                f'will be written to {value_fp.relative_to(self.dirpath)}'
+            )
             self.logger.warning(warnmsg)
             with open(key_fp,'wb') as fp :
                 fp.write(bytes(retval.key))
@@ -101,7 +107,9 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             dfc = msg.value #from KafkaCrypto
         #If the file was successfully reconstructed, return True
         if retval==DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE :
-            self.logger.debug(f'File {dfc.relative_filepath} successfully reconstructed from stream')
+            self.logger.debug(
+                f'File {dfc.relative_filepath} successfully reconstructed from stream'
+            )
             with lock :
                 self.recent_processed_filepaths.append(dfc.relative_filepath)
                 while len(self.recent_processed_filepaths)>self.N_RECENT_FILES :
@@ -112,8 +120,11 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
             return True
         #If the file hash was mismatched after reconstruction, return False
         if retval==DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE :
-            warnmsg = f'WARNING: hashes for file {dfc.relative_filepath} not matched after reconstruction! '
-            warnmsg+= 'All data have been written to disk, but not as they were uploaded.'
+            warnmsg = (
+                f'WARNING: hashes for file {dfc.relative_filepath} not matched after '
+                'reconstruction! All data have been written to disk, but not as they '
+                'were uploaded.'
+            )
             self.logger.warning(warnmsg)
             with lock :
                 del self.files_in_progress_by_path[dfc.relative_filepath]
@@ -124,8 +135,10 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         return False
 
     def _on_check(self) :
-        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{self.n_processed_files} files completely reconstructed so far'
+        msg = (
+            f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages '
+            f'processed, {self.n_processed_files} files completely reconstructed so far'
+        )
         self.logger.info(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)
@@ -169,14 +182,17 @@ class DataFileDownloadDirectory(DataFileDirectory,DataFileChunkProcessor,Runnabl
         reconstructor_directory.logger.info(f'File reconstructor writing to {args.output_dir} shut down')
         msg = f'{n_read} total messages were consumed'
         if len(complete_filepaths)>0 :
-            msg+=f', {n_processed} messages were successfully processed,'
-            msg+=f' and {n_complete_files} file'
-            msg+=' was' if n_complete_files==1 else 's were'
-            msg+=' successfully reconstructed'
+            msg+=(
+                f', {n_processed} messages were successfully processed, and '
+                f'{n_complete_files} file{" was" if n_complete_files==1 else "s were"} '
+                'successfully reconstructed'
+            )
         else :
             msg+=f' and {n_processed} messages were successfully processed'
-        msg+=f' from {run_start} to {run_stop}\n'
-        msg+=f'Most recent completed files (up to {cls.N_RECENT_FILES}):'
+        msg+=(
+            f' from {run_start} to {run_stop}\n'
+            f'Most recent completed files (up to {cls.N_RECENT_FILES}):'
+        )
         msg+='\n\t'.join(complete_filepaths)
         reconstructor_directory.logger.info(msg)
 

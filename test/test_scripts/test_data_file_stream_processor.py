@@ -83,8 +83,10 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
             self.assertTrue(dfsp.checked)
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to read other test file from the "{TOPIC_NAME}" topic in test_data_file_stream_processor '
-            msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to read other test file from the "{TOPIC_NAME}" topic '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             while ( (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) and 
                     time_waited<TIMEOUT_SECS ) :
@@ -92,15 +94,17 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                 LOGGER.info(f'\t{current_messages_read} messages read after waiting {time_waited} seconds....')
                 time.sleep(5)
                 time_waited+=5
-            msg = 'Quitting download thread in test_data_file_stream_processor after processing '
-            msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after processing {dfsp.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfsp.control_command_queue.put('q')
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if stream_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_data_file_stream_processor timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfsp.close()
             #make sure the contents of the file in memory are the same as the original
@@ -117,9 +121,9 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfsp.close()
                     if stream_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_data_file_stream_processor timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
         if TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR.is_dir() :
@@ -159,8 +163,10 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         try :
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart '
-            msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to read test files from "{TOPIC_NAME}" '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
@@ -170,15 +176,17 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
-            msg = 'Quitting download thread in test_data_file_stream_processor after processing '
-            msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after processing {dfsp.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfsp.control_command_queue.put('q')
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if stream_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfsp.close()
             #make sure the content of the failed file has been added as "None"
@@ -214,9 +222,9 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfsp.close()
                     if stream_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
         #upload a third file (fake config file)
@@ -240,8 +248,10 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
         try :
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart '
-            msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to read test files from "{TOPIC_NAME}" '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (third_filepath.name not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
@@ -251,15 +261,17 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
-            msg = 'Quitting download thread in test_data_file_stream_processor_restart after processing '
-            msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after processing {dfsp.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfsp.control_command_queue.put('q')
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if stream_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfsp.close()
             #make sure the content of the previously failed file is now correct
@@ -298,9 +310,9 @@ class TestDataFileStreamProcessor(unittest.TestCase) :
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfsp.close()
                     if stream_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart timed out after '
-                        errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART)

@@ -65,8 +65,10 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         :rtype: List
         """
         #startup message
-        msg = f'Will process files from messages in the {self.topic_name} topic using {self.n_threads} '
-        msg+= f'thread{"s" if self.n_threads>1 else ""}'
+        msg = (
+            f'Will process files from messages in the {self.topic_name} topic using '
+            f'{self.n_threads} thread{"s" if self.n_threads>1 else ""}'
+        )
         self.logger.info(msg)
         #set up the stream processor registry
         self.file_registry = StreamProcessorRegistry(dirpath=self.__logs_subdir,
@@ -75,9 +77,11 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
                                                       logger=self.logger)
         #if there are files that need to be re-processed, set the variables to re-read messages from those files
         if self.file_registry.rerun_file_key_regex is not None :
-            msg = f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning of the topic to '
-            msg+= f're-read messages for {self.file_registry.n_files_to_rerun} previously-failed '
-            msg+= f'file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
+            msg = (
+                f'Consumer{"s" if self.n_threads>1 else ""} will start from the beginning '
+                f'of the topic to re-read messages for {self.file_registry.n_files_to_rerun} '
+                f'previously-failed file{"s" if self.file_registry.n_files_to_rerun>1 else ""}'
+            )
             self.logger.info(msg)
             self.restart_at_beginning=True
             self.message_key_regex=self.file_registry.rerun_file_key_regex
@@ -156,10 +160,14 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
             #warn if it wasn't processed correctly and invoke the callback
             else :
                 if isinstance(processing_retval,Exception) :
-                    warnmsg = f'WARNING: Fully-read file {dfc.relative_filepath} was not able to be processed. '
-                    warnmsg+= 'The traceback of the Exception thrown during processing will be logged below, but not '
-                    warnmsg+= 're-raised. The messages for this file will need to be consumed again if the file is to '
-                    warnmsg+= 'be processed! Please rerun with the same consumer ID to try again.'
+                    warnmsg = (
+                        f'WARNING: Fully-read file {dfc.relative_filepath} was not able '
+                        'to be processed. The traceback of the Exception thrown during '
+                        'processing will be logged below, but not re-raised. '
+                        'The messages for this file will need to be consumed again if '
+                        'the file is to be processed! Please rerun with the same '
+                        'consumer ID to try again.'
+                    )
                     self.logger.warning(warnmsg,exc_info=processing_retval)
                 else :
                     warnmsg = f'Unrecognized return value from _process_downloaded_data_file: {processing_retval}'
@@ -210,8 +218,10 @@ class DataFileStreamProcessor(DataFileStreamHandler,DataFileChunkProcessor,ABC) 
         """
 
     def _on_check(self) :
-        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{self.n_processed_files} files completely processed so far'
+        msg = (
+            f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages '
+            f'processed, {self.n_processed_files} files completely processed so far'
+        )
         self.logger.info(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)

@@ -13,6 +13,8 @@ class TestConsoleScripts(unittest.TestCase):
                     try:
                         subprocess.check_output([script.name, '--help'],stderr=subprocess.STDOUT)
                     except subprocess.CalledProcessError as e:
-                        errmsg = f'ERROR: test for console script "{script.name}" '
-                        errmsg+= f'failed with output:\n{e.output.decode()}'
+                        errmsg = (
+                            f'ERROR: test for console script "{script.name}" '
+                            f'failed with output:\n{e.output.decode()}'
+                        )
                         raise RuntimeError(errmsg)

@@ -73,8 +73,10 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
         try :
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart_encrypted'
-            msg+= f' (will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to read test files from "{TOPIC_NAME}" topic '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (TEST_CONST.TEST_DATA_FILE_2_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
@@ -84,15 +86,17 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
-            msg = 'Quitting download thread in test_data_file_stream_processor_restart_encrypted after processing '
-            msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after processing {dfsp.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfsp.control_command_queue.put('q')
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if stream_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart_encrypted timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfsp.close()
             #make sure the content of the failed file has been added as "None"
@@ -126,9 +130,9 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                     upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfud.close()
                     if upload_thread.is_alive() :
-                        errmsg = 'ERROR: upload thread in test_data_file_stream_processor_restart_encrypted '
-                        errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Upload thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
             except Exception :
                 pass
             raise e
@@ -139,9 +143,9 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfsp.close()
                     if stream_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart_encrypted '
-                        errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
             except Exception as e :
                 raise e
         #upload a third file (fake config file)
@@ -152,20 +156,23 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
         time.sleep(1)
         #recreate and re-run the stream processor, allowing it to successfully process all files this time
         time.sleep(1.0)
-        dfsp = DataFileStreamProcessorForTesting(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-                                                 TOPIC_NAME,
-                                                 output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
-                                                 n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-                                                 consumer_group_id=CONSUMER_GROUP_ID,
-                                                 logger=LOGGER,
-                                                )
+        dfsp = DataFileStreamProcessorForTesting(
+            TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
+            TOPIC_NAME,
+            output_dir=TEST_CONST.TEST_STREAM_PROCESSOR_OUTPUT_DIR_RESTART_ENCRYPTED,
+            n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+            consumer_group_id=CONSUMER_GROUP_ID,
+            logger=LOGGER,
+        )
         stream_thread = ExceptionTrackingThread(target=dfsp.process_files_as_read)
         stream_thread.start()
         try :
             current_messages_read = -1
             time_waited = 0
-            msg = f'Waiting to read test files from "{TOPIC_NAME}" in test_data_file_stream_processor_restart_encrypted '
-            msg+= f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            msg = (
+                f'Waiting to read test files from "{TOPIC_NAME}" '
+                f'(will timeout after {TIMEOUT_SECS} seconds)...'
+            )
             LOGGER.info(msg)
             while ( ( (TEST_CONST.TEST_DATA_FILE_NAME not in [t[0] for t in dfsp.completed_filenames_bytestrings]) or
                     (third_filepath.name not in [t[0] for t in dfsp.completed_filenames_bytestrings]) ) and 
@@ -175,24 +182,26 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                 time.sleep(5)
                 time_waited+=5
             time.sleep(3)
-            msg = 'Quitting download thread in test_data_file_stream_processor_restart_encrypted after processing '
-            msg+= f'{dfsp.n_msgs_read} messages; will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            msg = (
+                f'Quitting download thread after processing {dfsp.n_msgs_read} messages; '
+                f'will timeout after {JOIN_TIMEOUT_SECS} seconds....'
+            )
             LOGGER.info(msg)
             dfsp.control_command_queue.put('q')
             stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if stream_thread.is_alive() :
-                errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart_encrypted timed out after '
-                errmsg+= f'{JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: download thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfsp.close()
             #wait for the uploading thread to complete
             dfud.control_command_queue.put('q')
             upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
             if upload_thread.is_alive() :
-                errmsg = 'ERROR: upload thread in test_data_file_stream_processor_restart_encrypted '
-                errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
-                raise TimeoutError(errmsg)
+                raise TimeoutError(
+                    f'ERROR: upload thread timed out after {JOIN_TIMEOUT_SECS} seconds!'
+                )
             else :
                 dfud.close()
             #make sure the content of the previously failed file is now correct
@@ -231,9 +240,9 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                     stream_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfsp.close()
                     if stream_thread.is_alive() :
-                        errmsg = 'ERROR: download thread in test_data_file_stream_processor_restart_encrypted '
-                        errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Download thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
             if upload_thread.is_alive() :
@@ -242,9 +251,9 @@ class TestDataFileStreamProcessorEncrypted(unittest.TestCase) :
                     upload_thread.join(timeout=JOIN_TIMEOUT_SECS)
                     dfud.close()
                     if upload_thread.is_alive() :
-                        errmsg = 'ERROR: upload thread in test_data_file_stream_processor_restart_encrypted '
-                        errmsg+= f'timed out after {JOIN_TIMEOUT_SECS} seconds!'
-                        raise TimeoutError(errmsg)
+                        raise TimeoutError(
+                            f'Upload thread timed out after {JOIN_TIMEOUT_SECS} seconds'
+                        )
                 except Exception as e :
                     raise e
         shutil.rmtree(TEST_CONST.TEST_STREAM_PROC_WATCHED_DIR_PATH_ENCRYPTED)

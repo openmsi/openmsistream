@@ -161,19 +161,20 @@ class DataFileChunk(Producible) :
         return retval
 
     def __str__(self) :
-        string_rep = 'DataFileChunk('
-        string_rep+=f'filename: {self.filename}, '
-        string_rep+=f'file_hash: {self.file_hash}, '
-        string_rep+=f'chunk_hash: {self.chunk_hash}, '
-        string_rep+=f'chunk_offset_read: {self.chunk_offset_read}, '
-        string_rep+=f'chunk_offset_write: {self.chunk_offset_write}, '
-        string_rep+=f'chunk_size: {self.chunk_size}, '
-        string_rep+=f'chunk_i: {self.chunk_i}, '
-        string_rep+=f'n_total_chunks: {self.n_total_chunks}, '
-        string_rep+=f'subdir_str: {self.subdir_str}, '
-        string_rep+=f'filename_append: {self.filename_append}, '
-        #string_rep+=f'data: {self.data}, '
-        string_rep+=')'
+        string_rep = (
+            'DataFileChunk('
+            f'filename: {self.filename}, '
+            f'file_hash: {self.file_hash}, '
+            f'chunk_hash: {self.chunk_hash}, '
+            f'chunk_offset_read: {self.chunk_offset_read}, '
+            f'chunk_offset_write: {self.chunk_offset_write}, '
+            f'chunk_size: {self.chunk_size}, '
+            f'chunk_i: {self.chunk_i}, '
+            f'n_total_chunks: {self.n_total_chunks}, '
+            f'subdir_str: {self.subdir_str}, '
+            f'filename_append: {self.filename_append})'#, '
+            #f'data: {self.data})'
+        )
         return string_rep
 
     def __hash__(self) :
@@ -217,16 +218,14 @@ class DataFileChunk(Producible) :
             data = fp.read(self.chunk_size)
         #make sure it's of the expected size
         if len(data) != self.chunk_size:
-            msg = f'ERROR: chunk {self.chunk_hash} size {len(data)} != expected size {self.chunk_size} in file '
-            msg+= f'{self.filepath}, offset {self.chunk_offset_read}'
+            msg = f'ERROR: chunk {self.chunk_hash} size {len(data)} != expected size {self.chunk_size} in file {self.filepath}, offset {self.chunk_offset_read}'
             logger.error(msg,exc_type=ValueError)
         #check that its hash matches what was found at the time of putting it in the queue
         check_chunk_hash = sha512()
         check_chunk_hash.update(data)
         check_chunk_hash = check_chunk_hash.digest()
         if self.chunk_hash != check_chunk_hash:
-            msg = f'ERROR: chunk hash {check_chunk_hash} != expected hash {self.chunk_hash} in file {self.filepath}, '
-            msg+= f'offset {self.chunk_offset_read}'
+            msg = f'ERROR: chunk hash {check_chunk_hash} != expected hash {self.chunk_hash} in file {self.filepath}, offset {self.chunk_offset_read}'
             logger.error(msg,exc_type=ValueError)
         #set the chunk's data value
         self.data = data

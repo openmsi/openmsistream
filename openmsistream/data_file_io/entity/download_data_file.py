@@ -87,8 +87,7 @@ class DownloadDataFile(DataFile,ABC) :
             return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         #the filepath of this DownloadDataFile and of the given DataFileChunk must match
         if dfc.filepath!=self.filepath :
-            errmsg = f'ERROR: filepath mismatch between data file chunk with {dfc.filepath} and '
-            errmsg+= f'data file with {self.filepath}'
+            errmsg = f'ERROR: filepath mismatch between data file chunk with {dfc.filepath} and data file with {self.filepath}'
             self.logger.error(errmsg,exc_type=ValueError)
         #modify the filepath to include any append to the name
         full_filepath = self.__class__.get_full_filepath(dfc)
@@ -96,9 +95,7 @@ class DownloadDataFile(DataFile,ABC) :
             self.full_filepath = full_filepath
             self.filename = self.full_filepath.name
         elif self.full_filepath!=full_filepath :
-            errmsg = f'ERROR: filepath for data file chunk {dfc.chunk_i}/{dfc.n_total_chunks} with offset '
-            errmsg+= f'{dfc.chunk_offset_write} is {full_filepath} but the file being reconstructed is '
-            errmsg+= f'expected to have filepath {self.full_filepath}'
+            errmsg = f'ERROR: filepath for data file chunk {dfc.chunk_i}/{dfc.n_total_chunks} with offset {dfc.chunk_offset_write} is {full_filepath} but the file being reconstructed is expected to have filepath {self.full_filepath}'
             self.logger.error(errmsg,exc_type=ValueError)
         #add the subdirectory string to this file
         if self.subdir_str is None :
@@ -111,9 +108,7 @@ class DownloadDataFile(DataFile,ABC) :
             with thread_lock :
                 self.n_total_chunks = dfc.n_total_chunks
         elif self.n_total_chunks!=dfc.n_total_chunks :
-            errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.full_filepath} is expecting '
-            errmsg+= f'{self.n_total_chunks} chunks but found a chunk from a split with '
-            errmsg+= f'{dfc.n_total_chunks} total chunks.'
+            errmsg = f'ERROR: {self.__class__.__name__} with filepath {self.full_filepath} is expecting {self.n_total_chunks} chunks but found a chunk from a split with {dfc.n_total_chunks} total chunks.'
             self.logger.error(errmsg,exc_type=ValueError)
         #acquire the thread lock to make sure this process is the only one dealing with this particular file
         with thread_lock :
@@ -212,8 +207,7 @@ class DownloadDataFileToMemory(DownloadDataFile) :
     @bytestring.setter
     def bytestring(self,new_bytestring) :
         if self.__bytestring is not None :
-            warnmsg = f'WARNING: resetting a non-None bytestring for {self.__class__.__name__} '
-            warnmsg+= f'with path {self.filepath}'
+            warnmsg = f'WARNING: resetting a non-None bytestring for {self.__class__.__name__} with path {self.filepath}'
             self.logger.warning(warnmsg)
         self.__bytestring = new_bytestring
 

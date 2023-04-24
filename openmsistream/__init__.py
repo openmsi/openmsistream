@@ -44,8 +44,10 @@ if os.name=='nt' :
         except Exception as e :
             errmsg = 'ERROR: Preloading librdkafka DLLs ('
             errmsg+=', '.join([str(_) for _ in fps])
-            errmsg = f'{errmsg}) did not allow confluent_kafka to be imported! Exception (will be re-raised): '
-            errmsg+= f'{traceback.format_exc()}'
+            errmsg+=(
+                f'{errmsg}) did not allow confluent_kafka to be imported! '
+                f'Exception (will be re-raised): {traceback.format_exc()}'
+            )
             print(errmsg)
             raise e
     _ = confluent_kafka.Producer #appease pyflakes

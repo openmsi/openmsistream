@@ -67,8 +67,7 @@ class UploadDataFile(DataFile,Runnable) :
         :param chunk_size: The size of the file chunk in each message in bytes
         :type chunk_size: int, optional
         """
-        startup_msg = f"Uploading entire file {self.filepath} to {topic_name} in {chunk_size} byte chunks "
-        startup_msg+=f"using {n_threads} threads...."
+        startup_msg = f"Uploading entire file {self.filepath} to {topic_name} in {chunk_size} byte chunks using {n_threads} threads...."
         self.logger.info(startup_msg)
         #add all the chunks to the upload queue
         upload_queue = Queue()

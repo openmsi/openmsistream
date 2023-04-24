@@ -64,19 +64,13 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
             self.logger.debug(object_key + ' matched with consumer datafile')
             # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
         else :
-            warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match '
-            warnmsg+= 'the file originally read from disk!'
+            warnmsg = f'WARNING: {object_key} transferred to bucket but the file on the bucket does not match the file originally read from disk!'
             self.logger.warning(warnmsg)
         return None
 
     def __get_datafile_object_key(self,datafile) :
-        file_name = str(datafile.filename)
         sub_dir = datafile.subdir_str
-        object_key = self.topic_name
-        if sub_dir!='' :
-            object_key+= '/' + sub_dir
-        object_key+= '/' + file_name
-        return object_key
+        return f'{self.topic_name}{"/" if sub_dir!="" else ""}{sub_dir}/{datafile.filename}'
 
     @classmethod
     def get_command_line_arguments(cls):
@@ -111,20 +105,15 @@ class S3TransferStreamProcessor(DataFileStreamProcessor) :
         s3_stream_proc.logger.info(msg)
         n_read,n_processed,n_complete,complete_filenames = s3_stream_proc.make_stream()
         s3_stream_proc.close()
-        msg = f'{n_read} total messages were consumed, {n_processed} messages were successfully processed,'
-        msg+= f'and {len(complete_filenames)} files were transferred to the {args.bucket_name} bucket'
+        msg = f'{n_read} total messages were consumed, {n_processed} messages were successfully processed, and {len(complete_filenames)} files were transferred to the {args.bucket_name} bucket'
         s3_stream_proc.logger.info(msg)
         if len(complete_filenames)>0 :
-            msg =f'{n_complete} file'
-            msg+=' was' if n_complete==1 else 's were'
-            msg+=f' successfully transferred to the {args.bucket_name} bucket.\n'
-            msg+=f'Transferred filepaths (up to {cls.N_RECENT_FILES} most recent):\n\t'
+            msg =f'{n_complete} file{" was" if n_complete==1 else "s were"} successfully transferred to the {args.bucket_name} bucket.\nTransferred filepaths (up to {cls.N_RECENT_FILES} most recent):\n\t'
             msg+='\n\t'.join(complete_filenames)
             s3_stream_proc.logger.debug(msg)
 
     def _on_check(self) :
-        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, '
-        msg+= f'{self.n_processed_files} files transferred so far'
+        msg = f'{self.n_msgs_read} messages read, {self.n_msgs_processed} messages processed, {self.n_processed_files} files transferred so far'
         self.logger.info(msg)
         if len(self.files_in_progress_by_path)>0 or len(self.recent_processed_filepaths)>0 :
             self.logger.debug(self.progress_msg)

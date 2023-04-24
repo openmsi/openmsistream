@@ -132,8 +132,7 @@ class ConsumerGroup(LogOwner) :
                 tp_offsets=kafka.KafkaAdminClient(**kac_kwargs).list_consumer_group_offsets(group_id=consumer_group_id,
                                                                                             partitions=parts)
                 if len(tp_offsets)!=n_partitions :
-                    errmsg = f'Found {n_partitions} partitions for topic {topic_name} but got {len(tp_offsets)} '
-                    errmsg+= 'TopicPartitions listing current consumer group offsets'
+                    errmsg = f'Found {n_partitions} partitions for topic {topic_name} but got {len(tp_offsets)} TopicPartitions listing current consumer group offsets'
                     raise RuntimeError(errmsg)
                 for t_p,offset_metadata in tp_offsets.items() :
                     starting_offsets.append(TopicPartition(t_p.topic,t_p.partition,offset_metadata.offset))
@@ -142,7 +141,6 @@ class ConsumerGroup(LogOwner) :
                 caught_exc = exc
                 n_retries-=1
         if caught_exc :
-            errmsg = f'ERROR: encountered an exception when gathering initial "{topic_name}" topic offsets for '
-            errmsg+= f'consumer group ID "{consumer_group_id}". The error will be logged below and re-raised.'
+            errmsg = f'ERROR: encountered an exception when gathering initial "{topic_name}" topic offsets for consumer group ID "{consumer_group_id}". The error will be logged below and re-raised.'
             self.logger.error(errmsg,exc_info=caught_exc,reraise=True)
         return None
