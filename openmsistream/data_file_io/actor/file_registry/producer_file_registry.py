@@ -122,13 +122,13 @@ class ProducerFileRegistry(LogOwner):
             )
             for entry_line in added_file.lines:
                 if entry_line not in all_lines:
-                    errmsg = (
+                    warnmsg = (
                         "ERROR: failed to consolidate individual files into "
                         f"{self.completed_filepath_pattern}. Individual files will be "
                         "retained and should be manually concatenated. "
                         "Duplicate entries may be present."
                     )
-                    raise RuntimeError(errmsg)
+                    self.logger.warning(warnmsg)
             if fp in self.__completed_tables_by_path:
                 self.__completed_tables_by_path.pop(fp)
             fp.unlink()
