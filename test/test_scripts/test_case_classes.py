@@ -1,10 +1,65 @@
 # imports
-import shutil, unittest, os
+import shutil, unittest, os, logging
 from openmsistream.utilities import LogOwner
-from test_scripts.config import TEST_CONST
+from openmsistream.utilities.misc import populated_kwargs
+from config import TEST_CONST
 
 
-class TestCaseWithOutputLocation(LogOwner, unittest.TestCase):
+class TestCaseWithLogger(LogOwner, unittest.TestCase):
+    """
+    Base class for unittest.TestCase classes that should own a logger
+    By default the logger won't write to a file, and will set the stream level to ERROR
+    Contains a function to overwrite the current stream level temporarily to log a
+    particular message
+    """
+
+    def __init__(self, *args, **kwargs):
+        kwargs = populated_kwargs(
+            kwargs,
+            {"streamlevel":logging.ERROR}
+        )
+        super().__init__(*args, **kwargs)
+
+    def log_at_level(self, msg, level, **kwargs):
+        """
+        Temporarily change the logger stream level for a single message to go through
+        """
+        old_level = self.logger.get_stream_level()
+        self.logger.set_stream_level(level)
+        levels_funcs = {
+            logging.DEBUG:self.logger.debug,
+            logging.INFO:self.logger.info,
+            logging.WARNING:self.logger.warning,
+            logging.ERROR:self.logger.error,
+        }
+        levels_funcs[level](msg,**kwargs)
+        self.logger.set_stream_level(old_level)
+
+    def log_at_debug(self, msg, **kwargs):
+        """
+        Log a message at debug level, temporarily changing the stream level
+        """
+        self.log_at_level(msg, logging.DEBUG, **kwargs)
+
+    def log_at_info(self, msg, **kwargs):
+        """
+        Log a message at info level, temporarily changing the stream level
+        """
+        self.log_at_level(msg, logging.INFO, **kwargs)
+
+    def log_at_warning(self, msg, **kwargs):
+        """
+        Log a message at warning level, temporarily changing the stream level
+        """
+        self.log_at_level(msg, logging.WARNING, **kwargs)
+
+    def log_at_error(self, msg, **kwargs):
+        """
+        Log a message at error level, temporarily changing the stream level
+        """
+        self.log_at_level(msg, logging.ERROR, **kwargs)
+
+class TestCaseWithOutputLocation(TestCaseWithLogger):
     """
     Base class for unittest.TestCase classes that will put output in a directory.
     Also owns an OpenMSIStream Logger.
@@ -70,12 +125,6 @@ class TestWithEnvVars(unittest.TestCase):
     but that do need some environment variable values set to run properly
     """
 
-    # constants
-    ENV_VAR_NAMES = [
-        "KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS",
-        "KAFKA_TEST_CLUSTER_USERNAME",
-        "KAFKA_TEST_CLUSTER_PASSWORD",
-    ]
 
     @classmethod
     def setUpClass(cls):
@@ -83,7 +132,7 @@ class TestWithEnvVars(unittest.TestCase):
         Set some placeholder environment variable values if they're not already on the system
         """
         cls.ENV_VARS_TO_RESET = []
-        for env_var_name in cls.ENV_VAR_NAMES:
+        for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             if os.path.expandvars(f"${env_var_name}") == f"${env_var_name}":
                 os.environ[env_var_name] = f"PLACEHOLDER_{env_var_name}"
                 cls.ENV_VARS_TO_RESET.append(env_var_name)

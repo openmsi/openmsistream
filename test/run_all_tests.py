@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
 from openmsistream.utilities import Logger
 from openmsistream.services.utilities import run_cmd_in_subprocess
-from test_scripts.test_case_classes import TestWithEnvVars
+from test_scripts.config import TEST_CONST
 
 # constants
 TOP_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
@@ -204,7 +204,7 @@ def skip_kafka_tests_and_get_temp_env(args, suites):
     temp_no_kafka_env = None
     if args.no_kafka:
         temp_env_var_dict = {}
-        for env_var_name in TestWithEnvVars.ENV_VAR_NAMES:
+        for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             temp_env_var_dict[env_var_name] = None
         temp_no_kafka_env = TemporaryEnvironment(temp_env_var_dict)
         temp_no_kafka_env.__enter__()

@@ -90,5 +90,12 @@ class TestRoutineConstants :
 
     # URL to download the example metadata extraction/tutorial plots file from
     TUTORIAL_TEST_FILE_URL = 'https://data.paradim.org/194/XRD/SC001/SC001%20XRR.csv'
+
+    # Names of environment variables that need to be edited to run tests with a local broker
+    ENV_VAR_NAMES = [
+        "KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS",
+        "KAFKA_TEST_CLUSTER_USERNAME",
+        "KAFKA_TEST_CLUSTER_PASSWORD",
+    ]
     
 TEST_CONST=TestRoutineConstants()

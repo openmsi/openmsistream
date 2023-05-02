@@ -88,6 +88,14 @@ class Logger:
         """
         self._streamhandler.setLevel(level)
 
+    def get_stream_level(self):
+        """
+        Get the current level of the underlying logger's streamhandler
+
+        :return: The integer level of the current streamhandler
+        """
+        return self._streamhandler.level
+
     def set_file_level(self, level):
         """
         Set the level of the underlying logger's filehandler

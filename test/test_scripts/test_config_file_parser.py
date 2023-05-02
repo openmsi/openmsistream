@@ -4,23 +4,16 @@ from random import choices
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
-from test_case_classes import TestWithEnvVars
+from test_case_classes import TestCaseWithLogger, TestWithEnvVars
 
-#constants
-LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
-ENV_VAR_NAMES = [
-    'KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS',
-    'KAFKA_TEST_CLUSTER_USERNAME',
-    'KAFKA_TEST_CLUSTER_PASSWORD'
-]
-
-class TestConfigFileParser(TestWithEnvVars) :
+class TestConfigFileParser(TestCaseWithLogger, TestWithEnvVars) :
     """
     Class for testing ConfigFileParser functions
     """
 
     def setUp(self) :
-        self.cfp = ConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH,logger=LOGGER)
+        super().setUp()
+        self.cfp = ConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH,logger=self.logger)
         self.testconfigparser = configparser.ConfigParser()
         self.testconfigparser.read(TEST_CONST.TEST_CFG_FILE_PATH)
 
@@ -50,20 +43,22 @@ class TestConfigFileParser(TestWithEnvVars) :
         random_section_name = ''.join(choices(string.ascii_letters,k=10))
         while random_section_name in self.cfp.available_group_names :
             random_section_name = string.ascii_letters
-        LOGGER.set_stream_level(logging.INFO)
-        LOGGER.info('\nExpecting two errors below:')
-        LOGGER.set_stream_level(logging.ERROR)
+        self.log_at_info('\nExpecting two errors below:')
         with self.assertRaises(ValueError) :
             _ = self.cfp.get_config_dict_for_groups(random_section_name)
         with self.assertRaises(ValueError) :
             _ = self.cfp.get_config_dict_for_groups([self.testconfigparser.sections()[0],random_section_name])
         if os.path.expandvars('$KAFKA_PROD_CLUSTER_USERNAME') == '$KAFKA_PROD_CLUSTER_USERNAME' :
-            other_cfp = ConfigFileParser(TEST_CONST.PROD_CONFIG_FILE_PATH,logger=LOGGER)
+            other_cfp = ConfigFileParser(
+                TEST_CONST.PROD_CONFIG_FILE_PATH,
+                logger=self.logger,
+            )
         else :
-            other_cfp = ConfigFileParser(TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH,logger=LOGGER)
+            other_cfp = ConfigFileParser(
+                TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH,
+                logger=self.logger
+            )
         self.assertTrue('broker' in other_cfp.available_group_names)
-        LOGGER.set_stream_level(logging.INFO)
-        LOGGER.info('\nExpecting one error below:')
-        LOGGER.set_stream_level(logging.ERROR)
+        self.log_at_info('\nExpecting one error below:')
         with self.assertRaises(ValueError) :
             _ = other_cfp.get_config_dict_for_groups('broker')
