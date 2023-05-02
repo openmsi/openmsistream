@@ -61,7 +61,7 @@ class TestDataFileDirectoriesEncrypted(
             if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False):
                 errmsg = (
                     "ERROR: files are not the same after reconstruction! "
-                    f"(This may also be due to the timeout being too short)"
+                    "(This may also be due to the timeout being too short)"
                 )
                 raise RuntimeError(errmsg)
             # make sure that the ProducerFileRegistry files were created
