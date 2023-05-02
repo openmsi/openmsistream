@@ -84,18 +84,15 @@ class TestDataFileDirectories(
             self.download_directory.control_command_queue.put("c")
             self.download_directory.control_command_queue.put("check")
             # wait for the timeout for the test file to be completely reconstructed
-            reco_rel_fp = pathlib.Path(
-                TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME / TEST_CONST.TEST_DATA_FILE_NAME
+            reco_rel_fp = (
+                pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
+                / TEST_CONST.TEST_DATA_FILE_NAME
             )
             self.wait_for_files_to_reconstruct(reco_rel_fp)
             # make sure the reconstructed file exists with the same name and content as the original
-            fp = (
-                self.reco_dir
-                / TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
-                / TEST_CONST.TEST_DATA_FILE_NAME
-            )
-            self.assertTrue(fp.is_file())
-            if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, fp, shallow=False):
+            reco_fp = self.reco_dir / reco_rel_fp
+            self.assertTrue(reco_fp.is_file())
+            if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False):
                 errmsg = (
                     "ERROR: files are not the same after reconstruction! "
                     "(This may also be due to the timeout being too short)"
