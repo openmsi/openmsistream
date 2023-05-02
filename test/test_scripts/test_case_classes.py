@@ -179,7 +179,8 @@ class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
         self.watched_dir = watched_dir
         if self.watched_dir is None:
             self.watched_dir = self.output_dir / self.WATCHED_DIR_NAME
-        self.watched_dir.mkdir(parents=True)
+        if not self.watched_dir.is_dir():
+            self.watched_dir.mkdir(parents=True)
         # create the DataFileUploadDirectory
         self.upload_directory = DataFileUploadDirectory(
             self.watched_dir,
@@ -304,7 +305,8 @@ class TestWithDataFileDownloadDirectory(TestCaseWithOutputLocation):
         if not self.reco_dir :
             self.reco_dir = self.output_dir/self.RECO_DIR_NAME
         #make the directory to reconstruct files into
-        self.reco_dir.mkdir()
+        if not self.reco_dir.is_dir():
+            self.reco_dir.mkdir(parents=True)
         #start up the DataFileDownloadDirectory
         self.download_directory = DataFileDownloadDirectory(
             self.reco_dir,
