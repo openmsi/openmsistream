@@ -1,7 +1,6 @@
 #imports
-import os, logging, configparser, string, pathlib
+import os, configparser, string
 from random import choices
-from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
 from test_case_classes import TestCaseWithLogger, TestWithEnvVars
