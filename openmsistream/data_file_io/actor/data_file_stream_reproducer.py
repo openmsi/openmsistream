@@ -41,6 +41,9 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
     :type n_consumer_threads: int, optional
     :param consumer_group_id: the group ID under which each consumer should be created
     :type consumer_group_id: str, optional
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
         :class:`~.data_file_io.DownloadDataFileToMemory`
@@ -368,6 +371,7 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
             "producer_topic_name",
             "n_consumer_threads",
             "n_producer_threads",
+            "download_regex",
         ]
         kwargs = {**superkwargs}
         return args, kwargs

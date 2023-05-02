@@ -33,6 +33,7 @@ class ControlledMessageReproducer(
         consumer_topic_name,
         producer_topic_name,
         *,
+        filepath_regex=None,
         n_producer_threads=1,
         n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,
         **kwargs,
@@ -55,6 +56,8 @@ class ControlledMessageReproducer(
         self.message_key_regex = None
         # reset the key regex after the consumer has filtered through previous messages
         self.filter_new_message_keys = False
+        # set below to some regex to filter messages by filepath
+        self.filepath_regex = filepath_regex
         # hold onto the last consumed message to commit its offset on shutdown
         self.last_message = None
         self.producer_topic_name = producer_topic_name
@@ -133,6 +136,7 @@ class ControlledMessageReproducer(
                 restart_at_beginning=self.restart_at_beginning,
                 message_key_regex=self.message_key_regex,
                 filter_new_message_keys=self.filter_new_message_keys,
+                filepath_regex=self.filepath_regex,
             )
         else:
             consumer = None

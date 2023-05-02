@@ -30,6 +30,9 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
     :param datafile_type: the type of data file that recognized files should be reconstructed as
         (must be a subclass of :class:`~.data_file_io.DownloadDataFileToDisk`)
     :type datafile_type: :class:`~.data_file_io.DownloadDataFileToDisk`, optional
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
         :class:`~.data_file_io.DownloadDataFileToDisk`
@@ -43,6 +46,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         config_path,
         topic_name,
         datafile_type=DownloadDataFileToDisk,
+        filepath_regex=None,
         **kwargs,
     ):
         """
@@ -50,7 +54,12 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         In this class datafile_type should be something that extends DownloadDataFileToDisk
         """
         super().__init__(
-            dirpath, config_path, topic_name, datafile_type=datafile_type, **kwargs
+            dirpath,
+            config_path,
+            topic_name,
+            datafile_type=datafile_type,
+            filepath_regex=filepath_regex,
+            **kwargs,
         )
         if not issubclass(self.datafile_type, DownloadDataFileToDisk):
             errmsg = (
@@ -185,6 +194,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             "topic_name",
             "update_seconds",
             "consumer_group_id",
+            "download_regex",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs
@@ -209,6 +219,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             args.config,
             args.topic_name,
             n_threads=args.n_threads,
+            filepath_regex=args.download_regex,
             consumer_group_id=args.consumer_group_id,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,

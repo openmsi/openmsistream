@@ -21,6 +21,9 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
     :type config_path: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
     """
 
     def __init__(self, bucket_name, config_path, topic_name, **kwargs):
@@ -116,6 +119,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
             args.topic_name,
             output_dir=args.output_dir,
             n_threads=args.n_threads,
+            filepath_regex=args.download_regex,
             update_secs=args.update_seconds,
             consumer_group_id=args.consumer_group_id,
             streamlevel=args.logger_stream_level,
