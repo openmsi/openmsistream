@@ -4,7 +4,7 @@ from random import choices
 from openmsistream.utilities.logging import Logger
 from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
-from placeholder_env_vars import TestWithEnvVars
+from test_case_classes import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)

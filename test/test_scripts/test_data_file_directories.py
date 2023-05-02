@@ -8,7 +8,7 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
 from openmsistream.data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
 from config import TEST_CONST
-from placeholder_env_vars import TestWithEnvVars
+from test_case_classes import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)

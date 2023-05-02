@@ -7,7 +7,7 @@ from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamCons
 from openmsistream.kafka_wrapper.producer_group import ProducerGroup
 from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST
-from placeholder_env_vars import TestWithEnvVars
+from test_case_classes import TestWithEnvVars
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.ERROR)
