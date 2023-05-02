@@ -218,7 +218,10 @@ class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
         Wait slightly before and after
         """
         time.sleep(1)
-        (self.watched_dir / dest_rel_path).write_bytes(src_path.read_bytes())
+        dest_path = self.watched_dir / dest_rel_path
+        if not dest_path.parent.is_dir() :
+            dest_path.parent.mkdir(parents=True)
+        dest_path.write_bytes(src_path.read_bytes())
         time.sleep(5)
 
     def stop_upload_thread(self, timeout_secs=90):
