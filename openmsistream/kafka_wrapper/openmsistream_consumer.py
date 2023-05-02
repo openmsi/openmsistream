@@ -12,6 +12,7 @@ from ..utilities.misc import (
     raise_err_with_optional_logger,
     debug_msg_with_optional_logger,
 )
+from ..data_file_io.entity.data_file_chunk import DataFileChunk
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
 from .config_file_parser import KafkaConfigFileParser
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
@@ -39,20 +40,26 @@ class OpenMSIStreamConsumer(LogOwner):
         Only messages matching this regex will be returned by :func:`~get_next_message`.
         This parameter only has an effect if `restart_at_beginning` is true and a consumer group
         with the given ID has previously consumed messages from the topic, or if
-        `filter_new_messages` is True. Messages with keys that are not strings will always
+        `filter_new_message_keys` is True. Messages with keys that are not strings will always
         be consumed, logging warnings if they should be filtered.
     :type message_key_regex: :func:`re.compile` or None, optional
-    :param filter_new_messages: If False (the default) the `message_key_regex` will only be used
+    :param filter_new_message_keys: If False (the default) the `message_key_regex` will only be used
         to filter messages from before each partition's currently committed location.
         Useful if you want to process only some messages from earlier in the topic, but all new
         messages that have never been read. To filter every message read instead of just
         previously-consumed messages, set this to True.
-    :type filter_new_messages: bool, optional
+    :type filter_new_message_keys: bool, optional
     :param starting_offsets: A list of :class:`confluent_kafka.TopicPartition` objects listing
         the initial starting offsets for each partition in the topic for Consumers with this
-        group ID. If `filter_new_messages` is False, messages with offsets greater than or
+        group ID. If `filter_new_message_keys` is False, messages with offsets greater than or
         equal to these will NOT be filtered using `message_key_regex`.
     :type starting_offsets: list(:class:`confluent_kafka.TopicPartition`) or None, optional
+    :param filepath_regex: A regular expression to filter messages based on the path to the
+        file with which they're associated (relative to the "root" upload directory).
+        Only messages matching this regex will be returned by :func:`~get_next_message`.
+        Messages that cannot be deserialized to :class:`~DataFileChunk` objects will
+        always be consumed, logging warnings if they should be filtered.
+    :type filepath_regex: :func:`re.compile` or None, optional
     :param kwargs: Any extra keyword arguments are added to the configuration dict for the Consumer,
         with underscores in their names replaced by dots
     :type kwargs: dict
@@ -69,8 +76,9 @@ class OpenMSIStreamConsumer(LogOwner):
         configs,
         kafkacrypto=None,
         message_key_regex=None,
-        filter_new_messages=False,
+        filter_new_message_keys=False,
         starting_offsets=None,
+        filepath_regex=None,
         **kwargs,
     ):
         """
@@ -91,7 +99,8 @@ class OpenMSIStreamConsumer(LogOwner):
             self.logger.error(errmsg, exc_type=ValueError)
         self.configs = configs
         self.message_key_regex = message_key_regex
-        self.filter_new_messages = filter_new_messages
+        self.filter_new_message_keys = filter_new_message_keys
+        self.filepath_regex = filepath_regex
         self.__starting_offsets = starting_offsets
 
     @staticmethod
@@ -311,28 +320,64 @@ class OpenMSIStreamConsumer(LogOwner):
 
     def _filter_message(self, msg):
         """
-        Checks a message's key against the regex and its offset against the starting offsets.
-        Returns None if a message should be skipped, otherwise returns the message.
+        Checks a message's key against the key regex, its filepath against the filepath regex,
+        and its offset against the starting offsets. Returns None if a message should be skipped,
+        otherwise returns the message.
         """
-        if (self.message_key_regex is not None) and (
-            self.filter_new_messages or self.message_consumed_before(msg)
+        if self._message_passes_key_filter(msg) and self._message_passes_filepath_filter(
+            msg
         ):
-            try:
-                msg_key = msg.key()  # from a regular Kafka Consumer
-            except TypeError:
-                msg_key = msg.key  # from KafkaCrypto
-            if not isinstance(msg_key, str):
-                warnmsg = (
-                    f"WARNING: found a message whose key ({msg_key}) is not a string, "
-                    "but which should be filtered using the key regex. "
-                    "This message will be consumed as though it successfully passed the filter."
-                )
-                self.logger.warning(warnmsg)
-                return msg
-            if self.message_key_regex.match(msg_key):
-                return msg
-            return None
-        return msg
+            return msg
+        return None
+
+    def _message_passes_key_filter(self, msg):
+        """
+        Returns True if a message should be consumed based on the key regex and False
+        if it should be skipped instead
+        """
+        if (self.message_key_regex is None) or not (
+            self.filter_new_message_keys or self.message_consumed_before(msg)
+        ):
+            return True
+        try:
+            msg_key = msg.key()  # from a regular Kafka Consumer
+        except TypeError:
+            msg_key = msg.key  # from KafkaCrypto
+        if not isinstance(msg_key, str):
+            warnmsg = (
+                f"WARNING: found a message whose key ({msg_key}) is not a string, "
+                "but which should be filtered using the key regex. "
+                "This message will be consumed as though it successfully passed the filter."
+            )
+            self.logger.warning(warnmsg)
+            return True
+        if self.message_key_regex.match(msg_key):
+            return True
+        return False
+
+    def _message_passes_filepath_filter(self, msg):
+        """
+        Returns True if a message should be consumed based on the filepath regex and False
+        if it should be skipped instead
+        """
+        if self.filepath_regex is None:
+            return True
+        try:
+            msg_value = msg.value()  # from a regular Kafka Consumer
+        except TypeError:
+            msg_value = msg.value  # from KafkaCrypto
+        if not isinstance(msg_value, DataFileChunk):
+            warnmsg = (
+                f"WARNING: found a message whose value ({msg_value}) is not a DataFileChunk, "
+                "but which should be filtered using the filepath regex. "
+                "This message will be consumed as though it successfully passed the filter."
+            )
+            self.logger.warning(warnmsg)
+            return True
+        rel_filepath = msg_value.relative_filepath
+        if self.filepath_regex.match(str(rel_filepath)):
+            return True
+        return False
 
     @methodtools.lru_cache()
     def message_consumed_before(self, msg):
