@@ -6,7 +6,7 @@ from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.actor.file_registry.stream_handler_registries import StreamProcessorRegistry
 from openmsistream import DataFileUploadDirectory
 from config import TEST_CONST
-from test_data_file_stream_processor import DataFileStreamProcessorForTesting
+from test_case_classes import DataFileStreamProcessorForTesting
 
 #constants
 LOGGER = Logger(pathlib.Path(__file__).name.split('.')[0],logging.INFO)

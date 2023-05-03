@@ -4,7 +4,12 @@ from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from openmsistream import DataFileUploadDirectory, DataFileDownloadDirectory
+from openmsistream import (
+    DataFileUploadDirectory,
+    DataFileDownloadDirectory,
+    DataFileStreamProcessor,
+    UploadDataFile,
+)
 from config import TEST_CONST
 
 
@@ -82,7 +87,7 @@ class TestCaseWithOutputLocation(TestCaseWithLogger):
             self.output_dir = TEST_CONST.TEST_DIR_PATH / f"{self._testMethodName}_output"
         # if output from a previous test already exists, remove it
         if self.output_dir.is_dir():
-            self.logger.info(f"Will delete existing output location at {self.output_dir}")
+            self.log_at_info(f"Will delete existing output location at {self.output_dir}")
             try:
                 shutil.rmtree(self.output_dir)
             except Exception as exc:  # pylint: disable=broad-except
@@ -116,6 +121,32 @@ class TestCaseWithOutputLocation(TestCaseWithLogger):
         # reset the output directory variable if we're using output directories per test
         if self.test_dependent_output_dirs:
             self.output_dir = None
+
+
+class TestWithUploadDataFile(TestCaseWithLogger):
+    """
+    Base class for tests that need to upload single files
+    """
+
+    def upload_single_file(
+        self,
+        filepath,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        topic_name="test",
+        rootdir=None,
+        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+        chunk_size=TEST_CONST.TEST_CHUNK_SIZE,
+    ):
+        """
+        Upload a file to a topic using UploadDataFile
+        """
+        upload_datafile = UploadDataFile(filepath, rootdir=rootdir, logger=self.logger)
+        upload_datafile.upload_whole_file(
+            cfg_file,
+            topic_name,
+            n_threads=n_threads,
+            chunk_size=chunk_size,
+        )
 
 
 class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
@@ -219,7 +250,7 @@ class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
         """
         time.sleep(1)
         dest_path = self.watched_dir / dest_rel_path
-        if not dest_path.parent.is_dir() :
+        if not dest_path.parent.is_dir():
             dest_path.parent.mkdir(parents=True)
         dest_path.write_bytes(src_path.read_bytes())
         time.sleep(5)
@@ -272,7 +303,7 @@ class TestWithDataFileDownloadDirectory(TestCaseWithOutputLocation):
             raise RuntimeError(
                 f"ERROR: download_thread = {self.download_thread} should not be set yet!"
             )
-        
+
     def tearDown(self):
         """
         Make sure the download thread is no longer running,
@@ -299,18 +330,18 @@ class TestWithDataFileDownloadDirectory(TestCaseWithOutputLocation):
         topic_name="test",
         n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         update_secs=5,
-        consumer_group_id='create_new',
+        consumer_group_id="create_new",
     ):
         """
         Create the download directory object to use
         """
         self.reco_dir = reco_dir
-        if not self.reco_dir :
-            self.reco_dir = self.output_dir/self.RECO_DIR_NAME
-        #make the directory to reconstruct files into
+        if not self.reco_dir:
+            self.reco_dir = self.output_dir / self.RECO_DIR_NAME
+        # make the directory to reconstruct files into
         if not self.reco_dir.is_dir():
             self.reco_dir.mkdir(parents=True)
-        #start up the DataFileDownloadDirectory
+        # start up the DataFileDownloadDirectory
         self.download_directory = DataFileDownloadDirectory(
             self.reco_dir,
             cfg_file,
@@ -330,53 +361,246 @@ class TestWithDataFileDownloadDirectory(TestCaseWithOutputLocation):
         )
         self.download_thread.start()
 
-    def wait_for_files_to_reconstruct(self,rel_filepaths,timeout_secs=90):
+    def wait_for_files_to_reconstruct(self, rel_filepaths, timeout_secs=90):
         """
         Keep running the download thread until one or more files are fully recognized,
         then shut down the download thread
         """
         # keep track of which of the requested files has been reconstructed
-        if isinstance(rel_filepaths,pathlib.PurePath):
+        if isinstance(rel_filepaths, pathlib.PurePath):
             rel_filepaths = [rel_filepaths]
         files_found_by_path = {}
-        for rel_fp in rel_filepaths :
+        for rel_fp in rel_filepaths:
             files_found_by_path[rel_fp] = False
         # read messages until all files are reconstructed
         current_messages_read = -1
         time_waited = 0
         self.log_at_info(
-            f'Waiting to reconstruct files; will timeout after {timeout_secs} seconds)...'
+            f"Waiting to reconstruct files; will timeout after {timeout_secs} seconds)..."
         )
         all_files_found = False
         start_time = datetime.datetime.now()
-        while (
-            (not all_files_found)
-            and (datetime.datetime.now()-start_time).total_seconds()<timeout_secs
-        ):
+        while (not all_files_found) and (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < timeout_secs:
             current_messages_read = self.download_directory.n_msgs_read
-            time_waited = (datetime.datetime.now()-start_time).total_seconds()
+            time_waited = (datetime.datetime.now() - start_time).total_seconds()
             self.log_at_info(
-                f'\t{current_messages_read} messages read after {time_waited} seconds....'
+                f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
             for rel_fp in files_found_by_path:
                 if files_found_by_path[rel_fp]:
                     continue
                 if rel_fp in self.download_directory.recent_processed_filepaths:
-                    files_found_by_path[rel_fp]=True
-            all_files_found = sum([files_found_by_path[rel_fp] for rel_fp in files_found_by_path])==len(rel_filepaths)
-        # after timing out, stalling, or completely reconstructing the test file, 
+                    files_found_by_path[rel_fp] = True
+            all_files_found = sum(
+                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
+            ) == len(rel_filepaths)
+        # after timing out, stalling, or completely reconstructing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
-            f'Quitting download thread after reading {self.download_directory.n_msgs_read} '
-            'messages; will timeout after 30 seconds....'
+            f"Quitting download thread after reading {self.download_directory.n_msgs_read} "
+            "messages; will timeout after 30 seconds...."
         )
         self.log_at_info(msg)
-        self.download_directory.control_command_queue.put('q')
+        self.download_directory.control_command_queue.put("q")
         # wait for the download thread to finish
         self.download_thread.join(timeout=30)
-        if self.download_thread.is_alive() :
-            raise TimeoutError('ERROR: download thread timed out after 30 seconds!')
+        if self.download_thread.is_alive():
+            raise TimeoutError("ERROR: download thread timed out after 30 seconds!")
+
+
+class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
+    """
+    Class to use for testing DataFileStreamProcessor functions since it's an abstract base class
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.checked = False
+        self.completed_filenames_bytestrings = []
+        self.filenames_to_fail = []
+        super().__init__(*args, **kwargs)
+
+    def _process_downloaded_data_file(self, datafile, lock):
+        if datafile.filename in self.filenames_to_fail:
+            with lock:
+                self.completed_filenames_bytestrings.append((datafile.filename, None))
+            return ValueError(
+                f"ERROR: testing processing for {datafile.filename} is set to fail!"
+            )
+        else:
+            with lock:
+                self.completed_filenames_bytestrings.append(
+                    (datafile.filename, datafile.bytestring)
+                )
+            return None
+
+    def _failed_processing_callback(self, datafile, lock):
+        if datafile.filename not in self.filenames_to_fail:
+            raise RuntimeError("ERROR: _failed_processing_callback invoked in test!")
+
+    def _mismatched_hash_callback(self, datafile, lock):
+        raise RuntimeError("ERROR: _mismatched_hash_callback invoked in test!")
+
+    def _on_check(self):
+        self.checked = True
+        super()._on_check()
+
+    @classmethod
+    def run_from_command_line(cls, args=None):
+        pass
+
+
+class TestWithStreamProcessor(TestCaseWithOutputLocation):
+    """
+    Base class for tests that need to run stream processors
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stream_processor = None
+        self.stream_processor_thread = None
+
+    def setUp(self):
+        """
+        Make sure the parameters haven't been set for this test
+        """
+        super().setUp()
+        if self.stream_processor is not None:
+            raise RuntimeError(
+                f"ERROR: stream_processor = {self.stream_processor} should not be set yet!"
+            )
+        if self.stream_processor_thread is not None:
+            raise RuntimeError(
+                f"ERROR: stream_processor_thread = {self.stream_processor_thread} should not be set yet!"
+            )
+
+    def tearDown(self):
+        """
+        Make sure the download thread is no longer running,
+        and reset the variables for a new test
+        """
+        self.reset_stream_processor()
+        super().tearDown()
+
+    def create_stream_processor(
+        self,
+        stream_processor_type=DataFileStreamProcessorForTesting,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        topic_name="test",
+        output_dir=None,
+        n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+        consumer_group_id="create_new",
+        other_init_args=(),
+        other_init_kwargs={},
+    ):
+        """
+        Create the stream processor object to use
+        """
+        if self.stream_processor is not None :
+            raise RuntimeError(
+                f'ERROR: stream processor is {self.stream_processor} but should be None!'
+            )
+        if output_dir is None:
+            output_dir = self.output_dir
+        self.stream_processor = stream_processor_type(
+            cfg_file,
+            topic_name,
+            *other_init_args,
+            output_dir=output_dir,
+            n_threads=n_threads,
+            consumer_group_id=consumer_group_id,
+            logger=self.logger,
+            **other_init_kwargs,
+        )
+
+    def start_stream_processor_thread(self, func=None, args=(), kwargs={}):
+        """
+        Start running the stream processor in a new thread
+        """
+        if self.stream_processor_thread is not None :
+            errmsg = (
+                f'ERROR: stream processor thread is {self.stream_processor_thread} '
+                'but it should be None!'
+            )
+            raise RuntimeError(errmsg)
+        if func is None:
+            func = self.stream_processor.process_files_as_read
+        self.stream_processor_thread = ExceptionTrackingThread(
+            target=func, args=args, kwargs=kwargs
+        )
+        self.stream_processor_thread.start()
+
+    def wait_for_files_to_be_processed(self, rel_filepaths, timeout_secs=90):
+        """
+        Keep running the stream processor thread until one or more files are processed,
+        then shut down the stream processor thread
+        """
+        # keep track of which of the requested files has been reconstructed
+        if isinstance(rel_filepaths, pathlib.PurePath):
+            rel_filepaths = [rel_filepaths]
+        files_found_by_path = {}
+        for rel_fp in rel_filepaths:
+            files_found_by_path[rel_fp] = False
+        # read messages until all files are processed
+        current_messages_read = -1
+        time_waited = 0
+        self.log_at_info(
+            f"Waiting to process files; will timeout after {timeout_secs} seconds)..."
+        )
+        all_files_found = False
+        start_time = datetime.datetime.now()
+        while (not all_files_found) and (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < timeout_secs:
+            current_messages_read = self.stream_processor.n_msgs_read
+            time_waited = (datetime.datetime.now() - start_time).total_seconds()
+            self.log_at_info(
+                f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
+            )
+            time.sleep(5)
+            for rel_fp in files_found_by_path:
+                if files_found_by_path[rel_fp]:
+                    continue
+                if rel_fp in self.stream_processor.recent_processed_filepaths:
+                    files_found_by_path[rel_fp] = True
+            all_files_found = sum(
+                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
+            ) == len(rel_filepaths)
+        # after timing out, stalling, or completely processing the test file,
+        # put the "quit" command into the input queue to stop the function running
+        msg = (
+            f"Quitting stream processor thread after reading {self.stream_processor.n_msgs_read} "
+            "messages; will timeout after 30 seconds...."
+        )
+        self.log_at_info(msg)
+        self.stream_processor.control_command_queue.put("q")
+        # wait for the download thread to finish
+        self.stream_processor_thread.join(timeout=30)
+        if self.stream_processor_thread.is_alive():
+            raise TimeoutError("ERROR: stream processor thread timed out after 30 seconds!")
+        
+    def reset_stream_processor(self,remove_output=False):
+        """
+        Shut down any running stream processor thread and set the stream processor
+        and its thread back to None. Also optionally remove and re-create the output dir
+        """
+        if self.stream_processor_thread and self.stream_processor:
+            if self.stream_processor_thread.is_alive():
+                try:
+                    self.stream_processor.shutdown()
+                    self.stream_processor_thread.join(timeout=30)
+                    if self.stream_processor_thread.is_alive():
+                        raise TimeoutError("Download thread timed out after 30 seconds")
+                except Exception as e:
+                    raise e
+        self.stream_processor = None
+        self.stream_processor_thread = None
+        if remove_output :
+            shutil.rmtree(self.output_dir)
+            self.output_dir.mkdir(parents=True)
+
 
 class TestWithEnvVars(unittest.TestCase):
     """
