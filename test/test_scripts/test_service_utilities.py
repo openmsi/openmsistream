@@ -55,7 +55,7 @@ class TestServiceUtilities(unittest.TestCase):
         self.assertTrue(ref_exec_fp.is_file())
         with open(ref_exec_fp, "r") as ref_fp:
             ref_lines = ref_fp.readlines()
-        real_ref_lines = [ref_line for ref_line in ref_lines if ref_line.strip()!=""]
+        real_ref_lines = [ref_line for ref_line in ref_lines if ref_line.strip() != ""]
         for test_line, ref_line in zip(test_lines, real_ref_lines):
             if ref_line.lstrip().startswith(
                 "output_filepath = "
