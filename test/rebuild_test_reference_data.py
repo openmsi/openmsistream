@@ -167,9 +167,8 @@ def rebuild_test_metadata_dict():
     )
     module_name = class_path.name[: -len(".py")]
     loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-    module = (
-        loader.load_module()
-    )  # pylint: disable=deprecated-method,no-value-for-parameter
+    # pylint: disable=deprecated-method,no-value-for-parameter
+    module = loader.load_module()
     # get the metadata dictionary from the file
     metadata_reproducer = module.XRDCSVMetadataReproducer(
         TEST_CONST.EXAMPLES_DIR_PATH
