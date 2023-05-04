@@ -19,6 +19,10 @@ class TestDownloadDataFile(TestWithOutputLocation):
     (without interacting with the Kafka broker)
     """
 
+    def __init__(self,*args,**kwargs):
+        super().__init__(*args,**kwargs)
+        self.dl_datafile=None
+
     def setUp(self): # pylint: disable=invalid-name
         """
         Create the datafile to use for testing
@@ -54,19 +58,19 @@ class TestDownloadDataFile(TestWithOutputLocation):
                 data=dfc.data,
             )
             dfc_as_dl.rootdir = self.output_dir
-            if dl_datafile is None:
+            if self.dl_datafile is None:
                 if disk_or_memory == "disk":
-                    dl_datafile = DownloadDataFileToDisk(
+                    self.dl_datafile = DownloadDataFileToDisk(
                         dfc_as_dl.filepath, logger=self.logger
                     )
                 elif disk_or_memory == "memory":
-                    dl_datafile = DownloadDataFileToMemory(
+                    self.dl_datafile = DownloadDataFileToMemory(
                         dfc_as_dl.filepath, logger=self.logger
                     )
-            check = dl_datafile.add_chunk(dfc_as_dl)
+            check = self.dl_datafile.add_chunk(dfc_as_dl)
             # try writing every tenth chunk twice; should return "chunk already added"
             if i_chunk % 10 == 0:
-                check2 = dl_datafile.add_chunk(dfc_as_dl)
+                check2 = self.dl_datafile.add_chunk(dfc_as_dl)
                 self.assertEqual(
                     check2, DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
                 )
@@ -82,7 +86,6 @@ class TestDownloadDataFile(TestWithOutputLocation):
         Helper function run by both tests below
         disk_or_memory variable determines which objects are used in the test
         """
-        dl_datafile = None
         try:
             self.add_all_chunks(disk_or_memory)
             # make sure that the reconstructed contents match the original contents
@@ -90,7 +93,7 @@ class TestDownloadDataFile(TestWithOutputLocation):
                 fp = (
                     self.output_dir
                     / TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
-                    / dl_datafile.filename
+                    / self.dl_datafile.filename
                 )
                 if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, fp, shallow=False):
                     raise RuntimeError(
@@ -100,13 +103,13 @@ class TestDownloadDataFile(TestWithOutputLocation):
             elif disk_or_memory == "memory":
                 with open(TEST_CONST.TEST_DATA_FILE_PATH, "rb") as fp:
                     ref_data = fp.read()
-                if not dl_datafile.bytestring == ref_data:
+                if not self.dl_datafile.bytestring == ref_data:
                     raise RuntimeError(
                         "ERROR: files are not the same after reconstruction!"
                     )
             # make sure the hashes are mismatched if some chunks are missing
             # pylint: disable=protected-access
-            dl_datafile._chunk_offsets_downloaded = []
+            self.dl_datafile._chunk_offsets_downloaded = []
             hash_missing_some_chunks = sha512()
             for i_chunk, dfc in enumerate(self.ul_datafile.chunks_to_upload):
                 if i_chunk % 3 == 0:
@@ -129,7 +132,7 @@ class TestDownloadDataFile(TestWithOutputLocation):
                 dfc_as_dl.rootdir = self.output_dir
                 if i_chunk == len(self.ul_datafile.chunks_to_upload) - 1:
                     dfc_as_dl.file_hash = hash_missing_some_chunks
-                check = dl_datafile.add_chunk(dfc_as_dl)
+                check = self.dl_datafile.add_chunk(dfc_as_dl)
                 expected_check_value = DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
                 if i_chunk == len(self.ul_datafile.chunks_to_upload) - 1:
                     expected_check_value = (
