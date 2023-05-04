@@ -16,13 +16,13 @@ from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import (
 )
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from config import TEST_CONST
-from test_case_classes import TestCaseWithLogger
+from test_base_classes import TestWithLogger
 
 # constants
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
 
 
-class TestSerialization(TestCaseWithLogger):
+class TestSerialization(TestWithLogger):
     """
     Class for testing classes in openmsistream.kafka_wrapper.serialization
     """

@@ -3,7 +3,7 @@ import pathlib, datetime, json, pickle, urllib.request, os
 import importlib.machinery, importlib.util
 from openmsistream.kafka_wrapper import ConsumerGroup
 from config import TEST_CONST
-from test_case_classes import TestWithUploadDataFile, TestWithStreamReproducer
+from test_base_classes import TestWithUploadDataFile, TestWithStreamReproducer
 
 # import the XRDCSVMetadataReproducer from the examples directory
 class_path = (

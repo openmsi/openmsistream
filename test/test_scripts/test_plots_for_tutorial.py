@@ -2,7 +2,7 @@
 import pathlib, urllib.request
 import importlib.machinery, importlib.util
 from config import TEST_CONST
-from test_case_classes import TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
 
 # import the XRDCSVPlotter from the examples directory
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"

@@ -3,7 +3,7 @@ import pathlib, hashlib
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
 from config import TEST_CONST
-from test_case_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
+from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
 # constants
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
@@ -84,7 +84,7 @@ class TestS3TransferStreamProcessor(
         s3d = S3DataTransfer(s3_config, logger=self.logger)
         log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
         for filepath in self.watched_dir.rglob("*"):
-            if filepath.is_relative_to(log_subdir):
+            if filepath.is_relative_to(log_subdir) or filepath.is_dir():
                 continue
             file_hash = self.hash_file(filepath)
             object_key = f"{TOPIC_NAME}/{filepath.relative_to(self.watched_dir)}"

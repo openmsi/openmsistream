@@ -13,7 +13,7 @@ from openmsistream import (
 from config import TEST_CONST
 
 
-class TestCaseWithLogger(LogOwner, unittest.TestCase):
+class TestWithLogger(LogOwner, unittest.TestCase):
     """
     Base class for unittest.TestCase classes that should own a logger
     By default the logger won't write to a file, and will set the stream level to ERROR
@@ -65,7 +65,7 @@ class TestCaseWithLogger(LogOwner, unittest.TestCase):
         self.log_at_level(msg, logging.ERROR, **kwargs)
 
 
-class TestCaseWithOutputLocation(TestCaseWithLogger):
+class TestWithOutputLocation(TestWithLogger):
     """
     Base class for unittest.TestCase classes that will put output in a directory.
     Also owns an OpenMSIStream Logger.
@@ -123,7 +123,7 @@ class TestCaseWithOutputLocation(TestCaseWithLogger):
             self.output_dir = None
 
 
-class TestWithUploadDataFile(TestCaseWithLogger):
+class TestWithUploadDataFile(TestWithLogger):
     """
     Base class for tests that need to upload single files
     """
@@ -149,7 +149,7 @@ class TestWithUploadDataFile(TestCaseWithLogger):
         )
 
 
-class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
+class TestWithDataFileUploadDirectory(TestWithOutputLocation):
     """
     Base class for tests that need to run a DataFileUploadDirectory
     """
@@ -275,7 +275,7 @@ class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
             )
 
 
-class TestWithDataFileDownloadDirectory(TestCaseWithOutputLocation):
+class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
     """
     Base class for tests that need to do things with download directories
     """
@@ -455,7 +455,7 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
         pass
 
 
-class TestWithStreamProcessor(TestCaseWithOutputLocation):
+class TestWithStreamProcessor(TestWithOutputLocation):
     """
     Base class for tests that need to run stream processors
     """
@@ -604,7 +604,7 @@ class TestWithStreamProcessor(TestCaseWithOutputLocation):
             shutil.rmtree(self.output_dir)
             self.output_dir.mkdir(parents=True)
 
-class TestWithStreamReproducer(TestCaseWithOutputLocation):
+class TestWithStreamReproducer(TestWithOutputLocation):
     """
     Base class for tests that need to run stream reproducers
     """

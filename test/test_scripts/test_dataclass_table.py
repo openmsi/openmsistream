@@ -3,7 +3,7 @@ import pathlib, datetime
 from typing import List, Set, Tuple
 from dataclasses import dataclass, fields
 from openmsistream.utilities.dataclass_table import DataclassTable
-from test_case_classes import TestCaseWithOutputLocation
+from test_base_classes import TestWithOutputLocation
 
 
 @dataclass
@@ -20,7 +20,7 @@ class TableLineForTesting:
     timestamp_field: datetime.datetime
 
 
-class TestDataclassTable(TestCaseWithOutputLocation):
+class TestDataclassTable(TestWithOutputLocation):
     """
     Class for testing DataclassTable utility
     """

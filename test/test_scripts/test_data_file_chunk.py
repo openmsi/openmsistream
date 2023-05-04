@@ -6,10 +6,10 @@ from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
 from config import TEST_CONST
-from test_case_classes import TestCaseWithLogger
+from test_base_classes import TestWithLogger
 
 
-class TestDataFileChunk(TestCaseWithLogger):
+class TestDataFileChunk(TestWithLogger):
     """
     Class for testing behavior of DataFileChunks
     """

@@ -3,10 +3,10 @@ import os, configparser, string
 from random import choices
 from openmsistream.utilities.config_file_parser import ConfigFileParser
 from config import TEST_CONST
-from test_case_classes import TestCaseWithLogger, TestWithEnvVars
+from test_base_classes import TestWithLogger, TestWithEnvVars
 
 
-class TestConfigFileParser(TestCaseWithLogger, TestWithEnvVars):
+class TestConfigFileParser(TestWithLogger, TestWithEnvVars):
     """
     Class for testing ConfigFileParser functions
     """

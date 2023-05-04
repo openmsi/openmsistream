@@ -9,10 +9,10 @@ from openmsistream.data_file_io.entity.download_data_file import (
     DownloadDataFileToMemory,
 )
 from config import TEST_CONST
-from test_case_classes import TestCaseWithOutputLocation
+from test_base_classes import TestWithOutputLocation
 
 
-class TestDownloadDataFile(TestCaseWithOutputLocation):
+class TestDownloadDataFile(TestWithOutputLocation):
     """
     Class for testing DownloadDataFile functions
     (without interacting with the Kafka broker)

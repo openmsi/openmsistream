@@ -5,10 +5,10 @@ from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamCons
 from openmsistream.kafka_wrapper.producer_group import ProducerGroup
 from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST
-from test_case_classes import TestCaseWithLogger, TestWithEnvVars
+from test_base_classes import TestWithLogger, TestWithEnvVars
 
 
-class TestCreateOpenMSIStreamKafkaObjects(TestCaseWithLogger, TestWithEnvVars):
+class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
     """
     Class for testing that objects in openmsistream.kafka_wrapper can
     be instantiated using default configs

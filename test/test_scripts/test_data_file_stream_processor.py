@@ -1,7 +1,7 @@
 # imports
 import time
 from config import TEST_CONST
-from test_case_classes import TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
 
 
 class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcessor):

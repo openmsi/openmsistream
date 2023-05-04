@@ -9,7 +9,7 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
 from config import TEST_CONST
-from test_case_classes import (
+from test_base_classes import (
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
     TestWithEnvVars,

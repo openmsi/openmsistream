@@ -1,7 +1,7 @@
 # imports
 import time, pathlib
 from config import TEST_CONST
-from test_case_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
+from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
 
 class TestDataFileStreamProcessorEncrypted(

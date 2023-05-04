@@ -7,7 +7,7 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 )
 from openmsistream import DataFileUploadDirectory
 from config import TEST_CONST
-from test_case_classes import (
+from test_base_classes import (
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
 )

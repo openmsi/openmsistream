@@ -13,10 +13,10 @@ from openmsistream.utilities.argument_parsing import (
 )
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST
-from test_case_classes import TestCaseWithOutputLocation
+from test_base_classes import TestWithOutputLocation
 
 
-class TestArgumentParsing(TestCaseWithOutputLocation):
+class TestArgumentParsing(TestWithOutputLocation):
     """
     Class for testing functions in utilities/argument_parsing.py
     """

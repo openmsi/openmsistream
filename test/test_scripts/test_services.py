@@ -8,10 +8,10 @@ from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
 from config import TEST_CONST
-from test_case_classes import TestCaseWithOutputLocation
+from test_base_classes import TestWithOutputLocation
 
 
-class TestServices(TestCaseWithOutputLocation):
+class TestServices(TestWithOutputLocation):
     """
     Class for testing that Services can be installed/started/stopped/removed
     without any errors on Linux OS
