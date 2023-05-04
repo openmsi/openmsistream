@@ -243,13 +243,16 @@ class TestWithDataFileUploadDirectory(TestCaseWithOutputLocation):
         )
         self.upload_thread.start()
 
-    def copy_file_to_watched_dir(self, src_path, dest_rel_path):
+    def copy_file_to_watched_dir(self, src_path, dest_rel_path=None):
         """
         Copy a file from src_path to watched_directory/dest_rel_path
         Wait slightly before and after
         """
         time.sleep(1)
-        dest_path = self.watched_dir / dest_rel_path
+        if dest_rel_path is not None:
+            dest_path = self.watched_dir / dest_rel_path
+        else:
+            dest_path = self.watched_dir/src_path.name
         if not dest_path.parent.is_dir():
             dest_path.parent.mkdir(parents=True)
         dest_path.write_bytes(src_path.read_bytes())
@@ -505,9 +508,9 @@ class TestWithStreamProcessor(TestCaseWithOutputLocation):
         if output_dir is None:
             output_dir = self.output_dir
         self.stream_processor = stream_processor_type(
+            *other_init_args,
             cfg_file,
             topic_name,
-            *other_init_args,
             output_dir=output_dir,
             n_threads=n_threads,
             consumer_group_id=consumer_group_id,
@@ -597,6 +600,165 @@ class TestWithStreamProcessor(TestCaseWithOutputLocation):
                     raise e
         self.stream_processor = None
         self.stream_processor_thread = None
+        if remove_output :
+            shutil.rmtree(self.output_dir)
+            self.output_dir.mkdir(parents=True)
+
+class TestWithStreamReproducer(TestCaseWithOutputLocation):
+    """
+    Base class for tests that need to run stream reproducers
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.stream_reproducer = None
+        self.stream_reproducer_thread = None
+
+    def setUp(self):
+        """
+        Make sure the parameters haven't been set for this test
+        """
+        super().setUp()
+        if self.stream_reproducer is not None:
+            errmsg = (
+                f"ERROR: stream_reproducer = {self.stream_reproducer} "
+                "but it should not be set yet!"
+            )
+            raise RuntimeError(errmsg)
+        if self.stream_reproducer_thread is not None:
+            errmsg = (
+                f"ERROR: stream_reproducer_thread = {self.stream_reproducer_thread} "
+                "but it should not be set yet!"
+            )
+            raise RuntimeError(errmsg)
+
+    def tearDown(self):
+        """
+        Make sure the download thread is no longer running,
+        and reset the variables for a new test
+        """
+        self.reset_stream_reproducer()
+        super().tearDown()
+
+    def create_stream_reproducer(
+        self,
+        stream_reproducer_type,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        source_topic_name="test",
+        dest_topic_name="test",
+        output_dir=None,
+        n_producer_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+        n_consumer_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+        consumer_group_id="create_new",
+        other_init_args=(),
+        other_init_kwargs={},
+    ):
+        """
+        Create the stream processor object to use
+        """
+        if self.stream_reproducer is not None :
+            raise RuntimeError(
+                f'ERROR: stream processor is {self.stream_reproducer} but should be None!'
+            )
+        if output_dir is None:
+            output_dir = self.output_dir
+        self.stream_reproducer = stream_reproducer_type(
+            *other_init_args,
+            cfg_file,
+            source_topic_name,
+            dest_topic_name,
+            output_dir=output_dir,
+            n_producer_threads=n_producer_threads,
+            n_consumer_threads=n_consumer_threads,
+            consumer_group_id=consumer_group_id,
+            logger=self.logger,
+            **other_init_kwargs,
+        )
+
+    def start_stream_reproducer_thread(self, func=None, args=(), kwargs={}):
+        """
+        Start running the stream processor in a new thread
+        """
+        if self.stream_reproducer_thread is not None :
+            errmsg = (
+                f'ERROR: stream reproducer thread is {self.stream_reproducer_thread} '
+                'but it should be None!'
+            )
+            raise RuntimeError(errmsg)
+        if func is None:
+            func = self.stream_reproducer.produce_processing_results_for_files_as_read
+        self.stream_reproducer_thread = ExceptionTrackingThread(
+            target=func, args=args, kwargs=kwargs
+        )
+        self.stream_reproducer_thread.start()
+
+    def wait_for_files_to_be_processed(self, rel_filepaths, timeout_secs=90):
+        """
+        Keep running the stream processor thread until one or more files are processed,
+        then shut down the stream processor thread
+        """
+        # keep track of which of the requested files has been reconstructed
+        if isinstance(rel_filepaths, pathlib.PurePath):
+            rel_filepaths = [rel_filepaths]
+        files_found_by_path = {}
+        for rel_fp in rel_filepaths:
+            files_found_by_path[rel_fp] = False
+        # read messages until all files are processed
+        current_messages_read = -1
+        time_waited = 0
+        msg = (
+            "Waiting to process files and produce their computed messages; "
+            f"will timeout after {timeout_secs} seconds)..."
+        )
+        self.log_at_info(msg)
+        all_files_found = False
+        start_time = datetime.datetime.now()
+        while (not all_files_found) and (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < timeout_secs:
+            current_messages_read = self.stream_reproducer.n_msgs_read
+            time_waited = (datetime.datetime.now() - start_time).total_seconds()
+            self.log_at_info(
+                f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
+            )
+            time.sleep(5)
+            for rel_fp in files_found_by_path:
+                if files_found_by_path[rel_fp]:
+                    continue
+                if rel_fp in self.stream_reproducer.recent_processed_filepaths:
+                    files_found_by_path[rel_fp] = True
+            all_files_found = sum(
+                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
+            ) == len(rel_filepaths)
+        # after timing out, stalling, or completely processing the test file,
+        # put the "quit" command into the input queue to stop the function running
+        msg = (
+            f"Quitting stream reproducer thread after reading {self.stream_reproducer.n_msgs_read} "
+            "messages; will timeout after 30 seconds...."
+        )
+        self.log_at_info(msg)
+        self.stream_reproducer.control_command_queue.put("q")
+        # wait for the download thread to finish
+        self.stream_reproducer_thread.join(timeout=30)
+        if self.stream_reproducer_thread.is_alive():
+            raise TimeoutError("ERROR: stream reproducer thread timed out after 30 seconds!")
+        
+    def reset_stream_reproducer(self,remove_output=False):
+        """
+        Shut down any running stream reproducer thread and set the stream reproducer
+        and its thread back to None. Also optionally remove and re-create the output dir
+        """
+        if self.stream_reproducer_thread and self.stream_reproducer:
+            if self.stream_reproducer_thread.is_alive():
+                try:
+                    self.stream_reproducer.shutdown()
+                    self.stream_reproducer_thread.join(timeout=30)
+                    if self.stream_reproducer_thread.is_alive():
+                        raise TimeoutError("Download thread timed out after 30 seconds")
+                except Exception as e:
+                    raise e
+        self.stream_reproducer = None
+        self.stream_reproducer_thread = None
         if remove_output :
             shutil.rmtree(self.output_dir)
             self.output_dir.mkdir(parents=True)
