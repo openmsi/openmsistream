@@ -1,5 +1,5 @@
 # imports
-import pkg_resources, subprocess, unittest # pylint: disable=wrong-import-order
+import pkg_resources, subprocess, unittest  # pylint: disable=wrong-import-order
 
 
 class TestConsoleScripts(unittest.TestCase):

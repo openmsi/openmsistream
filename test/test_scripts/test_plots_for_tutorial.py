@@ -1,7 +1,8 @@
 # imports
 import pathlib, urllib.request
 import importlib.machinery, importlib.util
-from config import TEST_CONST # pylint: disable=import-error
+from config import TEST_CONST  # pylint: disable=import-error
+
 # pylint: disable=import-error
 from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
 
@@ -9,7 +10,7 @@ from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"
 module_name = class_path.name[: -len(".py")]
 loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-module = loader.load_module() # pylint: disable=deprecated-method,no-value-for-parameter
+module = loader.load_module()  # pylint: disable=deprecated-method,no-value-for-parameter
 
 # constants
 TIMEOUT_SECS = 90
@@ -24,14 +25,14 @@ class TestPlotsForTutorial(TestWithUploadDataFile, TestWithStreamProcessor):
     successfully extracted and produced to another topic as a string of JSON
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Download the test data file from its URL on the PARADIM website
         """
         urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL, UPLOAD_FILE)
         super().setUp()
 
-    def tearDown(self): # pylint: disable=invalid-name
+    def tearDown(self):  # pylint: disable=invalid-name
         """
         Remove the test data file that was downloaded
         """
@@ -79,4 +80,4 @@ class TestPlotsForTutorial(TestWithUploadDataFile, TestWithStreamProcessor):
             )
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

@@ -8,7 +8,8 @@ from openmsistream.data_file_io.entity.download_data_file import (
     DownloadDataFileToDisk,
     DownloadDataFileToMemory,
 )
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
@@ -19,11 +20,11 @@ class TestDownloadDataFile(TestWithOutputLocation):
     (without interacting with the Kafka broker)
     """
 
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
-        self.dl_datafile=None
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.dl_datafile = None
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Create the datafile to use for testing
         """
@@ -40,7 +41,7 @@ class TestDownloadDataFile(TestWithOutputLocation):
     def add_all_chunks(self, disk_or_memory):
         """
         Add all of the chunks from an upload file, checking that
-        the return codes are correct        
+        the return codes are correct
         """
         for i_chunk, dfc in enumerate(self.ul_datafile.chunks_to_upload):
             dfc.populate_with_file_data(logger=self.logger)
@@ -141,7 +142,7 @@ class TestDownloadDataFile(TestWithOutputLocation):
                 self.assertEqual(check, expected_check_value)
         except Exception as exc:
             raise exc
-        self.success=True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_download_chunks_to_disk(self):
         """

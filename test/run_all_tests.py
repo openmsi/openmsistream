@@ -4,7 +4,7 @@ from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
 from openmsistream.utilities import Logger
 from openmsistream.services.utilities import run_cmd_in_subprocess
-from test_scripts.config import TEST_CONST # pylint: disable=wrong-import-order
+from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 
 # constants
 TEST_DIR_PATH = pathlib.Path(__file__).resolve().parent
@@ -199,7 +199,7 @@ def start_local_broker_and_get_temp_env(args):
             "LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS": "localhost:9092",
         }
         temp_env_local_broker = TemporaryEnvironment(temp_env_var_dict)
-        temp_env_local_broker.__enter__() # pylint: disable=unnecessary-dunder-call
+        temp_env_local_broker.__enter__()  # pylint: disable=unnecessary-dunder-call
     return temp_env_local_broker
 
 
@@ -216,9 +216,9 @@ def skip_kafka_tests_and_get_temp_env(args, suites):
         for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             temp_env_var_dict[env_var_name] = None
         temp_no_kafka_env = TemporaryEnvironment(temp_env_var_dict)
-        temp_no_kafka_env.__enter__() # pylint: disable=unnecessary-dunder-call
+        temp_no_kafka_env.__enter__()  # pylint: disable=unnecessary-dunder-call
         for suite in suites:
-            for test_group in suite._tests: # pylint: disable=protected-access
+            for test_group in suite._tests:  # pylint: disable=protected-access
                 for test in test_group:
                     # pylint: disable=protected-access
                     if (test._testMethodName).endswith("kafka"):
@@ -239,7 +239,7 @@ def skip_unmatched_tests(args, suites):
     """
     if args.test_regex is not None:
         for suite in suites:
-            for test_group in suite._tests: # pylint: disable=protected-access
+            for test_group in suite._tests:  # pylint: disable=protected-access
                 for test in test_group:
                     # pylint: disable=protected-access
                     if not args.test_regex.match(test._testMethodName):

@@ -5,8 +5,10 @@ from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+from test_base_classes import (
+    TestWithLogger,
+)  # pylint: disable=import-error,wrong-import-order
 
 
 class TestDataFileChunk(TestWithLogger):
@@ -14,7 +16,7 @@ class TestDataFileChunk(TestWithLogger):
     Class for testing behavior of DataFileChunks
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Get some chunks to use in tests
         """

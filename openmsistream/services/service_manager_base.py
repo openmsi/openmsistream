@@ -307,7 +307,7 @@ class ServiceManagerBase(LogOwner, HasArgumentParser):
             / f"{self.service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
         )
         code = """\
-            if __name__=='__main__' :
+            if __name__ == "__main__":
                 try :"""
         if self.service_dict["func_name"] is not None:
             code += f"""
@@ -321,10 +321,10 @@ class ServiceManagerBase(LogOwner, HasArgumentParser):
                 except Exception :
                     import pathlib, traceback, datetime
                     output_filepath = pathlib.Path(r"{error_log_path}")
-                    with open(output_filepath,'a') as fp :"""
+                    with open(output_filepath,"a") as fp :"""
         code += r"""
                         timestamp = (datetime.datetime.now()).strftime("%Y-%m-%d at %H:%M:%S")
-                        fp.write(f'Error on {timestamp}. Exception:\n{traceback.format_exc()}')
+                        fp.write(f"Error on {timestamp}. Exception:\n{traceback.format_exc()}")
                     import sys
                     sys.exit(1)
         """

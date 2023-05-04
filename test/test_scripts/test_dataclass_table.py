@@ -3,6 +3,7 @@ import pathlib, datetime
 from typing import List, Set, Tuple
 from dataclasses import dataclass, fields
 from openmsistream.utilities.dataclass_table import DataclassTable
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
@@ -12,6 +13,7 @@ class TableLineForTesting:
     """
     A dataclass to use as an example of what can be held in DataclassTables
     """
+
     str_field: str
     int_field: int
     float_field: float
@@ -135,4 +137,4 @@ class TestDataclassTable(TestWithOutputLocation):
         # dump and delete the test table
         test_table.dump_to_file()
         del test_table
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

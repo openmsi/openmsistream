@@ -2,7 +2,8 @@
 import os, configparser, string
 from random import choices
 from openmsistream.utilities.config_file_parser import ConfigFileParser
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithLogger, TestWithEnvVars
 
@@ -12,7 +13,7 @@ class TestConfigFileParser(TestWithLogger, TestWithEnvVars):
     Class for testing ConfigFileParser functions
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Create the config file parsers to use in tests
         """

@@ -7,7 +7,8 @@ from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
@@ -18,7 +19,7 @@ class TestServices(TestWithOutputLocation):
     without any errors on Linux OS
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Create a dictionary of arguments that each service should use
         """
@@ -91,7 +92,7 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         platform.system() != "Linux"
@@ -156,7 +157,7 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         (platform.system() != "Windows")
@@ -216,7 +217,7 @@ class TestServices(TestWithOutputLocation):
             for fp in fps_to_unlink:
                 if fp.exists():
                     fp.unlink()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         (platform.system() != "Windows")
@@ -291,4 +292,4 @@ class TestServices(TestWithOutputLocation):
             for fp in fps_to_unlink:
                 if fp.exists():
                     fp.unlink()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

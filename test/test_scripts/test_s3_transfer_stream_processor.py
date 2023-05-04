@@ -2,7 +2,8 @@
 import pathlib, hashlib
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
@@ -111,4 +112,4 @@ class TestS3TransferStreamProcessor(
         self.run_data_file_upload_directory()
         self.run_s3_tranfer_data()
         self.validate_s3_transfer()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

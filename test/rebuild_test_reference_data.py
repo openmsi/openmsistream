@@ -6,7 +6,7 @@ from openmsistream.data_file_io.entity.download_data_file import DownloadDataFil
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.config import SERVICE_CONST
-from test_scripts.config import TEST_CONST # pylint: disable=wrong-import-order
+from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 
 # constants
 EXISTING_TEST_DATA_DIR = (pathlib.Path(__file__).parent / "data").resolve()
@@ -114,7 +114,7 @@ def rebuild_binary_file_chunks_for_serialization_reference():
     for i in range(3):
         udf.chunks_to_upload[i].populate_with_file_data(LOGGER)
         binary_data = dfcs(udf.chunks_to_upload[i])
-        fn = f'{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_{i}.bin'
+        fn = f"{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_{i}.bin"
         with open(NEW_TEST_DATA_DIR / fn, "wb") as fp:
             fp.write(binary_data)
         compare_and_check_old_and_new_files(fn)
@@ -134,7 +134,7 @@ def rebuild_test_services_executable():
         service_spec_string=test_service_class_name,
         argslist=test_service_executable_argslist,
     )
-    manager._write_executable_file() # pylint: disable=protected-access
+    manager._write_executable_file()  # pylint: disable=protected-access
     # move it to the new test data folder
     exec_fp = (
         pathlib.Path(__file__).parent.parent
@@ -167,7 +167,9 @@ def rebuild_test_metadata_dict():
     )
     module_name = class_path.name[: -len(".py")]
     loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-    module = loader.load_module() # pylint: disable=deprecated-method,no-value-for-parameter
+    module = (
+        loader.load_module()
+    )  # pylint: disable=deprecated-method,no-value-for-parameter
     # get the metadata dictionary from the file
     metadata_reproducer = module.XRDCSVMetadataReproducer(
         TEST_CONST.EXAMPLES_DIR_PATH

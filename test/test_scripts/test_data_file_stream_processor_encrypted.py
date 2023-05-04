@@ -1,6 +1,7 @@
 # imports
 import time, pathlib
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
@@ -123,4 +124,4 @@ class TestDataFileStreamProcessorEncrypted(
             self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME]) >= 1)
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

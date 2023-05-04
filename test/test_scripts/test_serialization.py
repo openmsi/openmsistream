@@ -15,7 +15,8 @@ from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import (
     OpenMSIStreamKafkaCrypto,
 )
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithLogger
 
@@ -28,7 +29,7 @@ class TestSerialization(TestWithLogger):
     Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Make the dictionary of reference serialized binaries
         from the existing reference files
@@ -86,7 +87,7 @@ class TestSerialization(TestWithLogger):
         self.assertIsNone(dfcs(None))  # required by Kafka
         with self.assertRaises(SerializationError):
             dfcs("This is a string, not a DataFileChunk!")
-        for chunk_i,chunk_binary in self.test_chunk_binaries.items():
+        for chunk_i, chunk_binary in self.test_chunk_binaries.items():
             self.assertEqual(
                 dfcs(self.test_ul_chunk_objects[chunk_i]),
                 chunk_binary,
@@ -100,7 +101,7 @@ class TestSerialization(TestWithLogger):
         self.assertIsNone(dfcds(None))  # required by Kafka
         with self.assertRaises(SerializationError):
             dfcds("This is a string, not an array of bytes!")
-        for chunk_i,chunk_binary in self.test_chunk_binaries.items():
+        for chunk_i, chunk_binary in self.test_chunk_binaries.items():
             self.assertEqual(
                 self.test_dl_chunk_objects[chunk_i],
                 dfcds(chunk_binary),

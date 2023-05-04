@@ -1,6 +1,7 @@
 # imports
 import time
-from config import TEST_CONST # pylint: disable=import-error
+from config import TEST_CONST  # pylint: disable=import-error
+
 # pylint: disable=import-error
 from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
 
@@ -48,7 +49,7 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
             )
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_data_file_stream_processor_restart_kafka(self):
         """
@@ -163,4 +164,4 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
             self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME]) >= 1)
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

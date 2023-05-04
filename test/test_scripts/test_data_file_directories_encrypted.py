@@ -6,7 +6,8 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
     RegistryLineCompleted,
 )
 from openmsistream import DataFileUploadDirectory
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
     TestWithDataFileUploadDirectory,
@@ -83,4 +84,4 @@ class TestDataFileDirectoriesEncrypted(
             self.assertTrue(test_rel_filepath in addrs_by_fp)
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

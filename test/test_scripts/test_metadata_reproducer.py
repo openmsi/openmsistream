@@ -2,7 +2,8 @@
 import pathlib, datetime, json, pickle, urllib.request, os
 import importlib.machinery, importlib.util
 from openmsistream.kafka_wrapper import ConsumerGroup
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithUploadDataFile, TestWithStreamReproducer
 
@@ -14,7 +15,7 @@ class_path = (
 )
 module_name = class_path.name[: -len(".py")]
 loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-module = loader.load_module() # pylint: disable=deprecated-method,no-value-for-parameter
+module = loader.load_module()  # pylint: disable=deprecated-method,no-value-for-parameter
 
 # constants
 TIMEOUT_SECS = 90
@@ -44,14 +45,14 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
     as a string of JSON
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Download the test data file from its URL on the PARADIM website
         """
         urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL, UPLOAD_FILE)
         super().setUp()
 
-    def tearDown(self): # pylint: disable=invalid-name
+    def tearDown(self):  # pylint: disable=invalid-name
         """
         Remove the test data file that was downloaded
         """
@@ -71,9 +72,7 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
         # make sure the file is listed in the registry
         self.stream_reproducer.file_registry.in_progress_table.dump_to_file()
         self.stream_reproducer.file_registry.succeeded_table.dump_to_file()
-        self.assertEqual(
-            len(self.stream_reproducer.file_registry.filepaths_to_rerun), 0
-        )
+        self.assertEqual(len(self.stream_reproducer.file_registry.filepaths_to_rerun), 0)
         in_prog_table = self.stream_reproducer.file_registry.in_progress_table
         in_prog_entries = in_prog_table.obj_addresses_by_key_attr("status")
         succeeded_table = self.stream_reproducer.file_registry.succeeded_table
@@ -161,4 +160,4 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
                 raise RuntimeError(errmsg)
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

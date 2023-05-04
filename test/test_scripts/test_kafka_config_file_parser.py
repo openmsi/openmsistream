@@ -50,7 +50,7 @@ class TestKafkaConfigFileParser(unittest.TestCase):
         test_config_dict_1 = KafkaConfigFileParser.get_replaced_configs(
             test_config_dict_1, "serialization"
         )
-        for k,v in test_config_dict_1.items():
+        for k, v in test_config_dict_1.items():
             if k in ["par_1", "par_2", "par_3", "par_4"]:
                 self.assertTrue(isinstance(v, ref_classes_dict[k]))
             else:
@@ -59,7 +59,7 @@ class TestKafkaConfigFileParser(unittest.TestCase):
         test_config_dict_2 = KafkaConfigFileParser.get_replaced_configs(
             test_config_dict_2, "deserialization"
         )
-        for k,v in test_config_dict_2.items():
+        for k, v in test_config_dict_2.items():
             if k in ["par_5", "par_6", "par_7", "par_8"]:
                 self.assertTrue(isinstance(v, ref_classes_dict[k]))
             else:

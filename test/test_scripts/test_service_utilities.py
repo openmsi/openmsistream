@@ -2,7 +2,7 @@
 import unittest, pathlib, importlib
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.linux_service_manager import LinuxServiceManager
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # constants
 TEST_SERVICE_CLASS_NAME = "DataFileUploadDirectory"

@@ -8,7 +8,8 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
     TestWithDataFileUploadDirectory,
@@ -108,7 +109,7 @@ class TestDataFileDirectories(
         """
         self.run_data_file_upload_directory()
         self.run_data_file_download_directory()
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):
         """
@@ -157,4 +158,4 @@ class TestDataFileDirectories(
             raise exc
         finally:
             shutil.rmtree(subdir_path)
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init

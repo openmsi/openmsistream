@@ -392,7 +392,7 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp,found_file in files_found_by_path.items():
+            for rel_fp, found_file in files_found_by_path.items():
                 if found_file:
                     continue
                 if rel_fp in self.download_directory.recent_processed_filepaths:
@@ -506,7 +506,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
             )
         if output_dir is None:
             output_dir = self.output_dir
-        if not other_init_kwargs :
+        if not other_init_kwargs:
             other_init_kwargs = {}
         self.stream_processor = stream_processor_type(
             *other_init_args,
@@ -531,7 +531,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
             raise RuntimeError(errmsg)
         if func is None:
             func = self.stream_processor.process_files_as_read
-        if not kwargs :
+        if not kwargs:
             kwargs = {}
         self.stream_processor_thread = ExceptionTrackingThread(
             target=func, args=args, kwargs=kwargs
@@ -566,7 +566,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp,found_file in files_found_by_path.items():
+            for rel_fp, found_file in files_found_by_path.items():
                 if found_file:
                     continue
                 if rel_fp in self.stream_processor.recent_processed_filepaths:
@@ -666,7 +666,7 @@ class TestWithStreamReproducer(TestWithOutputLocation):
             )
         if output_dir is None:
             output_dir = self.output_dir
-        if not other_init_kwargs :
+        if not other_init_kwargs:
             other_init_kwargs = {}
         self.stream_reproducer = stream_reproducer_type(
             *other_init_args,
@@ -693,7 +693,7 @@ class TestWithStreamReproducer(TestWithOutputLocation):
             raise RuntimeError(errmsg)
         if func is None:
             func = self.stream_reproducer.produce_processing_results_for_files_as_read
-        if not kwargs :
+        if not kwargs:
             kwargs = {}
         self.stream_reproducer_thread = ExceptionTrackingThread(
             target=func, args=args, kwargs=kwargs
@@ -730,7 +730,7 @@ class TestWithStreamReproducer(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp,found_file in files_found_by_path.items():
+            for rel_fp, found_file in files_found_by_path.items():
                 if found_file:
                     continue
                 if rel_fp in self.stream_reproducer.recent_processed_filepaths:

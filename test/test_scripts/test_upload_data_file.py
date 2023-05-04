@@ -2,8 +2,10 @@
 from queue import Queue
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
-from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger # pylint: disable=import-error,wrong-import-order
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+from test_base_classes import (
+    TestWithLogger,
+)  # pylint: disable=import-error,wrong-import-order
 
 
 class TestUploadDataFile(TestWithLogger):
@@ -11,7 +13,7 @@ class TestUploadDataFile(TestWithLogger):
     Class for testing UploadDataFile functions
     """
 
-    def setUp(self): # pylint: disable=invalid-name
+    def setUp(self):  # pylint: disable=invalid-name
         """
         Create the datafile to use for testing
         """
@@ -23,7 +25,7 @@ class TestUploadDataFile(TestWithLogger):
 
     def test_upload_whole_file_kafka(self):
         """
-        Just need to make sure this function runs without throwing any errors        
+        Just need to make sure this function runs without throwing any errors
         """
         self.datafile.upload_whole_file(
             TEST_CONST.TEST_CFG_FILE_PATH,
