@@ -87,6 +87,13 @@ class TestRoutineConstants:
         TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH_MDC.with_name(
             f"local_broker_{TEST_CFG_FILE_PATH_MDC.name}"
         )
+    # The path to the "prod" Kafka config file to use
+    PROD_CONFIG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
+        f"prod{TEST_CFG_FILE_PATH.suffix}"
+    )
+    FAKE_PROD_CONFIG_FILE_PATH = (
+        TEST_DATA_DIR_PATH / f"fake_prod{RUN_CONST.CONFIG_FILE_EXT}"
+    )
 
     # Names of and paths to directories and files used in testing
     TEST_DATA_FILE_ROOT_DIR_NAME = "test_file_root_dir"

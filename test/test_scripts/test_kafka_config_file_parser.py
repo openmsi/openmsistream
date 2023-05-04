@@ -64,9 +64,9 @@ class TestKafkaConfigFileParser(unittest.TestCase):
                 self.assertTrue(isinstance(v, ref_classes_dict[k]))
             else:
                 self.assertEqual(v, test_config_dict[k])
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             _ = KafkaConfigFileParser.get_replaced_configs(None, None)
-        with self.assertRaises(AttributeError):
+        with self.assertRaises(ValueError):
             _ = KafkaConfigFileParser.get_replaced_configs(
                 test_config_dict, "never make this a recognized parameter group name"
             )

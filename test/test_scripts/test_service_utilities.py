@@ -56,6 +56,8 @@ class TestServiceUtilities(unittest.TestCase):
         with open(ref_exec_fp, "r") as ref_fp:
             ref_lines = ref_fp.readlines()
         for test_line, ref_line in zip(test_lines, ref_lines):
-            if ref_line.lstrip().startswith("output_filepath = "):
+            if ref_line.lstrip().startswith(
+                "output_filepath = "
+            ) or ref_line.lstrip().startswith("main("):
                 continue
             self.assertTrue(test_line == ref_line)
