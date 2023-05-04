@@ -3,6 +3,7 @@ from queue import Queue
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithLogger
 
