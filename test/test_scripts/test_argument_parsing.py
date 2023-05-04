@@ -12,7 +12,8 @@ from openmsistream.utilities.argument_parsing import (
     logger_string_to_level,
 )
 from openmsistream.data_file_io.config import RUN_OPT_CONST
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
 
@@ -53,7 +54,7 @@ class TestArgumentParsing(TestWithOutputLocation):
         with self.assertRaises(ValueError):
             parser = OpenMSIStreamArgumentParser()
             parser.add_arguments("never_name_a_command_line_arg_this")
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_existing_file(self):
         """
@@ -78,7 +79,7 @@ class TestArgumentParsing(TestWithOutputLocation):
             _ = existing_file(does_not_exist_file_path_str)
         with self.assertRaises(TypeError):
             _ = existing_file(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_existing_dir(self):
         """
@@ -99,7 +100,7 @@ class TestArgumentParsing(TestWithOutputLocation):
             _ = existing_dir(does_not_exist_dir_path_str)
         with self.assertRaises(TypeError):
             _ = existing_dir(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_create_dir(self):
         """
@@ -120,14 +121,14 @@ class TestArgumentParsing(TestWithOutputLocation):
             create_dir_path_str = str(create_dir_path)
             self.assertEqual(create_dir(create_dir_path_str), create_dir_path)
             self.assertTrue(create_dir_path.is_dir())
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             if create_dir_path.is_dir():
                 create_dir_path.rmdir()
         with self.assertRaises(TypeError):
             _ = existing_file(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_config_path(self):
         """
@@ -155,7 +156,7 @@ class TestArgumentParsing(TestWithOutputLocation):
             _ = config_path(does_not_exist_config_file_name)
         with self.assertRaises(TypeError):
             _ = config_path(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_int_power_of_two(self):
         """
@@ -179,7 +180,7 @@ class TestArgumentParsing(TestWithOutputLocation):
             _ = int_power_of_two(-4)
         with self.assertRaises(TypeError):
             _ = int_power_of_two(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_positive_int(self):
         """
@@ -196,7 +197,7 @@ class TestArgumentParsing(TestWithOutputLocation):
             _ = positive_int(-5)
         with self.assertRaises(TypeError):
             _ = positive_int(None)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_logger_string_to_level(self):
         """
@@ -211,4 +212,4 @@ class TestArgumentParsing(TestWithOutputLocation):
         self.assertEqual(logger_string_to_level("11"), 11)
         with self.assertRaises(ValueError):
             _ = logger_string_to_level("-5")
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init

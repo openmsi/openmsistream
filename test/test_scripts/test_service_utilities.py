@@ -2,7 +2,7 @@
 import unittest, pathlib, importlib
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.linux_service_manager import LinuxServiceManager
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
 
 # constants
 TEST_SERVICE_CLASS_NAME = "DataFileUploadDirectory"
@@ -20,8 +20,8 @@ class TestServiceUtilities(unittest.TestCase):
         Make sure that some config variables can be created successfully
         """
         # self.assertFalse(SERVICE_CONST.NSSM_EXECUTABLE_PATH.is_file())
-        for sd in SERVICE_CONST.available_services:
-            _ = importlib.import_module(sd["filepath"])
+        for service_dict in SERVICE_CONST.available_services:
+            _ = importlib.import_module(service_dict["filepath"])
         # the command below creates a file but that file should be ignored in the repo
         SERVICE_CONST.logger.info("testing")
 
@@ -46,6 +46,7 @@ class TestServiceUtilities(unittest.TestCase):
             service_spec_string=TEST_SERVICE_CLASS_NAME,
             argslist=TEST_SERVICE_EXECUTABLE_ARGSLIST,
         )
+        # pylint: disable=protected-access
         manager._write_executable_file(filepath=test_exec_fp)
         self.assertTrue(test_exec_fp.is_file())
         with open(test_exec_fp, "r") as test_fp:
@@ -57,5 +58,4 @@ class TestServiceUtilities(unittest.TestCase):
         for test_line, ref_line in zip(test_lines, ref_lines):
             if ref_line.lstrip().startswith("output_filepath = "):
                 continue
-            else:
-                self.assertTrue(test_line == ref_line)
+            self.assertTrue(test_line == ref_line)

@@ -8,7 +8,8 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
@@ -65,9 +66,9 @@ class TestDataFileDirectories(
                 logger=self.logger,
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            self.assertTrue(dest_rel_path in addrs_by_fp.keys())
-        except Exception as e:
-            raise e
+            self.assertTrue(dest_rel_path in addrs_by_fp)
+        except Exception as exc:
+            raise exc
 
     def run_data_file_download_directory(self):
         """
@@ -98,8 +99,8 @@ class TestDataFileDirectories(
                     "(This may also be due to the timeout being too short)"
                 )
                 raise RuntimeError(errmsg)
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
 
     def test_upload_and_download_directories_kafka(self):
         """
@@ -107,9 +108,12 @@ class TestDataFileDirectories(
         """
         self.run_data_file_upload_directory()
         self.run_data_file_download_directory()
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):
+        """
+        Test the function that says whether or not a file should be uploaded
+        """
         # create an upload directory
         self.create_upload_directory(TEST_CONST.TEST_DATA_DIR_PATH)
         # test the "filepath_should_be_uploaded" function
@@ -149,8 +153,8 @@ class TestDataFileDirectories(
             self.assertFalse(
                 self.upload_directory.filepath_should_be_uploaded(subdir_path)
             )
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             shutil.rmtree(subdir_path)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init

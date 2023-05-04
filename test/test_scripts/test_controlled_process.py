@@ -64,6 +64,9 @@ class TestControlledProcess(unittest.TestCase):
     """
 
     def test_controlled_process_single_thread(self):
+        """
+        Test the single-thread controlled process
+        """
         cpst = ControlledProcessSingleThreadForTesting(update_secs=5)
         self.assertEqual(cpst.counter, 0)
         run_thread = ExceptionTrackingThread(target=cpst.run)
@@ -88,8 +91,8 @@ class TestControlledProcess(unittest.TestCase):
                 )
                 raise TimeoutError(errmsg)
             self.assertEqual(cpst.counter, 5)
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             if run_thread.is_alive():
                 try:
@@ -101,10 +104,13 @@ class TestControlledProcess(unittest.TestCase):
                             "timed out after 5 seconds!"
                         )
                         raise TimeoutError(errmsg)
-                except Exception as e:
-                    raise e
+                except Exception as exc:
+                    raise exc
 
     def test_controlled_process_multi_threaded(self):
+        """
+        Test the multi-threaded controlled process
+        """
         cpmt = ControlledProcessMultiThreadedForTesting(
             n_threads=N_THREADS, update_secs=5
         )
@@ -130,8 +136,8 @@ class TestControlledProcess(unittest.TestCase):
                 )
                 raise TimeoutError(errmsg)
             self.assertEqual(cpmt.counter, 5)
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             if run_thread.is_alive():
                 try:
@@ -141,5 +147,5 @@ class TestControlledProcess(unittest.TestCase):
                         raise TimeoutError(
                             "ERROR: running thread timed out after 5 seconds!"
                         )
-                except Exception as e:
-                    raise e
+                except Exception as exc:
+                    raise exc

@@ -1,6 +1,7 @@
 # imports
 import time, pathlib
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
 
@@ -15,14 +16,14 @@ class TestDataFileStreamProcessorEncrypted(
         """
         Test restarting an encrypted DataFileStreamProcessor after failing to process a file
         """
-        TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[
-            "test_data_file_stream_processor_restart_encrypted_kafka"
+        topic_name = TEST_CONST.TEST_TOPIC_NAMES[
+            "test_stream_processor_restart_encrypted"
         ]
-        CONSUMER_GROUP_ID = "test_data_file_stream_processor_restart_encrypted"
+        consumer_group_id = "test_data_file_stream_processor_restart_encrypted"
         # create and start the upload directory
         self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
         self.start_upload_thread(
-            topic_name=TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
+            topic_name=topic_name, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
         )
         # copy the test files into the watched directory
         rel_filepath_1 = (
@@ -36,9 +37,9 @@ class TestDataFileStreamProcessorEncrypted(
         # deliberately failing the first file
         self.create_stream_processor(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=TOPIC_NAME,
+            topic_name=topic_name,
             output_dir=self.output_dir / "stream_processor_output",
-            consumer_group_id=CONSUMER_GROUP_ID,
+            consumer_group_id=consumer_group_id,
         )
         self.stream_processor.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
         self.start_stream_processor_thread()
@@ -72,8 +73,8 @@ class TestDataFileStreamProcessorEncrypted(
             self.assertEqual(
                 len(in_prog_entries[self.stream_processor.file_registry.FAILED]), 1
             )
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         # upload a third file (fake config file)
         third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
         rel_filepath_3 = pathlib.Path(third_filepath.name)
@@ -82,9 +83,9 @@ class TestDataFileStreamProcessorEncrypted(
         self.reset_stream_processor()
         self.create_stream_processor(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=TOPIC_NAME,
+            topic_name=topic_name,
             output_dir=self.output_dir / "stream_processor_output",
-            consumer_group_id=CONSUMER_GROUP_ID,
+            consumer_group_id=consumer_group_id,
         )
         self.start_stream_processor_thread()
         try:
@@ -120,6 +121,6 @@ class TestDataFileStreamProcessorEncrypted(
             self.assertTrue(len(succeeded_entries) >= 3)
             succeeded_entries = succeeded_table.obj_addresses_by_key_attr("filename")
             self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME]) >= 1)
-        except Exception as e:
-            raise e
-        self.success = True
+        except Exception as exc:
+            raise exc
+        self.success = True # pylint: disable=attribute-defined-outside-init

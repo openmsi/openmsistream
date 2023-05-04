@@ -2,7 +2,8 @@
 import pathlib, datetime, json, pickle, urllib.request, os
 import importlib.machinery, importlib.util
 from openmsistream.kafka_wrapper import ConsumerGroup
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithUploadDataFile, TestWithStreamReproducer
 
 # import the XRDCSVMetadataReproducer from the examples directory
@@ -13,7 +14,7 @@ class_path = (
 )
 module_name = class_path.name[: -len(".py")]
 loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-module = loader.load_module()
+module = loader.load_module() # pylint: disable=deprecated-method,no-value-for-parameter
 
 # constants
 TIMEOUT_SECS = 90
@@ -43,14 +44,14 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
     as a string of JSON
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
         """
         Download the test data file from its URL on the PARADIM website
         """
         urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL, UPLOAD_FILE)
         super().setUp()
 
-    def tearDown(self):
+    def tearDown(self): # pylint: disable=invalid-name
         """
         Remove the test data file that was downloaded
         """
@@ -58,7 +59,42 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
         if UPLOAD_FILE.is_file():
             UPLOAD_FILE.unlink()
 
+    def run_metadata_reproducer(self):
+        """
+        Convenience function to run the metadata reproducer
+        """
+        # upload the test data file
+        self.upload_single_file(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
+        recofp = pathlib.Path(UPLOAD_FILE.name)
+        # wait for the file to be processed
+        self.wait_for_files_to_be_processed(recofp)
+        # make sure the file is listed in the registry
+        self.stream_reproducer.file_registry.in_progress_table.dump_to_file()
+        self.stream_reproducer.file_registry.succeeded_table.dump_to_file()
+        self.assertEqual(
+            len(self.stream_reproducer.file_registry.filepaths_to_rerun), 0
+        )
+        in_prog_table = self.stream_reproducer.file_registry.in_progress_table
+        in_prog_entries = in_prog_table.obj_addresses_by_key_attr("status")
+        succeeded_table = self.stream_reproducer.file_registry.succeeded_table
+        succeeded_entries = succeeded_table.obj_addresses
+        self.assertTrue(len(succeeded_entries) >= 1)
+        self.assertTrue(
+            self.stream_reproducer.file_registry.PRODUCING_MESSAGE_FAILED
+            not in in_prog_entries.keys()
+        )
+        self.assertTrue(
+            self.stream_reproducer.file_registry.COMPUTING_RESULT_FAILED
+            not in in_prog_entries.keys()
+        )
+        # get the attributes of the succeeded file to make sure it matches
+        succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
+        self.assertTrue(succeeded_entry_attrs["filename"] == UPLOAD_FILE.name)
+
     def test_metadata_reproducer_kafka(self):
+        """
+        Test a metadata reproducer
+        """
         # make note of the start time
         start_time = datetime.datetime.now()
         # start up the reproducer
@@ -71,33 +107,7 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
         )
         self.start_stream_reproducer_thread()
         try:
-            # upload the test data file
-            self.upload_single_file(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
-            recofp = pathlib.Path(UPLOAD_FILE.name)
-            # wait for the file to be processed
-            self.wait_for_files_to_be_processed(recofp)
-            # make sure the file is listed in the registry
-            self.stream_reproducer.file_registry.in_progress_table.dump_to_file()
-            self.stream_reproducer.file_registry.succeeded_table.dump_to_file()
-            self.assertEqual(
-                len(self.stream_reproducer.file_registry.filepaths_to_rerun), 0
-            )
-            in_prog_table = self.stream_reproducer.file_registry.in_progress_table
-            in_prog_entries = in_prog_table.obj_addresses_by_key_attr("status")
-            succeeded_table = self.stream_reproducer.file_registry.succeeded_table
-            succeeded_entries = succeeded_table.obj_addresses
-            self.assertTrue(len(succeeded_entries) >= 1)
-            self.assertTrue(
-                self.stream_reproducer.file_registry.PRODUCING_MESSAGE_FAILED
-                not in in_prog_entries.keys()
-            )
-            self.assertTrue(
-                self.stream_reproducer.file_registry.COMPUTING_RESULT_FAILED
-                not in in_prog_entries.keys()
-            )
-            # get the attributes of the succeeded file to make sure it matches
-            succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
-            self.assertTrue(succeeded_entry_attrs["filename"] == UPLOAD_FILE.name)
+            self.run_metadata_reproducer()
             # consume messages from the destination topic and make sure the metadata
             # from the test file is there
             consumer_group = ConsumerGroup(
@@ -149,6 +159,6 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
                     "the reference metadata dictionary!"
                 )
                 raise RuntimeError(errmsg)
-        except Exception as e:
-            raise e
-        self.success = True
+        except Exception as exc:
+            raise exc
+        self.success = True # pylint: disable=attribute-defined-outside-init

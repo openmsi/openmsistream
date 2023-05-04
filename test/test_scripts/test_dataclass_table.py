@@ -3,11 +3,15 @@ import pathlib, datetime
 from typing import List, Set, Tuple
 from dataclasses import dataclass, fields
 from openmsistream.utilities.dataclass_table import DataclassTable
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
 
 @dataclass
 class TableLineForTesting:
+    """
+    A dataclass to use as an example of what can be held in DataclassTables
+    """
     str_field: str
     int_field: int
     float_field: float
@@ -26,7 +30,10 @@ class TestDataclassTable(TestWithOutputLocation):
     """
 
     def test_dataclass_table_functions(self):
-        e1 = TableLineForTesting(
+        """
+        Test the DataclassTable functions
+        """
+        entry_1 = TableLineForTesting(
             "test",
             1,
             2.3,
@@ -38,7 +45,7 @@ class TestDataclassTable(TestWithOutputLocation):
             pathlib.Path(__file__),
             datetime.datetime.now(),
         )
-        e2 = TableLineForTesting(
+        entry_2 = TableLineForTesting(
             "test",
             2,
             11.12,
@@ -50,7 +57,7 @@ class TestDataclassTable(TestWithOutputLocation):
             pathlib.Path(__file__).parent,
             datetime.datetime.now(),
         )
-        e3 = TableLineForTesting(
+        entry_3 = TableLineForTesting(
             "test",
             3,
             24.34,
@@ -62,9 +69,9 @@ class TestDataclassTable(TestWithOutputLocation):
             pathlib.Path(__file__).parent.parent,
             datetime.datetime.now(),
         )
-        e1_addr = hex(id(e1))
-        e2_addr = hex(id(e2))
-        e3_addr = hex(id(e3))
+        entry_1_addr = hex(id(entry_1))
+        entry_2_addr = hex(id(entry_2))
+        entry_3_addr = hex(id(entry_3))
         # make sure the table doesn't already exist
         self.assertFalse((self.output_dir / "test_table.csv").is_file())
         # create the empty table
@@ -74,26 +81,26 @@ class TestDataclassTable(TestWithOutputLocation):
             logger=self.logger,
         )
         # add only the first entry (and remove it and add it again)
-        test_table.add_entries(e1)
-        test_table.remove_entries(e1_addr)
-        test_table.add_entries(e1)
+        test_table.add_entries(entry_1)
+        test_table.remove_entries(entry_1_addr)
+        test_table.add_entries(entry_1)
         # get the attributes of the entry
-        e1_attrs_read = test_table.get_entry_attrs(e1_addr)
-        for field in fields(e1):
-            self.assertEqual(getattr(e1, field.name), e1_attrs_read[field.name])
+        entry_1_attrs_read = test_table.get_entry_attrs(entry_1_addr)
+        for field in fields(entry_1):
+            self.assertEqual(getattr(entry_1, field.name), entry_1_attrs_read[field.name])
         self.log_at_info("\nExpecting five errors below:")
         # adding the same entry again should give an error
         with self.assertRaises(ValueError):
-            test_table.add_entries(e1)
+            test_table.add_entries(entry_1)
         # removing a nonexistent entry should give an error
         with self.assertRaises(ValueError):
-            test_table.remove_entries(e2_addr)
+            test_table.remove_entries(entry_2_addr)
         # trying to get attrs for a nonexistent entry should give an error
         with self.assertRaises(ValueError):
-            _ = test_table.get_entry_attrs(e2_addr)
+            _ = test_table.get_entry_attrs(entry_2_addr)
         # same thing for setting attrs
         with self.assertRaises(ValueError):
-            test_table.set_entry_attrs(e2_addr, str_field="this should break")
+            test_table.set_entry_attrs(entry_2_addr, str_field="this should break")
         # should also get an error if trying to get a view keyed by a nonexistent attr
         with self.assertRaises(ValueError):
             _ = test_table.obj_addresses_by_key_attr("not_a_dataclass_attribute_name")
@@ -110,22 +117,22 @@ class TestDataclassTable(TestWithOutputLocation):
             1, len(test_table.obj_addresses_by_key_attr("str_field")["test"])
         )
         # after adding the other two entries the len of that list should be 3
-        test_table.add_entries([e2, e3])
+        test_table.add_entries([entry_2, entry_3])
         self.assertEqual(
             3, len(test_table.obj_addresses_by_key_attr("str_field")["test"])
         )
         # and there should be three unique integer fields
         self.assertEqual(3, len(test_table.obj_addresses_by_key_attr("int_field").keys()))
         # set one of the entries' str field to be something different
-        test_table.set_entry_attrs(e2_addr, str_field="testing")
+        test_table.set_entry_attrs(entry_2_addr, str_field="testing")
         by_str_field = test_table.obj_addresses_by_key_attr("str_field")
-        self.assertTrue("test" in by_str_field.keys())
+        self.assertTrue("test" in by_str_field)
         self.assertEqual(2, len(by_str_field["test"]))
-        self.assertTrue(e3_addr in by_str_field["test"])
-        self.assertTrue("testing" in by_str_field.keys())
+        self.assertTrue(entry_3_addr in by_str_field["test"])
+        self.assertTrue("testing" in by_str_field)
         self.assertEqual(1, len(by_str_field["testing"]))
-        self.assertTrue(e2_addr in by_str_field["testing"])
+        self.assertTrue(entry_2_addr in by_str_field["testing"])
         # dump and delete the test table
         test_table.dump_to_file()
         del test_table
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init

@@ -15,7 +15,8 @@ from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import (
     OpenMSIStreamKafkaCrypto,
 )
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithLogger
 
 # constants
@@ -27,7 +28,7 @@ class TestSerialization(TestWithLogger):
     Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
         """
         Make the dictionary of reference serialized binaries
         from the existing reference files
@@ -50,11 +51,12 @@ class TestSerialization(TestWithLogger):
             rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
             logger=self.logger,
         )
+        # pylint: disable=protected-access
         data_file._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
         data_file.add_chunks_to_upload()
         self.test_ul_chunk_objects = {}
         self.test_dl_chunk_objects = {}
-        for chunk_i in self.test_chunk_binaries.keys():
+        for chunk_i in self.test_chunk_binaries:
             ul_dfc = data_file.chunks_to_upload[int(chunk_i)]
             ul_dfc.populate_with_file_data(logger=self.logger)
             self.test_ul_chunk_objects[chunk_i] = ul_dfc
@@ -74,32 +76,40 @@ class TestSerialization(TestWithLogger):
                 filename_append=ul_dfc.filename_append,
                 data=ul_dfc.data,
             )
-            dl_dfc.rootdir = TEST_CONST.TEST_RECO_DIR_PATH
             self.test_dl_chunk_objects[chunk_i] = dl_dfc
 
     def test_data_file_chunk_serializer(self):
+        """
+        Test the serializer
+        """
         dfcs = DataFileChunkSerializer()
         self.assertIsNone(dfcs(None))  # required by Kafka
         with self.assertRaises(SerializationError):
             dfcs("This is a string, not a DataFileChunk!")
-        for chunk_i in self.test_chunk_binaries.keys():
+        for chunk_i,chunk_binary in self.test_chunk_binaries.items():
             self.assertEqual(
                 dfcs(self.test_ul_chunk_objects[chunk_i]),
-                self.test_chunk_binaries[chunk_i],
+                chunk_binary,
             )
 
     def test_data_file_chunk_deserializer(self):
+        """
+        Test the deserializer
+        """
         dfcds = DataFileChunkDeserializer()
         self.assertIsNone(dfcds(None))  # required by Kafka
         with self.assertRaises(SerializationError):
             dfcds("This is a string, not an array of bytes!")
-        for chunk_i in self.test_chunk_binaries.keys():
+        for chunk_i,chunk_binary in self.test_chunk_binaries.items():
             self.assertEqual(
                 self.test_dl_chunk_objects[chunk_i],
-                dfcds(self.test_chunk_binaries[chunk_i]),
+                dfcds(chunk_binary),
             )
 
     def test_encrypted_compound_serdes_kafka(self):
+        """
+        Test the encrypted compound serdes for KafkaCrypto
+        """
         parser1 = KafkaConfigFileParser(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=self.logger
         )
@@ -118,7 +128,7 @@ class TestSerialization(TestWithLogger):
             comp_ser.serialize(TOPIC_NAME, "This is a string, not a DataFileChunk!")
         with self.assertRaises(SerializationError):
             comp_des.deserialize(TOPIC_NAME, "This is a string, not a DataFileChunk!")
-        for chunk_i in self.test_chunk_binaries.keys():
+        for chunk_i in self.test_chunk_binaries:
             time.sleep(1)
             serialized = comp_ser.serialize(
                 TOPIC_NAME, self.test_ul_chunk_objects[chunk_i]

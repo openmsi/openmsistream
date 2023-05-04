@@ -2,7 +2,8 @@
 import os, configparser, string
 from random import choices
 from openmsistream.utilities.config_file_parser import ConfigFileParser
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithLogger, TestWithEnvVars
 
 
@@ -11,16 +12,25 @@ class TestConfigFileParser(TestWithLogger, TestWithEnvVars):
     Class for testing ConfigFileParser functions
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
+        """
+        Create the config file parsers to use in tests
+        """
         super().setUp()
         self.cfp = ConfigFileParser(TEST_CONST.TEST_CFG_FILE_PATH, logger=self.logger)
         self.testconfigparser = configparser.ConfigParser()
         self.testconfigparser.read(TEST_CONST.TEST_CFG_FILE_PATH)
 
     def test_available_group_names(self):
+        """
+        Make sure group names match
+        """
         self.assertEqual(self.cfp.available_group_names, self.testconfigparser.sections())
 
     def test_get_config_dict_for_groups(self):
+        """
+        test getting the dictionary of configs for given groups
+        """
         if len(self.testconfigparser.sections()) < 2:
             errmsg = (
                 f"ERROR: config file used for testing ({TEST_CONST.TEST_CFG_FILE_PATH}) "

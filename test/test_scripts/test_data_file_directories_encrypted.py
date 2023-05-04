@@ -6,7 +6,8 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
     RegistryLineCompleted,
 )
 from openmsistream import DataFileUploadDirectory
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
@@ -73,13 +74,13 @@ class TestDataFileDirectoriesEncrypted(
             in_prog_table = DataclassTableReadOnly(
                 RegistryLineInProgress, filepath=in_prog_filepath, logger=self.logger
             )
-            self.assertTrue(in_prog_table.obj_addresses_by_key_attr("filename") == {})
+            self.assertFalse(in_prog_table.obj_addresses_by_key_attr("filename"))
             self.assertTrue(completed_filepath.is_file())
             completed_table = DataclassTableReadOnly(
                 RegistryLineCompleted, filepath=completed_filepath, logger=self.logger
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            self.assertTrue(test_rel_filepath in addrs_by_fp.keys())
-        except Exception as e:
-            raise e
-        self.success = True
+            self.assertTrue(test_rel_filepath in addrs_by_fp)
+        except Exception as exc:
+            raise exc
+        self.success = True # pylint: disable=attribute-defined-outside-init

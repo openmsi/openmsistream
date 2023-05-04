@@ -1,5 +1,5 @@
 # imports
-import unittest, platform, shutil, pathlib, time
+import unittest, platform, pathlib, time
 from subprocess import check_output
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.utilities import run_cmd_in_subprocess
@@ -7,7 +7,8 @@ from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
 
@@ -17,7 +18,10 @@ class TestServices(TestWithOutputLocation):
     without any errors on Linux OS
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
+        """
+        Create a dictionary of arguments that each service should use
+        """
         super().setUp()
         self.argslists_by_class_name = {
             "UploadDataFile": [
@@ -49,10 +53,10 @@ class TestServices(TestWithOutputLocation):
         stopped, removed, and reinstalled
         """
         self.assertTrue(len(SERVICE_CONST.available_services) > 0)
-        for sd in SERVICE_CONST.available_services:
+        for service_dict in SERVICE_CONST.available_services:
             try:
-                service_class_name = sd["class"].__name__
-                if service_class_name not in self.argslists_by_class_name.keys():
+                service_class_name = service_dict["class"].__name__
+                if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
                     )
@@ -77,8 +81,8 @@ class TestServices(TestWithOutputLocation):
                     / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
                 )
                 self.assertFalse(error_log_path.is_file())
-            except Exception as e:
-                raise e
+            except Exception as exc:
+                raise exc
             finally:
                 fps_to_unlink = [
                     (SERVICE_CONST.WORKING_DIR / f"{service_name}_env_vars.txt"),
@@ -87,7 +91,7 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         platform.system() != "Linux"
@@ -101,10 +105,10 @@ class TestServices(TestWithOutputLocation):
         stopped, removed, and reinstalled
         """
         self.assertTrue(len(SERVICE_CONST.available_services) > 0)
-        for sd in SERVICE_CONST.available_services:
+        for service_dict in SERVICE_CONST.available_services:
             try:
-                service_class_name = sd["class"].__name__
-                if service_class_name not in self.argslists_by_class_name.keys():
+                service_class_name = service_dict["class"].__name__
+                if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
                     )
@@ -134,8 +138,8 @@ class TestServices(TestWithOutputLocation):
                     / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
                 )
                 self.assertFalse(error_log_path.is_file())
-            except Exception as e:
-                raise e
+            except Exception as exc:
+                raise exc
             finally:
                 service_path = (
                     SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
@@ -152,7 +156,7 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         (platform.system() != "Windows")
@@ -169,10 +173,7 @@ class TestServices(TestWithOutputLocation):
         started, checked, stopped, removed, and reinstalled
         """
         service_name = "RunnableExampleServiceTest"
-        test_file_path = (
-            TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST
-            / "runnable_example_service_test.txt"
-        )
+        test_file_path = self.output_dir / "runnable_example_service_test.txt"
         error_log_path = (
             pathlib.Path().resolve() / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
         )
@@ -195,8 +196,8 @@ class TestServices(TestWithOutputLocation):
             self.assertFalse(error_log_path.exists())
             if platform.system() == "Linux":
                 self.assertFalse(service_path.exists())
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             fps_to_unlink = [
                 test_file_path,
@@ -215,9 +216,7 @@ class TestServices(TestWithOutputLocation):
             for fp in fps_to_unlink:
                 if fp.exists():
                     fp.unlink()
-            if TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST.is_dir():
-                shutil.rmtree(TEST_CONST.TEST_DIR_CUSTOM_RUNNABLE_SERVICE_TEST)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(
         (platform.system() != "Windows")
@@ -234,10 +233,7 @@ class TestServices(TestWithOutputLocation):
         started, checked, stopped, removed, and reinstalled
         """
         service_name = "ScriptExampleServiceTest"
-        test_file_path = (
-            TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST
-            / "script_example_service_test.txt"
-        )
+        test_file_path = self.output_dir / "script_example_service_test.txt"
         error_log_path = (
             pathlib.Path().resolve() / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
         )
@@ -263,8 +259,8 @@ class TestServices(TestWithOutputLocation):
                         SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
                     ).exists()
                 )
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
         finally:
             fps_to_unlink = [
                 test_file_path,
@@ -295,6 +291,4 @@ class TestServices(TestWithOutputLocation):
             for fp in fps_to_unlink:
                 if fp.exists():
                     fp.unlink()
-            if TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST.is_dir():
-                shutil.rmtree(TEST_CONST.TEST_DIR_CUSTOM_SCRIPT_SERVICE_TEST)
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init

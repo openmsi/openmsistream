@@ -10,7 +10,7 @@ from openmsistream import (
     DataFileStreamProcessor,
     UploadDataFile,
 )
-from config import TEST_CONST
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 
 class TestWithLogger(LogOwner, unittest.TestCase):
@@ -193,8 +193,8 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
                     self.upload_thread.join(timeout=30)
                     if self.upload_thread.is_alive():
                         raise TimeoutError("Upload thread timed out after 30 seconds")
-                except Exception as e:
-                    raise e
+                except Exception as exc:
+                    raise exc
         self.watched_dir = None
         self.upload_directory = None
         self.upload_thread = None
@@ -252,7 +252,7 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
         if dest_rel_path is not None:
             dest_path = self.watched_dir / dest_rel_path
         else:
-            dest_path = self.watched_dir/src_path.name
+            dest_path = self.watched_dir / src_path.name
         if not dest_path.parent.is_dir():
             dest_path.parent.mkdir(parents=True)
         dest_path.write_bytes(src_path.read_bytes())
@@ -319,9 +319,9 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
                     self.download_thread.join(timeout=30)
                     if self.download_thread.is_alive():
                         raise TimeoutError("Download thread timed out after 30 seconds")
-                except Exception as e:
-                    raise e
-        self.watched_dir = None
+                except Exception as exc:
+                    raise exc
+        self.reco_dir = None
         self.download_directory = None
         self.download_thread = None
         super().tearDown()
@@ -392,14 +392,12 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp in files_found_by_path:
-                if files_found_by_path[rel_fp]:
+            for rel_fp,found_file in files_found_by_path.items():
+                if found_file:
                     continue
                 if rel_fp in self.download_directory.recent_processed_filepaths:
                     files_found_by_path[rel_fp] = True
-            all_files_found = sum(
-                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
-            ) == len(rel_filepaths)
+            all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
         # after timing out, stalling, or completely reconstructing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
@@ -432,12 +430,11 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
             return ValueError(
                 f"ERROR: testing processing for {datafile.filename} is set to fail!"
             )
-        else:
-            with lock:
-                self.completed_filenames_bytestrings.append(
-                    (datafile.filename, datafile.bytestring)
-                )
-            return None
+        with lock:
+            self.completed_filenames_bytestrings.append(
+                (datafile.filename, datafile.bytestring)
+            )
+        return None
 
     def _failed_processing_callback(self, datafile, lock):
         if datafile.filename not in self.filenames_to_fail:
@@ -475,9 +472,11 @@ class TestWithStreamProcessor(TestWithOutputLocation):
                 f"ERROR: stream_processor = {self.stream_processor} should not be set yet!"
             )
         if self.stream_processor_thread is not None:
-            raise RuntimeError(
-                f"ERROR: stream_processor_thread = {self.stream_processor_thread} should not be set yet!"
+            errmsg = (
+                f"ERROR: stream_processor_thread = {self.stream_processor_thread} "
+                "but it should not be set yet!"
             )
+            raise RuntimeError(errmsg)
 
     def tearDown(self):
         """
@@ -496,17 +495,19 @@ class TestWithStreamProcessor(TestWithOutputLocation):
         n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         consumer_group_id="create_new",
         other_init_args=(),
-        other_init_kwargs={},
+        other_init_kwargs=None,
     ):
         """
         Create the stream processor object to use
         """
-        if self.stream_processor is not None :
+        if self.stream_processor is not None:
             raise RuntimeError(
-                f'ERROR: stream processor is {self.stream_processor} but should be None!'
+                f"ERROR: stream processor is {self.stream_processor} but should be None!"
             )
         if output_dir is None:
             output_dir = self.output_dir
+        if not other_init_kwargs :
+            other_init_kwargs = {}
         self.stream_processor = stream_processor_type(
             *other_init_args,
             cfg_file,
@@ -518,18 +519,20 @@ class TestWithStreamProcessor(TestWithOutputLocation):
             **other_init_kwargs,
         )
 
-    def start_stream_processor_thread(self, func=None, args=(), kwargs={}):
+    def start_stream_processor_thread(self, func=None, args=(), kwargs=None):
         """
         Start running the stream processor in a new thread
         """
-        if self.stream_processor_thread is not None :
+        if self.stream_processor_thread is not None:
             errmsg = (
-                f'ERROR: stream processor thread is {self.stream_processor_thread} '
-                'but it should be None!'
+                f"ERROR: stream processor thread is {self.stream_processor_thread} "
+                "but it should be None!"
             )
             raise RuntimeError(errmsg)
         if func is None:
             func = self.stream_processor.process_files_as_read
+        if not kwargs :
+            kwargs = {}
         self.stream_processor_thread = ExceptionTrackingThread(
             target=func, args=args, kwargs=kwargs
         )
@@ -563,14 +566,12 @@ class TestWithStreamProcessor(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp in files_found_by_path:
-                if files_found_by_path[rel_fp]:
+            for rel_fp,found_file in files_found_by_path.items():
+                if found_file:
                     continue
                 if rel_fp in self.stream_processor.recent_processed_filepaths:
                     files_found_by_path[rel_fp] = True
-            all_files_found = sum(
-                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
-            ) == len(rel_filepaths)
+            all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
         # after timing out, stalling, or completely processing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
@@ -582,9 +583,11 @@ class TestWithStreamProcessor(TestWithOutputLocation):
         # wait for the download thread to finish
         self.stream_processor_thread.join(timeout=30)
         if self.stream_processor_thread.is_alive():
-            raise TimeoutError("ERROR: stream processor thread timed out after 30 seconds!")
-        
-    def reset_stream_processor(self,remove_output=False):
+            raise TimeoutError(
+                "ERROR: stream processor thread timed out after 30 seconds!"
+            )
+
+    def reset_stream_processor(self, remove_output=False):
         """
         Shut down any running stream processor thread and set the stream processor
         and its thread back to None. Also optionally remove and re-create the output dir
@@ -596,13 +599,14 @@ class TestWithStreamProcessor(TestWithOutputLocation):
                     self.stream_processor_thread.join(timeout=30)
                     if self.stream_processor_thread.is_alive():
                         raise TimeoutError("Download thread timed out after 30 seconds")
-                except Exception as e:
-                    raise e
+                except Exception as exc:
+                    raise exc
         self.stream_processor = None
         self.stream_processor_thread = None
-        if remove_output :
+        if remove_output:
             shutil.rmtree(self.output_dir)
             self.output_dir.mkdir(parents=True)
+
 
 class TestWithStreamReproducer(TestWithOutputLocation):
     """
@@ -651,17 +655,19 @@ class TestWithStreamReproducer(TestWithOutputLocation):
         n_consumer_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         consumer_group_id="create_new",
         other_init_args=(),
-        other_init_kwargs={},
+        other_init_kwargs=None,
     ):
         """
         Create the stream processor object to use
         """
-        if self.stream_reproducer is not None :
+        if self.stream_reproducer is not None:
             raise RuntimeError(
-                f'ERROR: stream processor is {self.stream_reproducer} but should be None!'
+                f"ERROR: stream processor is {self.stream_reproducer} but should be None!"
             )
         if output_dir is None:
             output_dir = self.output_dir
+        if not other_init_kwargs :
+            other_init_kwargs = {}
         self.stream_reproducer = stream_reproducer_type(
             *other_init_args,
             cfg_file,
@@ -675,18 +681,20 @@ class TestWithStreamReproducer(TestWithOutputLocation):
             **other_init_kwargs,
         )
 
-    def start_stream_reproducer_thread(self, func=None, args=(), kwargs={}):
+    def start_stream_reproducer_thread(self, func=None, args=(), kwargs=None):
         """
         Start running the stream processor in a new thread
         """
-        if self.stream_reproducer_thread is not None :
+        if self.stream_reproducer_thread is not None:
             errmsg = (
-                f'ERROR: stream reproducer thread is {self.stream_reproducer_thread} '
-                'but it should be None!'
+                f"ERROR: stream reproducer thread is {self.stream_reproducer_thread} "
+                "but it should be None!"
             )
             raise RuntimeError(errmsg)
         if func is None:
             func = self.stream_reproducer.produce_processing_results_for_files_as_read
+        if not kwargs :
+            kwargs = {}
         self.stream_reproducer_thread = ExceptionTrackingThread(
             target=func, args=args, kwargs=kwargs
         )
@@ -722,14 +730,12 @@ class TestWithStreamReproducer(TestWithOutputLocation):
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
             time.sleep(5)
-            for rel_fp in files_found_by_path:
-                if files_found_by_path[rel_fp]:
+            for rel_fp,found_file in files_found_by_path.items():
+                if found_file:
                     continue
                 if rel_fp in self.stream_reproducer.recent_processed_filepaths:
                     files_found_by_path[rel_fp] = True
-            all_files_found = sum(
-                [files_found_by_path[rel_fp] for rel_fp in files_found_by_path]
-            ) == len(rel_filepaths)
+            all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
         # after timing out, stalling, or completely processing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
@@ -741,9 +747,11 @@ class TestWithStreamReproducer(TestWithOutputLocation):
         # wait for the download thread to finish
         self.stream_reproducer_thread.join(timeout=30)
         if self.stream_reproducer_thread.is_alive():
-            raise TimeoutError("ERROR: stream reproducer thread timed out after 30 seconds!")
-        
-    def reset_stream_reproducer(self,remove_output=False):
+            raise TimeoutError(
+                "ERROR: stream reproducer thread timed out after 30 seconds!"
+            )
+
+    def reset_stream_reproducer(self, remove_output=False):
         """
         Shut down any running stream reproducer thread and set the stream reproducer
         and its thread back to None. Also optionally remove and re-create the output dir
@@ -755,11 +763,11 @@ class TestWithStreamReproducer(TestWithOutputLocation):
                     self.stream_reproducer_thread.join(timeout=30)
                     if self.stream_reproducer_thread.is_alive():
                         raise TimeoutError("Download thread timed out after 30 seconds")
-                except Exception as e:
-                    raise e
+                except Exception as exc:
+                    raise exc
         self.stream_reproducer = None
         self.stream_reproducer_thread = None
-        if remove_output :
+        if remove_output:
             shutil.rmtree(self.output_dir)
             self.output_dir.mkdir(parents=True)
 

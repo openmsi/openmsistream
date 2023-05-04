@@ -2,8 +2,8 @@
 from queue import Queue
 from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
-from config import TEST_CONST
-from test_base_classes import TestWithLogger
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from test_base_classes import TestWithLogger # pylint: disable=import-error,wrong-import-order
 
 
 class TestUploadDataFile(TestWithLogger):
@@ -11,7 +11,10 @@ class TestUploadDataFile(TestWithLogger):
     Class for testing UploadDataFile functions
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
+        """
+        Create the datafile to use for testing
+        """
         self.datafile = UploadDataFile(
             TEST_CONST.TEST_DATA_FILE_PATH,
             rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
@@ -19,7 +22,9 @@ class TestUploadDataFile(TestWithLogger):
         )
 
     def test_upload_whole_file_kafka(self):
-        # just need to make sure this function runs without throwing any errors
+        """
+        Just need to make sure this function runs without throwing any errors        
+        """
         self.datafile.upload_whole_file(
             TEST_CONST.TEST_CFG_FILE_PATH,
             RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
@@ -28,6 +33,9 @@ class TestUploadDataFile(TestWithLogger):
         )
 
     def test_initial_properties(self):
+        """
+        Make sure datafiles are initialized with the right properties
+        """
         self.assertEqual(self.datafile.filename, TEST_CONST.TEST_DATA_FILE_NAME)
         self.assertTrue(self.datafile.to_upload)
         self.assertFalse(self.datafile.fully_enqueued)
@@ -35,6 +43,9 @@ class TestUploadDataFile(TestWithLogger):
         self.assertFalse(self.datafile.upload_in_progress)
 
     def test_enqueue_chunks_for_upload(self):
+        """
+        Test enqueueing chunks to be uploaded
+        """
         # adding to a full Queue should do nothing
         full_queue = Queue(maxsize=3)
         full_queue.put("I am going to")

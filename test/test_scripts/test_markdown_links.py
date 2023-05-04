@@ -1,3 +1,4 @@
+# pylint: skip-file
 import bs4, functools, git, itertools, marko.ext.toc, pathlib, re, slugify, unittest
 
 

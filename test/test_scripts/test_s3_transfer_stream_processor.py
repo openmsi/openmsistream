@@ -2,7 +2,8 @@
 import pathlib, hashlib
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-from config import TEST_CONST
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+# pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
 
 # constants
@@ -33,8 +34,8 @@ class TestS3TransferStreamProcessor(
             self.copy_file_to_watched_dir(TEST_CONST.TEST_DATA_FILE_PATH, rel_filepath)
             # stop the upload thread
             self.stop_upload_thread()
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
 
     def run_s3_tranfer_data(self):
         """
@@ -56,21 +57,26 @@ class TestS3TransferStreamProcessor(
         try:
             # wait for the test file to be processed
             self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=300)
-        except Exception as e:
-            raise e
+        except Exception as exc:
+            raise exc
 
     def hash_file(self, my_file):
+        """
+        Return the md5 hash of a given file
+        """
         md5 = hashlib.md5()
-        BUF_SIZE = 65536
-        with open(my_file, "rb") as f:
+        with open(my_file, "rb") as fp:
             while True:
-                data = f.read(BUF_SIZE)
+                data = fp.read(65536)
                 if not data:
                     break
                 md5.update(data)
         return format(md5.hexdigest())
 
     def validate_s3_transfer(self):
+        """
+        Make sure contents on disk match the contents in the bucket
+        """
         endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
         if not endpoint_url.startswith("https://"):
             endpoint_url = "https://" + endpoint_url
@@ -99,7 +105,10 @@ class TestS3TransferStreamProcessor(
             s3d.delete_object_from_bucket(TEST_CONST.TEST_BUCKET_NAME, object_key)
 
     def test_upload_and_transfer_into_s3_bucket_kafka(self):
+        """
+        Actually run the test
+        """
         self.run_data_file_upload_directory()
         self.run_s3_tranfer_data()
         self.validate_s3_transfer()
-        self.success = True
+        self.success = True # pylint: disable=attribute-defined-outside-init

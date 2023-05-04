@@ -5,8 +5,8 @@ from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
-from config import TEST_CONST
-from test_base_classes import TestWithLogger
+from config import TEST_CONST # pylint: disable=import-error,wrong-import-order
+from test_base_classes import TestWithLogger # pylint: disable=import-error,wrong-import-order
 
 
 class TestDataFileChunk(TestWithLogger):
@@ -14,7 +14,10 @@ class TestDataFileChunk(TestWithLogger):
     Class for testing behavior of DataFileChunks
     """
 
-    def setUp(self):
+    def setUp(self): # pylint: disable=invalid-name
+        """
+        Get some chunks to use in tests
+        """
         # use a DataFile to get a couple chunks to test
         super().setUp()
         udf = UploadDataFile(
@@ -22,6 +25,7 @@ class TestDataFileChunk(TestWithLogger):
             rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
             logger=self.logger,
         )
+        # pylint: disable=protected-access
         udf._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
         udf.add_chunks_to_upload()
         self.test_chunk_1 = udf.chunks_to_upload[0]
@@ -30,6 +34,9 @@ class TestDataFileChunk(TestWithLogger):
         self.test_chunk_2.populate_with_file_data(logger=self.logger)
 
     def test_produce_to_topic_kafka(self):
+        """
+        Test producing chunks to a topic
+        """
         producer = OpenMSIStreamProducer.from_file(
             TEST_CONST.TEST_CFG_FILE_PATH, logger=self.logger
         )
@@ -47,6 +54,10 @@ class TestDataFileChunk(TestWithLogger):
         producer.flush()
 
     def test_chunk_of_nonexistent_file_kafka(self):
+        """
+        Make sure an error is thrown at the right time when trying to produce chunks
+        from a nonexistent file
+        """
         nonexistent_file_path = (
             pathlib.Path(__file__).parent / "never_name_a_file_this.txt"
         )
@@ -76,6 +87,9 @@ class TestDataFileChunk(TestWithLogger):
             )
 
     def test_eq(self):
+        """
+        Test the equivalency method
+        """
         test_chunk_1_copied_no_data = DataFileChunk(
             self.test_chunk_1.filepath,
             self.test_chunk_1.filename,
@@ -136,6 +150,9 @@ class TestDataFileChunk(TestWithLogger):
         self.assertFalse(self.test_chunk_1 == "this is a string, not a DataFileChunk!")
 
     def test_props(self):
+        """
+        Test that properties of chunks are set at the right time
+        """
         self.assertEqual(
             self.test_chunk_1.subdir_str, TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME
         )
