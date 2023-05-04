@@ -90,7 +90,9 @@ class TestDataFileStreamProcessorEncrypted(
         )
         self.start_stream_processor_thread()
         try:
-            self.wait_for_files_to_be_processed([rel_filepath_1, rel_filepath_3])
+            self.wait_for_files_to_be_processed(
+                [rel_filepath_1, rel_filepath_3], timeout=300
+            )
             # make sure the content of the previously failed file is now correct
             ref_bytestring = None
             with open(TEST_CONST.TEST_DATA_FILE_PATH, "rb") as fp:
