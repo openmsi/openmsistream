@@ -308,7 +308,7 @@ class ServiceManagerBase(LogOwner, HasArgumentParser):
         )
         code = """\
             if __name__ == "__main__":
-                try :"""
+                try:"""
         if self.service_dict["func_name"] is not None:
             code += f"""
                     from {self.service_dict['filepath']} import {self.service_dict['func_name']}
@@ -318,10 +318,10 @@ class ServiceManagerBase(LogOwner, HasArgumentParser):
                     from {self.service_dict['filepath']} import {self.service_dict['class_name']}
                     {self.service_dict['class_name']}.run_from_command_line({self.argslist})"""
         code += f"""
-                except Exception :
+                except Exception:
                     import pathlib, traceback, datetime
                     output_filepath = pathlib.Path(r"{error_log_path}")
-                    with open(output_filepath,"a") as fp :"""
+                    with open(output_filepath, "a") as fp:"""
         code += r"""
                         timestamp = (datetime.datetime.now()).strftime("%Y-%m-%d at %H:%M:%S")
                         fp.write(f"Error on {timestamp}. Exception:\n{traceback.format_exc()}")
