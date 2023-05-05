@@ -1,5 +1,5 @@
 # imports
-import pathlib, shutil, filecmp
+import pathlib, shutil, filecmp, re
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -28,28 +28,26 @@ class TestDataFileDirectories(
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """
 
-    def run_data_file_upload_directory(self):
+    def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
         """
         Called by the test method below to run an upload directory from start to finish
         """
         # create the upload directory with the default config file
-        self.create_upload_directory()
+        self.create_upload_directory(**create_kwargs)
         # start it running in a new thread
         self.start_upload_thread(topic_name=TOPIC_NAME)
         try:
-            # put the test file in the watched directory
-            dest_rel_path = (
-                pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
-                / TEST_CONST.TEST_DATA_FILE_NAME
-            )
-            self.copy_file_to_watched_dir(TEST_CONST.TEST_DATA_FILE_PATH, dest_rel_path)
+            # put the test file(s) in the watched directory
+            for filepath, filedict in upload_file_dict.items():
+                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
+                self.copy_file_to_watched_dir(filepath, filepath.relative_to(rootdir))
             # put the "check" command into the input queue a couple times to test it
             self.upload_directory.control_command_queue.put("c")
             self.upload_directory.control_command_queue.put("check")
             # shut down the upload thread
             self.stop_upload_thread()
             # make sure that the ProducerFileRegistry files were created
-            # and they list the file as completely uploaded
+            # and they list the file(s) as completely uploaded
             log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
             in_prog_filepath = log_subdir / f"upload_to_{TOPIC_NAME}_in_progress.csv"
             completed_filepath = log_subdir / f"uploaded_to_{TOPIC_NAME}.csv"
@@ -67,48 +65,83 @@ class TestDataFileDirectories(
                 logger=self.logger,
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            self.assertTrue(dest_rel_path in addrs_by_fp)
+            for filepath, filedict in upload_file_dict.items():
+                if filedict["upload_expected"]:
+                    rootdir = filedict["rootdir"] if "rootdir" in filedict else None
+                    if rootdir:
+                        rel_path = filepath.relative_to(rootdir)
+                    else:
+                        rel_path = pathlib.Path(filepath.name)
+                    self.assertTrue(rel_path in addrs_by_fp)
         except Exception as exc:
             raise exc
 
-    def run_data_file_download_directory(self):
+    def run_data_file_download_directory(self, download_file_dict, **other_create_kwargs):
         """
         Called by the test method below to run a download directory from start to finish
         """
+        # make a list of relative filepaths we'll be waiting for
+        relevant_files = {}
+        for filepath, filedict in download_file_dict.items():
+            if filedict["download_expected"]:
+                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
+                if rootdir:
+                    rel_path = filepath.relative_to(rootdir)
+                else:
+                    rel_path = pathlib.Path(filepath.name)
+                relevant_files[filepath] = rel_path
         # create the download directory
-        self.create_download_directory(
-            consumer_group_id="run_data_file_download_directory"
-        )
+        self.create_download_directory(topic_name=TOPIC_NAME, **other_create_kwargs)
         # start reconstruct in a separate thread so we can time it out
         self.start_download_thread()
         try:
             # put the "check" command into the input queue a couple times
             self.download_directory.control_command_queue.put("c")
             self.download_directory.control_command_queue.put("check")
-            # wait for the timeout for the test file to be completely reconstructed
-            reco_rel_fp = (
-                pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
-                / TEST_CONST.TEST_DATA_FILE_NAME
-            )
-            self.wait_for_files_to_reconstruct(reco_rel_fp)
-            # make sure the reconstructed file exists with the same name and content as the original
-            reco_fp = self.reco_dir / reco_rel_fp
-            self.assertTrue(reco_fp.is_file())
-            if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False):
-                errmsg = (
-                    "ERROR: files are not the same after reconstruction! "
-                    "(This may also be due to the timeout being too short)"
-                )
-                raise RuntimeError(errmsg)
+            # wait for the timeout for the test file(s) to be completely reconstructed
+            self.wait_for_files_to_reconstruct(relevant_files.values())
+            # make sure the reconstructed file(s) exists with the same content as the original
+            for orig_fp, rel_fp in relevant_files.items():
+                reco_fp = self.reco_dir / rel_fp
+                self.assertTrue(reco_fp.is_file())
+                if not filecmp.cmp(orig_fp, reco_fp, shallow=False):
+                    errmsg = (
+                        "ERROR: files are not the same after reconstruction! "
+                        "(This may also be due to the timeout being too short)"
+                    )
+                    raise RuntimeError(errmsg)
         except Exception as exc:
             raise exc
 
     def test_upload_and_download_directories_kafka(self):
         """
-        Test both upload_files_as_added and then reconstruct, in that order
+        Test the upload and download directories while applying regular expressions
         """
-        self.run_data_file_upload_directory()
-        self.run_data_file_download_directory()
+        files_roots = {
+            TEST_CONST.TEST_DATA_FILE_PATH: {
+                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+                "upload_expected": True,
+                "download_expected": True,
+            },
+            TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH: {
+                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+                "upload_expected": True,
+                "download_expected": False,
+            },
+            TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE: {
+                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+                "upload_expected": False,
+                "download_expected": False,
+            },
+        }
+        upload_regex = re.compile(r"^.*\.(dat|config)$")
+        download_regex = re.compile(r"^.*\.dat$")
+        self.run_data_file_upload_directory(files_roots, upload_regex=upload_regex)
+        self.run_data_file_download_directory(
+            files_roots,
+            consumer_group_id="run_data_file_download_directory_with_regexes",
+            filepath_regex=download_regex,
+        )
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):

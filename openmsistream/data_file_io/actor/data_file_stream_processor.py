@@ -30,6 +30,9 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     :type n_threads: int, optional
     :param consumer_group_id: the group ID under which each consumer should be created
     :type consumer_group_id: str, optional
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
         :class:`~.data_file_io.DownloadDataFileToMemory`
@@ -260,6 +263,6 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "topic_name"]
+        args = [*superargs, "topic_name", "download_regex"]
         kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs

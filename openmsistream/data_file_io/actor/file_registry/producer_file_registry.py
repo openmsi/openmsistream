@@ -120,8 +120,10 @@ class ProducerFileRegistry(LogOwner):
             added_file = DataclassTableReadOnly(
                 dataclass_type=RegistryLineCompleted, filepath=fp, logger=self.logger
             )
+            file_is_good = True
             for entry_line in added_file.lines:
                 if entry_line not in all_lines:
+                    self.logger.warning(f"missing line = {entry_line} in file {fp}")
                     warnmsg = (
                         "WARNING: failed to consolidate individual files into "
                         f"{self.completed_filepath_pattern}. Individual files will be "
@@ -129,9 +131,11 @@ class ProducerFileRegistry(LogOwner):
                         "Duplicate entries may be present."
                     )
                     self.logger.warning(warnmsg)
-            if fp in self.__completed_tables_by_path:
-                self.__completed_tables_by_path.pop(fp)
-            fp.unlink()
+                    file_is_good = False
+            if file_is_good:
+                if fp in self.__completed_tables_by_path:
+                    self.__completed_tables_by_path.pop(fp)
+                fp.unlink()
 
     def get_incomplete_filepaths_and_chunks(self):
         """

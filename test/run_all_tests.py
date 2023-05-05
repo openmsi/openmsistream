@@ -190,7 +190,7 @@ def start_local_broker_and_get_temp_env(args):
             LOGGER.info("Testing topics created in local broker")
         except Exception as exc:
             errmsg = (
-                "ERROR: failed to set up the local testing broker and topics. "
+                "ERROR: failed to set up the local testing broker and topics: is Docker running? "
                 "Exception will be re-raised."
             )
             LOGGER.error(errmsg, exc_info=exc, reraise=True)

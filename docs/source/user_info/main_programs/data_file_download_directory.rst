@@ -20,6 +20,7 @@ Options for running the code include:
 
 #. Changing the number of parallel threads: add the ``--n_threads [threads]`` argument where ``[threads]`` is the desired number of parallel threads to use (and, also, the number of consumers used in the group). The default is 2 threads/consumers; increasing this number may give Kafka warnings or errors depending on how many consumers can be subscribed to a particular topic (generally you can use as many threads as there are partitions to the topic).
 #. Changing the consumer group ID: add the ``--consumer_group_id [group_id]`` argument where ``[group_id]`` is the string to use for the Consumer group ID. The default creates a new ID every time, but if you would like to keep track of which messages have already been consumed you can choose a consistent group ID to use every time, and only messages whose offsets haven't been comitted yet will be consumed. Please see the `documentation for Kafka Consumers here <https://docs.confluent.io/platform/current/clients/consumer.html>`_ for more details if consumer offset commits are unfamiliar to you.
+#. Changing which files get downloaded: add the ``--download_regex [regex]`` argument where ``[regex]`` is a regular expression string that matches the relative filepath of every file you would like to reconstruct. Messages from files whose relative paths don't match the regex will be read from the topic but skipped.
 
 To see other optional command line arguments, run ``DataFileDownloadDirectory -h``.
 

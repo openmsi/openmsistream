@@ -38,6 +38,9 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
     :type n_consumer_threads: int, optional
     :param consumer_group_id: the group ID under which each consumer should be created
     :type consumer_group_id: str, optional
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
         :class:`~.data_file_io.DownloadDataFileToMemory`
@@ -111,6 +114,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
             n_consumer_threads=args.n_consumer_threads,
             n_producer_threads=args.n_producer_threads,
             output_dir=args.output_dir,
+            filepath_regex=args.download_regex,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,

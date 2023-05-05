@@ -99,6 +99,7 @@ class XRDCSVPlotter(DataFileStreamProcessor):
             args.config,
             args.topic_name,
             n_threads=args.n_threads,
+            filepath_regex=args.download_regex,
             update_secs=args.update_seconds,
             consumer_group_id=args.consumer_group_id,
         )

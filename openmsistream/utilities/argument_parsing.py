@@ -250,7 +250,14 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
             {
                 "default": RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,
                 "type": re.compile,
-                "help": "Only files matching this regular expression will be uploaded",
+                "help": "Only files with paths matching this regular expression will be uploaded",
+            },
+        ],
+        "download_regex": [
+            "optional",
+            {
+                "type": re.compile,
+                "help": "Only files with paths matching this regular expression will be uploaded",
             },
         ],
         "chunk_size": [

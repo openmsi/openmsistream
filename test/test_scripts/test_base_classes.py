@@ -201,11 +201,15 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
         super().tearDown()
 
     def create_upload_directory(
-        self, watched_dir=None, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, update_secs=5
+        self,
+        watched_dir=None,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        **other_kwargs,
     ):
         """
         Create the upload directory object to use
         """
+        other_kwargs = populated_kwargs(other_kwargs, {"logger": self.logger})
         # make the directory to watch
         self.watched_dir = watched_dir
         if self.watched_dir is None:
@@ -216,8 +220,7 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
         self.upload_directory = DataFileUploadDirectory(
             self.watched_dir,
             cfg_file,
-            update_secs=update_secs,
-            logger=self.logger,
+            **other_kwargs,
         )
 
     def start_upload_thread(
@@ -331,13 +334,12 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
         reco_dir=None,
         cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
         topic_name="test",
-        n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
-        update_secs=5,
-        consumer_group_id="create_new",
+        **other_kwargs,
     ):
         """
         Create the download directory object to use
         """
+        other_kwargs = populated_kwargs(other_kwargs, {"logger": self.logger})
         self.reco_dir = reco_dir
         if not self.reco_dir:
             self.reco_dir = self.output_dir / self.RECO_DIR_NAME
@@ -349,10 +351,7 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
             self.reco_dir,
             cfg_file,
             topic_name,
-            n_threads=n_threads,
-            update_secs=update_secs,
-            consumer_group_id=consumer_group_id,
-            logger=self.logger,
+            **other_kwargs,
         )
 
     def start_download_thread(self):

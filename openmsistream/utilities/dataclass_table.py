@@ -427,7 +427,7 @@ class DataclassTableReadOnly(DataclassTableBase):
         """
         A list of all the text lines in the file
         """
-        return self._entry_lines.values()
+        return [line.strip() for line in self._entry_lines.values()]
 
 
 class DataclassTableAppendOnly(DataclassTableBase):
