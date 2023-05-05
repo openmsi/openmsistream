@@ -1,5 +1,5 @@
 # imports
-import time, pathlib
+import pathlib
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
@@ -7,7 +7,7 @@ from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamPro
 
 
 class TestDataFileStreamProcessorEncrypted(
-    TestWithDataFileUploadDirectory, TestWithStreamProcessor
+    TestWithStreamProcessor, TestWithDataFileUploadDirectory
 ):
     """
     Class for testing behavior of an encrypted DataFileStreamProcessor
@@ -91,8 +91,9 @@ class TestDataFileStreamProcessorEncrypted(
         self.start_stream_processor_thread()
         try:
             self.wait_for_files_to_be_processed(
-                [rel_filepath_1, rel_filepath_3], timeout=300
+                [rel_filepath_1, rel_filepath_3], timeout_secs=300
             )
+            self.stop_upload_thread()
             # make sure the content of the previously failed file is now correct
             ref_bytestring = None
             with open(TEST_CONST.TEST_DATA_FILE_PATH, "rb") as fp:
@@ -114,7 +115,6 @@ class TestDataFileStreamProcessorEncrypted(
                 (third_filepath.name, ref_bytestring)
                 in self.stream_processor.completed_filenames_bytestrings
             )
-            time.sleep(1.0)
             # read the file registry to make sure it registers three successful files
             self.stream_processor.file_registry.in_progress_table.dump_to_file()
             self.stream_processor.file_registry.succeeded_table.dump_to_file()
