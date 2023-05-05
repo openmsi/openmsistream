@@ -91,7 +91,7 @@ class TestDataFileDirectories(
                     rel_path = pathlib.Path(filepath.name)
                 relevant_files[filepath] = rel_path
         # create the download directory
-        self.create_download_directory(topic_name=TOPIC_NAME,**other_create_kwargs)
+        self.create_download_directory(topic_name=TOPIC_NAME, **other_create_kwargs)
         # start reconstruct in a separate thread so we can time it out
         self.start_download_thread()
         try:
@@ -134,9 +134,9 @@ class TestDataFileDirectories(
                 "download_expected": False,
             },
         }
-        upload_regex = re.compile(r'^.*\.(dat|config)$')
-        download_regex = re.compile(r'^.*\.dat$')
-        self.run_data_file_upload_directory(files_roots,upload_regex=upload_regex)
+        upload_regex = re.compile(r"^.*\.(dat|config)$")
+        download_regex = re.compile(r"^.*\.dat$")
+        self.run_data_file_upload_directory(files_roots, upload_regex=upload_regex)
         self.run_data_file_download_directory(
             files_roots,
             consumer_group_id="run_data_file_download_directory_with_regexes",
