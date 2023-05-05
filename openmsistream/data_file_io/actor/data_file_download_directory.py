@@ -253,9 +253,9 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             msg += f" and {n_processed} messages were successfully processed"
         msg += (
             f" from {run_start} to {run_stop}\n"
-            f"Most recent completed files (up to {cls.N_RECENT_FILES}):"
+            f"Most recent completed files (up to {cls.N_RECENT_FILES}):\n\t"
         )
-        msg += "\n\t".join(complete_filepaths)
+        msg += "\n\t".join([str(filepath) for filepath in complete_filepaths])
         reconstructor_directory.logger.info(msg)
 
 
