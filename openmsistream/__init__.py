@@ -49,7 +49,7 @@ if os.name == "nt":
             print(f"WARNING: Failed to preload librdkafka DLLs. Reason: {reason}")
         try:
             import confluent_kafka
-        except Exception as e:
+        except Exception as exc:
             errmsg = "ERROR: Preloading librdkafka DLLs ("
             errmsg += ", ".join([str(_) for _ in fps])
             errmsg += (
@@ -57,5 +57,5 @@ if os.name == "nt":
                 f"Exception (will be re-raised): {traceback.format_exc()}"
             )
             print(errmsg)
-            raise e
+            raise exc
     _ = confluent_kafka.Producer  # appease pyflakes

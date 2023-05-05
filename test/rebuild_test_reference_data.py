@@ -6,7 +6,7 @@ from openmsistream.data_file_io.entity.download_data_file import DownloadDataFil
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
 from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.config import SERVICE_CONST
-from test_scripts.config import TEST_CONST
+from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 
 # constants
 EXISTING_TEST_DATA_DIR = (pathlib.Path(__file__).parent / "data").resolve()
@@ -101,19 +101,20 @@ def rebuild_binary_file_chunks_for_serialization_reference():
     )
     test_data_fp = test_data_fp / TEST_CONST.TEST_DATA_FILE_NAME
     # make the data file and build its list of chunks
-    df = UploadDataFile(
+    udf = UploadDataFile(
         test_data_fp,
         rootdir=EXISTING_TEST_DATA_DIR / TEST_CONST.TEST_DATA_FILE_ROOT_DIR_NAME,
         logger=LOGGER,
     )
-    df._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
-    df.add_chunks_to_upload()
+    # pylint: disable=protected-access
+    udf._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
+    udf.add_chunks_to_upload()
     # populate and serialize a few chunks and save them as binary data
     dfcs = DataFileChunkSerializer()
     for i in range(3):
-        df.chunks_to_upload[i].populate_with_file_data(LOGGER)
-        binary_data = dfcs(df.chunks_to_upload[i])
-        fn = f'{TEST_CONST.TEST_DATA_FILE_NAME.split(".")[0]}_test_chunk_{i}.bin'
+        udf.chunks_to_upload[i].populate_with_file_data(LOGGER)
+        binary_data = dfcs(udf.chunks_to_upload[i])
+        fn = f"{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_{i}.bin"
         with open(NEW_TEST_DATA_DIR / fn, "wb") as fp:
             fp.write(binary_data)
         compare_and_check_old_and_new_files(fn)
@@ -124,16 +125,16 @@ def rebuild_test_services_executable():
     Rebuild the executable file used to double-check Services behavior
     """
     # some constants
-    TEST_SERVICE_CLASS_NAME = "DataFileUploadDirectory"
-    TEST_SERVICE_NAME = "testing_service"
-    TEST_SERVICE_EXECUTABLE_ARGSLIST = ["test_upload"]
+    test_service_class_name = "DataFileUploadDirectory"
+    test_service_name = "testing_service"
+    test_service_executable_argslist = ["test_upload"]
     # create the file using the function supplied
     manager = WindowsServiceManager(
-        TEST_SERVICE_NAME,
-        service_spec_string=TEST_SERVICE_CLASS_NAME,
-        argslist=TEST_SERVICE_EXECUTABLE_ARGSLIST,
+        test_service_name,
+        service_spec_string=test_service_class_name,
+        argslist=test_service_executable_argslist,
     )
-    manager._write_executable_file()
+    manager._write_executable_file()  # pylint: disable=protected-access
     # move it to the new test data folder
     exec_fp = (
         pathlib.Path(__file__).parent.parent
@@ -141,7 +142,7 @@ def rebuild_test_services_executable():
         / "services"
         / "working_dir"
     )
-    exec_fp = exec_fp / f"{TEST_SERVICE_NAME}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}"
+    exec_fp = exec_fp / f"{test_service_name}{SERVICE_CONST.SERVICE_EXECUTABLE_NAME_STEM}"
     exec_fp.replace(NEW_TEST_DATA_DIR / exec_fp.name)
     compare_and_check_old_and_new_files(exec_fp.name)
 
@@ -166,6 +167,7 @@ def rebuild_test_metadata_dict():
     )
     module_name = class_path.name[: -len(".py")]
     loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
+    # pylint: disable=deprecated-method,no-value-for-parameter
     module = loader.load_module()
     # get the metadata dictionary from the file
     metadata_reproducer = module.XRDCSVMetadataReproducer(
@@ -176,6 +178,7 @@ def rebuild_test_metadata_dict():
         TEST_CONST.TEST_TOPIC_NAMES["test_metadata_reproducer"] + "_dest",
         output_dir=pathlib.Path("./REMOVE_ME"),
     )
+    # pylint: disable=protected-access
     metadata_dict = metadata_reproducer._get_metadata_dict_for_file(datafile)
     metadata_dict.pop("metadata_message_generated_at")  # get rid of the timestamp
     # pickle up the file
@@ -196,6 +199,9 @@ def rebuild_test_metadata_dict():
 
 
 def main():
+    """
+    Main method to run the whole script
+    """
     # make the directory to hold the new test data
     NEW_TEST_DATA_DIR.mkdir()
     # try populating it with all of the necessary new data, checking with the user along the way
@@ -208,8 +214,8 @@ def main():
         rebuild_test_metadata_dict()
         LOGGER.info(f"Moving new files into {EXISTING_TEST_DATA_DIR}...")
         relocate_files(NEW_TEST_DATA_DIR)
-    except Exception as e:
-        raise e
+    except Exception as exc:
+        raise exc
     finally:
         shutil.rmtree(NEW_TEST_DATA_DIR)
 
