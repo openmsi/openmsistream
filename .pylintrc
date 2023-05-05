@@ -160,7 +160,8 @@ disable=raw-checker-failed,
         exec-used, # Be careful about using exec() but don't disallow it (only used once)
         multiple-imports, # Makes for cleaner-looking (and definitely more concise and clear) code
         duplicate-code, # This checker is unfortunately just too enthusiastic
-        consider-using-with # Multiple instances where this is unnecessary
+        consider-using-with, # Multiple instances where this is unnecessary
+        missing-module-docstring # Fell out of style
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -454,7 +455,7 @@ max-args=15
 max-attributes=15
 
 # Maximum number of boolean expressions in an if statement (see R0916).
-max-bool-expr=5
+max-bool-expr=10 #5
 
 # Maximum number of branch for function / method body.
 max-branches=12
@@ -472,7 +473,7 @@ max-public-methods=20
 max-returns=10
 
 # Maximum number of statements in function / method body.
-max-statements=50
+max-statements=100 #50
 
 # Minimum number of public methods for a class (see R0903).
 min-public-methods=0

@@ -67,8 +67,8 @@ class XRDCSVPlotter(DataFileStreamProcessor):
                 plot_path.parent.mkdir(parents=True)
             f.savefig(plot_path, bbox_inches="tight")
             plt.close(f)
-        except Exception as e:
-            return e
+        except Exception as exc:
+            return exc
         return None
 
     def _failed_processing_callback(self, datafile, lock):

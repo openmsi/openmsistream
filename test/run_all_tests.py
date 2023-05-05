@@ -4,23 +4,16 @@ from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
 from openmsistream.utilities import Logger
 from openmsistream.services.utilities import run_cmd_in_subprocess
-from test_scripts.placeholder_env_vars import ENV_VAR_NAMES
+from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 
 # constants
-TOP_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
-START_LOCAL_BROKER_SCRIPT_PATH = (
-    pathlib.Path(__file__).parent / "start_local_broker.sh"
-).resolve()
-CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH = (
-    pathlib.Path(__file__).parent / "create_local_testing_topics.sh"
-).resolve()
-STOP_LOCAL_BROKER_SCRIPT_PATH = (
-    pathlib.Path(__file__).parent / "stop_local_broker.sh"
-).resolve()
-TEST_SCRIPT_DIR_PATH = (pathlib.Path(__file__).parent / "test_scripts").resolve()
-TEST_REPO_STATUS_SCRIPT_PATH = (
-    pathlib.Path(__file__).parent / "test_repo_status.sh"
-).resolve()
+TEST_DIR_PATH = pathlib.Path(__file__).resolve().parent
+TOP_DIR_PATH = TEST_DIR_PATH.parent
+START_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "start_local_broker.sh"
+CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH = TEST_DIR_PATH / "create_local_testing_topics.sh"
+STOP_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "stop_local_broker.sh"
+TEST_SCRIPT_DIR_PATH = TEST_DIR_PATH / "test_scripts"
+TEST_REPO_STATUS_SCRIPT_PATH = TEST_DIR_PATH / "test_repo_status.sh"
 CWD = pathlib.Path().resolve()
 LOGGER = Logger("run_all_tests")
 
@@ -65,9 +58,11 @@ def get_args(args):
     parser.add_argument(
         "--local_broker",
         action="store_true",
-        help="""Add this flag to automatically set up a local Kafka broker with Docker 
-                                and use that broker to run tests instead of a third-party broker 
-                                configured using environment variables""",
+        help=(
+            "Add this flag to automatically set up a local Kafka broker with Docker "
+            "and use that broker to run tests instead of a third-party broker "
+            "configured using environment variables"
+        ),
     )
     parser.add_argument(
         "--no_repo",
@@ -90,14 +85,18 @@ def test_pyflakes(args):
         LOGGER.info("SKIPPING PYFLAKES TEST")
     else:
         LOGGER.info("testing code consistency with pyflakes...")
-        p = subprocess.Popen(
-            f"cd {TOP_DIR_PATH}; pyflakes .; cd {CWD}; exit 0",
+        cmd = (
+            f"cd {TOP_DIR_PATH}; pyflakes .; cd {TEST_DIR_PATH}; pyflakes.; "
+            f"cd {CWD}; exit 0"
+        )
+        proc = subprocess.Popen(
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
             universal_newlines=True,
         )
-        stdout, _ = p.communicate()
+        stdout, _ = proc.communicate()
         if stdout != "":
             LOGGER.error(
                 f"ERROR: pyflakes check failed with output:\n{stdout}",
@@ -114,8 +113,12 @@ def test_formatting(args):
         LOGGER.info("SKIPPING FORMATTING TEST")
     else:
         LOGGER.info("testing code formatting with Black...")
+        cmd = (
+            f"cd {TOP_DIR_PATH}; black openmsistream --check; black test --check; "
+            f"cd {CWD}; exit 0"
+        )
         with subprocess.Popen(
-            f"cd {TOP_DIR_PATH}; black openmsistream --check; cd {CWD}; exit 0",
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
@@ -138,14 +141,18 @@ def test_pylint(args):
         LOGGER.info("SKIPPING PYLINT TEST")
     else:
         LOGGER.info("testing code consistency with pylint...")
-        p = subprocess.Popen(
-            f"cd {TOP_DIR_PATH}; pylint openmsistream; cd {CWD}; exit 0",
+        cmd = (
+            f"cd {TOP_DIR_PATH}; pylint openmsistream; pylint --recursive=y test; "
+            f"cd {CWD}; exit 0"
+        )
+        proc = subprocess.Popen(
+            cmd,
             stdout=subprocess.PIPE,
             stderr=subprocess.PIPE,
             shell=True,
             universal_newlines=True,
         )
-        stdout, _ = p.communicate()
+        stdout, _ = proc.communicate()
         if stdout != "":
             LOGGER.error(
                 f"ERROR: pylint checks failed with output:\n{stdout}",
@@ -162,9 +169,7 @@ def start_local_broker_and_get_temp_env(args):
     """
     temp_env_local_broker = None
     if args.local_broker:
-        LOGGER.info(
-            "Tests will be run using a local broker set up using Docker instead of a third-party broker"
-        )
+        LOGGER.info("Tests will be run using a local broker set up using Docker")
         try:
             run_cmd_in_subprocess(
                 ["sh", str(START_LOCAL_BROKER_SCRIPT_PATH)],
@@ -173,7 +178,7 @@ def start_local_broker_and_get_temp_env(args):
                 cwd=pathlib.Path(__file__).parent,
             )
             LOGGER.info(
-                "Local broker started, will sleep for 5 seconds to give it a moment to get up and running"
+                "Local broker started, sleeping 5 seconds to give it a moment to get up and running"
             )
             time.sleep(5)
             run_cmd_in_subprocess(
@@ -194,27 +199,30 @@ def start_local_broker_and_get_temp_env(args):
             "LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS": "localhost:9092",
         }
         temp_env_local_broker = TemporaryEnvironment(temp_env_var_dict)
-        temp_env_local_broker.__enter__()
+        temp_env_local_broker.__enter__()  # pylint: disable=unnecessary-dunder-call
     return temp_env_local_broker
 
 
 def skip_kafka_tests_and_get_temp_env(args, suites):
     """
-    If requested, un-set environment variables used for tests and set tests ending in "kafka" to skip
+    If requested, un-set environment variables used for tests
+    and set tests ending in "kafka" to skip
 
     Returns the TemporaryEnvironment to use for the "no_kafka" tests, or None if not necessary
     """
     temp_no_kafka_env = None
     if args.no_kafka:
         temp_env_var_dict = {}
-        for env_var_name in ENV_VAR_NAMES:
+        for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             temp_env_var_dict[env_var_name] = None
         temp_no_kafka_env = TemporaryEnvironment(temp_env_var_dict)
-        temp_no_kafka_env.__enter__()
+        temp_no_kafka_env.__enter__()  # pylint: disable=unnecessary-dunder-call
         for suite in suites:
-            for test_group in suite._tests:
+            for test_group in suite._tests:  # pylint: disable=protected-access
                 for test in test_group:
+                    # pylint: disable=protected-access
                     if (test._testMethodName).endswith("kafka"):
+                        # pylint: disable=protected-access
                         test_name = test._testMethodName
                         msg = (
                             "tests that interact with the kafka broker are being skipped"
@@ -231,11 +239,16 @@ def skip_unmatched_tests(args, suites):
     """
     if args.test_regex is not None:
         for suite in suites:
-            for test_group in suite._tests:
+            for test_group in suite._tests:  # pylint: disable=protected-access
                 for test in test_group:
+                    # pylint: disable=protected-access
                     if not args.test_regex.match(test._testMethodName):
+                        # pylint: disable=protected-access
                         test_name = test._testMethodName
-                        msg = f"tests that don't match the regex '{args.test_regex}' are being skipped"
+                        msg = (
+                            f"tests that don't match the regex '{args.test_regex}' "
+                            "are being skipped"
+                        )
                         setattr(
                             test, test_name, unittest.skip(msg)(getattr(test, test_name))
                         )
@@ -259,7 +272,8 @@ def run_script_tests(args):
             errmsg = "ERROR: encountered the following errors in loading tests:\n\t"
             errmsg += "\n\t".join([str(error) for error in loader.errors])
             LOGGER.error(errmsg, exc_type=RuntimeError)
-        # if we're running in "no_kafka" mode, unset the environment variables and set some tests to skip
+        # if we're running in "no_kafka" mode, unset the environment variables
+        # and set some tests to skip
         temp_no_kafka_env = skip_kafka_tests_and_get_temp_env(args, suites)
         # otherwise, if only some tests will be run. Set any that don't match the regex to skip
         skip_unmatched_tests(args, suites)
@@ -308,8 +322,14 @@ def test_repo_is_clean(args):
         # Commenting out repo checks for now (expect that KafkaCrypto files will update)
         ##make sure the Github repo is still clean from its initial state
         # LOGGER.info('Checking the status of the Git repo....')
-        # p = subprocess.Popen(f'sh {TEST_REPO_STATUS_SCRIPT_PATH}',stdout=subprocess.PIPE,stderr=subprocess.PIPE,
-        #                     shell=True,cwd=TOP_DIR_PATH)#,universal_newlines=True)
+        # p = subprocess.Popen(
+        #   f'sh {TEST_REPO_STATUS_SCRIPT_PATH}',
+        #   stdout=subprocess.PIPE,
+        #   stderr=subprocess.PIPE,
+        #   shell=True,
+        #   cwd=TOP_DIR_PATH,
+        #   #universal_newlines=True,
+        # )
         # stdout,stderr = p.communicate()
         # try :
         #    stdout = stdout.decode()
@@ -317,11 +337,17 @@ def test_repo_is_clean(args):
         # except :
         #    pass
         # if stdout!='' :
-        #    LOGGER.error(f'ERROR: Git repo check failed with output:\n{stdout}',exc_type=RuntimeError)
+        #    LOGGER.error(
+        #       f'ERROR: Git repo check failed with output:\n{stdout}',
+        #       exc_type=RuntimeError,
+        # )
         # LOGGER.info('Repo is good : )')
 
 
 def main(args=None):
+    """
+    Main function to run the script
+    """
     args = get_args(args)
     test_pyflakes(args)
     test_formatting(args)

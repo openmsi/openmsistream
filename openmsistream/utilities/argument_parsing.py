@@ -69,7 +69,7 @@ def detect_bucket_name(argstring):
     """
     if argstring is None:  # Then the argument wasn't given and nothing should be done
         return None
-    illegal_charcters = [
+    illegal_characters = [
         "#",
         "%",
         "&",
@@ -93,8 +93,9 @@ def detect_bucket_name(argstring):
         "|",
         "=",
     ]
-    if argstring in illegal_charcters:
-        raise RuntimeError(f"ERROR: Illegal characters in bucket_name {argstring}")
+    for illegal_character in illegal_characters:
+        if illegal_character in argstring:
+            raise RuntimeError(f"ERROR: Illegal characters in bucket_name {argstring}")
     return argstring
 
 
