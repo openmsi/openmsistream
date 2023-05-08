@@ -59,11 +59,11 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         # start up a stream processor to read its data back into memory
         self.run_stream_processor_test(topic_name, "memory")
         # start up a stream processor to read its data back to disk
-        self.reset_stream_processor()
-        self.run_stream_processor_test_disk(topic_name, "disk")
+        self.reset_stream_processor(remove_output=True)
+        self.run_stream_processor_test(topic_name, "disk")
         # start up a stream processor to read its data back to memory and disk
-        self.reset_stream_processor()
-        self.run_stream_processor_test_both(topic_name, "both")
+        self.reset_stream_processor(remove_output=True)
+        self.run_stream_processor_test(topic_name, "both")
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_data_file_stream_processor_restart_kafka(self):
