@@ -47,8 +47,8 @@ class DataFileChunkHandler(LogOwner, ABC):
         self.datafile_type = datafile_type
         if not issubclass(self.datafile_type, DownloadDataFile):
             errmsg = (
-                "ERROR: DataFileChunkProcessor requires a datafile_type that is a subclass"
-                f" of DownloadDataFile but {self.datafile_type} was given!"
+                f"ERROR: {self.__class__.__name__} requires a datafile_type that is "
+                f"a subclass of DownloadDataFile but {self.datafile_type} was given!"
             )
             raise ValueError(errmsg)
         self.files_in_progress_by_path = {}

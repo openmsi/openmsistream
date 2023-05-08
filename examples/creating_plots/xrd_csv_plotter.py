@@ -102,6 +102,7 @@ class XRDCSVPlotter(DataFileStreamProcessor):
             filepath_regex=args.download_regex,
             update_secs=args.update_seconds,
             consumer_group_id=args.consumer_group_id,
+            mode=args.mode,
         )
         # start the plot maker running
         run_start = datetime.datetime.now()
@@ -132,7 +133,7 @@ class XRDCSVPlotter(DataFileStreamProcessor):
             f" from {run_start} to {run_stop}. Up to {cls.N_RECENT_FILES} most recently "
             "processed files:\n\t"
         )
-        msg += "\n\t".join(proc_filepaths)
+        msg += "\n\t".join([str(fp) for fp in proc_filepaths])
         plot_maker.logger.info(msg)
 
 

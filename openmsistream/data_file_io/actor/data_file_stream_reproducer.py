@@ -30,9 +30,15 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
     :param output_dir: Path to the directory where the log and csv registry files should be kept
         (if None a default will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
-    :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`~.data_file_io.DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~.data_file_io.DownloadDataFileToMemory`, optional
+    :param mode: a string flag determining whether reconstructed data files should
+        have their contents stored only in "memory" (the default, and the fastest),
+        only on "disk" (in the output directory, to reduce the memory footprint),
+        or "both" (for flexibility in processing)
+    :type mode: str, optional
+    :param datafile_type: the type of data file that recognized files should be reconstructed as.
+        Default options are set automatically depending on the "mode" argument.
+        (must be a subclass of :class:`~.data_file_io.DownloadDataFile`)
+    :type datafile_type: :class:`~.data_file_io.DownloadDataFile`, optional
     :param n_producer_threads: the number of producers to run. The total number of
         producer/consumer threads started is `max(n_consumer_threads,n_producer_threads)`.
     :type n_producer_threads: int, optional
@@ -46,7 +52,8 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
     :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
-        :class:`~.data_file_io.DownloadDataFileToMemory`
+        :class:`~.data_file_io.DownloadDataFileToMemory`, or more specific as determined
+        by the "mode" argument
     """
 
     def __init__(self, config_file, consumer_topic_name, producer_topic_name, **kwargs):
@@ -86,7 +93,7 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
         self.logger.info(msg)
         # set up the stream reproducer registry
         self.file_registry = StreamReproducerRegistry(
-            dirpath=self._output_dir,
+            dirpath=self._logs_subdir,
             consumer_topic_name=self.consumer_topic_name,
             consumer_group_id=self.consumer_group_id,
             producer_topic_name=self.producer_topic_name,
@@ -126,7 +133,6 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
             self.n_msgs_read,
             self.n_msgs_processed,
             self.n_processed_files,
-            self.recent_processed_filepaths,
             self.n_results_produced_files,
             self.recent_results_produced,
         )

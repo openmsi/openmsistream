@@ -114,6 +114,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
             n_consumer_threads=args.n_consumer_threads,
             n_producer_threads=args.n_producer_threads,
             output_dir=args.output_dir,
+            mode=args.mode,
             filepath_regex=args.download_regex,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
@@ -130,7 +131,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
             n_m_p,
             n_f_r,
             n_f_mp,
-            m_p_fns,
+            m_p_fps,
         ) = metadata_reproducer.produce_processing_results_for_files_as_read()
         metadata_reproducer.close()
         msg = ""
@@ -152,5 +153,5 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
                 f"to the {args.producer_topic_name} topic. "
                 f"Up to {cls.N_RECENT_FILES} most recent:\n\t"
             )
-            msg += "\n\t".join(m_p_fns)
+            msg += "\n\t".join([str(fp) for fp in m_p_fps])
             metadata_reproducer.logger.debug(msg)
