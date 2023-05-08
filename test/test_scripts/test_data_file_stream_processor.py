@@ -17,7 +17,7 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         """
         self.create_stream_processor(
             topic_name=topic_name,
-            consumer_group_id="test_data_file_stream_processor",
+            consumer_group_id=f"test_data_file_stream_processor_{mode}",
             other_init_kwargs={"mode": mode},
         )
         self.start_stream_processor_thread()
