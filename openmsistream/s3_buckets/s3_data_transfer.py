@@ -16,12 +16,12 @@ class S3DataTransfer(S3Service):
         """
         Transfer the contents of a DataFile Consumed from chunks in a topic to an S3 bucket
         """
-        content=None
+        content = None
         try:
-            content=datafile.bytestring
+            content = datafile.bytestring
         except AttributeError:
-            with open(datafile.full_filepath,'rb') as fp:
-                content=fp.read()
+            with open(datafile.full_filepath, "rb") as fp:
+                content = fp.read()
         file_name = str(datafile.filename)
         try:
             self.s3_client.put_object(
