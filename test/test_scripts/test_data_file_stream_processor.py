@@ -11,20 +11,14 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
     Class for testing behavior of a DataFileStreamProcessor
     """
 
-    def test_data_file_stream_processor_kafka(self):
+    def run_stream_processor_test(self, topic_name, mode):
         """
-        Upload a data file and then use a DataFileStreamProcessor to read its data back
+        Run the stream processor downloading files to memory
         """
-        topic_name = TEST_CONST.TEST_TOPIC_NAMES["test_data_file_stream_processor_kafka"]
-        # upload the test file
-        self.upload_single_file(
-            TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=topic_name,
-            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-        )
-        # start up a stream processor to read its data back into memory
         self.create_stream_processor(
-            topic_name=topic_name, consumer_group_id="test_data_file_stream_processor"
+            topic_name=topic_name,
+            consumer_group_id="test_data_file_stream_processor",
+            other_init_kwargs={"mode": mode},
         )
         self.start_stream_processor_thread()
         try:
@@ -39,7 +33,7 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
                 TEST_CONST.TEST_DATA_DIR_PATH
             )
             self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
-            # make sure the contents of the file in memory are the same as the original
+            # make sure the contents of the file are the same as the original
             ref_bytestring = None
             with open(TEST_CONST.TEST_DATA_FILE_2_PATH, "rb") as fp:
                 ref_bytestring = fp.read()
@@ -49,6 +43,27 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
             )
         except Exception as exc:
             raise exc
+
+    def test_data_file_stream_processor_modes_kafka(self):
+        """
+        Upload a data file and then use a DataFileStreamProcessor to read its data back
+        in all three modes
+        """
+        topic_name = TEST_CONST.TEST_TOPIC_NAMES["test_data_file_stream_processor_kafka"]
+        # upload the test file
+        self.upload_single_file(
+            TEST_CONST.TEST_DATA_FILE_2_PATH,
+            topic_name=topic_name,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+        )
+        # start up a stream processor to read its data back into memory
+        self.run_stream_processor_test(topic_name, "memory")
+        # start up a stream processor to read its data back to disk
+        self.reset_stream_processor()
+        self.run_stream_processor_test_disk(topic_name, "disk")
+        # start up a stream processor to read its data back to memory and disk
+        self.reset_stream_processor()
+        self.run_stream_processor_test_both(topic_name, "both")
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_data_file_stream_processor_restart_kafka(self):

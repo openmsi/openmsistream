@@ -118,6 +118,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
             args.config,
             args.topic_name,
             output_dir=args.output_dir,
+            mode=args.mode,
             n_threads=args.n_threads,
             filepath_regex=args.download_regex,
             update_secs=args.update_seconds,

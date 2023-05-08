@@ -100,9 +100,12 @@ class XRDCSVPlotter(DataFileStreamProcessor):
             args.topic_name,
             n_threads=args.n_threads,
             filepath_regex=args.download_regex,
-            update_secs=args.update_seconds,
             consumer_group_id=args.consumer_group_id,
+            output_dir=args.output_dir,
             mode=args.mode,
+            update_secs=args.update_seconds,
+            streamlevel=args.logger_stream_level,
+            filelevel=args.logger_file_level,
         )
         # start the plot maker running
         run_start = datetime.datetime.now()
@@ -136,6 +139,11 @@ class XRDCSVPlotter(DataFileStreamProcessor):
         msg += "\n\t".join([str(fp) for fp in proc_filepaths])
         plot_maker.logger.info(msg)
 
+def main(args=None):
+    """
+    Calls run from command line
+    """
+    XRDCSVPlotter.run_from_command_line(args)
 
 if __name__ == "__main__":
-    XRDCSVPlotter.run_from_command_line()
+    main()
