@@ -67,11 +67,11 @@ class DataFileUploadDirectory(
         Constructor method
         """
         # create a subdirectory for the logs
-        self.__logs_subdir = dirpath / self.LOG_SUBDIR_NAME
-        if not self.__logs_subdir.is_dir():
-            self.__logs_subdir.mkdir(parents=True)
+        self._logs_subdir = dirpath / self.LOG_SUBDIR_NAME
+        if not self._logs_subdir.is_dir():
+            self._logs_subdir.mkdir(parents=True)
         # put the log file in the subdirectory
-        kwargs = populated_kwargs(kwargs, {"logger_file": self.__logs_subdir})
+        kwargs = populated_kwargs(kwargs, {"logger_file": self._logs_subdir})
         super().__init__(dirpath, config_path, **kwargs)
         if not issubclass(datafile_type, UploadDataFile):
             errmsg = (
@@ -85,7 +85,7 @@ class DataFileUploadDirectory(
         self.__observer = Observer(timeout=self.WATCHDOG_OBSERVER_TIMEOUT)
         self.__event_handler = UploadDirectoryEventHandler(
             upload_regex=upload_regex,
-            logs_subdir=self.__logs_subdir,
+            logs_subdir=self._logs_subdir,
             logger=self.logger,
         )
         self.__active_files_by_path = {}
@@ -134,7 +134,7 @@ class DataFileUploadDirectory(
         self.logger.info(msg)
         # start up a file registry in the watched directory
         self.__file_registry = ProducerFileRegistry(
-            dirpath=self.__logs_subdir, topic_name=topic_name, logger=self.logger
+            dirpath=self._logs_subdir, topic_name=topic_name, logger=self.logger
         )
         # start the upload queue
         n_max_queue_items = int((1000000 * max_queue_size) / self.__chunk_size)

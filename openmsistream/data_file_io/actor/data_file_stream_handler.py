@@ -14,7 +14,11 @@ from ...utilities.misc import populated_kwargs
 from ...utilities import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_timestamp_string
-from ..entity.download_data_file import DownloadDataFileToMemory
+from ..entity.download_data_file import (
+    DownloadDataFileToMemory,
+    DownloadDataFileToDisk,
+    DownloadDataFileToMemoryAndDisk,
+)
 from .data_file_chunk_handlers import DataFileChunkHandler
 
 
@@ -24,8 +28,10 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     once entire files are available
     """
 
+    LOG_SUBDIR_NAME = "LOGS"  # name of the directory that holds the logs
+
     def __init__(
-        self, *args, output_dir=None, datafile_type=DownloadDataFileToMemory, **kwargs
+        self, *args, output_dir=None, mode="memory", datafile_type=None, **kwargs
     ):
         """
         Constructor method
@@ -36,15 +42,31 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
         )
         if not self._output_dir.is_dir():
             self._output_dir.mkdir(parents=True)
-        kwargs = populated_kwargs(kwargs, {"logger_file": self._output_dir})
-        super().__init__(*args, datafile_type=datafile_type, **kwargs)
-        self.logger.info(f"Log files and output will be in {self._output_dir}")
-        if not issubclass(datafile_type, DownloadDataFileToMemory):
+        # create a subdirectory for the logs
+        self._logs_subdir = self._output_dir / self.LOG_SUBDIR_NAME
+        if not self._logs_subdir.is_dir():
+            self._logs_subdir.mkdir(parents=True)
+        # put the log file in the subdirectory
+        kwargs = populated_kwargs(kwargs, {"logger_file": self._logs_subdir})
+        # figure out or check the datafile type from the "mode" argument
+        if mode == "memory":
+            base_datafile_type = DownloadDataFileToMemory
+        elif mode == "disk":
+            base_datafile_type = DownloadDataFileToDisk
+        elif mode == "both":
+            base_datafile_type = DownloadDataFileToMemoryAndDisk
+        else:
+            raise ValueError(f"ERROR: unrecognized mode argument '{mode}'")
+        if not datafile_type:
+            datafile_type = base_datafile_type
+        if not issubclass(datafile_type, base_datafile_type):
             errmsg = (
                 f"ERROR: {self.__class__.__name__} requires a datafile_type that is a "
-                f"subclass of DownloadDataFileToMemory but {datafile_type} was given!"
+                f"subclass of {base_datafile_type} but {datafile_type} was given!"
             )
-            self.logger.error(errmsg, exc_type=ValueError)
+            raise ValueError(errmsg)
+        super().__init__(*args, datafile_type=datafile_type, **kwargs)
+        self.logger.info(f"Log files and output will be in {self._output_dir}")
         self.file_registry = None  # needs to be set in subclasses
 
     def _process_message(self, lock, msg, rootdir_to_set=None):
@@ -150,7 +172,7 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "config", "consumer_group_id", "update_seconds"]
+        args = [*superargs, "config", "consumer_group_id", "update_seconds", "mode"]
         kwargs = {
             **superkwargs,
             "optional_output_dir": cls._get_auto_output_dir(),

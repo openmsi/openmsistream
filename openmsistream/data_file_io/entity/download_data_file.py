@@ -169,6 +169,10 @@ class DownloadDataFileToDisk(DownloadDataFile):
     :type filepath: :class:`pathlib.Path`
     """
 
+    #################### CONSTANTS ####################
+
+    READ_BUFFER_SIZE = 4096
+
     #################### PROPERTIES ####################
 
     @property
@@ -178,8 +182,11 @@ class DownloadDataFileToDisk(DownloadDataFile):
         """
         check_file_hash = sha512()
         with open(self.full_filepath, "rb") as fp:
-            data = fp.read()
-        check_file_hash.update(data)
+            while True:
+                data = fp.read(self.READ_BUFFER_SIZE)
+                if not data:
+                    break
+                check_file_hash.update(data)
         return check_file_hash.digest()
 
     #################### PUBLIC FUNCTIONS ####################
@@ -197,6 +204,10 @@ class DownloadDataFileToDisk(DownloadDataFile):
         :param dfc: the DataFileChunk object whose data should be added
         :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
+        try:
+            super()._on_add_chunk(dfc)
+        except NotImplementedError:
+            pass
         mode = "r+b" if self.full_filepath.is_file() else "w+b"
         with open(self.full_filepath, mode) as fp:
             fp.seek(dfc.chunk_offset_write)
@@ -264,6 +275,10 @@ class DownloadDataFileToMemory(DownloadDataFile):
         :param dfc: the DataFileChunk object whose data should be added
         :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
+        try:
+            super()._on_add_chunk(dfc)
+        except NotImplementedError:
+            pass
         self.__chunk_data_by_offset[dfc.chunk_offset_write] = dfc.data
 
     def __create_bytestring(self):
@@ -277,3 +292,42 @@ class DownloadDataFileToMemory(DownloadDataFile):
         ]:
             bytestring += data
         self.__bytestring = bytestring
+
+
+class DownloadDataFileToMemoryAndDisk(DownloadDataFileToMemory, DownloadDataFileToDisk):
+    """
+    A class for a file that should be written to disk as its messages are read
+    from a topic, but that should also have a bytestring created for it.
+
+    :param filepath: Path to the file
+    :type filepath: :class:`pathlib.Path`
+    """
+
+    @property
+    def check_file_hash(self):
+        """
+        Hash of the file contents as read from its current location on disk
+        and from the bytestring of the file stored in memory.
+        Raises an error if they don't match.
+        """
+        check_file_hash_memory = sha512()
+        check_file_hash_memory.update(self.bytestring)
+        check_file_hash_memory = check_file_hash_memory.digest()
+        check_file_hash_disk = sha512()
+        with open(self.full_filepath, "rb") as fp:
+            while True:
+                data = fp.read(self.READ_BUFFER_SIZE)
+                if not data:
+                    break
+                check_file_hash_disk.update(data)
+        check_file_hash_disk = check_file_hash_disk.digest()
+        if check_file_hash_disk != check_file_hash_memory:
+            errmsg = (
+                f"ERROR: hashes of file on disk and in memory are mismatched! "
+                f"On disk: {check_file_hash_disk}. In memory: {check_file_hash_memory}."
+            )
+            self.logger.error(errmsg, exc_type=ValueError)
+        return check_file_hash_disk
+
+    def __init__(self, filepath, *args, **kwargs):
+        super().__init__(filepath, *args, **kwargs)

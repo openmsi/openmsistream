@@ -46,8 +46,8 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
         super().__init__(**other_kwargs)
         # variables for determining files whose events should be dispatched
         self.__upload_regex = upload_regex
-        self.__logs_subdir = logs_subdir
-        self.__rootdir = self.__logs_subdir.parent
+        self._logs_subdir = logs_subdir
+        self.__rootdir = self._logs_subdir.parent
         # A thread lock
         self.__lock = RLock()
         # all currently active files
@@ -103,7 +103,7 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
         if not filepath.is_relative_to(self.__rootdir):
             return False
         # must be outside the logs subdirectory
-        if self.__logs_subdir in filepath.parents:
+        if self._logs_subdir in filepath.parents:
             return False
         # name shouldn't start with '.'
         if filepath.name.startswith("."):

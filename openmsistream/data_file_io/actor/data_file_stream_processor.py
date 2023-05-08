@@ -2,7 +2,6 @@
 
 # imports
 from abc import ABC, abstractmethod
-from ...utilities.misc import populated_kwargs
 from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
 from .data_file_stream_handler import DataFileStreamHandler
@@ -23,9 +22,15 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     :param output_dir: Path to the directory where the log and csv registry files should be kept
         (if None a default will be created in the current directory)
     :type output_dir: :class:`pathlib.Path`, optional
-    :param datafile_type: the type of data file that recognized files should be reconstructed as
-        (must be a subclass of :class:`~.data_file_io.DownloadDataFileToMemory`)
-    :type datafile_type: :class:`~.data_file_io.DownloadDataFileToMemory`, optional
+    :param mode: a string flag determining whether reconstructed data files should
+        have their contents stored only in "memory" (the default, and the fastest),
+        only on "disk" (in the output directory, to reduce the memory footprint),
+        or "both" (for flexibility in processing)
+    :type mode: str, optional
+    :param datafile_type: the type of data file that recognized files should be reconstructed as.
+        Default options are set automatically depending on the "mode" argument.
+        (must be a subclass of :class:`~.data_file_io.DownloadDataFile`)
+    :type datafile_type: :class:`~.data_file_io.DownloadDataFile`, optional
     :param n_threads: the number of threads/consumers to run
     :type n_threads: int, optional
     :param consumer_group_id: the group ID under which each consumer should be created
@@ -35,27 +40,14 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
 
     :raises ValueError: if `datafile_type` is not a subclass of
-        :class:`~.data_file_io.DownloadDataFileToMemory`
+        :class:`~.data_file_io.DownloadDataFileToMemory`, or more specific as determined
+        by the "mode" argument
     """
 
-    LOG_SUBDIR_NAME = "LOGS"
-
-    def __init__(self, config_file, topic_name, output_dir=None, **kwargs):
+    def __init__(self, config_file, topic_name, **kwargs):
         """
-        Constructor method
+        Constructor method (duplicated here for its function signature in the docs)
         """
-        # set the output directory
-        self._output_dir = (
-            self._get_auto_output_dir() if output_dir is None else output_dir
-        )
-        # create a subdirectory for the logs
-        self.__logs_subdir = self._output_dir / self.LOG_SUBDIR_NAME
-        if not self.__logs_subdir.is_dir():
-            self.__logs_subdir.mkdir(parents=True)
-        # put the log file in the subdirectory
-        kwargs = populated_kwargs(
-            kwargs, {"output_dir": self._output_dir, "logger_file": self.__logs_subdir}
-        )
         super().__init__(config_file, topic_name, **kwargs)
 
     def process_files_as_read(self):
@@ -82,7 +74,7 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         self.logger.info(msg)
         # set up the stream processor registry
         self.file_registry = StreamProcessorRegistry(
-            dirpath=self.__logs_subdir,
+            dirpath=self._logs_subdir,
             topic_name=self.topic_name,
             consumer_group_id=self.consumer_group_id,
             logger=self.logger,

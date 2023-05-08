@@ -293,6 +293,19 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
                 ),
             },
         ],
+        "mode": [
+            "optional",
+            {
+                "choices": ["memory", "disk", "both"],
+                "default": "memory",
+                "help": (
+                    "Choose whether files should be reconstructed in 'memory', "
+                    "on 'disk' (with the output directory as the root directory) "
+                    "or 'both' (giving access to the data bytestring, "
+                    "but also writing to disk)"
+                ),
+            },
+        ],
         "upload_existing": [
             "optional",
             {

@@ -18,6 +18,9 @@ class ControlledProcessMultiThreaded(ControlledProcess, ABC):
     :type n_threads: int, optional
     """
 
+    # time in seconds to wait for threads to join in shutdown
+    SHUTDOWN_THREAD_TIMEOUT = 10
+
     def __init__(self, *args, n_threads=RUN_CONST.DEFAULT_N_THREADS, **kwargs):
         self.n_threads = n_threads
         super().__init__(*args, **kwargs)
@@ -92,7 +95,7 @@ class ControlledProcessMultiThreaded(ControlledProcess, ABC):
         just be sure to also call :func:`super()._on_shutdown()`.
         """
         for thread in self.__threads:
-            thread.join()
+            thread.join(self.SHUTDOWN_THREAD_TIMEOUT)
 
     @abstractmethod
     def _run_worker(self):

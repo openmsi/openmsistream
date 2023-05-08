@@ -4,6 +4,11 @@ from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.data_file_io.config import RUN_OPT_CONST
+from openmsistream.data_file_io.entity.download_data_file import (
+    DownloadDataFileToDisk,
+    DownloadDataFileToMemory,
+    DownloadDataFileToMemoryAndDisk,
+)
 from openmsistream import (
     DataFileUploadDirectory,
     DataFileDownloadDirectory,
@@ -423,16 +428,30 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
         super().__init__(*args, **kwargs)
 
     def _process_downloaded_data_file(self, datafile, lock):
+        # fail any files that have been set to fail
         if datafile.filename in self.filenames_to_fail:
             with lock:
                 self.completed_filenames_bytestrings.append((datafile.filename, None))
             return ValueError(
                 f"ERROR: testing processing for {datafile.filename} is set to fail!"
             )
-        with lock:
-            self.completed_filenames_bytestrings.append(
-                (datafile.filename, datafile.bytestring)
+        # make sure that the file has the right properties for its type, and get its bytestring
+        bytestring = None
+        if self.datafile_type == DownloadDataFileToDisk:
+            with open(datafile.full_filepath, "rb") as fp:
+                bytestring = fp.read()
+        elif self.datafile_type in (
+            DownloadDataFileToMemory,
+            DownloadDataFileToMemoryAndDisk,
+        ):
+            bytestring = datafile.bytestring
+        else:
+            raise ValueError(
+                f"ERROR: unrecognized download data file type {self.datafile_type}"
             )
+        # add the filename and bytestring to the list
+        with lock:
+            self.completed_filenames_bytestrings.append((datafile.filename, bytestring))
         return None
 
     def _failed_processing_callback(self, datafile, lock):
