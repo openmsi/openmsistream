@@ -66,6 +66,7 @@ Selected base + utility classes
    api/download_data_file
    api/download_data_file_to_disk
    api/download_data_file_to_memory
+   api/download_data_file_to_memory_and_disk
    api/data_file_directory
    api/log_owner
    api/logger
