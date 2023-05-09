@@ -1,7 +1,7 @@
 """Constants used in running different controlled processes in general"""
 
 # imports
-import os, pathlib
+import os, pathlib, re
 
 
 class RunConstants:
@@ -19,6 +19,22 @@ class RunConstants:
     )
     DEFAULT_N_THREADS = 2
     DEFAULT_UPDATE_SECONDS = 300
+    # name of the config file that will be used by default
+    DEFAULT_CONFIG_FILE = "test"
+    # name of the topic to produce to by default
+    DEFAULT_TOPIC_NAME = "test"
+    # default number of threads to use when uploading a file
+    N_DEFAULT_UPLOAD_THREADS = 2
+    # default number of threads to use when downloading chunks of a file
+    N_DEFAULT_DOWNLOAD_THREADS = 2
+    # name of the config file used in "real" production
+    PRODUCTION_CONFIG_FILE = "prod"
+    # matches everything except something starting with a '.' or ending in '.log'
+    DEFAULT_UPLOAD_REGEX = re.compile(r"^((?!(\.|.*.log))).*$")
+    # default size in bytes of each file upload chunk
+    DEFAULT_CHUNK_SIZE = 524288
+    # default maximum size (in MB) of the internal upload Queue
+    DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES = 500
 
 
 RUN_CONST = RunConstants()

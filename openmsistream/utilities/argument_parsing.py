@@ -3,7 +3,6 @@
 # imports
 import pathlib, math, re, logging
 from argparse import ArgumentParser
-from ..data_file_io.config import RUN_OPT_CONST
 from .config import RUN_CONST
 
 #################### MISC. FUNCTIONS ####################
@@ -192,7 +191,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "config": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_CONFIG_FILE,
+                "default": RUN_CONST.DEFAULT_CONFIG_FILE,
                 "type": config_path,
                 "help": (
                     f"Name of config file to use in {RUN_CONST.CONFIG_FILE_DIR.resolve()}, "
@@ -203,21 +202,21 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "topic_name": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                "default": RUN_CONST.DEFAULT_TOPIC_NAME,
                 "help": "Name of the topic to produce to or consume from",
             },
         ],
         "consumer_topic_name": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                "default": RUN_CONST.DEFAULT_TOPIC_NAME,
                 "help": "Name of the topic to consume from",
             },
         ],
         "producer_topic_name": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                "default": RUN_CONST.DEFAULT_TOPIC_NAME,
                 "help": "Name of the topic to produce to",
             },
         ],
@@ -232,7 +231,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "n_consumer_threads": [
             "optional",
             {
-                "default": RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+                "default": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS,
                 "type": positive_int,
                 "help": "Number of consumer threads to use",
             },
@@ -240,7 +239,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "n_producer_threads": [
             "optional",
             {
-                "default": RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+                "default": RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
                 "type": positive_int,
                 "help": "Number of producer threads to use",
             },
@@ -248,7 +247,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "upload_regex": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,
+                "default": RUN_CONST.DEFAULT_UPLOAD_REGEX,
                 "type": re.compile,
                 "help": "Only files with paths matching this regular expression will be uploaded",
             },
@@ -263,7 +262,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "chunk_size": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+                "default": RUN_CONST.DEFAULT_CHUNK_SIZE,
                 "type": int_power_of_two,
                 "help": (
                     "Max size (in bytes) of chunks into which files should be broken "
@@ -274,7 +273,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "queue_max_size": [
             "optional",
             {
-                "default": RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+                "default": RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
                 "type": int,
                 "help": (
                     "Maximum allowed size in MB of the internal upload queue. "

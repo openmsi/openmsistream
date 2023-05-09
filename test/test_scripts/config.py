@@ -1,7 +1,6 @@
 # imports
 import os, pathlib
 from openmsistream.utilities.config import RUN_CONST
-from openmsistream.data_file_io.config import RUN_OPT_CONST
 
 
 class TestRoutineConstants:
@@ -50,7 +49,7 @@ class TestRoutineConstants:
     # different config files used in tests
     TEST_CFG_FILE_PATH = (
         RUN_CONST.CONFIG_FILE_DIR
-        / f"{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}"
+        / f"{RUN_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}"
     )
     # Same as above except it includes a node_id to test encryption
     TEST_CFG_FILE_PATH_ENC = TEST_CFG_FILE_PATH.with_name(

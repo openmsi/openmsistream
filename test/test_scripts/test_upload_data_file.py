@@ -1,6 +1,6 @@
 # imports
 from queue import Queue
-from openmsistream.data_file_io.config import RUN_OPT_CONST
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
@@ -29,8 +29,8 @@ class TestUploadDataFile(TestWithLogger):
         """
         self.datafile.upload_whole_file(
             TEST_CONST.TEST_CFG_FILE_PATH,
-            RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
-            n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+            RUN_CONST.DEFAULT_TOPIC_NAME,
+            n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
             chunk_size=TEST_CONST.TEST_CHUNK_SIZE,
         )
 
@@ -69,13 +69,13 @@ class TestUploadDataFile(TestWithLogger):
         self.assertTrue(self.datafile.upload_in_progress)
         self.assertFalse(self.datafile.fully_enqueued)
         self.datafile.enqueue_chunks_for_upload(
-            real_queue, n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS
+            real_queue, n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS
         )
         self.datafile.enqueue_chunks_for_upload(
-            real_queue, n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS
+            real_queue, n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS
         )
         self.datafile.enqueue_chunks_for_upload(
-            real_queue, n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS
+            real_queue, n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS
         )
         self.datafile.enqueue_chunks_for_upload(real_queue)
         self.assertEqual(real_queue.qsize(), n_total_chunks)

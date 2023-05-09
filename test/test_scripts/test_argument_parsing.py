@@ -11,7 +11,6 @@ from openmsistream.utilities.argument_parsing import (
     positive_int,
     logger_string_to_level,
 )
-from openmsistream.data_file_io.config import RUN_OPT_CONST
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
@@ -135,10 +134,10 @@ class TestArgumentParsing(TestWithOutputLocation):
         """
         Test the config_path argument parser callback
         """
-        cfg_file_name = f"{RUN_OPT_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}"
+        cfg_file_name = f"{RUN_CONST.DEFAULT_CONFIG_FILE}{RUN_CONST.CONFIG_FILE_EXT}"
         default_config_file_path = (RUN_CONST.CONFIG_FILE_DIR / cfg_file_name).resolve()
         self.assertEqual(
-            config_path(RUN_OPT_CONST.DEFAULT_CONFIG_FILE), default_config_file_path
+            config_path(RUN_CONST.DEFAULT_CONFIG_FILE), default_config_file_path
         )
         self.assertEqual(
             config_path(str(default_config_file_path)), default_config_file_path
@@ -164,8 +163,8 @@ class TestArgumentParsing(TestWithOutputLocation):
         Test the int_power_of_two argument parser callback
         """
         self.assertEqual(
-            int_power_of_two(RUN_OPT_CONST.DEFAULT_CHUNK_SIZE),
-            RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+            int_power_of_two(RUN_CONST.DEFAULT_CHUNK_SIZE),
+            RUN_CONST.DEFAULT_CHUNK_SIZE,
         )
         self.assertEqual(
             int_power_of_two(TEST_CONST.TEST_CHUNK_SIZE), TEST_CONST.TEST_CHUNK_SIZE

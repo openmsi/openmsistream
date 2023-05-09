@@ -9,8 +9,9 @@ import datetime, warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto.message import KafkaCryptoMessage
+from ...utilities.config import RUN_CONST
 from ...utilities import Runnable
-from ..config import DATA_FILE_HANDLING_CONST, RUN_OPT_CONST
+from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_key_and_value_filenames
 from .. import DataFileDirectory, DownloadDataFileToDisk
 from .data_file_chunk_handlers import DataFileChunkProcessor
@@ -196,7 +197,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             "consumer_group_id",
             "download_regex",
         ]
-        kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
+        kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs
 
     @classmethod
