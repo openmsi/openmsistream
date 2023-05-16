@@ -9,10 +9,10 @@ from threading import Lock
 from queue import Queue
 from watchdog.observers import Observer
 from ...kafka_wrapper import ProducerGroup
+from ...utilities.config import RUN_CONST
 from ...utilities import Runnable, ControlledProcessSingleThread
 from ...utilities.misc import populated_kwargs
 from ...utilities.exception_tracking_thread import ExceptionTrackingThread
-from ..config import RUN_OPT_CONST
 from .. import DataFileDirectory
 from .file_registry.producer_file_registry import ProducerFileRegistry
 from ..entity.upload_data_file import UploadDataFile
@@ -59,7 +59,7 @@ class DataFileUploadDirectory(
         self,
         dirpath,
         config_path,
-        upload_regex=RUN_OPT_CONST.DEFAULT_UPLOAD_REGEX,
+        upload_regex=RUN_CONST.DEFAULT_UPLOAD_REGEX,
         datafile_type=UploadDataFile,
         **kwargs,
     ):
@@ -100,9 +100,9 @@ class DataFileUploadDirectory(
     def upload_files_as_added(
         self,
         topic_name,
-        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-        chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
-        max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+        n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
+        chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
+        max_queue_size=RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
         upload_existing=False,
     ):
         """
@@ -562,7 +562,7 @@ class DataFileUploadDirectory(
             "update_seconds",
             "upload_existing",
         ]
-        kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS}
+        kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_UPLOAD_THREADS}
         return args, kwargs
 
     @classmethod

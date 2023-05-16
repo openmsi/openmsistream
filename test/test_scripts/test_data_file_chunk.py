@@ -1,7 +1,7 @@
 # imports
 import pathlib
 from confluent_kafka.error import SerializationError
-from openmsistream.data_file_io.config import RUN_OPT_CONST
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
@@ -43,13 +43,13 @@ class TestDataFileChunk(TestWithLogger):
             TEST_CONST.TEST_CFG_FILE_PATH, logger=self.logger
         )
         producer.produce(
-            topic=RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+            topic=RUN_CONST.DEFAULT_TOPIC_NAME,
             key=self.test_chunk_1.msg_key,
             value=self.test_chunk_1.msg_value,
         )
         producer.flush()
         producer.produce(
-            topic=RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+            topic=RUN_CONST.DEFAULT_TOPIC_NAME,
             key=self.test_chunk_2.msg_key,
             value=self.test_chunk_2.msg_value,
         )
@@ -83,7 +83,7 @@ class TestDataFileChunk(TestWithLogger):
         )
         with self.assertRaises(SerializationError):
             producer.produce(
-                topic=RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+                topic=RUN_CONST.DEFAULT_TOPIC_NAME,
                 key=chunk_to_fail.msg_key,
                 value=chunk_to_fail.msg_value,
             )

@@ -1,5 +1,5 @@
 # imports
-from openmsistream.data_file_io.config import RUN_OPT_CONST
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
 from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamConsumer
 from openmsistream.kafka_wrapper.producer_group import ProducerGroup
@@ -78,7 +78,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
         """
         con_group = ConsumerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH,
-            RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+            RUN_CONST.DEFAULT_TOPIC_NAME,
             consumer_group_id="test_create_consumer_group",
             logger=self.logger,
         )
@@ -91,7 +91,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
         """
         con_group = ConsumerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            RUN_OPT_CONST.DEFAULT_TOPIC_NAME,
+            RUN_CONST.DEFAULT_TOPIC_NAME,
             consumer_group_id="test_create_consumer_group_encrypted",
             logger=self.logger,
         )

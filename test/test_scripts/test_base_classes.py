@@ -1,9 +1,9 @@
 # imports
 import pathlib, shutil, unittest, os, logging, time, datetime
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.data_file_io.config import RUN_OPT_CONST
 from openmsistream.data_file_io.entity.download_data_file import (
     DownloadDataFileToDisk,
     DownloadDataFileToMemory,
@@ -139,7 +139,7 @@ class TestWithUploadDataFile(TestWithLogger):
         cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
         topic_name="test",
         rootdir=None,
-        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+        n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
         chunk_size=TEST_CONST.TEST_CHUNK_SIZE,
     ):
         """
@@ -231,9 +231,9 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
     def start_upload_thread(
         self,
         topic_name="test",
-        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
+        n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
         chunk_size=TEST_CONST.TEST_CHUNK_SIZE,
-        max_queue_size=RUN_OPT_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+        max_queue_size=RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
         upload_existing=True,
     ):
         """
@@ -510,7 +510,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
         cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
         topic_name="test",
         output_dir=None,
-        n_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+        n_threads=RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         consumer_group_id="create_new",
         other_init_args=(),
         other_init_kwargs=None,
@@ -669,8 +669,8 @@ class TestWithStreamReproducer(TestWithOutputLocation):
         source_topic_name="test",
         dest_topic_name="test",
         output_dir=None,
-        n_producer_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-        n_consumer_threads=RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS,
+        n_producer_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
+        n_consumer_threads=RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         consumer_group_id="create_new",
         other_init_args=(),
         other_init_kwargs=None,

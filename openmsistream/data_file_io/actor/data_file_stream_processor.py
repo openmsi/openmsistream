@@ -2,7 +2,8 @@
 
 # imports
 from abc import ABC, abstractmethod
-from ..config import RUN_OPT_CONST, DATA_FILE_HANDLING_CONST
+from ...utilities.config import RUN_CONST
+from ..config import DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
 from .data_file_stream_handler import DataFileStreamHandler
 from .file_registry.stream_handler_registries import StreamProcessorRegistry
@@ -256,5 +257,5 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
         args = [*superargs, "topic_name", "download_regex"]
-        kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_DOWNLOAD_THREADS}
+        kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs

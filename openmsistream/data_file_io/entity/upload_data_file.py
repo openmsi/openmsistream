@@ -5,9 +5,9 @@ import time, datetime
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
+from ...utilities.config import RUN_CONST
 from ...utilities import Runnable
 from ...kafka_wrapper import ProducerGroup
-from ..config import RUN_OPT_CONST
 from .. import DataFile
 from .data_file_chunk import DataFileChunk
 
@@ -57,8 +57,8 @@ class UploadDataFile(DataFile, Runnable):
         self,
         config_path,
         topic_name,
-        n_threads=RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS,
-        chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+        n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
+        chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
     ):
         """
         Chunk and upload an entire file on disk to a broker's topic.
@@ -111,7 +111,7 @@ class UploadDataFile(DataFile, Runnable):
         self.logger.info(f"Done uploading {self.filepath}")
 
     def add_chunks_to_upload(
-        self, chunks_to_add=None, chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE
+        self, chunks_to_add=None, chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE
     ):
         """
         Add chunks from this file to the internal list of chunks to upload,
@@ -164,7 +164,7 @@ class UploadDataFile(DataFile, Runnable):
         self,
         queue,
         n_threads=None,
-        chunk_size=RUN_OPT_CONST.DEFAULT_CHUNK_SIZE,
+        chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
         queue_full_timeout=0.001,
     ):
         """
@@ -295,7 +295,7 @@ class UploadDataFile(DataFile, Runnable):
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
         args = [*superargs, "filepath", "config", "topic_name", "chunk_size"]
-        kwargs = {**superkwargs, "n_threads": RUN_OPT_CONST.N_DEFAULT_UPLOAD_THREADS}
+        kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_UPLOAD_THREADS}
         return args, kwargs
 
     @classmethod
