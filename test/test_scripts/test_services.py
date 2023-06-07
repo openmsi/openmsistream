@@ -25,9 +25,6 @@ class TestServices(TestWithOutputLocation):
         """
         super().setUp()
         self.argslists_by_class_name = {
-            "UploadDataFile": [
-                TEST_CONST.TEST_DATA_FILE_PATH,
-            ],
             "DataFileUploadDirectory": [
                 self.output_dir,
             ],
@@ -159,6 +156,10 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
+                if self.output_dir.exists():
+                    run_cmd_in_subprocess(
+                        ["sudo", "rm", "-rf", f'"{self.output_dir}"'], logger=self.logger
+                    )
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(

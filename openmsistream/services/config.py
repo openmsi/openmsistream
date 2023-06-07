@@ -36,7 +36,12 @@ class ServicesConstants:
         self.service_dicts = []
         for script in pkg_resources.iter_entry_points("console_scripts"):
             if script.dist.key == "openmsistream":
-                if script.name in ("InstallService", "ManageService", "ProvisionNode"):
+                if script.name in (
+                    "InstallService",
+                    "ManageService",
+                    "ProvisionNode",
+                    "UploadDataFile",
+                ):
                     continue
                 scriptstr = str(script)
                 cmd = (scriptstr.split())[0]
