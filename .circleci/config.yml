@@ -80,8 +80,10 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: set Python version to 3.9
-          command: pyenv global 3.9
+          name: set Python version to 3.9.16
+          command: |
+            pyenv install 3.9.16
+            pyenv global 3.9.16
       - python/install-packages:
           pkg-manager: pip
           args: .[test]
