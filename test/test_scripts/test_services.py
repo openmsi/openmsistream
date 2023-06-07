@@ -143,7 +143,7 @@ class TestServices(TestWithOutputLocation):
             finally:
                 if self.output_dir.exists():
                     run_cmd_in_subprocess(
-                        ["sudo", "rm", "-rf", f'{self.output_dir}'], logger=self.logger
+                        ["sudo", "rm", "-rf", f"{self.output_dir}"], logger=self.logger
                     )
                 service_path = (
                     SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
