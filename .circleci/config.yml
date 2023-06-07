@@ -17,6 +17,9 @@ workflows:
       - run-tests:
           requires:
             - run-tests-no-kafka
+      - run-tests-python37:
+          requires:
+            - run-tests
       - check-repo:
           requires:
             - run-tests
@@ -70,6 +73,31 @@ jobs:
   run-tests:
     docker:
       - image: openmsi/openmsistream-ci:1.5
+        auth:
+          username: $DOCKERHUB_USERNAME
+          password: $DOCKERHUB_TOKEN
+    parallelism: 15
+    resource_class: large
+    steps:
+      - attach_workspace:
+          at: .
+      - python/install-packages:
+          pkg-manager: pip
+          args: .[test]
+      - run:
+          name: run tests
+          command: |
+            cd test/test_scripts
+            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
+            python -m unittest $TESTCLASSES -v
+      - persist_to_workspace:
+          root: .
+          paths:
+              - .
+  # Run all tests in the python 3.7 image instead
+  run-tests:
+    docker:
+      - image: openmsi/openmsistream-ci-python37:v1.0
         auth:
           username: $DOCKERHUB_USERNAME
           password: $DOCKERHUB_TOKEN
