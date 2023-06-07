@@ -25,9 +25,6 @@ class TestServices(TestWithOutputLocation):
         """
         super().setUp()
         self.argslists_by_class_name = {
-            "UploadDataFile": [
-                TEST_CONST.TEST_DATA_FILE_PATH,
-            ],
             "DataFileUploadDirectory": [
                 self.output_dir,
             ],
@@ -74,9 +71,10 @@ class TestServices(TestWithOutputLocation):
                 )
                 manager.install_service()
                 for run_mode in ("start", "status", "stop", "remove", "reinstall"):
-                    time.sleep(1)
+                    self.log_at_info(f"Running {run_mode} for {service_name}....")
+                    time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
-                time.sleep(1)
+                time.sleep(5)
                 error_log_path = (
                     pathlib.Path().resolve()
                     / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
@@ -108,6 +106,8 @@ class TestServices(TestWithOutputLocation):
         self.assertTrue(len(SERVICE_CONST.available_services) > 0)
         for service_dict in SERVICE_CONST.available_services:
             try:
+                if not self.output_dir.is_dir():
+                    self.output_dir.mkdir()
                 service_class_name = service_dict["class"].__name__
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
@@ -126,9 +126,10 @@ class TestServices(TestWithOutputLocation):
                 )
                 manager.install_service()
                 for run_mode in ("start", "status", "stop", "remove", "reinstall"):
-                    time.sleep(1)
+                    time.sleep(5)
+                    self.log_at_info(f"Running {run_mode} for {service_name}....")
                     manager.run_manage_command(run_mode, False, False)
-                time.sleep(1)
+                time.sleep(5)
                 self.assertFalse(
                     (
                         SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
@@ -142,6 +143,10 @@ class TestServices(TestWithOutputLocation):
             except Exception as exc:
                 raise exc
             finally:
+                if self.output_dir.exists():
+                    run_cmd_in_subprocess(
+                        ["sudo", "rm", "-rf", f"{self.output_dir}"], logger=self.logger
+                    )
                 service_path = (
                     SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
                 )

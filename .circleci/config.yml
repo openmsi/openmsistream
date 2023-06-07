@@ -1,5 +1,32 @@
 version: 2.1
 
+################# Arguments to the pip install #################
+pip_install_block: &pip_install_block
+  pkg-manager: pip
+  args: .[test]
+
+################# Command to run tests #################
+run_tests_cmd: &run_tests_cmd
+  command: |
+    cd test/test_scripts
+    TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
+    python -m unittest $TESTCLASSES -v
+
+################# Kafka broker setup/teardown blocks #################
+
+kafka_setup: &kafka_setup
+  name: set up local Kafka broker
+  command: |
+    cd test
+    bash start_local_broker.sh
+    bash create_local_testing_topics.sh
+
+kafka_teardown: &kafka_teardown
+  name: shut down local Kafka broker
+  command: |
+    cd test
+    bash stop_local_broker.sh
+
 ################# ORB #################
 orbs:
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
@@ -17,13 +44,9 @@ workflows:
       - run-tests:
           requires:
             - run-tests-no-kafka
-      - run-tests-python37:
-          requires:
-            - run-tests-no-kafka
       - check-repo:
           requires:
             - run-tests
-            - run-tests-python37
 
 ################# JOBS #################
 jobs:
@@ -34,8 +57,7 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
+          <<: *pip_install_block
       - run:
           name: code check
           command: |
@@ -50,7 +72,7 @@ jobs:
           root: .
           paths:
             - .
-  # Run non-Kafka tests, without the environment variables set
+  # Run non-Kafka tests in the CI image
   run-tests-no-kafka:
     docker:
       - image: openmsi/openmsistream-ci:1.5
@@ -58,59 +80,58 @@ jobs:
       - attach_workspace:
           at: .
       - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
+          <<: *pip_install_block
       - run:
           name: run "no Kafka" tests
           command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
       - persist_to_workspace:
           root: .
           paths:
-              - .
-  # Run all tests, including those that send messages to the Kafka cluster
+            - .
+  # Run all tests in a Linux VM with a local Kafka broker
   run-tests:
-    docker:
-      - image: openmsi/openmsistream-ci:1.5
+    machine:
+      image: ubuntu-2204:current
     parallelism: 15
     resource_class: large
+    environment:
+      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
+      LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS: localhost:9092
     steps:
       - attach_workspace:
           at: .
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
       - run:
-          name: run tests
+          name: set Python version to 3.9.16
           command: |
-            cd test/test_scripts
-            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-            python -m unittest $TESTCLASSES -v
+            pyenv install 3.9.16
+            pyenv global 3.9.16
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
+      - run:
+          name: run tests in Python 3.9
+          <<: *run_tests_cmd
+      - run:
+          <<: *kafka_teardown
+      - run:
+          name: set Python version to 3.7.12
+          command: |
+            pyenv install 3.7.12
+            pyenv global 3.7.12
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
+      - run:
+          name: run tests in Python 3.7
+          <<: *run_tests_cmd
+      - run:
+          <<: *kafka_teardown
       - persist_to_workspace:
           root: .
           paths:
-              - .
-  # Run all tests in the python 3.7 image instead
-  run-tests-python37:
-    docker:
-      - image: openmsi/openmsistream-ci-python37:v1.0
-    parallelism: 15
-    resource_class: large
-    steps:
-      - attach_workspace:
-          at: .
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
-      - run:
-          name: run tests
-          command: |
-            cd test/test_scripts
-            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-            python -m unittest $TESTCLASSES -v
-      - persist_to_workspace:
-          root: .
-          paths:
-              - .
+            - .
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:

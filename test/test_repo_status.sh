@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/bash
 #Bash script to check the status of the git repo after all other tests are completed
 
 #Check for uncommitted changes
