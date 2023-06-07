@@ -35,7 +35,7 @@ SOURCE_TOPIC_NAME = (
 DEST_TOPIC_NAME = (
     TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]] + "_dest"
 )
-CONSUMER_GROUP_ID = "test_metadata_reproducer"
+CONSUMER_GROUP_ID = f"test_metadata_reproducer_{TEST_CONST.PY_VERSION}"
 
 
 class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):

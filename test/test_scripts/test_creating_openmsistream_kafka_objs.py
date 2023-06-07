@@ -79,7 +79,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
         con_group = ConsumerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH,
             RUN_CONST.DEFAULT_TOPIC_NAME,
-            consumer_group_id="test_create_consumer_group",
+            consumer_group_id=f"test_create_consumer_group_{TEST_CONST.PY_VERSION}",
             logger=self.logger,
         )
         self.assertTrue(con_group is not None)
@@ -92,7 +92,7 @@ class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
         con_group = ConsumerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
             RUN_CONST.DEFAULT_TOPIC_NAME,
-            consumer_group_id="test_create_consumer_group_encrypted",
+            consumer_group_id=f"test_create_consumer_group_encrypted_{TEST_CONST.PY_VERSION}",
             logger=self.logger,
         )
         self.assertTrue(con_group is not None)

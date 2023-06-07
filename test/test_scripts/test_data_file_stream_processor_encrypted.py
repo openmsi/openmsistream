@@ -20,7 +20,9 @@ class TestDataFileStreamProcessorEncrypted(
         topic_name = TEST_CONST.TEST_TOPIC_NAMES[
             "test_stream_processor_restart_encrypted"
         ]
-        consumer_group_id = "test_data_file_stream_processor_restart_encrypted"
+        consumer_group_id = (
+            f"test_data_file_stream_processor_restart_encrypted_{TEST_CONST.PY_VERSION}"
+        )
         # create and start the upload directory
         self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
         self.start_upload_thread(

@@ -26,7 +26,7 @@ OpenMSIStream provides Python applications for generalized laboratory, analysis,
    :target: https://github.com/PyCQA/pylint
    :alt: linting: pylint
 
-OpenMSIStream is free and open source. It's available on `PyPI <https://pypi.org/project/openmsistream/>`_ and on `GitHub <https://github.com/openmsi/openmsistream>`_. 
+OpenMSIStream is free and open source. It's available on `PyPI <https://pypi.org/project/openmsistream/>`_ and on `GitHub <https://github.com/openmsi/openmsistream>`_. It's also available as a public `Docker image <https://hub.docker.com/r/openmsi/openmsistream>`_.
 
 The development team can be reached at openmsistream@gmail.com. Please see :doc:`the page on support and contribution <user_info/support_and_contribution>` for ways to get help using OpenMSIStream, as well as information on how to request new functionality or contribute to the project. 
 

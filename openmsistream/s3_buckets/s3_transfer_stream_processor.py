@@ -136,7 +136,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
         s3_stream_proc.close()
         msg = (
             f"{n_read} total messages were consumed, {n_processed} messages were "
-            f"successfully processed, and {len(complete_filenames)} files were transferred "
+            f"successfully processed, and {n_complete} files were transferred "
             f"to the {args.bucket_name} bucket"
         )
         s3_stream_proc.logger.info(msg)

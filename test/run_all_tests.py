@@ -172,7 +172,7 @@ def start_local_broker_and_get_temp_env(args):
         LOGGER.info("Tests will be run using a local broker set up using Docker")
         try:
             run_cmd_in_subprocess(
-                ["sh", str(START_LOCAL_BROKER_SCRIPT_PATH)],
+                ["bash", str(START_LOCAL_BROKER_SCRIPT_PATH)],
                 logger=LOGGER,
                 reraise=True,
                 cwd=pathlib.Path(__file__).parent,
@@ -182,7 +182,7 @@ def start_local_broker_and_get_temp_env(args):
             )
             time.sleep(5)
             run_cmd_in_subprocess(
-                ["sh", str(CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH)],
+                ["bash", str(CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH)],
                 logger=LOGGER,
                 reraise=True,
                 cwd=pathlib.Path(__file__).parent,
@@ -291,7 +291,7 @@ def run_script_tests(args):
             temp_env_local_broker.__exit__()
             try:
                 run_cmd_in_subprocess(
-                    ["sh", str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
+                    ["bash", str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
                     logger=LOGGER,
                     reraise=True,
                     cwd=pathlib.Path(__file__).parent,
@@ -323,7 +323,7 @@ def test_repo_is_clean(args):
         ##make sure the Github repo is still clean from its initial state
         # LOGGER.info('Checking the status of the Git repo....')
         # p = subprocess.Popen(
-        #   f'sh {TEST_REPO_STATUS_SCRIPT_PATH}',
+        #   f'bash {TEST_REPO_STATUS_SCRIPT_PATH}',
         #   stdout=subprocess.PIPE,
         #   stderr=subprocess.PIPE,
         #   shell=True,

@@ -16,7 +16,7 @@ module = loader.load_module()  # pylint: disable=deprecated-method,no-value-for-
 TIMEOUT_SECS = 90
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "SC001_XRR.csv"
 TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
-CONSUMER_GROUP_ID = "test_plots_for_tutorial"
+CONSUMER_GROUP_ID = f"test_plots_for_tutorial_{TEST_CONST.PY_VERSION}"
 
 
 class TestPlotsForTutorial(TestWithUploadDataFile, TestWithStreamProcessor):

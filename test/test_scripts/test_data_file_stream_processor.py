@@ -17,7 +17,7 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         """
         self.create_stream_processor(
             topic_name=topic_name,
-            consumer_group_id=f"test_data_file_stream_processor_{mode}",
+            consumer_group_id=f"test_data_file_stream_processor_{mode}_{TEST_CONST.PY_VERSION}",
             other_init_kwargs={"mode": mode},
         )
         self.start_stream_processor_thread()
@@ -74,7 +74,9 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         topic_name = TEST_CONST.TEST_TOPIC_NAMES[
             "test_data_file_stream_processor_restart_kafka"
         ]
-        consumer_group_id = "test_data_file_stream_processor_restart"
+        consumer_group_id = (
+            f"test_data_file_stream_processor_restart_{TEST_CONST.PY_VERSION}"
+        )
         # upload the data files
         self.upload_single_file(
             TEST_CONST.TEST_DATA_FILE_PATH,

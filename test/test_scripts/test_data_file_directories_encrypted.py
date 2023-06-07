@@ -43,7 +43,7 @@ class TestDataFileDirectoriesEncrypted(
         self.create_download_directory(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
             topic_name=TOPIC_NAME,
-            consumer_group_id="test_encrypted_data_file_directories",
+            consumer_group_id=f"test_encrypted_data_file_directories_{TEST_CONST.PY_VERSION}",
         )
         self.start_download_thread()
         time.sleep(10)

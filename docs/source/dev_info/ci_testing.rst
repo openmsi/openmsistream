@@ -2,7 +2,7 @@
 Code Tests
 ==========
 
-There are several tests for the codebase already written (and more will be added over time). The repo also has a continuous integration workflow set up on `CircleCI <https://circleci.com/>`_, and the checks in that workflow must pass successfully on any branch being merged into main via a Pull Request.  
+There are several tests for the codebase already written (and more will be added over time). The repo also has a continuous integration workflow set up on `CircleCI <https://circleci.com/>`_, and the checks in that workflow must pass successfully on any branch being merged into main via a Pull Request. OpenMSIStream is tested in Ubuntu 22.04 Linux. 
 
 Running tests interactively 
 ---------------------------
@@ -34,7 +34,7 @@ or similar.
 CircleCI website
 ----------------
 
-On the CircleCI website you can manually run tests on any branch you'd like. Tests will also automatically run for each commit on every branch, and must pass to merge any pull requests into the main branch. The configuration for CircleCI is in the `.circleci/config.yml file in the root directory of the repository <https://github.com/openmsi/openmsistream/blob/main/.circleci/config.yml>`_. Tests on CircleCI use the same environment as the official public `Docker image <https://hub.docker.com/repository/docker/openmsi/openmsistream/general>`_.
+On the CircleCI website you can manually run tests on any branch you'd like. Tests will also automatically run for each commit on every branch, and must pass to merge any pull requests into the main branch. The configuration for CircleCI is in the `.circleci/config.yml file in the root directory of the repository <https://github.com/openmsi/openmsistream/blob/main/.circleci/config.yml>`_. Tests on CircleCI use the same environment as the official public `Docker image <https://hub.docker.com/r/openmsi/openmsistream>`_.
 
 Running tests successfully on CircleCI requires that the Project on CircleCI has environment variables for the test broker username and password registered within it, as well as environment variables to allow access to the openmsi DockerHub organization, and environment variables to connect to the S3 bucket used for testing.
 

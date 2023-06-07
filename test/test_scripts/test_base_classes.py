@@ -89,7 +89,10 @@ class TestWithOutputLocation(TestWithLogger):
         """
         # If output directory isn't set, set it to a directory named for the test function
         if self.output_dir is None:
-            self.output_dir = TEST_CONST.TEST_DIR_PATH / f"{self._testMethodName}_output"
+            self.output_dir = (
+                TEST_CONST.TEST_DIR_PATH
+                / f"{self._testMethodName}_output_{TEST_CONST.PY_VERSION}"
+            )
         # if output from a previous test already exists, remove it
         if self.output_dir.is_dir():
             self.log_at_info(f"Will delete existing output location at {self.output_dir}")
@@ -113,7 +116,8 @@ class TestWithOutputLocation(TestWithLogger):
                 self.logger.debug(
                     f"Test success={self.success}; removing output in {self.output_dir}"
                 )
-                shutil.rmtree(self.output_dir)
+                if self.output_dir.exists():
+                    shutil.rmtree(self.output_dir)
             except Exception as exc:  # pylint: disable=broad-except
                 self.logger.error(
                     f"ERROR: failed to remove test output at {self.output_dir}!",

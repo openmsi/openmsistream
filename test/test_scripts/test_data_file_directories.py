@@ -137,9 +137,12 @@ class TestDataFileDirectories(
         upload_regex = re.compile(r"^.*\.(dat|config)$")
         download_regex = re.compile(r"^.*\.dat$")
         self.run_data_file_upload_directory(files_roots, upload_regex=upload_regex)
+        consumer_group_id = (
+            f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
+        )
         self.run_data_file_download_directory(
             files_roots,
-            consumer_group_id="run_data_file_download_directory_with_regexes",
+            consumer_group_id=consumer_group_id,
             filepath_regex=download_regex,
         )
         self.success = True  # pylint: disable=attribute-defined-outside-init

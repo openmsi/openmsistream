@@ -1,5 +1,5 @@
 # imports
-import os, pathlib
+import os, pathlib, sys
 from openmsistream.utilities.config import RUN_CONST
 
 
@@ -121,6 +121,10 @@ class TestRoutineConstants:
         "KAFKA_TEST_CLUSTER_USERNAME",
         "KAFKA_TEST_CLUSTER_PASSWORD",
     ]
+
+    # Version tag to use for separating output locations, consumer group IDs, etc.
+    # for concurrently-running tests
+    PY_VERSION = f"python_{sys.version.split()[0].replace('.','_')}"
 
 
 TEST_CONST = TestRoutineConstants()
