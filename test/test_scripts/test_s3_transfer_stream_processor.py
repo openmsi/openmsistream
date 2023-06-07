@@ -47,7 +47,7 @@ class TestS3TransferStreamProcessor(
             S3TransferStreamProcessor,
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
             topic_name=TOPIC_NAME,
-            consumer_group_id="test_s3_transfer",
+            consumer_group_id=f"test_s3_transfer_{TEST_CONST.PY_VERSION}",
             other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
         )
         self.start_stream_processor_thread(self.stream_processor.make_stream)

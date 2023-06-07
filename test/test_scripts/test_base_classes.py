@@ -89,9 +89,9 @@ class TestWithOutputLocation(TestWithLogger):
         """
         # If output directory isn't set, set it to a directory named for the test function
         if self.output_dir is None:
-            version_tag = f"python_{sys.version.split()[0].replace('.','_')}"
             self.output_dir = (
-                TEST_CONST.TEST_DIR_PATH / f"{self._testMethodName}_output_{version_tag}"
+                TEST_CONST.TEST_DIR_PATH
+                / f"{self._testMethodName}_output_{TEST_CONST.PY_VERSION}"
             )
         # if output from a previous test already exists, remove it
         if self.output_dir.is_dir():
