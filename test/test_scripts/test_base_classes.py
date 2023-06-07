@@ -1,5 +1,5 @@
 # imports
-import pathlib, shutil, unittest, os, logging, time, datetime, sys
+import pathlib, shutil, unittest, os, logging, time, datetime
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
