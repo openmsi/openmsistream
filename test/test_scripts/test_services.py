@@ -73,7 +73,14 @@ class TestServices(TestWithOutputLocation):
                     logger=self.logger,
                 )
                 manager.install_service()
-                for run_mode in ("start", "status", "stop", "remove", "reinstall", "remove"):
+                for run_mode in (
+                    "start",
+                    "status",
+                    "stop",
+                    "remove",
+                    "reinstall",
+                    "remove",
+                ):
                     time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
                 time.sleep(5)
@@ -125,7 +132,14 @@ class TestServices(TestWithOutputLocation):
                     logger=self.logger,
                 )
                 manager.install_service()
-                for run_mode in ("start", "status", "stop", "remove", "reinstall", "remove"):
+                for run_mode in (
+                    "start",
+                    "status",
+                    "stop",
+                    "remove",
+                    "reinstall",
+                    "remove",
+                ):
                     time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
                 time.sleep(5)
