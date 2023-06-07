@@ -141,6 +141,10 @@ class TestServices(TestWithOutputLocation):
             except Exception as exc:
                 raise exc
             finally:
+                if self.output_dir.exists():
+                    run_cmd_in_subprocess(
+                        ["sudo", "rm", "-rf", f'{self.output_dir}'], logger=self.logger
+                    )
                 service_path = (
                     SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
                 )
@@ -156,10 +160,6 @@ class TestServices(TestWithOutputLocation):
                 for fp in fps_to_unlink:
                     if fp.exists():
                         fp.unlink()
-                if self.output_dir.exists():
-                    run_cmd_in_subprocess(
-                        ["sudo", "rm", "-rf", f'"{self.output_dir}"'], logger=self.logger
-                    )
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     @unittest.skipIf(

@@ -116,7 +116,8 @@ class TestWithOutputLocation(TestWithLogger):
                 self.logger.debug(
                     f"Test success={self.success}; removing output in {self.output_dir}"
                 )
-                shutil.rmtree(self.output_dir)
+                if self.output_dir.exists():
+                    shutil.rmtree(self.output_dir)
             except Exception as exc:  # pylint: disable=broad-except
                 self.logger.error(
                     f"ERROR: failed to remove test output at {self.output_dir}!",
