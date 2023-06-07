@@ -96,7 +96,7 @@ class TestS3TransferStreamProcessor(
             try:
                 if filepath.is_relative_to(log_subdir):
                     continue
-            except AttributeError: # "is_relative_to" was added after python 3.7
+            except AttributeError:  # "is_relative_to" was added after python 3.7
                 if str(filepath).startswith(str(log_subdir)):
                     continue
             file_hash = self.hash_file(filepath)
