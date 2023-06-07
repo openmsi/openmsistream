@@ -1,5 +1,20 @@
 version: 2.1
 
+################# Kafka broker setup/teardown blocks #################
+
+kafka_setup: &kafka_setup
+  name: set up local Kafka broker
+  command: |
+    cd test
+    bash start_local_broker.sh
+    bash create_local_testing_topics.sh
+
+kafka_teardown: &kafka_teardown
+  name: shut down local Kafka broker
+  command: |
+    cd test
+    bash stop_local_broker.sh
+
 ################# ORB #################
 orbs:
   # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
@@ -88,45 +103,50 @@ jobs:
           pkg-manager: pip
           args: .[test]
       - run:
-          name: set up local Kafka broker
-          command: |
-            cd test
-            bash start_local_broker.sh
-            bash create_local_testing_topics.sh
+          <<: *kafka_setup
       - run:
-          name: run tests
+          name: run tests in Python 3.9
           command: |
             python --version
             cd test/test_scripts
             TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
             python -m unittest $TESTCLASSES -v
       - run:
-          name: shut down local Kafka broker
-          command: |
-            cd test
-            bash stop_local_broker.sh
+          <<: *kafka_teardown
       - persist_to_workspace:
           root: .
           paths:
             - .
-  # Run all tests in the python 3.7 image instead
+  # Run all tests in python 3.7 instead
   run-tests-python37:
-    docker:
-      - image: openmsi/openmsistream-ci-python37:v1.0
+    machine:
+      image: ubuntu-2204:current
     parallelism: 15
     resource_class: large
+    environment:
+      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
+      LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS: localhost:9092
     steps:
       - attach_workspace:
           at: .
+      - run:
+          name: set Python version to 3.7.4
+          command: |
+            pyenv install 3.7.4
+            pyenv global 3.7.4
       - python/install-packages:
           pkg-manager: pip
           args: .[test]
       - run:
-          name: run tests
+          <<: *kafka_setup
+      - run:
+          name: run tests in Python 3.7
           command: |
             cd test/test_scripts
             TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
             python -m unittest $TESTCLASSES -v
+      - run:
+          <<: *kafka_teardown
       - persist_to_workspace:
           root: .
           paths:

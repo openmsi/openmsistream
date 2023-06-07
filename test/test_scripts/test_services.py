@@ -73,10 +73,10 @@ class TestServices(TestWithOutputLocation):
                     logger=self.logger,
                 )
                 manager.install_service()
-                for run_mode in ("start", "status", "stop", "remove", "reinstall"):
-                    time.sleep(1)
+                for run_mode in ("start", "status", "stop", "remove", "reinstall", "remove"):
+                    time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
-                time.sleep(1)
+                time.sleep(5)
                 error_log_path = (
                     pathlib.Path().resolve()
                     / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
@@ -125,10 +125,10 @@ class TestServices(TestWithOutputLocation):
                     logger=self.logger,
                 )
                 manager.install_service()
-                for run_mode in ("start", "status", "stop", "remove", "reinstall"):
-                    time.sleep(1)
+                for run_mode in ("start", "status", "stop", "remove", "reinstall", "remove"):
+                    time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
-                time.sleep(1)
+                time.sleep(5)
                 self.assertFalse(
                     (
                         SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
