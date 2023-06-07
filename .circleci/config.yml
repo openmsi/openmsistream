@@ -57,6 +57,9 @@ jobs:
     steps:
       - attach_workspace:
           at: .
+      - python/install-packages:
+          pkg-manager: pip
+          args: .[test]
       - run:
           name: run "no Kafka" tests
           command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
