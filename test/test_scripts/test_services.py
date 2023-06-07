@@ -53,6 +53,8 @@ class TestServices(TestWithOutputLocation):
         self.assertTrue(len(SERVICE_CONST.available_services) > 0)
         for service_dict in SERVICE_CONST.available_services:
             try:
+                if not self.output_dir.is_dir():
+                    self.output_dir.mkdir()
                 service_class_name = service_dict["class"].__name__
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
