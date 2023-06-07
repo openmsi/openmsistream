@@ -95,7 +95,7 @@ class LinuxServiceManager(ServiceManagerBase):
                 f"Try invoking systemctl status {self.service_name}.service manually."
             )
             self.logger.warning(warnmsg)
-        else :
+        else:
             self.logger.info(f"{self.service_name} status: {result.decode()}")
 
     def stop_service(self):
