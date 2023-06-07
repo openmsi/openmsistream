@@ -19,10 +19,11 @@ workflows:
             - run-tests-no-kafka
       - run-tests-python37:
           requires:
-            - run-tests
+            - run-tests-no-kafka
       - check-repo:
           requires:
             - run-tests
+            - run-tests-python37
 
 ################# JOBS #################
 jobs:
