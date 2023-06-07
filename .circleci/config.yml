@@ -95,7 +95,7 @@ jobs:
           paths:
               - .
   # Run all tests in the python 3.7 image instead
-  run-tests:
+  run-tests-python37:
     docker:
       - image: openmsi/openmsistream-ci-python37:v1.0
         auth:
