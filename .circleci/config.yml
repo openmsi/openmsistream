@@ -107,7 +107,7 @@ jobs:
       - run:
           name: run tests in Python 3.9
           command: |
-            python --version
+            whoami
             cd test/test_scripts
             TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
             python -m unittest $TESTCLASSES -v
