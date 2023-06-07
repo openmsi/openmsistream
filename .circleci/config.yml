@@ -130,10 +130,10 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: set Python version to 3.7.4
+          name: set Python version to 3.7.12
           command: |
-            pyenv install 3.7.4
-            pyenv global 3.7.4
+            pyenv install 3.7.12
+            pyenv global 3.7.12
       - python/install-packages:
           pkg-manager: pip
           args: .[test]

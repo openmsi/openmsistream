@@ -89,7 +89,14 @@ class LinuxServiceManager(ServiceManagerBase):
             ["sudo", "systemctl", "status", f"{self.service_name}.service"],
             logger=self.logger,
         )
-        self.logger.info(f"{self.service_name} status: {result.decode()}")
+        if not result:
+            warnmsg = (
+                f"Failed getting status for service {self.service_name}. "
+                f"Try invoking systemctl status {self.service_name}.service manually."
+            )
+            self.logger.warning(warnmsg)
+        else :
+            self.logger.info(f"{self.service_name} status: {result.decode()}")
 
     def stop_service(self):
         """
