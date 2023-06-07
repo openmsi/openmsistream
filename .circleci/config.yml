@@ -34,22 +34,22 @@ jobs:
     steps:
       - checkout
       - python/install-packages:
-        pkg-manager: pip
-        args: .[test]
+          pkg-manager: pip
+          args: .[test]
       - run:
-        name: code check
-        command: |
-          cd ~/project
-          python -m pyflakes .
-          black openmsistream --check
-          black test --check
-          python -m pylint openmsistream
-          python -m pylint --recursive=y test
-          cd -
+          name: code check
+          command: |
+            cd ~/project
+            python -m pyflakes .
+            black openmsistream --check
+            black test --check
+            python -m pylint openmsistream
+            python -m pylint --recursive=y test
+            cd -
       - persist_to_workspace:
-        root: .
-        paths:
-          - .
+          root: .
+          paths:
+            - .
   # Run non-Kafka tests, without the environment variables set
   run-tests-no-kafka:
     docker:
