@@ -91,8 +91,14 @@ class TestS3TransferStreamProcessor(
         s3d = S3DataTransfer(s3_config, logger=self.logger)
         log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
         for filepath in self.watched_dir.rglob("*"):
-            if filepath.is_relative_to(log_subdir) or filepath.is_dir():
+            if filepath.is_dir():
                 continue
+            try:
+                if filepath.is_relative_to(log_subdir):
+                    continue
+            except AttributeError: # "is_relative_to" was added after python 3.7
+                if str(filepath).startswith(str(log_subdir)):
+                    continue
             file_hash = self.hash_file(filepath)
             object_key = f"{TOPIC_NAME}/{filepath.relative_to(self.watched_dir)}"
             if not (

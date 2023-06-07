@@ -100,8 +100,12 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
         if not filepath.is_file():
             return False
         # must be relative to the upload directory
-        if not filepath.is_relative_to(self.__rootdir):
-            return False
+        try:
+            if not filepath.is_relative_to(self.__rootdir):
+                return False
+        except AttributeError: # "is_relative_to" was added after 3.7
+            if not str(filepath).startswith(str(self.__rootdir)):
+                return False
         # must be outside the logs subdirectory
         if self._logs_subdir in filepath.parents:
             return False
