@@ -103,7 +103,7 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
         try:
             if not filepath.is_relative_to(self.__rootdir):
                 return False
-        except AttributeError: # "is_relative_to" was added after 3.7
+        except AttributeError:  # "is_relative_to" was added after 3.7
             if not str(filepath).startswith(str(self.__rootdir)):
                 return False
         # must be outside the logs subdirectory
