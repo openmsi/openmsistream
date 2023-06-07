@@ -1,19 +1,34 @@
 version: 2.1
 
+################# Command to run the pip install #################
+run_pip_install: &run_pip_install
+  - python/install-packages:
+      pkg-manager: pip
+      args: .[test]
+
+################# Command to run tests #################
+run_tests_cmd: &run_tests_cmd
+  command: |
+    cd test/test_scripts
+    TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
+    python -m unittest $TESTCLASSES -v
+
 ################# Kafka broker setup/teardown blocks #################
 
 kafka_setup: &kafka_setup
-  name: set up local Kafka broker
-  command: |
-    cd test
-    bash start_local_broker.sh
-    bash create_local_testing_topics.sh
+  - run:
+      name: set up local Kafka broker
+      command: |
+        cd test
+        bash start_local_broker.sh
+        bash create_local_testing_topics.sh
 
 kafka_teardown: &kafka_teardown
-  name: shut down local Kafka broker
-  command: |
-    cd test
-    bash stop_local_broker.sh
+  - run:
+      name: shut down local Kafka broker
+      command: |
+        cd test
+        bash stop_local_broker.sh
 
 ################# ORB #################
 orbs:
@@ -32,13 +47,9 @@ workflows:
       - run-tests:
           requires:
             - run-tests-no-kafka
-      - run-tests-python37:
-          requires:
-            - run-tests-no-kafka
       - check-repo:
           requires:
             - run-tests
-            - run-tests-python37
 
 ################# JOBS #################
 jobs:
@@ -48,9 +59,7 @@ jobs:
       - image: openmsi/openmsistream-ci:1.5
     steps:
       - checkout
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
+      <<: *run_pip_install
       - run:
           name: code check
           command: |
@@ -65,16 +74,14 @@ jobs:
           root: .
           paths:
             - .
-  # Run non-Kafka tests, without the environment variables set
+  # Run non-Kafka tests in the ci image
   run-tests-no-kafka:
     docker:
       - image: openmsi/openmsistream-ci:1.5
     steps:
       - attach_workspace:
           at: .
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
+      <<: *run_pip_install
       - run:
           name: run "no Kafka" tests
           command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
@@ -99,57 +106,27 @@ jobs:
           command: |
             pyenv install 3.9.16
             pyenv global 3.9.16
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
-      - run:
-          <<: *kafka_setup
+      <<: *run_pip_install
+      <<: *kafka_setup
       - run:
           name: run tests in Python 3.9
-          command: |
-            cd test/test_scripts
-            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-            python -m unittest $TESTCLASSES -v
-      - run:
-          <<: *kafka_teardown
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-  # Run all tests in python 3.7 instead
-  run-tests-python37:
-    machine:
-      image: ubuntu-2204:current
-    parallelism: 15
-    resource_class: large
-    environment:
-      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
-      LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS: localhost:9092
-    steps:
-      - attach_workspace:
-          at: .
+          <<: *run_tests_cmd
+      <<: *kafka_teardown
       - run:
           name: set Python version to 3.7.12
           command: |
             pyenv install 3.7.12
             pyenv global 3.7.12
-      - python/install-packages:
-          pkg-manager: pip
-          args: .[test]
-      - run:
-          <<: *kafka_setup
+      <<: *run_pip_install
+      <<: *kafka_setup
       - run:
           name: run tests in Python 3.7
-          command: |
-            cd test/test_scripts
-            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-            python -m unittest $TESTCLASSES -v
-      - run:
-          <<: *kafka_teardown
+          <<: *run_tests_cmd
+      <<: *kafka_teardown
       - persist_to_workspace:
           root: .
           paths:
-              - .
+            - .
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:
