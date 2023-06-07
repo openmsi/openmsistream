@@ -56,14 +56,14 @@ jobs:
       - image: openmsi/openmsistream-ci:1.5
     steps:
       - attach_workspace:
-        at: .
+          at: .
       - run:
-        name: run "no Kafka" tests
-        command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
+          name: run "no Kafka" tests
+          command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
       - persist_to_workspace:
-        root: .
-        paths:
-          - .
+          root: .
+          paths:
+            - .
   # Run all tests, including those that send messages to the Kafka cluster
   run-tests:
     machine:
@@ -75,35 +75,35 @@ jobs:
       LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS: localhost:9092
     steps:
       - attach_workspace:
-        at: .
+          at: .
       - run:
-        name: set Python version to 3.9
-        command: pyenv global 3.9
+          name: set Python version to 3.9
+          command: pyenv global 3.9
       - python/install-packages:
-        pkg-manager: pip
-        args: .[test]
+          pkg-manager: pip
+          args: .[test]
       - run:
-        name: set up local Kafka broker
-        command: |
-          cd test
-          sh start_local_broker.sh
-          sh create_local_testing_topics.sh
+          name: set up local Kafka broker
+          command: |
+            cd test
+            sh start_local_broker.sh
+            sh create_local_testing_topics.sh
       - run:
-        name: run tests
-        command: |
-          python --version
-          cd test/test_scripts
-          TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-          python -m unittest $TESTCLASSES -v
+          name: run tests
+          command: |
+            python --version
+            cd test/test_scripts
+            TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
+            python -m unittest $TESTCLASSES -v
       - run:
-        name: shut down local Kafka broker
-        command: |
-          cd test
-          sh stop_local_broker.sh
+          name: shut down local Kafka broker
+          command: |
+            cd test
+            sh stop_local_broker.sh
       - persist_to_workspace:
-        root: .
-        paths:
-          - .
+          root: .
+          paths:
+            - .
   # Run all tests in the python 3.7 image instead
   run-tests-python37:
     docker:
