@@ -1,10 +1,9 @@
 version: 2.1
 
-################# Command to run the pip install #################
-run_pip_install: &run_pip_install
-  - python/install-packages:
-      pkg-manager: pip
-      args: .[test]
+################# Arguments to the pip install #################
+pip_install_block: &pip_install_block
+  pkg-manager: pip
+  args: .[test]
 
 ################# Command to run tests #################
 run_tests_cmd: &run_tests_cmd
@@ -16,19 +15,17 @@ run_tests_cmd: &run_tests_cmd
 ################# Kafka broker setup/teardown blocks #################
 
 kafka_setup: &kafka_setup
-  - run:
-      name: set up local Kafka broker
-      command: |
-        cd test
-        bash start_local_broker.sh
-        bash create_local_testing_topics.sh
+  name: set up local Kafka broker
+  command: |
+    cd test
+    bash start_local_broker.sh
+    bash create_local_testing_topics.sh
 
 kafka_teardown: &kafka_teardown
-  - run:
-      name: shut down local Kafka broker
-      command: |
-        cd test
-        bash stop_local_broker.sh
+  name: shut down local Kafka broker
+  command: |
+    cd test
+    bash stop_local_broker.sh
 
 ################# ORB #################
 orbs:
@@ -59,7 +56,8 @@ jobs:
       - image: openmsi/openmsistream-ci:1.5
     steps:
       - checkout
-      <<: *run_pip_install
+      - python/install-packages:
+          <<: *pip_install_block
       - run:
           name: code check
           command: |
@@ -74,14 +72,15 @@ jobs:
           root: .
           paths:
             - .
-  # Run non-Kafka tests in the ci image
+  # Run non-Kafka tests in the CI image
   run-tests-no-kafka:
     docker:
       - image: openmsi/openmsistream-ci:1.5
     steps:
       - attach_workspace:
           at: .
-      <<: *run_pip_install
+      - python/install-packages:
+          <<: *pip_install_block
       - run:
           name: run "no Kafka" tests
           command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
@@ -89,7 +88,7 @@ jobs:
           root: .
           paths:
             - .
-  # Run all tests, including those that send messages to the Kafka cluster
+  # Run all tests in a Linux VM with a local Kafka broker
   run-tests:
     machine:
       image: ubuntu-2204:current
@@ -106,23 +105,29 @@ jobs:
           command: |
             pyenv install 3.9.16
             pyenv global 3.9.16
-      <<: *run_pip_install
-      <<: *kafka_setup
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
       - run:
           name: run tests in Python 3.9
           <<: *run_tests_cmd
-      <<: *kafka_teardown
+      - run:
+          <<: *kafka_teardown
       - run:
           name: set Python version to 3.7.12
           command: |
             pyenv install 3.7.12
             pyenv global 3.7.12
-      <<: *run_pip_install
-      <<: *kafka_setup
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
       - run:
           name: run tests in Python 3.7
           <<: *run_tests_cmd
-      <<: *kafka_teardown
+      - run:
+          <<: *kafka_teardown
       - persist_to_workspace:
           root: .
           paths:
