@@ -4,11 +4,6 @@ from openmsistream.utilities.config import RUN_CONST
 from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.data_file_io.entity.download_data_file import (
-    DownloadDataFileToDisk,
-    DownloadDataFileToMemory,
-    DownloadDataFileToMemoryAndDisk,
-)
 from openmsistream import (
     DataFileUploadDirectory,
     DataFileDownloadDirectory,
