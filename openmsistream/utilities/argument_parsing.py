@@ -274,7 +274,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
             "optional",
             {
                 "default": RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
-                "type": int,
+                "type": positive_int,
                 "help": (
                     "Maximum allowed size in MB of the internal upload queue. "
                     "Use to adjust RAM usage if necessary."
@@ -313,6 +313,17 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
                     "Add this flag to upload files already existing in addition to those "
                     "added to the directory after this code starts running (by default "
                     "only files added after startup will be uploaded)"
+                ),
+            },
+        ],
+        "watchdog_lag_time": [
+            "optional",
+            {
+                "default": RUN_CONST.DEFAULT_WATCHDOG_LAG_TIME,
+                "type": int,
+                "help": (
+                    "Number of seconds that a file must remain static (unmodified) "
+                    "for its upload to begin"
                 ),
             },
         ],

@@ -35,6 +35,8 @@ class RunConstants:
     DEFAULT_CHUNK_SIZE = 524288
     # default maximum size (in MB) of the internal upload Queue
     DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES = 500
+    # default number of seconds that a file must remain static for uploading to start
+    DEFAULT_WATCHDOG_LAG_TIME = 3
 
 
 RUN_CONST = RunConstants()
