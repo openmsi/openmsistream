@@ -439,23 +439,11 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
             return ValueError(
                 f"ERROR: testing processing for {datafile.filename} is set to fail!"
             )
-        # make sure that the file has the right properties for its type, and get its bytestring
-        bytestring = None
-        if self.datafile_type == DownloadDataFileToDisk:
-            with open(datafile.full_filepath, "rb") as fp:
-                bytestring = fp.read()
-        elif self.datafile_type in (
-            DownloadDataFileToMemory,
-            DownloadDataFileToMemoryAndDisk,
-        ):
-            bytestring = datafile.bytestring
-        else:
-            raise ValueError(
-                f"ERROR: unrecognized download data file type {self.datafile_type}"
-            )
         # add the filename and bytestring to the list
         with lock:
-            self.completed_filenames_bytestrings.append((datafile.filename, bytestring))
+            self.completed_filenames_bytestrings.append(
+                (datafile.filename, datafile.bytestring)
+            )
         return None
 
     def _failed_processing_callback(self, datafile, lock):
