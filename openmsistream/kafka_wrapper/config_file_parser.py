@@ -154,7 +154,6 @@ class KafkaConfigFileParser(ConfigFileParser):
                     f"(expected one of {filepaths})"
                 )
                 self.logger.error(errmsg, exc_type=FileNotFoundError)
-                return str(filepath)
         # no config file found
         return None
 
