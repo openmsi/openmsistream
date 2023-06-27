@@ -23,7 +23,6 @@ docker exec local_kafka_broker kafka-topics --bootstrap-server broker:9092 --cre
 docker exec local_kafka_broker kafka-topics --bootstrap-server broker:9092 --create --topic test_s3_transfer_stream_processor
 
 docker exec local_kafka_broker kafka-topics --bootstrap-server broker:9092 --create --topic test_metadata_extractor_source
-
 docker exec local_kafka_broker kafka-topics --bootstrap-server broker:9092 --create --topic test_metadata_extractor_dest
 
 docker exec local_kafka_broker kafka-topics --bootstrap-server broker:9092 --create --topic test_plots_for_tutorial

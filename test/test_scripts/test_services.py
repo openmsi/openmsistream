@@ -124,6 +124,7 @@ class TestServices(TestWithOutputLocation):
                     interactive=False,
                     logger=self.logger,
                 )
+                self.log_at_info(f"Installing {service_name}...")
                 manager.install_service()
                 for run_mode in ("start", "status", "stop", "remove", "reinstall"):
                     time.sleep(5)
