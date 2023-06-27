@@ -409,6 +409,46 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
                 ),
             },
         ],
+        "girder_api_url": [
+            "positional",
+            {
+                "help": (
+                    "The full path to the REST API of a Girder instance, "
+                    "e.g. http://my.girder.com/api/v1."
+                )
+            },
+        ],
+        "girder_api_key": [
+            "positional",
+            {"help": "The API key to use for authenticating to the Girder instance"},
+        ],
+        "collection_name": [
+            "optional",
+            {
+                "default": "WholeTale Catalog",
+                "help": "The name of the top-level Collection to which files should be uploaded",
+            },
+        ],
+        "girder_root_folder": [
+            "optional",
+            {
+                "help": (
+                    "The name of the Folder inside the top-level Collection relative to "
+                    "which files should be uploaded. A path to a subdirectory in the "
+                    "Collection can be given using forward slashes. "
+                    "(default = collection_name/topic_name)"
+                ),
+            },
+        ],
+        "provider": [
+            "optional",
+            {
+                "help": (
+                    'Adding this argument will add a corresponding "provider" metadata '
+                    "field to all created folders and items"
+                ),
+            },
+        ],
     }
 
     #################### OVERLOADED FUNCTIONS ####################
