@@ -52,9 +52,10 @@ setupkwargs = dict(
         "test": [
             "beautifulsoup4",
             "black",
+            "docker",
             "gitpython",
             "lxml",
-            "marko[toc]",
+            "marko[toc]==1.3.0",
             "pyflakes>=3.0.1",
             "pylint>=2.16.3",
             "tempenv>=2.0.0",
