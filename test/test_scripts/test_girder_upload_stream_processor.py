@@ -1,7 +1,7 @@
 # imports
 import pathlib, time, subprocess, unittest
 from hashlib import sha512
-import requests, docker, girder_client # pylint: disable=wrong-import-order
+import requests, docker, girder_client  # pylint: disable=wrong-import-order
 from openmsistream.girder import GirderUploadStreamProcessor
 from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
@@ -32,8 +32,8 @@ class TestGirderUploadStreamProcessor(TestWithUploadDataFile, TestWithStreamProc
 
     HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
-    def __init__(self,*args,**kwargs):
-        super().__init__(*args,**kwargs)
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
         self.assetstore_id = None
         self.api_key = None
         self.api_key_id = None
