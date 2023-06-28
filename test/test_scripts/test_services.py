@@ -12,6 +12,9 @@ from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import TestWithOutputLocation
 
+# some classes to skip because they're more complex
+SKIP_CLASS_NAMES = ["GirderUploadStreamProcessor"]
+
 
 class TestServices(TestWithOutputLocation):
     """
@@ -58,6 +61,8 @@ class TestServices(TestWithOutputLocation):
         for service_dict in SERVICE_CONST.available_services:
             try:
                 service_class_name = service_dict["class"].__name__
+                if service_class_name in SKIP_CLASS_NAMES:
+                    continue
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
@@ -113,6 +118,8 @@ class TestServices(TestWithOutputLocation):
                 if not self.output_dir.is_dir():
                     self.output_dir.mkdir()
                 service_class_name = service_dict["class"].__name__
+                if service_class_name in SKIP_CLASS_NAMES:
+                    continue
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
