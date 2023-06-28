@@ -60,6 +60,7 @@ setupkwargs = dict(
             "marko[toc]==1.3.0",
             "pyflakes>=3.0.1",
             "pylint>=2.16.3",
+            "requests",
             "tempenv>=2.0.0",
         ],
         "docs": [
