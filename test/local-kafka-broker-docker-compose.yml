@@ -26,18 +26,3 @@ services:
       KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
       KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
       KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
-
-  mongodb:
-    image: mongo:3.6
-    container_name: mongo
-    command: bash -c "mkdir /dev/shm/mongo && mongod --storageEngine ephemeralForTest --nojournal --dbpath=/dev/shm/mongo --noauth --bind_ip_all"
-
-  girder:
-    image: wholetale/girder:latest
-    container_name: girder
-    ports:
-      - 8080:8080
-    depends_on:
-      - mongodb
-    volumes:
-      - ./girder.local.cfg:/girder/girder/conf/girder.local.cfg

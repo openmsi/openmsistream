@@ -205,7 +205,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         root_folder_rel_path = "/" + "/".join(root_folder_split[start_index:])
         return root_folder_id, root_folder_rel_path
 
-    def __create_folder(self, parentId, name, **kwargs):
+    def __create_folder(self, parent_id, name, **kwargs):
         """
         Create a new folder in the Girder instance under the given parent ID
         with the given name
@@ -219,7 +219,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         new_folder_id = None
         try:
             new_folder = self.__girder_client.createFolder(
-                parentId,
+                parent_id,
                 name,
                 **kwargs,
             )
@@ -305,6 +305,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
 
 def main(args=None):
+    """
+    Run the stream processor from the command line
+    """
     GirderUploadStreamProcessor.run_from_command_line(args)
 
 
