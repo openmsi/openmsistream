@@ -425,7 +425,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
         "collection_name": [
             "optional",
             {
-                "default": "WholeTale Catalog",
+                "default": RUN_CONST.DEFAULT_COLLECTION_NAME,
                 "help": "The name of the top-level Collection to which files should be uploaded",
             },
         ],

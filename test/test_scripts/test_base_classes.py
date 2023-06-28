@@ -382,7 +382,7 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
         current_messages_read = -1
         time_waited = 0
         self.log_at_info(
-            f"Waiting to reconstruct files; will timeout after {timeout_secs} seconds)..."
+            f"Waiting to reconstruct files; will timeout after {timeout_secs} seconds..."
         )
         all_files_found = False
         start_time = datetime.datetime.now()
@@ -558,7 +558,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
         current_messages_read = -1
         time_waited = 0
         self.log_at_info(
-            f"Waiting to process files; will timeout after {timeout_secs} seconds)..."
+            f"Waiting to process files; will timeout after {timeout_secs} seconds..."
         )
         all_files_found = False
         start_time = datetime.datetime.now()
@@ -721,7 +721,7 @@ class TestWithStreamReproducer(TestWithOutputLocation):
         time_waited = 0
         msg = (
             "Waiting to process files and produce their computed messages; "
-            f"will timeout after {timeout_secs} seconds)..."
+            f"will timeout after {timeout_secs} seconds..."
         )
         self.log_at_info(msg)
         all_files_found = False

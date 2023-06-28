@@ -19,6 +19,7 @@ class TestRoutineConstants:
         "test_s3_transfer_stream_processor": "test_s3_transfer_stream_processor",
         "test_serialization": "test_oms_encrypted",
         "test_metadata_reproducer": "test_metadata_extractor",
+        "test_girder_upload_stream_processor": "test_girder_upload_stream_processor",
     }
 
     # Paths to locations inside the code base

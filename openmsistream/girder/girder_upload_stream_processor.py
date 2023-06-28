@@ -4,6 +4,7 @@ from hashlib import sha256
 import girder_client
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from ..data_file_io.entity.download_data_file import DownloadDataFileToDisk
+from ..utilities.config import RUN_CONST
 
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
@@ -18,9 +19,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         config_file,
         topic_name,
         *,
-        collection_name,
-        girder_root_folder,
-        provider,
+        collection_name=RUN_CONST.DEFAULT_COLLECTION_NAME,
+        girder_root_folder=None,
+        provider=None,
         **other_kwargs,
     ):
         super().__init__(config_file, topic_name, **other_kwargs)
@@ -36,7 +37,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc, reraise=True)
         # set some minimal amount of metadata fields
         self.minimal_metadata_dict = {
-            "OpenMSIStreamVersion": self.__get_openmsistream_version()
+            "OpenMSIStreamVersion": self.__get_openmsistream_version(),
+            "KafkaTopic": topic_name,
         }
         if provider:
             self.minimal_metadata_dict["provider"] = provider
@@ -208,8 +210,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         """
         Find or create a "root" Girder Folder at the given (posix-formatted string) path
         into which files should be reconstructed
-
-        Logs an re-raises any Exceptions encountered
 
         Returns the ID of the root folder and its relative path string for metadata use
         """
