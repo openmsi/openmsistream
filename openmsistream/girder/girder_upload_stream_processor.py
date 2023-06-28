@@ -161,10 +161,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         collection_id = None
         try:
             for resp in self.__girder_client.listCollection():
-                if (
-                    resp["_modelType"] == "collection"
-                    and resp["name"] == collection_name
-                ):
+                if resp["_modelType"] == "collection" and resp["name"] == collection_name:
                     collection_id = resp["_id"]
             if not collection_id:
                 new_collection = self.__girder_client.createCollection(

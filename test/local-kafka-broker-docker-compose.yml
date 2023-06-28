@@ -1,4 +1,5 @@
 ---
+name: local-kafka
 version: '3'
 services:
   zookeeper:
