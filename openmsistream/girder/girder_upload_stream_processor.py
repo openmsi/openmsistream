@@ -2,6 +2,7 @@
 from io import BytesIO
 from hashlib import sha256
 import girder_client
+import openmsistream
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from ..data_file_io.entity.download_data_file import DownloadDataFileToDisk
 from ..utilities.config import RUN_CONST
@@ -37,7 +38,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc, reraise=True)
         # set some minimal amount of metadata fields
         self.minimal_metadata_dict = {
-            "OpenMSIStreamVersion": self.__get_openmsistream_version(),
+            "OpenMSIStreamVersion": openmsistream.__version__,
             "KafkaTopic": topic_name,
         }
         if provider:
@@ -136,33 +137,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc)
             return exc
         return None
-
-    def __get_openmsistream_version(self):
-        """
-        Return the version of OpenMSIStream that's running. Preferably from the
-        importlib metadata, but otherwise from the setup.py file.
-        """
-        version_number = None
-        try:
-            # pylint: disable=import-outside-toplevel
-            from importlib.metadata import version
-
-            version_number = version("openmsistream")
-        except ModuleNotFoundError:
-            # pylint: disable=import-outside-toplevel
-            import pathlib
-
-            setup_file = pathlib.Path(__file__).parent.parent.parent / "setup.py"
-            with open(setup_file, "r") as fp:
-                for line in fp.readlines():
-                    if line.startswith("version"):
-                        version_number = line.strip().split("=")[-1].strip()
-        if not version_number:
-            self.logger.error(
-                "ERROR: failed to determine openmsistream version for metadata",
-                exc_type=RuntimeError,
-            )
-        return version_number
 
     def __get_girder_path(self, pieces, relative_to_root_dir=True):
         """

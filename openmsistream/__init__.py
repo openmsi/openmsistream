@@ -1,5 +1,7 @@
 """OpenMSIStream library for simplified data streaming using Apache Kafka"""
 
+__version__ = "1.5.2"
+
 # imports
 import os
 from .data_file_io.entity.upload_data_file import UploadDataFile
