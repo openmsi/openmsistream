@@ -14,7 +14,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
     single interface for reading and processing individual messages
     """
 
-    CONSUMER_POLL_TIMEOUT = 5.
+    CONSUMER_POLL_TIMEOUT = 5.0
 
     def __init__(self, *args, filepath_regex=None, **kwargs):
         """
