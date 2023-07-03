@@ -2,7 +2,7 @@
 import setuptools
 
 # version tag
-version = "1.5.2"
+version = "1.5.3"
 
 long_description = ""
 with open("README.md", "r") as readme:
@@ -54,7 +54,7 @@ setupkwargs = dict(
             "black",
             "gitpython",
             "lxml",
-            "marko[toc]",
+            "marko[toc]==1.3.0",
             "pyflakes>=3.0.1",
             "pylint>=2.16.3",
             "tempenv>=2.0.0",

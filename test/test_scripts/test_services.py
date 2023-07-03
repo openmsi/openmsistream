@@ -27,9 +27,13 @@ class TestServices(TestWithOutputLocation):
         self.argslists_by_class_name = {
             "DataFileUploadDirectory": [
                 self.output_dir,
+                "--config",
+                TEST_CONST.TEST_CFG_FILE_PATH,
             ],
             "DataFileDownloadDirectory": [
                 self.output_dir,
+                "--config",
+                TEST_CONST.TEST_CFG_FILE_PATH,
             ],
             "S3TransferStreamProcessor": [
                 TEST_CONST.TEST_BUCKET_NAME,
