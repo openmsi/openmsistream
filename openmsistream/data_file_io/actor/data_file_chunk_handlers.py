@@ -143,17 +143,18 @@ class DataFileChunkProcessor(DataFileChunkHandler, ControlledMessageProcessor):
             f"Files recognized so far (up to {self.N_RECENT_FILES} most recent "
             "completed files shown):\n\t"
         )
-        progress_msg += "\n\t".join(
-            [
-                f"{df.relative_filepath} (in progress)"
-                for df in self.files_in_progress_by_path.values()
-            ]
-        )
-        if len(self.files_in_progress_by_path) > 0:
-            progress_msg += "\n\t"
-        progress_msg += "\n\t".join(
-            [f"{fp} (completed)" for fp in self.recent_processed_filepaths]
-        )
+        with self.lock:
+            progress_msg += "\n\t".join(
+                [
+                    f"{df.relative_filepath} (in progress)"
+                    for df in self.files_in_progress_by_path.values()
+                ]
+            )
+            if len(self.files_in_progress_by_path) > 0:
+                progress_msg += "\n\t"
+            progress_msg += "\n\t".join(
+                [f"{fp} (completed)" for fp in self.recent_processed_filepaths]
+            )
         return progress_msg
 
 
@@ -173,14 +174,15 @@ class DataFileChunkReproducer(DataFileChunkHandler, ControlledMessageReproducer)
             "completed files shown):\n\t"
         )
         progress_msg = "The following files have been recognized so far:\n"
-        for datafile in self.files_in_progress_by_path.values():
-            if datafile.relative_filepath not in self.recent_processed_filepaths:
-                progress_msg += f"\t{datafile.relative_filepath} (in progress)\n"
-        for fp in self.recent_processed_filepaths:
-            if fp not in self.recent_results_produced:
-                progress_msg += f"\t{fp} (fully read from topic)\n"
-        for fp in self.recent_results_produced:
-            progress_msg += f"\t{fp} (processing results produced)\n"
+        with self.lock:
+            for datafile in self.files_in_progress_by_path.values():
+                if datafile.relative_filepath not in self.recent_processed_filepaths:
+                    progress_msg += f"\t{datafile.relative_filepath} (in progress)\n"
+            for fp in self.recent_processed_filepaths:
+                if fp not in self.recent_results_produced:
+                    progress_msg += f"\t{fp} (fully read from topic)\n"
+            for fp in self.recent_results_produced:
+                progress_msg += f"\t{fp} (processing results produced)\n"
         return progress_msg
 
     def __init__(self, *args, **kwargs):
