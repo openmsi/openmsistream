@@ -179,8 +179,8 @@ class DataclassTableBase(LogOwner, ABC):
         to_return = {}
         locked_internally = False
         if not self.lock.locked():
-            locked_internally = True
             self.lock.acquire()
+            locked_internally = True
         for addr, obj in self._entry_objs.items():
             rkey = getattr(obj, key_attr_name)
             if rkey not in to_return:
