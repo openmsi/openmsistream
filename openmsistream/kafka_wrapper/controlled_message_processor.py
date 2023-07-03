@@ -3,7 +3,6 @@ A ConsumerGroup whose receipt of messages is governed using the ControlledProces
 """
 
 # imports
-import time
 from abc import ABC, abstractmethod
 from ..utilities import ControlledProcessMultiThreaded
 from .consumer_group import ConsumerGroup
