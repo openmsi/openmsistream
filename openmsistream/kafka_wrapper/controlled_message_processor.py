@@ -15,10 +15,7 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
     single interface for reading and processing individual messages
     """
 
-    CONSUMER_POLL_TIMEOUT = 0.050
-    NO_MESSAGE_WAIT = (
-        0.005  # how long to wait if consumer.get_next_message_value returns None
-    )
+    CONSUMER_POLL_TIMEOUT = 5.
 
     def __init__(self, *args, filepath_regex=None, **kwargs):
         """
@@ -96,7 +93,6 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
         # consume a message from the topic
         msg = consumer.get_next_message(self.CONSUMER_POLL_TIMEOUT)
         if msg is None:
-            time.sleep(self.NO_MESSAGE_WAIT)  # wait just a bit to not over-tax things
             return
         with self.lock:
             self.n_msgs_read += 1
