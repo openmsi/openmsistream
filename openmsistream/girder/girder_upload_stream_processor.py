@@ -195,7 +195,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             )
             parent_folder_id = new_folder_id
         root_folder_id = parent_folder_id
-        root_folder_rel_path = "/" + "/".join(root_folder_split[start_index:])
         return root_folder_id
 
     def __create_folder(self, parent_id, name, **kwargs):
