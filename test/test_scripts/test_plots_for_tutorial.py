@@ -4,7 +4,11 @@ import importlib.machinery, importlib.util
 from config import TEST_CONST  # pylint: disable=import-error
 
 # pylint: disable=import-error
-from test_base_classes import TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithUploadDataFile,
+    TestWithStreamProcessor,
+)
 
 # import the XRDCSVPlotter from the examples directory
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"
@@ -18,7 +22,9 @@ UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "SC001_XRR.csv"
 CONSUMER_GROUP_ID = f"test_plots_for_tutorial_{TEST_CONST.PY_VERSION}"
 
 
-class TestPlotsForTutorial(TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor):
+class TestPlotsForTutorial(
+    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+):
     """
     Class for testing that an uploaded file can be read back from the topic and have its metadata
     successfully extracted and produced to another topic as a string of JSON
@@ -26,7 +32,7 @@ class TestPlotsForTutorial(TestWithKafkaTopics, TestWithUploadDataFile, TestWith
 
     TOPIC_NAME = "test_plots_for_tutorial"
 
-    TOPICS = {TOPIC_NAME:{}}
+    TOPICS = {TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
