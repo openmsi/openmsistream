@@ -19,7 +19,6 @@ kafka_setup: &kafka_setup
   command: |
     cd test
     bash start_local_broker.sh
-    bash create_local_testing_topics.sh
 
 kafka_teardown: &kafka_teardown
   name: shut down local Kafka broker
