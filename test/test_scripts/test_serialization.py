@@ -28,7 +28,12 @@ class TestSerialization(TestWithKafkaTopics, TestWithLogger):
 
     TOPIC_NAME = "test_oms_encrypted"
 
-    TOPICS = {TOPIC_NAME: {}}
+    TOPICS = {
+        TOPIC_NAME: {},
+        f"{TOPIC_NAME}.keys": {"--partitions": 1},
+        f"{TOPIC_NAME}.reqs": {"--partitions": 1},
+        f"{TOPIC_NAME}.subs": {"--partitions": 1},
+    }
 
     def setUp(self):  # pylint: disable=invalid-name
         """
