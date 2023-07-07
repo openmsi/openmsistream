@@ -8,13 +8,15 @@ from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProd
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger
+from test_base_classes import TestWithLogger, TestWithKafkaTopics
 
 
-class TestDataFileChunk(TestWithLogger):
+class TestDataFileChunk(TestWithLogger, TestWithKafkaTopics):
     """
     Class for testing behavior of DataFileChunks
     """
+
+    TOPICS = {RUN_CONST.DEFAULT_TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """

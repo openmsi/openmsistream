@@ -1,15 +1,18 @@
 # imports
-import pathlib, time, subprocess, unittest
+import time, subprocess, unittest
 from hashlib import sha512
 import requests, docker, girder_client  # pylint: disable=wrong-import-order
 from openmsistream.girder import GirderUploadStreamProcessor
 from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
 # pylint: disable=import-error, wrong-import-order
-from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithUploadDataFile,
+    TestWithStreamProcessor,
+)
 
 # constants
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
 GIRDER_COMPOSE_FILE_PATH = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
 GIRDER_API_URL = "http://localhost:8080/api/v1"
 GIRDER_TIMEOUT = 10
@@ -25,10 +28,16 @@ except docker.errors.DockerException:
     DOCKER_RUNNING,
     "Docker must be running to test Girder upload (uses local Girder in Docker Compose)",
 )
-class TestGirderUploadStreamProcessor(TestWithUploadDataFile, TestWithStreamProcessor):
+class TestGirderUploadStreamProcessor(
+    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+):
     """
     Test using a stream processor to upload a file to a local Girder instance
     """
+
+    TOPIC_NAME = "test_girder_upload_stream_processor"
+
+    TOPICS = {TOPIC_NAME: {}}
 
     HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
@@ -122,13 +131,13 @@ class TestGirderUploadStreamProcessor(TestWithUploadDataFile, TestWithStreamProc
         # upload the test file
         self.upload_single_file(
             TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=TOPIC_NAME,
+            topic_name=self.TOPIC_NAME,
             rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
         )
         # start up a stream processor to read its data back into memory
         self.create_stream_processor(
             stream_processor_type=GirderUploadStreamProcessor,
-            topic_name=TOPIC_NAME,
+            topic_name=self.TOPIC_NAME,
             consumer_group_id=f"test_girder_upload_stream_processor_{TEST_CONST.PY_VERSION}",
             other_init_args=(
                 GIRDER_API_URL,
@@ -178,11 +187,11 @@ class TestGirderUploadStreamProcessor(TestWithUploadDataFile, TestWithStreamProc
             topic_folder_id = None
             resps = girder.listFolder(coll_folder_id)
             for resp in resps:
-                if resp["_modelType"] == "folder" and resp["name"] == TOPIC_NAME:
+                if resp["_modelType"] == "folder" and resp["name"] == self.TOPIC_NAME:
                     topic_folder_id = resp["_id"]
             if not topic_folder_id:
                 errmsg = (
-                    f"ERROR: could not find the '{TOPIC_NAME}' folder "
+                    f"ERROR: could not find the '{self.TOPIC_NAME}' folder "
                     f"in the collection folder! Responses: {list(resps)}"
                 )
                 raise RuntimeError(errmsg)

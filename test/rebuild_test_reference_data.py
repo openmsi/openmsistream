@@ -174,8 +174,8 @@ def rebuild_test_metadata_dict():
         TEST_CONST.EXAMPLES_DIR_PATH
         / "extracting_metadata"
         / "test_xrd_csv_metadata_reproducer.config",
-        TEST_CONST.TEST_TOPIC_NAMES["test_metadata_reproducer"] + "_source",
-        TEST_CONST.TEST_TOPIC_NAMES["test_metadata_reproducer"] + "_dest",
+        "test_metadata_extractor_source",
+        "test_metadata_extractor_dest",
         output_dir=pathlib.Path("./REMOVE_ME"),
     )
     # pylint: disable=protected-access

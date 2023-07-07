@@ -1,6 +1,7 @@
 # imports
 import unittest, platform, pathlib, time
 from subprocess import check_output
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from openmsistream.services.windows_service_manager import WindowsServiceManager
@@ -10,17 +11,22 @@ from openmsistream.services.manage_service import main as manage_service_main
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOutputLocation
+from test_base_classes import TestWithKafkaTopics, TestWithOutputLocation
 
 # some classes to skip because they're more complex
 SKIP_CLASS_NAMES = ["GirderUploadStreamProcessor"]
 
 
-class TestServices(TestWithOutputLocation):
+class TestServices(TestWithKafkaTopics, TestWithOutputLocation):
     """
     Class for testing that Services can be installed/started/stopped/removed
     without any errors on Linux OS
     """
+
+    DEF_TOPIC_NAME = RUN_CONST.DEFAULT_TOPIC_NAME
+    S3_TOPIC_NAME = "test_s3_transfer_stream_processor"
+
+    TOPICS = {DEF_TOPIC_NAME: {}, S3_TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -45,7 +51,7 @@ class TestServices(TestWithOutputLocation):
                 "--config",
                 TEST_CONST.TEST_CFG_FILE_PATH_S3,
                 "--topic_name",
-                TEST_CONST.TEST_TOPIC_NAMES["test_s3_transfer_stream_processor"],
+                self.S3_TOPIC_NAME,
                 "--consumer_group_id",
                 "create_new",
             ],

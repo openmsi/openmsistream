@@ -7,14 +7,18 @@ from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger, TestWithEnvVars
+from test_base_classes import TestWithKafkaTopics, TestWithLogger, TestWithEnvVars
 
 
-class TestCreateOpenMSIStreamKafkaObjects(TestWithLogger, TestWithEnvVars):
+class TestCreateOpenMSIStreamKafkaObjects(
+    TestWithKafkaTopics, TestWithLogger, TestWithEnvVars
+):
     """
     Class for testing that objects in openmsistream.kafka_wrapper can
     be instantiated using default configs
     """
+
+    TOPICS = {RUN_CONST.DEFAULT_TOPIC_NAME: {}}
 
     def test_create_openmsistream_producer(self):
         """

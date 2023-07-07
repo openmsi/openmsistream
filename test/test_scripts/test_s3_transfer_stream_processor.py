@@ -5,18 +5,23 @@ from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
-
-# constants
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithDataFileUploadDirectory,
+    TestWithStreamProcessor,
+)
 
 
 class TestS3TransferStreamProcessor(
-    TestWithDataFileUploadDirectory, TestWithStreamProcessor
+    TestWithKafkaTopics, TestWithDataFileUploadDirectory, TestWithStreamProcessor
 ):
     """
     Class for testing S3TransferStreamProcessor
     """
+
+    TOPIC_NAME = "test_s3_transfer_stream_processor"
+
+    TOPICS = {TOPIC_NAME: {}}
 
     def run_data_file_upload_directory(self):
         """
@@ -25,7 +30,7 @@ class TestS3TransferStreamProcessor(
         # make the directory to watch
         self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3)
         # start upload_files_as_added in a separate thread so we can time it out
-        self.start_upload_thread(TOPIC_NAME)
+        self.start_upload_thread(self.TOPIC_NAME)
         try:
             # copy the test file into the watched directory
             rel_filepath = (
@@ -46,7 +51,7 @@ class TestS3TransferStreamProcessor(
         self.create_stream_processor(
             S3TransferStreamProcessor,
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
-            topic_name=TOPIC_NAME,
+            topic_name=self.TOPIC_NAME,
             consumer_group_id=f"test_s3_transfer_{TEST_CONST.PY_VERSION}",
             other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
         )
@@ -100,7 +105,7 @@ class TestS3TransferStreamProcessor(
                 if str(filepath).startswith(str(log_subdir)):
                     continue
             file_hash = self.hash_file(filepath)
-            object_key = f"{TOPIC_NAME}/{filepath.relative_to(self.watched_dir)}"
+            object_key = f"{self.TOPIC_NAME}/{filepath.relative_to(self.watched_dir)}"
             if not (
                 s3d.compare_producer_datafile_with_s3_object_stream(
                     TEST_CONST.TEST_BUCKET_NAME, object_key, file_hash

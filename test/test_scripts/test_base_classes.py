@@ -1,5 +1,5 @@
 # imports
-import pathlib, shutil, unittest, os, logging, time, datetime
+import pathlib, shutil, unittest, os, logging, time, datetime, subprocess
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
@@ -11,6 +11,78 @@ from openmsistream import (
     UploadDataFile,
 )
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+
+class TestWithKafkaTopics(unittest.TestCase):
+    """
+    Base class for tests that depend on one or more Kafka topics
+
+    Topics are created and deleted in setUp/tearDownClass
+    """
+
+    TOPICS = {}
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if os.environ.get("TESTS_NO_KAFKA"):
+            return
+        if not (
+            os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS")
+            and os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+        ):
+            return
+        for topic_name, args_dict in cls.TOPICS.items():
+            n_partitions = 2
+            replication_factor = 1
+            extra_args = []
+            for argflag, argval in args_dict.items():
+                if argflag == "--partitions":
+                    n_partitions = argval
+                    continue
+                if argflag == "--replication-factor":
+                    replication_factor = argval
+                    continue
+                extra_args += [argflag, str(argval)]
+            cmd = [
+                "docker",
+                "exec",
+                "local_kafka_broker",
+                "kafka-topics",
+                "--bootstrap-server",
+                os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"),
+                "--create",
+                "--partitions",
+                str(n_partitions),
+                "--replication-factor",
+                str(replication_factor),
+                *extra_args,
+                "--topic",
+                topic_name,
+            ]
+            subprocess.check_output(cmd)
+
+    @classmethod
+    def tearDownClass(cls):
+        if not (
+            os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS")
+            and os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+        ):
+            return
+        for topic_name in cls.TOPICS:
+            cmd = [
+                "docker",
+                "exec",
+                "local_kafka_broker",
+                "kafka-topics",
+                "--bootstrap-server",
+                os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"),
+                "--delete",
+                "--topic",
+                topic_name,
+            ]
+            subprocess.check_output(cmd)
+        super().tearDownClass()
 
 
 class TestWithLogger(LogOwner, unittest.TestCase):

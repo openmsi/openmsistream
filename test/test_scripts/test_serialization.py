@@ -18,16 +18,17 @@ from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger
-
-# constants
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
+from test_base_classes import TestWithKafkaTopics, TestWithLogger
 
 
-class TestSerialization(TestWithLogger):
+class TestSerialization(TestWithKafkaTopics, TestWithLogger):
     """
     Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
+
+    TOPIC_NAME = "test_oms_encrypted"
+
+    TOPICS = {TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -123,18 +124,20 @@ class TestSerialization(TestWithLogger):
         dfcds = DataFileChunkDeserializer()
         comp_ser = CompoundSerializer(dfcs, kc1.value_serializer)
         comp_des = CompoundDeserializer(kc2.value_deserializer, dfcds)
-        self.assertIsNone(comp_ser.serialize(TOPIC_NAME, None))
-        self.assertIsNone(comp_des.deserialize(TOPIC_NAME, None))
+        self.assertIsNone(comp_ser.serialize(self.TOPIC_NAME, None))
+        self.assertIsNone(comp_des.deserialize(self.TOPIC_NAME, None))
         with self.assertRaises(SerializationError):
-            comp_ser.serialize(TOPIC_NAME, "This is a string, not a DataFileChunk!")
+            comp_ser.serialize(self.TOPIC_NAME, "This is a string, not a DataFileChunk!")
         with self.assertRaises(SerializationError):
-            comp_des.deserialize(TOPIC_NAME, "This is a string, not a DataFileChunk!")
+            comp_des.deserialize(
+                self.TOPIC_NAME, "This is a string, not a DataFileChunk!"
+            )
         for chunk_i in self.test_chunk_binaries:
             time.sleep(1)
             serialized = comp_ser.serialize(
-                TOPIC_NAME, self.test_ul_chunk_objects[chunk_i]
+                self.TOPIC_NAME, self.test_ul_chunk_objects[chunk_i]
             )
-            deserialized = comp_des.deserialize(TOPIC_NAME, serialized)
+            deserialized = comp_des.deserialize(self.TOPIC_NAME, serialized)
             self.assertEqual(deserialized, self.test_ul_chunk_objects[chunk_i])
         kc1.close()
         kc2.close()

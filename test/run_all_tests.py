@@ -1,5 +1,5 @@
 # imports
-import unittest, subprocess, pathlib, re, time
+import unittest, subprocess, pathlib, re
 from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
 import docker
@@ -11,7 +11,6 @@ from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 TEST_DIR_PATH = pathlib.Path(__file__).resolve().parent
 TOP_DIR_PATH = TEST_DIR_PATH.parent
 START_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "start_local_broker.sh"
-CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH = TEST_DIR_PATH / "create_local_testing_topics.sh"
 STOP_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "stop_local_broker.sh"
 TEST_SCRIPT_DIR_PATH = TEST_DIR_PATH / "test_scripts"
 TEST_REPO_STATUS_SCRIPT_PATH = TEST_DIR_PATH / "test_repo_status.sh"
@@ -194,20 +193,9 @@ def setup_local_broker():
             reraise=True,
             cwd=pathlib.Path(__file__).parent,
         )
-        LOGGER.info(
-            "Local broker started, sleeping 5 seconds to give it a moment to get up and running"
-        )
-        time.sleep(5)
-        run_cmd_in_subprocess(
-            ["bash", str(CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH)],
-            logger=LOGGER,
-            reraise=True,
-            cwd=pathlib.Path(__file__).parent,
-        )
-        LOGGER.info("Testing topics created in local broker")
     except Exception as exc:
         errmsg = (
-            "ERROR: failed to set up the local testing broker and topics: is Docker running? "
+            "ERROR: failed to set up the local testing broker: is Docker running? "
             "Exception will be re-raised."
         )
         LOGGER.error(errmsg, exc_info=exc, reraise=True)
@@ -266,7 +254,7 @@ def skip_kafka_tests_and_get_temp_env(args, suites):
     """
     temp_no_kafka_env = None
     if args.no_kafka:
-        temp_env_var_dict = {}
+        temp_env_var_dict = {"TESTS_NO_KAFKA": "yes"}
         for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             temp_env_var_dict[env_var_name] = None
         temp_no_kafka_env = TemporaryEnvironment(temp_env_var_dict)

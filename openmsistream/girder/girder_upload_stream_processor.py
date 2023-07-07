@@ -85,6 +85,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                         f"{metadata_dict['dsRelPath']}"
                     )
                     self.logger.error(errmsg, exc_info=exc)
+                    return exc
                 parent_id = new_folder_id
         else:
             subdir_str_split = []
