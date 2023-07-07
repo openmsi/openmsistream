@@ -68,13 +68,23 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 metadata_dict["dsRelPath"] = self.__get_girder_path(
                     subdir_str_split[:folder_depth]
                 )
-                new_folder_id = self.__create_folder(
-                    parent_id,
-                    folder_name,
-                    parentType="folder",
-                    reuseExisting=True,
-                    metadata=metadata_dict,
-                )
+                try:
+                    new_folder_id = self.__create_folder(
+                        parent_id,
+                        folder_name,
+                        parentType="folder",
+                        reuseExisting=True,
+                    )
+                    self.__girder_client.addMetadataToFolder(
+                        new_folder_id,
+                        metadata_dict,
+                    )
+                except Exception as exc:
+                    errmsg = (
+                        "ERROR: failed to create the folder with relpath "
+                        f"{metadata_dict['dsRelPath']}"
+                    )
+                    self.logger.error(errmsg, exc_info=exc)
                 parent_id = new_folder_id
         else:
             subdir_str_split = []
