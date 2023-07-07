@@ -65,9 +65,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             subdir_str_split = datafile.subdir_str.split("/")
             for folder_depth, folder_name in enumerate(subdir_str_split):
                 metadata_dict = self.minimal_metadata_dict.copy()
-                metadata_dict["dsRelPath"] = self.__get_girder_path(
-                    subdir_str_split[:folder_depth]
-                )
                 try:
                     new_folder_id = self.__create_folder(
                         parent_id,
@@ -80,9 +77,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                         metadata_dict,
                     )
                 except Exception as exc:
+                    relative_path = self.__get_girder_path(
+                        subdir_str_split[:folder_depth]
+                    )
                     errmsg = (
                         "ERROR: failed to create the folder with relpath "
-                        f"{metadata_dict['dsRelPath']}"
+                        f"{relative_path}"
                     )
                     self.logger.error(errmsg, exc_info=exc)
                     return exc
@@ -132,9 +132,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         checksum_hash = sha256()
         checksum_hash.update(bytestring)
         metadata_dict = self.minimal_metadata_dict.copy()
-        metadata_dict["dsRelPath"] = self.__get_girder_path(
-            subdir_str_split + [datafile.filename]
-        )
         metadata_dict["checksum"] = {
             "sha256": checksum_hash.hexdigest(),
         }
@@ -203,9 +200,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         parent_folder_id = None
         for folder_depth, folder_name in enumerate(root_folder_split):
             metadata_dict = self.minimal_metadata_dict.copy()
-            metadata_dict["dsRelPath"] = self.__get_girder_path(
-                root_folder_split[start_index:folder_depth], relative_to_root_dir=False
-            )
             new_folder_id = self.__create_folder(
                 parent_folder_id if parent_folder_id else collection_id,
                 folder_name,
