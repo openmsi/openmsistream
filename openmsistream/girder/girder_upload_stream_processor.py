@@ -20,8 +20,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         config_file,
         topic_name,
         *,
-        collection_name=RUN_CONST.DEFAULT_COLLECTION_NAME,
-        girder_root_folder=None,
+        girder_root_folder_id=None,
+        collection_name=None,
+        girder_root_folder_path=None,
         provider=None,
         **other_kwargs,
     ):
@@ -43,15 +44,22 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         }
         if provider:
             self.minimal_metadata_dict["provider"] = provider
-        # get or create the collection with the given name, and save its ID
-        collection_id = self.__init_collection(collection_name)
-        # get or create the root folder, and save its ID and relative path
-        root_folder = girder_root_folder
-        if not root_folder:
-            root_folder = f"{collection_name}/{topic_name}"
-        self.__root_folder_id, self.__root_folder_rel_path = self.__init_root_folder(
-            root_folder, collection_id, collection_name
-        )
+        # if a root folder ID was given, just use that
+        if girder_root_folder_id:
+            self.__root_folder_id = girder_root_folder_id
+        # otherwise, figure it out from the given collection name and/or root folder path
+        else:
+            # get or create the collection with the given name, and save its ID
+            if not collection_name:
+                collection_name = RUN_CONST.DEFAULT_COLLECTION_NAME
+            collection_id = self.__init_collection(collection_name)
+            # get or create the root folder and save its ID
+            root_folder_path = girder_root_folder_path
+            if not root_folder_path:
+                root_folder_path = f"{collection_name}/{topic_name}"
+            self.__root_folder_id = self.__init_root_folder(
+                root_folder_path, collection_id, collection_name
+            )
 
     def _process_downloaded_data_file(self, datafile, lock):
         """
@@ -63,7 +71,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         parent_id = self.__root_folder_id
         if datafile.subdir_str != "":
             subdir_str_split = datafile.subdir_str.split("/")
-            for folder_depth, folder_name in enumerate(subdir_str_split):
+            for folder_name in subdir_str_split:
                 metadata_dict = self.minimal_metadata_dict.copy()
                 try:
                     new_folder_id = self.__create_folder(
@@ -77,13 +85,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                         metadata_dict,
                     )
                 except Exception as exc:
-                    relative_path = self.__get_girder_path(
-                        subdir_str_split[:folder_depth]
-                    )
-                    errmsg = (
-                        "ERROR: failed to create the folder with relpath "
-                        f"{relative_path}"
-                    )
+                    errmsg = f"ERROR: failed to create the '{folder_name}' folder"
                     self.logger.error(errmsg, exc_info=exc)
                     return exc
                 parent_id = new_folder_id
@@ -146,22 +148,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             return exc
         return None
 
-    def __get_girder_path(self, pieces, relative_to_root_dir=True):
-        """
-        Given a list of strings that should be separated with forward slashes, return
-        a constructed path string for Girder metadata.
-        Can be relative to the root directory or absolute.
-        """
-        if relative_to_root_dir:
-            path = self.__root_folder_rel_path
-        else:
-            path = "/"
-        if len(pieces) < 1:
-            return path
-        path += "" if path.endswith("/") else "/"
-        path += "/".join(pieces)
-        return path
-
     def __init_collection(self, collection_name):
         """
         Find or create a Collection with the given name, returning its ID
@@ -210,7 +196,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             parent_folder_id = new_folder_id
         root_folder_id = parent_folder_id
         root_folder_rel_path = "/" + "/".join(root_folder_split[start_index:])
-        return root_folder_id, root_folder_rel_path
+        return root_folder_id
 
     def __create_folder(self, parent_id, name, **kwargs):
         """
@@ -246,8 +232,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "girder_api_url",
             "girder_api_key",
             *superargs,
+            "girder_root_folder_id",
             "collection_name",
-            "girder_root_folder",
+            "girder_root_folder_path",
             "provider",
         ]
         return ret_args, superkwargs
@@ -266,6 +253,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             args.girder_api_key,
             args.config,
             args.topic_name,
+            girder_root_folder_id=args.girder_root_folder_id,
             collection_name=args.collection_name,
             girder_root_folder=args.girder_root_folder,
             provider=args.provider,

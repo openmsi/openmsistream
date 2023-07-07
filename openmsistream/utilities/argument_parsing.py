@@ -422,20 +422,33 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
             "positional",
             {"help": "The API key to use for authenticating to the Girder instance"},
         ],
+        "girder_root_folder_id": [
+            "optional",
+            {
+                "help": (
+                    "The ID of the Girder Folder relative to which files should be "
+                    "uploaded. If this argument is given, it will supersede both of the "
+                    "'collection_name' and 'girder_root_folder_path' arguments."
+                ),
+            },
+        ],
         "collection_name": [
             "optional",
             {
-                "default": RUN_CONST.DEFAULT_COLLECTION_NAME,
-                "help": "The name of the top-level Collection to which files should be uploaded",
+                "help": (
+                    "The name of the top-level Collection to which files should be uploaded. "
+                    "Superseded if 'girder_root_folder_id' is given."
+                ),
             },
         ],
-        "girder_root_folder": [
+        "girder_root_folder_path": [
             "optional",
             {
                 "help": (
                     "The name of the Folder inside the top-level Collection relative to "
                     "which files should be uploaded. A path to a subdirectory in the "
                     "Collection can be given using forward slashes. "
+                    "Superseded if 'girder_root_folder_id' is given. "
                     "(default = collection_name/topic_name)"
                 ),
             },
