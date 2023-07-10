@@ -2,7 +2,7 @@
 import time, subprocess, unittest
 from hashlib import sha512
 import requests, docker, girder_client  # pylint: disable=wrong-import-order
-from openmsistream.girder import GirderUploadStreamProcessor
+from openmsistream import GirderUploadStreamProcessor
 from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
 # pylint: disable=import-error, wrong-import-order

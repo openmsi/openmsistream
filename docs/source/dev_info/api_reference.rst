@@ -14,6 +14,7 @@ Top-level classes
    api/data_file_upload_directory
    api/data_file_download_directory
    api/s3_transfer_stream_processor
+   api/girder_upload_stream_processor
    api/metadata_json_reproducer
    api/data_file_stream_processor
    api/data_file_stream_reproducer

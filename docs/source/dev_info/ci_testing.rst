@@ -22,7 +22,7 @@ There are also a few options you can add to ``run_all_tests.py`` if you only wan
 #. Add the ``--no_script_tests`` flag to skip the tests in "test_scripts" entirely, OR
 #. Add the ``--no_kafka`` flag to skip running tests that need to communicate with the Kafka broker. Adding this flag automatically **skips any test methods whose names end with "kafka"**; you will see that they were skipped at the end of the output. Adding this flag also runs tests with some environment variables un-set to ensure that these tests are truly independent of communication with a Kafka broker.
 #. Add the ``--test_regex [regex]`` option to skip any tests whose function names aren't matched to the ``[regex]`` regular expression
-#. Add the ``--local_broker`` flag to run tests using a local Kafka broker running in Docker instead of a third party broker. Including this flag automatically `starts up <https://github.com/openmsi/openmsistream/blob/main/test/start_local_broker.sh#L5>`_ the broker and `creates the topics needed <https://github.com/openmsi/openmsistream/blob/main/test/create_local_testing_topics.sh#L5-L29>`_ before running the tests, and it `stops the broker <https://github.com/openmsi/openmsistream/blob/main/test/stop_local_broker.sh#L5>`_ running when the tests complete. Adding this flag assumes that Docker is installed and that the Docker daemon is running. 
+#. Add the ``--local_broker`` flag to run tests using a local Kafka broker running in Docker instead of a third party broker. Including this flag automatically `starts up <https://github.com/openmsi/openmsistream/blob/main/test/start_local_broker.sh#L5>`_ the broker before running the tests, and it `stops the broker <https://github.com/openmsi/openmsistream/blob/main/test/stop_local_broker.sh#L5>`_ running when the tests complete. Adding this flag assumes that Docker is installed and that the Docker daemon is running. If you want to separate starting up and stopping the local Kafka broker from running the tests, you can run the script with the ``--setup_local_broker`` first, run your tests adding the ``--skip_broker_teardown`` flag, and run the script with the ``--teardown_local_broker`` flag when you're ready to stop running the local broker.
 #. Add the ``--failfast`` flag to stop executing the script early if any individual test(s) fail. Normally all tests are run regardless of how many fail, but including this flag will stop the run as soon as any test fails.
 
 **NOTE:** If you are running the ``run_all_tests.py`` script interactively on a Linux system with ``systemd`` installed, some of the tests will temporarily install code as daemons. You should therefore activate sudo privileges before running the script, with::
@@ -31,12 +31,14 @@ There are also a few options you can add to ``run_all_tests.py`` if you only wan
 
 or similar.
 
+**NOTE ALSO:** The CI test for the ``GirderUploadStreamProcessor`` uses a local Girder instance with a MongoDB backend set up using Docker Compose. If Docker is not running, that test will be skipped.
+
 CircleCI website
 ----------------
 
 On the CircleCI website you can manually run tests on any branch you'd like. Tests will also automatically run for each commit on every branch, and must pass to merge any pull requests into the main branch. The configuration for CircleCI is in the `.circleci/config.yml file in the root directory of the repository <https://github.com/openmsi/openmsistream/blob/main/.circleci/config.yml>`_. Tests on CircleCI use the same environment as the official public `Docker image <https://hub.docker.com/r/openmsi/openmsistream>`_.
 
-Running tests successfully on CircleCI requires that the Project on CircleCI has environment variables for the test broker username and password registered within it, as well as environment variables to allow access to the openmsi DockerHub organization, and environment variables to connect to the S3 bucket used for testing.
+Running tests successfully on CircleCI requires that the Project on CircleCI has environment variables to allow access to the openmsi DockerHub organization, and environment variables to connect to the S3 bucket used for testing.
 
 Rebuilding static test data
 ---------------------------
@@ -54,7 +56,7 @@ Regardless of which broker solution you use, though, you'll next need to add an 
 
 If you use Confluent Cloud, or if you add authentication to your self-managed broker, you'll also need to add environment variables called ``KAFKA_TEST_CLUSTER_USERNAME`` and ``KAFKA_TEST_CLUSTER_PASSWORD`` to hold the authentication username and password, respectively. For brokers on Confluent Cloud, you can add authentication by creating a new API key under "API keys" on the website, and set the environment variable values to the username and password of the api key.
 
-Then, you'll need to create the topics used in running the tests. You can add topics using the Kafka CLI, or under the ``Topics`` section for your cluster on the Confluent Cloud website. The following topics should be created, ideally with 2 partitions each, and it's recommended to set the cleanup policy to "delete" with a max retention time of 1 hour to keep the topics mostly empty for testing purposes.
+If you're using Confluent Cloud, you'll also need to create the topics used in running the tests. You can add topics using the Kafka CLI, or under the ``Topics`` section for your cluster on the Confluent Cloud website. The following topics should be created, ideally with 2 partitions each, and it's recommended to set the cleanup policy to "delete" with a max retention time of 1 hour to keep the topics mostly empty for testing purposes.
 
     #. ``test``
     #. ``test_data_file_directories``
@@ -66,6 +68,7 @@ Then, you'll need to create the topics used in running the tests. You can add to
     #. ``test_metadata_extractor_source``
     #. ``test_metadata_extractor_dest``
     #. ``test_plots_for_tutorial``
+    #. ``test_girder_upload_stream_processor``
 
 The ``test_oms_encrypted`` and ``test_data_file_stream_processor_encrypted`` topics hold messages encrypted with KafkaCrypto; those topics each need three additional "key-passing" topics called ``[topic_name].keys``, ``[topic_name].reqs``, and ``[topic_name].subs``. These additional topics can have only one partition each, and can use the "compact" cleanup policy (they will not end up storing a huge amount of data). 
 

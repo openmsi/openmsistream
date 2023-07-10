@@ -4,9 +4,9 @@ S3TransferStreamProcessor
 
 .. image:: ../../images/s3_transfer_stream_processor.png
    :alt: S3TransferStreamProcessor
-   :scale: 20 %
+   :scale: 80 %
 
-This module reads messages from a topic to build up data files in memory, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``. 
+This module reads messages from a topic to build up data files in memory or on disk, and then uploads complete files into an S3 object store bucket. Downloaded data files will be added to the bucket under a subdirectory named after the topic from which they were consumed, and will replicate the subdirectory structure relative to a root watched directory if they were produced using ``DataFileUploadDirectory``. 
 
 The :class:`~.S3TransferStreamProcessor` is a specific type of :class:`~.DataFileStreamProcessor`.
 
@@ -48,7 +48,7 @@ To see other optional command line arguments, run ``S3TransferStreamProcessor -h
 Interacting with the program
 ----------------------------
 
-While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total messages have been read and how many files have been transferred to the S3 bucket. When all the messages for a single file have been received and the file is transferred to the bucket, a message will be printed to the console saying what file it was and the result of the validation of its contents as read from the bucket with the original file contents read from disk at production time. The processes can be shut down at any time by typing "quit" or "q" into the console.
+While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total messages have been read and how many files have been transferred to the S3 bucket. The processes can be shut down at any time by typing "quit" or "q" into the console.
 
 Consumer offset commits
 -----------------------

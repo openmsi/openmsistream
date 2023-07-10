@@ -4,7 +4,7 @@ Tutorials
 
 The hands-on examples described in this section will walk through some of the key functionality of the OpenMSIStream package. After setting up access to a Kafka cluster, creating a topic to use for testing, and downloading some specific example data, you'll use a :doc:`DataFileUploadDirectory <../user_info/main_programs/data_file_upload_directory>` producer to upload the example files from your local machine to the topic. You'll then use a :doc:`DataFileDownloadDirectory <../user_info/main_programs/>` consumer to reconstruct the files to your local machine from their chunks stored on the topic.
 
-More advanced tutorials explore other OpenMSIStream functionality by setting up additional types of consumers on your local machine. An example :doc:`DataFileStreamProcessor <../user_info/base_classes/data_file_stream_processor>` can create simple plots from the data in the files on the topic.  An example :doc:`MetadataJSONReproducer <../user_info/base_classes/metadata_json_reproducer>` can extract the metadata blocks of the example files and produce those blocks to a second topic as JSON-formatted strings. An :doc:`S3TransferStreamProcessor <../user_info/main_programs/s3_transfer_stream_processor>` can reconstruct the files in an S3 bucket instead of locally on disk (after some more setup).
+More advanced tutorials explore other OpenMSIStream functionality by setting up additional types of consumers on your local machine. An example :doc:`DataFileStreamProcessor <../user_info/base_classes/data_file_stream_processor>` can create simple plots from the data in the files on the topic.  An example :doc:`MetadataJSONReproducer <../user_info/base_classes/metadata_json_reproducer>` can extract the metadata blocks of the example files and produce those blocks to a second topic as JSON-formatted strings. A :doc:`GirderUploadStreamProcessor <../user_info/main_programs/girder_upload_stream_processor>` can be used to upload files in a topic to a Girder instance. An :doc:`S3TransferStreamProcessor <../user_info/main_programs/s3_transfer_stream_processor>` can reconstruct the files in an S3 bucket (after some more setup).
 
 Initial setup
 =============
@@ -16,9 +16,13 @@ Access to a Kafka broker
 
 To begin, you'll need access to a Kafka broker. That broker can be running locally or on a server that you have access to (possibly in Docker), or on `Confluent Cloud <https://confluent.cloud/>`_, which provides Kafka as a managed service. If ACLs are defined for your broker, you will need to be able to authenticate to it using plaintext SASL authentication (the default for Confluent Cloud). 
 
-You will also need to create a topic on that broker to use for testing, called "``openmsistream_tutorial_data``" (if you use a different name just replace it in the commands shown below). The default settings are fine for a single test, but if you'd like you can adjust the retention times to be an hour or less so that the contents of the testing topics will get flushed out regularly and you can work through the tutorial repeatedly without reading previously-produced data.
+You will also need to create topics on that broker to use for testing, called "``openmsistream_tutorial_data``" and "``openmsistream_tutorial_metadata``" (if you use different names just replace them in the commands shown). The default settings are fine for a single test, but if you'd like you can adjust the retention times to be an hour or less so that the contents of the testing topics will get flushed out regularly and you can work through the tutorial repeatedly without reading previously-produced data.
 
-The OpenMSIStream GitHub repository includes a `Docker compose .yaml file <https://github.com/openmsi/openmsistream/blob/main/test/local-kafka-broker-docker-compose.yml>`_ that you can use to set up a very simple single-node broker on your local machine (if you have Docker installed). To start up the broker, run `the command shown in the "start broker" shell script <https://github.com/openmsi/openmsistream/blob/main/test/start_local_broker.sh#L5>`_. After starting the local broker, you can add topics using the Kafka CLI, like what's shown in the `"create topics" shell script <https://github.com/openmsi/openmsistream/blob/main/test/create_local_testing_topics.sh#L5>`_. You can stop and delete the broker using `the command in the "stop broker" shell script <https://github.com/openmsi/openmsistream/blob/33-use-local-kafka-broker/test/stop_local_broker.sh#L5>`_.
+The OpenMSIStream GitHub repository includes a `Docker compose .yml file <https://github.com/openmsi/openmsistream/blob/main/test/local-kafka-broker-docker-compose.yml>`_ that you can use to set up a very simple single-node broker on your local machine (if you have Docker installed). To start up the broker, run `the command shown in the "start broker" shell script <https://github.com/openmsi/openmsistream/blob/main/test/start_local_broker.sh#L5>`_. After starting the local broker, you can add topics using the Kafka CLI with commands like::
+
+    docker exec local_kafka_broker kafka-topics --bootstrap-server localhost:9092 --create --partitions 2 --replication-factor 1 --topic [topic_name]
+
+You can stop and delete the broker using `the command in the "stop broker" shell script <https://github.com/openmsi/openmsistream/blob/main/test/stop_local_broker.sh#L5>`_.
 
 Setting environment variables
 -----------------------------
@@ -77,6 +81,7 @@ The pages below contain some more hands-on examples of different ways to consume
 .. toctree::
    :maxdepth: 1
 
+   tutorials/girder_upload
    tutorials/s3_transfer
    tutorials/creating_plots
    tutorials/extracting_metadata

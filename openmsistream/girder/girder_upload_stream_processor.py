@@ -10,7 +10,40 @@ from ..utilities.config import RUN_CONST
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
     """
-    A stream processor that adds downloaded files to folders in a Girder collection
+    A class to reconstruct data files read as messages from a topic, hold them in memory
+    or on disk, and upload them to a Girder instance when all of their messages have been
+    received
+
+    :param girder_api_url: URL of the REST API endpoint for the Girder instance to which
+        files should be uploaded
+    :type girder_api_url: str
+    :param girder_api_key: API key for interacting with the Girder instance
+    :type girder_api_key: str
+    :param config_file: Path to the config file to use in defining the Broker connection
+        and Consumers
+    :type config_file: :class:`pathlib.Path`
+    :param topic_name: Name of the topic to which the Consumers should be subscribed
+    :type topic_name: str
+    :param girder_root_folder_ID: ID of an existing Girder Folder relative to which
+        files should be uploaded. Additional Folders will be created within this root
+        Folder to replicate the original Producer-side subdirectory structure.
+    :type girder_root_folder_ID: str
+    :param collection_name: Name of the Girder Collection to which files should be
+        uploaded. Only used if `girder_root_folder_id` is not given.
+    :type collection_name: str
+    :param girder_root_folder_path: Path to the root Folder within which files should be
+        uploaded. Additional Folders will be created within this root Folder to replicate
+        the original Producer-side subdirectory structure. This argument is only used if
+        `girder_root_folder_id` is not provided. If a `collection_name` is given but this
+        argument is not, a Folder named after the topic will be created within the
+        Collection.
+    :type girder_root_folder_path: str
+    :param provider: If this argument is given, an extra "provider" metadata field with
+        the given value will be added to uploaded Files and Folders.
+    :type provider: str
+    :param filepath_regex: If given, only messages associated with files whose paths match
+        this regex will be consumed
+    :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
     """
 
     def __init__(
@@ -63,9 +96,19 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
     def _process_downloaded_data_file(self, datafile, lock):
         """
-        Upload the downloaded data file to the Girder instance
+        Upload a fully-reconstructed file to the Girder instance, creating Folders as
+        necessary to preserve original subdirectory structure. Also adds metadata to Files
+        and Folders listing the version of OpenMSIStream that's running and the name of
+        the topic from which files are being consumed.
 
-        returns None if processing was successful, an Exception otherwise
+        :param datafile: A :class:`~DownloadDataFile` object that has received
+            all of its messages from the topic
+        :type datafile: :class:`~DownloadDataFile`
+        :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance
+            of :func:`~_process_downloaded_data_file` is running at once
+        :type lock: :class:`threading.Lock`
+
+        :return: None if upload was successful, a caught Exception otherwise
         """
         # Create the nested subdirectories that should hold this file
         parent_id = self.__root_folder_id
@@ -226,6 +269,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
     @classmethod
     def get_command_line_arguments(cls):
+        """
+        Return the names of arguments needed to run the program from the command line
+        """
         superargs, superkwargs = super().get_command_line_arguments()
         ret_args = [
             "girder_api_url",
@@ -241,7 +287,14 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
     @classmethod
     def run_from_command_line(cls, args=None):
         """
-        Run the stream-processed analysis code from the command line
+        Run a :class:`~GirderUploadStreamProcessor` directly from the command line
+
+        Calls :func:`~DataFileStreamProcessor.process_files_as_read` on a :class:`~GirderUploadStreamProcessor`
+        defined by command line (or given) arguments
+
+        :param args: the list of arguments to send to the parser instead of getting them
+            from sys.argv
+        :type args: list, optional
         """
         # make the argument parser
         parser = cls.get_argument_parser()
@@ -264,9 +317,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         )
         # start the processor running
         msg = (
-            f"Listening to the {args.topic_name} topic for files to upload to the "
-            f"{args.collection_name} collection using the Girder API at "
-            f"{args.girder_api_url}"
+            f"Listening to the {args.topic_name} topic for files to upload to "
+            f"Girder using the API at {args.girder_api_url}"
         )
         girder_uploader.logger.info(msg)
         (
@@ -285,13 +337,13 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         msg = (
             f"{n_read} total messages were consumed, {n_msgs_procd} messages were "
             f"successfully processed, and {n_files_procd} files were uploaded "
-            f"to the {args.collection_name} Girder collection"
+            f"to Girder"
         )
         girder_uploader.logger.info(msg)
         if len(procd_fps) > 0:
             msg = (
                 f"{n_files_procd} file{' was' if n_files_procd==1 else 's were'} "
-                f"successfully uploaded to the {args.collection_name} Girder collection."
+                f"successfully uploaded to Girder."
                 f"\nUploaded filepaths (up to {cls.N_RECENT_FILES} most recent):\n\t"
             )
             msg += "\n\t".join([str(fp) for fp in procd_fps])
