@@ -119,8 +119,11 @@ class KafkaConfigFileParser(ConfigFileParser):
         1) The regular config file has a "kafkacrypto" section with a "config_file" parameter
         that is the path to the KafkaCrypo config file
         2) The regular config file has a "kafkacrypto" section with a "node_id" parameter
-        corresponding to a named subdirectory in openmsistream/kafka_wrapper/config_files
-        that was created when the node was provisioned
+        corresponding to a named subdirectory that was created when the node was provisioned.
+        The subdirectory must be located in:
+        a) openmsistream/kafka_wrapper/config_files,
+        b) the same directory as the config file, or
+        c) the current directory
         """
         if "kafkacrypto" in self.available_group_names:
             kc_configs = self.get_config_dict_for_groups("kafkacrypto")
@@ -137,15 +140,20 @@ class KafkaConfigFileParser(ConfigFileParser):
             # option 2 above
             if "node_id" in kc_configs:
                 node_id = kc_configs["node_id"]
-                dirpath = RUN_CONST.CONFIG_FILE_DIR / node_id
-                filepath = dirpath / f"{node_id}.config"
-                if (not dirpath.is_dir()) or (not filepath.is_file()):
-                    errmsg = (
-                        "ERROR: no KafkaCrypto config file found in the default location "
-                        f"({filepath}) for node ID = {node_id}"
-                    )
-                    self.logger.error(errmsg, exc_type=FileNotFoundError)
-                return str(filepath)
+                dirpaths = [
+                    RUN_CONST.CONFIG_FILE_DIR / node_id,
+                    self.filepath.parent / node_id,
+                    pathlib.Path(".").resolve() / node_id,
+                ]
+                filepaths = [dpath / f"{node_id}.config" for dpath in dirpaths]
+                for filepath in filepaths:
+                    if filepath.is_file():
+                        return str(filepath)
+                errmsg = (
+                    f"ERROR: no KafkaCrypto config file found for node ID = {node_id}"
+                    f"(expected one of {filepaths})"
+                )
+                self.logger.error(errmsg, exc_type=FileNotFoundError)
         # no config file found
         return None
 

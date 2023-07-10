@@ -274,7 +274,7 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
             "optional",
             {
                 "default": RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
-                "type": int,
+                "type": positive_int,
                 "help": (
                     "Maximum allowed size in MB of the internal upload queue. "
                     "Use to adjust RAM usage if necessary."
@@ -313,6 +313,17 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
                     "Add this flag to upload files already existing in addition to those "
                     "added to the directory after this code starts running (by default "
                     "only files added after startup will be uploaded)"
+                ),
+            },
+        ],
+        "watchdog_lag_time": [
+            "optional",
+            {
+                "default": RUN_CONST.DEFAULT_WATCHDOG_LAG_TIME,
+                "type": int,
+                "help": (
+                    "Number of seconds that a file must remain static (unmodified) "
+                    "for its upload to begin"
                 ),
             },
         ],
@@ -395,6 +406,59 @@ class OpenMSIStreamArgumentParser(ArgumentParser):
                 "default": "warning",
                 "help": (
                     "Messages below this level will not be processed by the logger's file handler"
+                ),
+            },
+        ],
+        "girder_api_url": [
+            "positional",
+            {
+                "help": (
+                    "The full path to the REST API of a Girder instance, "
+                    "e.g. http://my.girder.com/api/v1."
+                )
+            },
+        ],
+        "girder_api_key": [
+            "positional",
+            {"help": "The API key to use for authenticating to the Girder instance"},
+        ],
+        "girder_root_folder_id": [
+            "optional",
+            {
+                "help": (
+                    "The ID of the Girder Folder relative to which files should be "
+                    "uploaded. If this argument is given, it will supersede both of the "
+                    "'collection_name' and 'girder_root_folder_path' arguments."
+                ),
+            },
+        ],
+        "collection_name": [
+            "optional",
+            {
+                "help": (
+                    "The name of the top-level Collection to which files should be uploaded. "
+                    "Superseded if 'girder_root_folder_id' is given."
+                ),
+            },
+        ],
+        "girder_root_folder_path": [
+            "optional",
+            {
+                "help": (
+                    "The name of the Folder inside the top-level Collection relative to "
+                    "which files should be uploaded. A path to a subdirectory in the "
+                    "Collection can be given using forward slashes. "
+                    "Superseded if 'girder_root_folder_id' is given. "
+                    "(default = collection_name/topic_name)"
+                ),
+            },
+        ],
+        "provider": [
+            "optional",
+            {
+                "help": (
+                    'Adding this argument will add a corresponding "provider" metadata '
+                    "field to all created folders and items"
                 ),
             },
         ],

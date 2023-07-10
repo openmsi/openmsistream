@@ -14,6 +14,7 @@ The main functional programs provided in OpenMSIStream are accessible through sp
    main_programs/data_file_upload_directory
    main_programs/data_file_download_directory
    main_programs/s3_transfer_stream_processor
+   main_programs/girder_upload_stream_processor
 
 OpenMSIStream also provides some useful base classes that can be extended to create customized Kafka streaming workflows for specific lab use cases. Those base classes are described in detail on the pages linked below, as well as documented in :doc:`the API reference <../dev_info/api_reference>`.
 
@@ -37,4 +38,3 @@ Encrypting data (optional)
 --------------------------
 
 The messages sent and received by the main programs above (running either interactively or as Services/daemons) can optionally be encrypted while stored on the broker, so that only the Producer/Consumer endpoints need to be trusted. OpenMSIStream includes a wrapper around `KafkaCrypto <https://github.com/tmcqueen-materials/kafkacrypto>`_ to facilitate this encryption. Please see :doc:`the page on message encryption <encryption>` for more information, including how to provision nodes and set up configuration files to encrypt messages.
-

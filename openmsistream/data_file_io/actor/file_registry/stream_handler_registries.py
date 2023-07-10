@@ -393,11 +393,13 @@ class StreamReproducerRegistry(StreamHandlerRegistry):
             )
         self._add_to_succeeded_table(new_entry, f"p{prodid}")
         if existing_entry_addr is not None:
+            self._in_progress_table.lock.acquire()
             try:
                 self._in_progress_table.remove_entries(existing_entry_addr)
                 self._in_progress_table.dump_to_file()
             except ValueError:
                 pass
+            self._in_progress_table.lock.release()
 
     def register_file_computing_result_failed(
         self, filename, rel_filepath, n_total_chunks

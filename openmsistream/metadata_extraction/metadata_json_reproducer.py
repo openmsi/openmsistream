@@ -16,9 +16,9 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
 
     This is a base class that cannot be instantiated on its own.
 
-    :param config_path: Path to the config file to use in defining the Broker connection,
+    :param config_file: Path to the config file to use in defining the Broker connection,
         Consumers, and Producers
-    :type config_path: :class:`pathlib.Path`
+    :type config_file: :class:`pathlib.Path`
     :param consumer_topic_name: Name of the topic to which the Consumer(s) should be subscribed
     :type consumer_topic_name: str
     :param producer_topic_name: Name of the topic to which the Producer(s) should produce

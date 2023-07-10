@@ -5,13 +5,15 @@ from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger
+from test_base_classes import TestWithKafkaTopics, TestWithLogger
 
 
-class TestUploadDataFile(TestWithLogger):
+class TestUploadDataFile(TestWithKafkaTopics, TestWithLogger):
     """
     Class for testing UploadDataFile functions
     """
+
+    TOPICS = {RUN_CONST.DEFAULT_TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """

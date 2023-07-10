@@ -10,20 +10,29 @@ from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
+    TestWithKafkaTopics,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
 )
 
-# constants
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
-
 
 class TestDataFileDirectoriesEncrypted(
-    TestWithDataFileUploadDirectory, TestWithDataFileDownloadDirectory
+    TestWithKafkaTopics,
+    TestWithDataFileUploadDirectory,
+    TestWithDataFileDownloadDirectory,
 ):
     """
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """
+
+    TOPIC_NAME = "test_oms_encrypted"
+
+    TOPICS = {
+        TOPIC_NAME: {},
+        f"{TOPIC_NAME}.keys": {"--partitions": 1},
+        f"{TOPIC_NAME}.reqs": {"--partitions": 1},
+        f"{TOPIC_NAME}.subs": {"--partitions": 1},
+    }
 
     def test_encrypted_upload_and_download_kafka(self):
         """
@@ -32,7 +41,9 @@ class TestDataFileDirectoriesEncrypted(
         # create the upload directory
         self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
         # start the upload thread
-        self.start_upload_thread(TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE)
+        self.start_upload_thread(
+            self.TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
+        )
         # copy the test file into the watched directory
         test_rel_filepath = (
             pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
@@ -42,7 +53,7 @@ class TestDataFileDirectoriesEncrypted(
         # start up the DataFileDownloadDirectory
         self.create_download_directory(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=TOPIC_NAME,
+            topic_name=self.TOPIC_NAME,
             consumer_group_id=f"test_encrypted_data_file_directories_{TEST_CONST.PY_VERSION}",
         )
         self.start_download_thread()
@@ -69,8 +80,8 @@ class TestDataFileDirectoriesEncrypted(
             # make sure that the ProducerFileRegistry files were created
             # and they list the file as completely uploaded
             log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f"upload_to_{TOPIC_NAME}_in_progress.csv"
-            completed_filepath = log_subdir / f"uploaded_to_{TOPIC_NAME}.csv"
+            in_prog_filepath = log_subdir / f"upload_to_{self.TOPIC_NAME}_in_progress.csv"
+            completed_filepath = log_subdir / f"uploaded_to_{self.TOPIC_NAME}.csv"
             self.assertTrue(in_prog_filepath.is_file())
             in_prog_table = DataclassTableReadOnly(
                 RegistryLineInProgress, filepath=in_prog_filepath, logger=self.logger

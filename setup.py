@@ -1,9 +1,17 @@
 # imports
-import setuptools
+import setuptools, pathlib
 
-# version tag
-version = "1.5.3"
+# read version tag
+version = None
+version_path = pathlib.Path(__file__).parent/"openmsistream"/"version.py"
+with open(version_path,"r") as version_file:
+    for line in version_file.readlines():
+        if line.startswith("__version__"):
+            version = line.strip().split("=")[-1].strip().strip('"')
+if not version:
+    raise RuntimeError("ERROR: Failed to find version tag!")
 
+# read a portion of the README to get the description
 long_description = ""
 with open("README.md", "r") as readme:
     for il, line in enumerate(readme.readlines(), start=1):
@@ -35,6 +43,7 @@ setupkwargs = dict(
             "ManageService=openmsistream.services.manage_service:main",
             "ProvisionNode=openmsistream.utilities.provision_wrapper:main",
             "S3TransferStreamProcessor=openmsistream.s3_buckets.s3_transfer_stream_processor:main",
+            "GirderUploadStreamProcessor=openmsistream.girder.girder_upload_stream_processor:main",
         ],
     },
     python_requires=">=3.7,<3.10",
@@ -42,6 +51,7 @@ setupkwargs = dict(
         "atomicwrites>=1.4.1",
         "boto3>=1.26.84",
         "confluent-kafka>=2.0.2",
+        "girder-client>=3.1.20",
         "kafkacrypto>=0.9.10.0",
         "matplotlib",
         "methodtools",
@@ -52,11 +62,13 @@ setupkwargs = dict(
         "test": [
             "beautifulsoup4",
             "black",
+            "docker",
             "gitpython",
             "lxml",
             "marko[toc]==1.3.0",
             "pyflakes>=3.0.1",
             "pylint>=2.16.3",
+            "requests",
             "tempenv>=2.0.0",
         ],
         "docs": [

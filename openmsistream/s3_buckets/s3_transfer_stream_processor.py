@@ -11,8 +11,9 @@ from .s3_data_transfer import S3DataTransfer
 
 class S3TransferStreamProcessor(DataFileStreamProcessor):
     """
-    A class to reconstruct data files read as messages from a topic, hold them in memory,
-    and transfer them to an S3 bucket when all of their messages have been received
+    A class to reconstruct data files read as messages from a topic, hold them in memory
+    or on disk, and transfer them to an S3 bucket when all of their messages have been
+    received
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
     :type bucket_name: str
@@ -55,9 +56,9 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
         in the bucket match its original hash from disk.
         Logs a warning if the file hashes don't match.
 
-        :param datafile: A :class:`~DownloadDataFileToMemory` object that has received
+        :param datafile: A :class:`~DownloadDataFile` object that has received
             all of its messages from the topic
-        :type datafile: :class:`~DownloadDataFileToMemory`
+        :type datafile: :class:`~DownloadDataFile`
         :param lock: Acquiring this :class:`threading.Lock` object ensures that only one instance
             of :func:`~_process_downloaded_data_file` is running at once
         :type lock: :class:`threading.Lock`

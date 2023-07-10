@@ -38,6 +38,14 @@ class DownloadDataFile(DataFile, ABC):
 
     @property
     @abstractmethod
+    def bytestring(self):
+        """
+        A bytestring of the data contained in the file. Not implemented in the base class.
+        """
+        raise NotImplementedError
+
+    @property
+    @abstractmethod
     def check_file_hash(self):
         """
         The hash of the data in the file after it was read. Not implemented in the base class.
@@ -174,6 +182,15 @@ class DownloadDataFileToDisk(DownloadDataFile):
     READ_BUFFER_SIZE = 4096
 
     #################### PROPERTIES ####################
+
+    @property
+    def bytestring(self):
+        """
+        A bytestring of the data in the file
+        """
+        with open(self.full_filepath, "rb") as fp:
+            data = fp.read()
+        return data
 
     @property
     def check_file_hash(self):

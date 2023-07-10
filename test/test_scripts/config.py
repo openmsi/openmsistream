@@ -8,19 +8,6 @@ class TestRoutineConstants:
     constants used in running tests
     """
 
-    # names of topics on the test cluster to use for each test
-    TEST_TOPIC_NAMES = {
-        "test_data_file_directories": "test_data_file_directories",
-        "test_data_file_directories_encrypted": "test_oms_encrypted",
-        "test_data_file_stream_processor_kafka": "test_data_file_stream_processor",
-        "test_data_file_stream_processor_restart_kafka": "test_data_file_stream_processor_2",
-        "test_stream_processor_restart_encrypted": "test_data_file_stream_processor_encrypted",
-        "test_plots_for_tutorial": "test_plots_for_tutorial",
-        "test_s3_transfer_stream_processor": "test_s3_transfer_stream_processor",
-        "test_serialization": "test_oms_encrypted",
-        "test_metadata_reproducer": "test_metadata_extractor",
-    }
-
     # Paths to locations inside the code base
     TEST_DIR_PATH = (pathlib.Path(__file__).parent.parent).resolve()
     EXAMPLES_DIR_PATH = TEST_DIR_PATH.parent / "examples"

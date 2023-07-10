@@ -3,13 +3,27 @@ import time
 from config import TEST_CONST  # pylint: disable=import-error
 
 # pylint: disable=import-error
-from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithUploadDataFile,
+    TestWithStreamProcessor,
+)
 
 
-class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcessor):
+class TestDataFileStreamProcessor(
+    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+):
     """
     Class for testing behavior of a DataFileStreamProcessor
     """
+
+    TOPIC_NAME = "test_data_file_stream_processor"
+    TOPIC_2_NAME = "test_data_file_stream_processor_2"
+
+    TOPICS = {
+        TOPIC_NAME: {},
+        TOPIC_2_NAME: {},
+    }
 
     def run_stream_processor_test(self, topic_name, mode):
         """
@@ -49,21 +63,20 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         Upload a data file and then use a DataFileStreamProcessor to read its data back
         in all three modes
         """
-        topic_name = TEST_CONST.TEST_TOPIC_NAMES["test_data_file_stream_processor_kafka"]
         # upload the test file
         self.upload_single_file(
             TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=topic_name,
+            topic_name=self.TOPIC_NAME,
             rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
         )
         # start up a stream processor to read its data back into memory
-        self.run_stream_processor_test(topic_name, "memory")
+        self.run_stream_processor_test(self.TOPIC_NAME, "memory")
         # start up a stream processor to read its data back to disk
         self.reset_stream_processor(remove_output=True)
-        self.run_stream_processor_test(topic_name, "disk")
+        self.run_stream_processor_test(self.TOPIC_NAME, "disk")
         # start up a stream processor to read its data back to memory and disk
         self.reset_stream_processor(remove_output=True)
-        self.run_stream_processor_test(topic_name, "both")
+        self.run_stream_processor_test(self.TOPIC_NAME, "both")
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_data_file_stream_processor_restart_kafka(self):
@@ -71,21 +84,18 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         Test restarting a DataFileStreamProcessor from the beginning of the topic
         after failing to process a file
         """
-        topic_name = TEST_CONST.TEST_TOPIC_NAMES[
-            "test_data_file_stream_processor_restart_kafka"
-        ]
         consumer_group_id = (
             f"test_data_file_stream_processor_restart_{TEST_CONST.PY_VERSION}"
         )
         # upload the data files
         self.upload_single_file(
             TEST_CONST.TEST_DATA_FILE_PATH,
-            topic_name=topic_name,
+            topic_name=self.TOPIC_2_NAME,
             rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
         )
         self.upload_single_file(
             TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=topic_name,
+            topic_name=self.TOPIC_2_NAME,
             rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
         )
         rel_filepath_1 = TEST_CONST.TEST_DATA_FILE_PATH.relative_to(
@@ -97,7 +107,7 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         # use a stream processor to read their data back into memory one time,
         # deliberately failing the first file
         self.create_stream_processor(
-            topic_name=topic_name, consumer_group_id=consumer_group_id
+            topic_name=self.TOPIC_2_NAME, consumer_group_id=consumer_group_id
         )
         self.stream_processor.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
         self.start_stream_processor_thread()
@@ -136,13 +146,15 @@ class TestDataFileStreamProcessor(TestWithUploadDataFile, TestWithStreamProcesso
         # upload a third file (fake config file)
         third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
         self.upload_single_file(
-            third_filepath, topic_name=topic_name, rootdir=TEST_CONST.TEST_DATA_DIR_PATH
+            third_filepath,
+            topic_name=self.TOPIC_2_NAME,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
         )
         rel_filepath_3 = third_filepath.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
         # recreate and re-run the stream processor, allowing it to process all files
         self.reset_stream_processor()
         self.create_stream_processor(
-            topic_name=topic_name, consumer_group_id=consumer_group_id
+            topic_name=self.TOPIC_2_NAME, consumer_group_id=consumer_group_id
         )
         self.start_stream_processor_thread()
         try:

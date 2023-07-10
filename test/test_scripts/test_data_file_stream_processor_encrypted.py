@@ -3,30 +3,40 @@ import pathlib
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithDataFileUploadDirectory, TestWithStreamProcessor
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithDataFileUploadDirectory,
+    TestWithStreamProcessor,
+)
 
 
 class TestDataFileStreamProcessorEncrypted(
-    TestWithStreamProcessor, TestWithDataFileUploadDirectory
+    TestWithKafkaTopics, TestWithStreamProcessor, TestWithDataFileUploadDirectory
 ):
     """
     Class for testing behavior of an encrypted DataFileStreamProcessor
     """
 
+    TOPIC_NAME = "test_data_file_stream_processor_encrypted"
+
+    TOPICS = {
+        TOPIC_NAME: {},
+        f"{TOPIC_NAME}.keys": {"--partitions": 1},
+        f"{TOPIC_NAME}.reqs": {"--partitions": 1},
+        f"{TOPIC_NAME}.subs": {"--partitions": 1},
+    }
+
     def test_data_file_stream_processor_restart_encrypted_kafka(self):
         """
         Test restarting an encrypted DataFileStreamProcessor after failing to process a file
         """
-        topic_name = TEST_CONST.TEST_TOPIC_NAMES[
-            "test_stream_processor_restart_encrypted"
-        ]
         consumer_group_id = (
             f"test_data_file_stream_processor_restart_encrypted_{TEST_CONST.PY_VERSION}"
         )
         # create and start the upload directory
         self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
         self.start_upload_thread(
-            topic_name=topic_name, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
+            topic_name=self.TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
         )
         # copy the test files into the watched directory
         rel_filepath_1 = (
@@ -40,7 +50,7 @@ class TestDataFileStreamProcessorEncrypted(
         # deliberately failing the first file
         self.create_stream_processor(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=topic_name,
+            topic_name=self.TOPIC_NAME,
             output_dir=self.output_dir / "stream_processor_output",
             consumer_group_id=consumer_group_id,
         )
@@ -86,7 +96,7 @@ class TestDataFileStreamProcessorEncrypted(
         self.reset_stream_processor()
         self.create_stream_processor(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=topic_name,
+            topic_name=self.TOPIC_NAME,
             output_dir=self.output_dir / "stream_processor_output",
             consumer_group_id=consumer_group_id,
         )

@@ -1,14 +1,9 @@
 # imports
-import pathlib, shutil, unittest, os, logging, time, datetime
+import pathlib, shutil, unittest, os, logging, time, datetime, subprocess
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.utilities import LogOwner
 from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.data_file_io.entity.download_data_file import (
-    DownloadDataFileToDisk,
-    DownloadDataFileToMemory,
-    DownloadDataFileToMemoryAndDisk,
-)
 from openmsistream import (
     DataFileUploadDirectory,
     DataFileDownloadDirectory,
@@ -16,6 +11,78 @@ from openmsistream import (
     UploadDataFile,
 )
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+
+class TestWithKafkaTopics(unittest.TestCase):
+    """
+    Base class for tests that depend on one or more Kafka topics
+
+    Topics are created and deleted in setUp/tearDownClass
+    """
+
+    TOPICS = {}
+
+    @classmethod
+    def setUpClass(cls):
+        super().setUpClass()
+        if os.environ.get("TESTS_NO_KAFKA"):
+            return
+        if not (
+            os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS")
+            and os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+        ):
+            return
+        for topic_name, args_dict in cls.TOPICS.items():
+            n_partitions = 2
+            replication_factor = 1
+            extra_args = []
+            for argflag, argval in args_dict.items():
+                if argflag == "--partitions":
+                    n_partitions = argval
+                    continue
+                if argflag == "--replication-factor":
+                    replication_factor = argval
+                    continue
+                extra_args += [argflag, str(argval)]
+            cmd = [
+                "docker",
+                "exec",
+                "local_kafka_broker",
+                "kafka-topics",
+                "--bootstrap-server",
+                os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"),
+                "--create",
+                "--partitions",
+                str(n_partitions),
+                "--replication-factor",
+                str(replication_factor),
+                *extra_args,
+                "--topic",
+                topic_name,
+            ]
+            subprocess.check_output(cmd)
+
+    @classmethod
+    def tearDownClass(cls):
+        if not (
+            os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS")
+            and os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+        ):
+            return
+        for topic_name in cls.TOPICS:
+            cmd = [
+                "docker",
+                "exec",
+                "local_kafka_broker",
+                "kafka-topics",
+                "--bootstrap-server",
+                os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"),
+                "--delete",
+                "--topic",
+                topic_name,
+            ]
+            subprocess.check_output(cmd)
+        super().tearDownClass()
 
 
 class TestWithLogger(LogOwner, unittest.TestCase):
@@ -387,7 +454,7 @@ class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
         current_messages_read = -1
         time_waited = 0
         self.log_at_info(
-            f"Waiting to reconstruct files; will timeout after {timeout_secs} seconds)..."
+            f"Waiting to reconstruct files; will timeout after {timeout_secs} seconds..."
         )
         all_files_found = False
         start_time = datetime.datetime.now()
@@ -439,23 +506,11 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
             return ValueError(
                 f"ERROR: testing processing for {datafile.filename} is set to fail!"
             )
-        # make sure that the file has the right properties for its type, and get its bytestring
-        bytestring = None
-        if self.datafile_type == DownloadDataFileToDisk:
-            with open(datafile.full_filepath, "rb") as fp:
-                bytestring = fp.read()
-        elif self.datafile_type in (
-            DownloadDataFileToMemory,
-            DownloadDataFileToMemoryAndDisk,
-        ):
-            bytestring = datafile.bytestring
-        else:
-            raise ValueError(
-                f"ERROR: unrecognized download data file type {self.datafile_type}"
-            )
         # add the filename and bytestring to the list
         with lock:
-            self.completed_filenames_bytestrings.append((datafile.filename, bytestring))
+            self.completed_filenames_bytestrings.append(
+                (datafile.filename, datafile.bytestring)
+            )
         return None
 
     def _failed_processing_callback(self, datafile, lock):
@@ -575,7 +630,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
         current_messages_read = -1
         time_waited = 0
         self.log_at_info(
-            f"Waiting to process files; will timeout after {timeout_secs} seconds)..."
+            f"Waiting to process files; will timeout after {timeout_secs} seconds..."
         )
         all_files_found = False
         start_time = datetime.datetime.now()
@@ -738,7 +793,7 @@ class TestWithStreamReproducer(TestWithOutputLocation):
         time_waited = 0
         msg = (
             "Waiting to process files and produce their computed messages; "
-            f"will timeout after {timeout_secs} seconds)..."
+            f"will timeout after {timeout_secs} seconds..."
         )
         self.log_at_info(msg)
         all_files_found = False

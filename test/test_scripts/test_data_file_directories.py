@@ -12,21 +12,26 @@ from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
+    TestWithKafkaTopics,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
     TestWithEnvVars,
 )
 
-# constants
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
-
 
 class TestDataFileDirectories(
-    TestWithDataFileUploadDirectory, TestWithDataFileDownloadDirectory, TestWithEnvVars
+    TestWithKafkaTopics,
+    TestWithDataFileUploadDirectory,
+    TestWithDataFileDownloadDirectory,
+    TestWithEnvVars,
 ):
     """
     Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
     """
+
+    TOPIC_NAME = "test_data_file_directories"
+
+    TOPICS = {TOPIC_NAME: {}}
 
     def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
         """
@@ -35,7 +40,7 @@ class TestDataFileDirectories(
         # create the upload directory with the default config file
         self.create_upload_directory(**create_kwargs)
         # start it running in a new thread
-        self.start_upload_thread(topic_name=TOPIC_NAME)
+        self.start_upload_thread(topic_name=self.TOPIC_NAME)
         try:
             # put the test file(s) in the watched directory
             for filepath, filedict in upload_file_dict.items():
@@ -49,8 +54,8 @@ class TestDataFileDirectories(
             # make sure that the ProducerFileRegistry files were created
             # and they list the file(s) as completely uploaded
             log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f"upload_to_{TOPIC_NAME}_in_progress.csv"
-            completed_filepath = log_subdir / f"uploaded_to_{TOPIC_NAME}.csv"
+            in_prog_filepath = log_subdir / f"upload_to_{self.TOPIC_NAME}_in_progress.csv"
+            completed_filepath = log_subdir / f"uploaded_to_{self.TOPIC_NAME}.csv"
             self.assertTrue(in_prog_filepath.is_file())
             in_prog_table = DataclassTableReadOnly(
                 RegistryLineInProgress,
@@ -91,7 +96,7 @@ class TestDataFileDirectories(
                     rel_path = pathlib.Path(filepath.name)
                 relevant_files[filepath] = rel_path
         # create the download directory
-        self.create_download_directory(topic_name=TOPIC_NAME, **other_create_kwargs)
+        self.create_download_directory(topic_name=self.TOPIC_NAME, **other_create_kwargs)
         # start reconstruct in a separate thread so we can time it out
         self.start_download_thread()
         try:

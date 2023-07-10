@@ -26,6 +26,7 @@ The main programs offered by OpenMSIStream include streamlined ways to:
 * :doc:`Persistently watch directory trees on file systems and upload any files added to them to Kafka topics <../user_info/main_programs/data_file_upload_directory>`
 * :doc:`Download files uploaded to Kafka topics to disk <../user_info/main_programs/data_file_download_directory>`
 * :doc:`Download files uploaded to Kafka topics and transfer them to S3 object store buckets <../user_info/main_programs/s3_transfer_stream_processor>`
+* :doc:`Download files uploaded to Kafka topics and transfer them to Girder-based data management platforms <../user_info/main_programs/girder_upload_stream_processor>`
 
 OpenMSIStream also includes some base classes that can be extended by users to:
 

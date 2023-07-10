@@ -5,7 +5,11 @@ from openmsistream.kafka_wrapper import ConsumerGroup
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithUploadDataFile, TestWithStreamReproducer
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithUploadDataFile,
+    TestWithStreamReproducer,
+)
 
 # import the XRDCSVMetadataReproducer from the examples directory
 class_path = (
@@ -29,21 +33,25 @@ if os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS") and os.environ.get(
 ):
     REP_CONFIG_PATH = REP_CONFIG_PATH.with_name(f"local_broker_{REP_CONFIG_PATH.name}")
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "extracting_metadata" / "SC001_XRR.csv"
-SOURCE_TOPIC_NAME = (
-    TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]] + "_source"
-)
-DEST_TOPIC_NAME = (
-    TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]] + "_dest"
-)
 CONSUMER_GROUP_ID = f"test_metadata_reproducer_{TEST_CONST.PY_VERSION}"
 
 
-class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
+class TestMetadataReproducer(
+    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamReproducer
+):
     """
     Class for testing that an uploaded file can be read back from the topic
     and have its metadata successfully extracted and produced to another topic
     as a string of JSON
     """
+
+    SOURCE_TOPIC_NAME = "test_metadata_extractor_source"
+    DEST_TOPIC_NAME = "test_metadata_extractor_dest"
+
+    TOPICS = {
+        SOURCE_TOPIC_NAME: {},
+        DEST_TOPIC_NAME: {},
+    }
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -65,7 +73,7 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
         Convenience function to run the metadata reproducer
         """
         # upload the test data file
-        self.upload_single_file(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
+        self.upload_single_file(UPLOAD_FILE, topic_name=self.SOURCE_TOPIC_NAME)
         recofp = pathlib.Path(UPLOAD_FILE.name)
         # wait for the file to be processed
         self.wait_for_files_to_be_processed(recofp)
@@ -100,8 +108,8 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
         self.create_stream_reproducer(
             module.XRDCSVMetadataReproducer,
             cfg_file=REP_CONFIG_PATH,
-            source_topic_name=SOURCE_TOPIC_NAME,
-            dest_topic_name=DEST_TOPIC_NAME,
+            source_topic_name=self.SOURCE_TOPIC_NAME,
+            dest_topic_name=self.DEST_TOPIC_NAME,
             consumer_group_id=CONSUMER_GROUP_ID,
         )
         self.start_stream_reproducer_thread()
@@ -111,7 +119,7 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
             # from the test file is there
             consumer_group = ConsumerGroup(
                 TEST_CONST.TEST_CFG_FILE_PATH_MDC,
-                DEST_TOPIC_NAME,
+                self.DEST_TOPIC_NAME,
                 consumer_group_id=CONSUMER_GROUP_ID,
             )
             consumer = consumer_group.get_new_subscribed_consumer()
@@ -148,7 +156,7 @@ class TestMetadataReproducer(TestWithUploadDataFile, TestWithStreamReproducer):
                         success = True
             if msg is None:
                 errmsg = (
-                    f"ERROR: could not consume metadata message from {DEST_TOPIC_NAME} "
+                    f"ERROR: could not consume metadata message from {self.DEST_TOPIC_NAME} "
                     f"within {TIMEOUT_SECS} seconds."
                 )
                 raise RuntimeError(errmsg)

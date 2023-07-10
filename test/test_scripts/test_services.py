@@ -1,6 +1,7 @@
 # imports
 import unittest, platform, pathlib, time
 from subprocess import check_output
+from openmsistream.utilities.config import RUN_CONST
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from openmsistream.services.windows_service_manager import WindowsServiceManager
@@ -10,14 +11,22 @@ from openmsistream.services.manage_service import main as manage_service_main
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOutputLocation
+from test_base_classes import TestWithKafkaTopics, TestWithOutputLocation
+
+# some classes to skip because they're more complex
+SKIP_CLASS_NAMES = ["GirderUploadStreamProcessor"]
 
 
-class TestServices(TestWithOutputLocation):
+class TestServices(TestWithKafkaTopics, TestWithOutputLocation):
     """
     Class for testing that Services can be installed/started/stopped/removed
     without any errors on Linux OS
     """
+
+    DEF_TOPIC_NAME = RUN_CONST.DEFAULT_TOPIC_NAME
+    S3_TOPIC_NAME = "test_s3_transfer_stream_processor"
+
+    TOPICS = {DEF_TOPIC_NAME: {}, S3_TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -42,7 +51,7 @@ class TestServices(TestWithOutputLocation):
                 "--config",
                 TEST_CONST.TEST_CFG_FILE_PATH_S3,
                 "--topic_name",
-                TEST_CONST.TEST_TOPIC_NAMES["test_s3_transfer_stream_processor"],
+                self.S3_TOPIC_NAME,
                 "--consumer_group_id",
                 "create_new",
             ],
@@ -58,6 +67,8 @@ class TestServices(TestWithOutputLocation):
         for service_dict in SERVICE_CONST.available_services:
             try:
                 service_class_name = service_dict["class"].__name__
+                if service_class_name in SKIP_CLASS_NAMES:
+                    continue
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
@@ -113,6 +124,8 @@ class TestServices(TestWithOutputLocation):
                 if not self.output_dir.is_dir():
                     self.output_dir.mkdir()
                 service_class_name = service_dict["class"].__name__
+                if service_class_name in SKIP_CLASS_NAMES:
+                    continue
                 if service_class_name not in self.argslists_by_class_name:
                     raise ValueError(
                         f'ERROR: no arguments to use found for class "{service_class_name}"!'
@@ -128,6 +141,7 @@ class TestServices(TestWithOutputLocation):
                     interactive=False,
                     logger=self.logger,
                 )
+                self.log_at_info(f"Installing {service_name}...")
                 manager.install_service()
                 for run_mode in ("start", "status", "stop", "remove", "reinstall"):
                     time.sleep(5)

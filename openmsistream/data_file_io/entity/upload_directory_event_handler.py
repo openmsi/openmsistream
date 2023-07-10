@@ -30,16 +30,14 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
     :type upload_regex: :func:`re.compile`, optional
     :param logs_subdir: path to the owning upload directory's "logs" directory
     :type logs_subdir: :class:`pathlib.Path`
+    :param watchdog_lag_time: Number of seconds that files must remain static (unmodified)
+        before it's given in :func:`get_new_files`
+    :type watchdog_lag_time: int
     """
-
-    #################### CONSTANTS ####################
-
-    # how long a file must remain unmodified before it's given in get_new_files
-    PERSISTENCE_SECS = 3
 
     #################### NEW PUBLIC FUNCTIONS ####################
 
-    def __init__(self, upload_regex, logs_subdir, **other_kwargs):
+    def __init__(self, upload_regex, logs_subdir, lag_time, **other_kwargs):
         """
         Constructor method
         """
@@ -48,6 +46,7 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
         self.__upload_regex = upload_regex
         self._logs_subdir = logs_subdir
         self.__rootdir = self._logs_subdir.parent
+        self.__lag_time = lag_time
         # A thread lock
         self.__lock = RLock()
         # all currently active files
@@ -65,7 +64,7 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
             for filepath, active_file in self.__active_files_by_path.items():
                 if (
                     ref_timestamp - active_file.last_updated
-                ).total_seconds() > self.PERSISTENCE_SECS:
+                ).total_seconds() > self.__lag_time:
                     keys_to_pop.append(filepath)
             for key in keys_to_pop:
                 yield self.__active_files_by_path.pop(key)

@@ -1,7 +1,8 @@
 # imports
-import unittest, subprocess, pathlib, re, time
+import unittest, subprocess, pathlib, re
 from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
+import docker
 from openmsistream.utilities import Logger
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
@@ -10,7 +11,6 @@ from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 TEST_DIR_PATH = pathlib.Path(__file__).resolve().parent
 TOP_DIR_PATH = TEST_DIR_PATH.parent
 START_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "start_local_broker.sh"
-CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH = TEST_DIR_PATH / "create_local_testing_topics.sh"
 STOP_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "stop_local_broker.sh"
 TEST_SCRIPT_DIR_PATH = TEST_DIR_PATH / "test_scripts"
 TEST_REPO_STATUS_SCRIPT_PATH = TEST_DIR_PATH / "test_repo_status.sh"
@@ -23,6 +23,17 @@ def get_args(args):
     Return the parsed command line arguments
     """
     parser = ArgumentParser()
+    local_broker_group = parser.add_mutually_exclusive_group()
+    local_broker_group.add_argument(
+        "--setup_local_broker",
+        action="store_true",
+        help="Add this flag to set up the local broker and quit",
+    )
+    local_broker_group.add_argument(
+        "--teardown_local_broker",
+        action="store_true",
+        help="Add this flag to tear down the local broker and quit",
+    )
     parser.add_argument(
         "--no_pyflakes",
         action="store_true",
@@ -62,6 +73,15 @@ def get_args(args):
             "Add this flag to automatically set up a local Kafka broker with Docker "
             "and use that broker to run tests instead of a third-party broker "
             "configured using environment variables"
+        ),
+    )
+    parser.add_argument(
+        "--skip_broker_teardown",
+        action="store_true",
+        help=(
+            "Add this flag to skip tearing down the local Kafka broker "
+            "after running tests. The local broker can be shut down manually "
+            'by rerunning with "--teardown_local_broker".'
         ),
     )
     parser.add_argument(
@@ -161,6 +181,50 @@ def test_pylint(args):
         LOGGER.info("Passed pylint checks : )")
 
 
+def setup_local_broker():
+    """
+    Start up a local broker running in Docker and create the necessary topics in it
+    """
+    LOGGER.info("Setting up local Kafka broker")
+    try:
+        run_cmd_in_subprocess(
+            ["bash", str(START_LOCAL_BROKER_SCRIPT_PATH)],
+            logger=LOGGER,
+            reraise=True,
+            cwd=pathlib.Path(__file__).parent,
+        )
+    except Exception as exc:
+        errmsg = (
+            "ERROR: failed to set up the local testing broker: is Docker running? "
+            "Exception will be re-raised."
+        )
+        LOGGER.error(errmsg, exc_info=exc, reraise=True)
+
+
+def local_broker_is_running():
+    """
+    Returns True if the local Kafka broker is running, and False otherwise
+    """
+    try:
+        client = docker.from_env()
+        try:
+            broker_name = "local_kafka_broker"
+            broker_status = client.containers.get(broker_name).attrs["State"]["Status"]
+            zk_name = "local_kafka_zookeeper"
+            zookeeper_status = client.containers.get(zk_name).attrs["State"]["Status"]
+            if broker_status == "running" and zookeeper_status == "running":
+                return True
+        except docker.errors.NotFound:
+            return False
+    except Exception as exc:
+        LOGGER.error(
+            "ERROR: failed to test whether the local broker is running! Will re-raise exception.",
+            exc_info=exc,
+            reraise=True,
+        )
+    return False
+
+
 def start_local_broker_and_get_temp_env(args):
     """
     If requested, start up a local broker running in docker, create the necessary topics in it,
@@ -170,30 +234,8 @@ def start_local_broker_and_get_temp_env(args):
     temp_env_local_broker = None
     if args.local_broker:
         LOGGER.info("Tests will be run using a local broker set up using Docker")
-        try:
-            run_cmd_in_subprocess(
-                ["bash", str(START_LOCAL_BROKER_SCRIPT_PATH)],
-                logger=LOGGER,
-                reraise=True,
-                cwd=pathlib.Path(__file__).parent,
-            )
-            LOGGER.info(
-                "Local broker started, sleeping 5 seconds to give it a moment to get up and running"
-            )
-            time.sleep(5)
-            run_cmd_in_subprocess(
-                ["bash", str(CREATE_LOCAL_TESTING_TOPICS_SCRIPT_PATH)],
-                logger=LOGGER,
-                reraise=True,
-                cwd=pathlib.Path(__file__).parent,
-            )
-            LOGGER.info("Testing topics created in local broker")
-        except Exception as exc:
-            errmsg = (
-                "ERROR: failed to set up the local testing broker and topics: is Docker running? "
-                "Exception will be re-raised."
-            )
-            LOGGER.error(errmsg, exc_info=exc, reraise=True)
+        if not local_broker_is_running():
+            setup_local_broker()
         temp_env_var_dict = {
             "USE_LOCAL_KAFKA_BROKER_IN_TESTS": "yes",
             "LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS": "localhost:9092",
@@ -212,7 +254,7 @@ def skip_kafka_tests_and_get_temp_env(args, suites):
     """
     temp_no_kafka_env = None
     if args.no_kafka:
-        temp_env_var_dict = {}
+        temp_env_var_dict = {"TESTS_NO_KAFKA": "yes"}
         for env_var_name in TEST_CONST.ENV_VAR_NAMES:
             temp_env_var_dict[env_var_name] = None
         temp_no_kafka_env = TemporaryEnvironment(temp_env_var_dict)
@@ -254,6 +296,26 @@ def skip_unmatched_tests(args, suites):
                         )
 
 
+def teardown_local_broker():
+    """
+    Stop the local Kafka broker
+    """
+    try:
+        run_cmd_in_subprocess(
+            ["bash", str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
+            logger=LOGGER,
+            reraise=True,
+            cwd=pathlib.Path(__file__).parent,
+        )
+        LOGGER.info("Local broker stopped")
+    except Exception as exc:
+        errmsg = (
+            "ERROR: failed to stop the local testing broker, and it may need "
+            "to be stopped manually. Exception will be re-raised."
+        )
+        LOGGER.error(errmsg, exc_info=exc, reraise=True)
+
+
 def run_script_tests(args):
     """
     Run all requested tests defined in the "test_scripts" directory
@@ -289,20 +351,8 @@ def run_script_tests(args):
         # exit the "local broker" TemporaryEnvironment and stop the local broker
         if temp_env_local_broker:
             temp_env_local_broker.__exit__()
-            try:
-                run_cmd_in_subprocess(
-                    ["bash", str(STOP_LOCAL_BROKER_SCRIPT_PATH)],
-                    logger=LOGGER,
-                    reraise=True,
-                    cwd=pathlib.Path(__file__).parent,
-                )
-                LOGGER.info("Local broker stopped")
-            except Exception as exc:
-                errmsg = (
-                    "ERROR: failed to stop the local testing broker, and it may need "
-                    "to be stopped manually. Exception will be re-raised."
-                )
-                LOGGER.error(errmsg, exc_info=exc, reraise=True)
+            if not args.skip_broker_teardown:
+                teardown_local_broker()
         # check for any errors or failures
         if len(result.errors) > 0 or len(result.failures) > 0:
             raise RuntimeError(
@@ -349,6 +399,13 @@ def main(args=None):
     Main function to run the script
     """
     args = get_args(args)
+    # If we're just setting up or tearing down the local broker, run just those functions
+    if args.setup_local_broker:
+        setup_local_broker()
+        return
+    if args.teardown_local_broker:
+        teardown_local_broker()
+        return
     test_pyflakes(args)
     test_formatting(args)
     test_pylint(args)

@@ -27,7 +27,7 @@ To see other optional command line arguments, run ``DataFileDownloadDirectory -h
 Interacting with the program
 ----------------------------
 
-While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total messages have been read and how many files have been completely reconstructed. When all the messages for a single file have been received and the file is completely reconstructed, a message will be printed to the console saying what file it was. The processes can be shut down at any time by typing "quit" or "q" into the console.
+While the main process is running, a line with a "." character will be printed out periodically to indicate the process is still alive. At any time, typing "check" or "c" into the console will print a message specifying how many total messages have been read and how many files have been completely reconstructed. The processes can be shut down at any time by typing "quit" or "q" into the console.
 
 Consumer offset commits
 -----------------------

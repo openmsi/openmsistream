@@ -15,9 +15,9 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     into memory and perform some operation(s) when entire files are available.
     This is a base class that cannot be instantiated on its own.
 
-    :param config_path: Path to the config file to use in defining the Broker connection
+    :param config_file: Path to the config file to use in defining the Broker connection
         and Consumers
-    :type config_path: :class:`pathlib.Path`
+    :type config_file: :class:`pathlib.Path`
     :param topic_name: Name of the topic to which the Consumers should be subscribed
     :type topic_name: str
     :param output_dir: Path to the directory where the log and csv registry files should be kept

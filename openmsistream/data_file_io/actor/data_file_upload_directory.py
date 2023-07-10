@@ -36,6 +36,9 @@ class DataFileUploadDirectory(
     :param datafile_type: the type of data file that recognized files should be uploaded as
         (must be a subclass of :class:`~UploadDataFile`)
     :type datafile_type: :class:`~UploadDataFile`, optional
+    :param watchdog_lag_time: Number of seconds that files must remain static (unmodified)
+        for their uploads to begin
+    :type watchdog_lag_time: int
 
     :raises ValueError: if `datafile_type` is not a subclass of :class:`~UploadDataFile`
     """
@@ -61,6 +64,7 @@ class DataFileUploadDirectory(
         config_path,
         upload_regex=RUN_CONST.DEFAULT_UPLOAD_REGEX,
         datafile_type=UploadDataFile,
+        watchdog_lag_time=RUN_CONST.DEFAULT_WATCHDOG_LAG_TIME,
         **kwargs,
     ):
         """
@@ -86,6 +90,7 @@ class DataFileUploadDirectory(
         self.__event_handler = UploadDirectoryEventHandler(
             upload_regex=upload_regex,
             logs_subdir=self._logs_subdir,
+            lag_time=watchdog_lag_time,
             logger=self.logger,
         )
         self.__active_files_by_path = {}
@@ -561,6 +566,7 @@ class DataFileUploadDirectory(
             "queue_max_size",
             "update_seconds",
             "upload_existing",
+            "watchdog_lag_time",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_UPLOAD_THREADS}
         return args, kwargs
@@ -583,6 +589,7 @@ class DataFileUploadDirectory(
             args.upload_dir,
             args.config,
             upload_regex=args.upload_regex,
+            watchdog_lag_time=args.watchdog_lag_time,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,

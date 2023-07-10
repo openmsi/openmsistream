@@ -4,7 +4,11 @@ import importlib.machinery, importlib.util
 from config import TEST_CONST  # pylint: disable=import-error
 
 # pylint: disable=import-error
-from test_base_classes import TestWithUploadDataFile, TestWithStreamProcessor
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithUploadDataFile,
+    TestWithStreamProcessor,
+)
 
 # import the XRDCSVPlotter from the examples directory
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"
@@ -15,15 +19,20 @@ module = loader.load_module()  # pylint: disable=deprecated-method,no-value-for-
 # constants
 TIMEOUT_SECS = 90
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "SC001_XRR.csv"
-TOPIC_NAME = TEST_CONST.TEST_TOPIC_NAMES[pathlib.Path(__file__).name[: -len(".py")]]
 CONSUMER_GROUP_ID = f"test_plots_for_tutorial_{TEST_CONST.PY_VERSION}"
 
 
-class TestPlotsForTutorial(TestWithUploadDataFile, TestWithStreamProcessor):
+class TestPlotsForTutorial(
+    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+):
     """
     Class for testing that an uploaded file can be read back from the topic and have its metadata
     successfully extracted and produced to another topic as a string of JSON
     """
+
+    TOPIC_NAME = "test_plots_for_tutorial"
+
+    TOPICS = {TOPIC_NAME: {}}
 
     def setUp(self):  # pylint: disable=invalid-name
         """
@@ -47,13 +56,13 @@ class TestPlotsForTutorial(TestWithUploadDataFile, TestWithStreamProcessor):
         # start up the plot maker
         self.create_stream_processor(
             module.XRDCSVPlotter,
-            topic_name=TOPIC_NAME,
+            topic_name=self.TOPIC_NAME,
             consumer_group_id=CONSUMER_GROUP_ID,
         )
         self.start_stream_processor_thread()
         try:
             # upload the test data file
-            self.upload_single_file(UPLOAD_FILE, topic_name=TOPIC_NAME)
+            self.upload_single_file(UPLOAD_FILE, topic_name=self.TOPIC_NAME)
             recofp = pathlib.Path(UPLOAD_FILE.name)
             # wait for the file to be processed
             self.wait_for_files_to_be_processed(recofp)
