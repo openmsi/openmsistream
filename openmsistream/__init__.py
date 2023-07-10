@@ -1,7 +1,5 @@
 """OpenMSIStream library for simplified data streaming using Apache Kafka"""
 
-__version__ = "1.5.3"
-
 # imports
 import os
 from .data_file_io.entity.upload_data_file import UploadDataFile
@@ -11,8 +9,10 @@ from .data_file_io.actor.data_file_stream_processor import DataFileStreamProcess
 from .data_file_io.actor.data_file_stream_reproducer import DataFileStreamReproducer
 from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
 from .girder.girder_upload_stream_processor import GirderUploadStreamProcessor
+from .version import __version__
 
 __all__ = [
+    "__version__",
     "UploadDataFile",
     "DataFileUploadDirectory",
     "DataFileDownloadDirectory",

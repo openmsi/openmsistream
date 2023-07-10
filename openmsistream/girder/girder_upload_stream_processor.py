@@ -2,9 +2,8 @@
 from io import BytesIO
 from hashlib import sha256
 import girder_client
-import openmsistream
+from ..version import __version__
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
-from ..data_file_io.entity.download_data_file import DownloadDataFileToDisk
 from ..utilities.config import RUN_CONST
 
 
@@ -72,7 +71,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc, reraise=True)
         # set some minimal amount of metadata fields
         self.minimal_metadata_dict = {
-            "OpenMSIStreamVersion": openmsistream.__version__,
+            "OpenMSIStreamVersion": __version__,
             "KafkaTopic": topic_name,
         }
         if provider:
@@ -168,14 +167,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 f"at {datafile.relative_filepath}"
             )
             return RuntimeError(errmsg)
-        bytestring = None
-        if isinstance(datafile, DownloadDataFileToDisk):
-            with open(datafile.full_filepath, "rb") as fp:
-                bytestring = fp.read()
-        else:
-            bytestring = datafile.bytestring
         checksum_hash = sha256()
-        checksum_hash.update(bytestring)
+        checksum_hash.update(datafile.bytestring)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
             "sha256": checksum_hash.hexdigest(),
@@ -289,8 +282,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         """
         Run a :class:`~GirderUploadStreamProcessor` directly from the command line
 
-        Calls :func:`~DataFileStreamProcessor.process_files_as_read` on a :class:`~GirderUploadStreamProcessor`
-        defined by command line (or given) arguments
+        Calls :func:`~DataFileStreamProcessor.process_files_as_read` on a
+        :class:`~GirderUploadStreamProcessor` defined by command line (or given) arguments
 
         :param args: the list of arguments to send to the parser instead of getting them
             from sys.argv

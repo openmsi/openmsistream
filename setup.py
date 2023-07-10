@@ -3,13 +3,13 @@ import setuptools, pathlib
 
 # read version tag
 version = None
-module_init_path = pathlib.Path(__file__).parent/"openmsistream"/"__init__.py"
-with open(module_init_path,"r") as init_file:
-    for line in init_file.readlines():
+version_path = pathlib.Path(__file__).parent/"openmsistream"/"version.py"
+with open(version_path,"r") as version_file:
+    for line in version_file.readlines():
         if line.startswith("__version__"):
             version = line.strip().split("=")[-1].strip().strip('"')
 if not version:
-    raise RuntimeError("ERROR: Failed to find version tag from __init__ file!")
+    raise RuntimeError("ERROR: Failed to find version tag!")
 
 # read a portion of the README to get the description
 long_description = ""
