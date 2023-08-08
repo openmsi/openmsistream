@@ -116,6 +116,7 @@ class TestWithUploadDataFile(TestWithLogger):
             chunk_size=chunk_size,
         )
 
+
 class TestWithOpenMSIStreamOutputLocation(TestWithOutputLocation):
     """
     A test with an output location.
@@ -134,6 +135,7 @@ class TestWithOpenMSIStreamOutputLocation(TestWithOutputLocation):
                 / f"{self._testMethodName}_output_{TEST_CONST.PY_VERSION}"
             )
         super().setUp()
+
 
 class TestWithDataFileUploadDirectory(TestWithOpenMSIStreamOutputLocation):
     """
