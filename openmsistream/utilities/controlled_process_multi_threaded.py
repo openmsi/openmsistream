@@ -6,7 +6,6 @@ A ControlledProcess running with more than one thread
 from threading import Lock
 from abc import ABC, abstractmethod
 from ..utilities.exception_tracking_thread import ExceptionTrackingThread
-from .config import RUN_CONST
 from .controlled_process import ControlledProcess
 
 
@@ -18,10 +17,10 @@ class ControlledProcessMultiThreaded(ControlledProcess, ABC):
     :type n_threads: int, optional
     """
 
-    # time in seconds to wait for threads to join in shutdown
-    SHUTDOWN_THREAD_TIMEOUT = 10
+    DEF_N_THREADS = 2
+    SHUTDOWN_THREAD_TIMEOUT = 10 # time in seconds to wait for threads to join in shutdown
 
-    def __init__(self, *args, n_threads=RUN_CONST.DEFAULT_N_THREADS, **kwargs):
+    def __init__(self, *args, n_threads=DEF_N_THREADS, **kwargs):
         self.n_threads = n_threads
         super().__init__(*args, **kwargs)
         self.lock = Lock()

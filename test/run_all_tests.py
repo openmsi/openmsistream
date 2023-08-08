@@ -2,8 +2,8 @@
 import unittest, subprocess, pathlib, re
 from argparse import ArgumentParser
 from tempenv import TemporaryEnvironment
+from openmsitoolbox.logging import OpenMSILogger
 import docker
-from openmsistream.utilities import Logger
 from openmsistream.services.utilities import run_cmd_in_subprocess
 from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 
@@ -15,7 +15,7 @@ STOP_LOCAL_BROKER_SCRIPT_PATH = TEST_DIR_PATH / "stop_local_broker.sh"
 TEST_SCRIPT_DIR_PATH = TEST_DIR_PATH / "test_scripts"
 TEST_REPO_STATUS_SCRIPT_PATH = TEST_DIR_PATH / "test_repo_status.sh"
 CWD = pathlib.Path().resolve()
-LOGGER = Logger("run_all_tests")
+LOGGER = OpenMSILogger("run_all_tests")
 
 
 def get_args(args):

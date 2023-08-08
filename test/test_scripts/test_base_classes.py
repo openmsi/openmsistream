@@ -1,8 +1,14 @@
 # imports
-import pathlib, shutil, unittest, os, logging, time, datetime, subprocess
+import pathlib
+import shutil
+import unittest
+import os
+import time
+import datetime
+import subprocess
+from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
+from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsistream.utilities.config import RUN_CONST
-from openmsistream.utilities import LogOwner
-from openmsistream.utilities.misc import populated_kwargs
 from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import (
     DataFileUploadDirectory,
@@ -85,120 +91,6 @@ class TestWithKafkaTopics(unittest.TestCase):
         super().tearDownClass()
 
 
-class TestWithLogger(LogOwner, unittest.TestCase):
-    """
-    Base class for unittest.TestCase classes that should own a logger
-    By default the logger won't write to a file, and will set the stream level to ERROR
-    Contains a function to overwrite the current stream level temporarily to log a
-    particular message
-    """
-
-    def __init__(self, *args, **kwargs):
-        kwargs = populated_kwargs(kwargs, {"streamlevel": logging.ERROR})
-        super().__init__(*args, **kwargs)
-
-    def log_at_level(self, msg, level, **kwargs):
-        """
-        Temporarily change the logger stream level for a single message to go through
-        """
-        old_level = self.logger.get_stream_level()
-        self.logger.set_stream_level(level)
-        levels_funcs = {
-            logging.DEBUG: self.logger.debug,
-            logging.INFO: self.logger.info,
-            logging.WARNING: self.logger.warning,
-            logging.ERROR: self.logger.error,
-        }
-        levels_funcs[level](msg, **kwargs)
-        self.logger.set_stream_level(old_level)
-
-    def log_at_debug(self, msg, **kwargs):
-        """
-        Log a message at debug level, temporarily changing the stream level
-        """
-        self.log_at_level(msg, logging.DEBUG, **kwargs)
-
-    def log_at_info(self, msg, **kwargs):
-        """
-        Log a message at info level, temporarily changing the stream level
-        """
-        self.log_at_level(msg, logging.INFO, **kwargs)
-
-    def log_at_warning(self, msg, **kwargs):
-        """
-        Log a message at warning level, temporarily changing the stream level
-        """
-        self.log_at_level(msg, logging.WARNING, **kwargs)
-
-    def log_at_error(self, msg, **kwargs):
-        """
-        Log a message at error level, temporarily changing the stream level
-        """
-        self.log_at_level(msg, logging.ERROR, **kwargs)
-
-
-class TestWithOutputLocation(TestWithLogger):
-    """
-    Base class for unittest.TestCase classes that will put output in a directory.
-    Also owns an OpenMSIStream Logger.
-    """
-
-    def __init__(self, *args, output_dir=None, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.output_dir = output_dir
-        self.test_dependent_output_dirs = self.output_dir is None
-        self.success = False
-
-    def setUp(self):
-        """
-        Create the output location, removing it if it already exists.
-        Set success to false before every test.
-        """
-        # If output directory isn't set, set it to a directory named for the test function
-        if self.output_dir is None:
-            self.output_dir = (
-                TEST_CONST.TEST_DIR_PATH
-                / f"{self._testMethodName}_output_{TEST_CONST.PY_VERSION}"
-            )
-        # if output from a previous test already exists, remove it
-        if self.output_dir.is_dir():
-            self.log_at_info(f"Will delete existing output location at {self.output_dir}")
-            try:
-                shutil.rmtree(self.output_dir)
-            except Exception as exc:  # pylint: disable=broad-except
-                self.logger.error(
-                    f"ERROR: failed to remove existing output at {self.output_dir}!",
-                    exc_info=exc,
-                )
-        # create the directory to hold the output DB
-        self.logger.debug(f"Creating output location at {self.output_dir}")
-        self.output_dir.mkdir()
-        # set the success variable to false
-        self.success = False
-
-    def tearDown(self):
-        # if the test was successful, remove the output directory
-        if self.success:
-            try:
-                self.logger.debug(
-                    f"Test success={self.success}; removing output in {self.output_dir}"
-                )
-                if self.output_dir.exists():
-                    shutil.rmtree(self.output_dir)
-            except Exception as exc:  # pylint: disable=broad-except
-                self.logger.error(
-                    f"ERROR: failed to remove test output at {self.output_dir}!",
-                    exc_info=exc,
-                )
-        else:
-            self.logger.info(
-                f"Test success={self.success}; output at {self.output_dir} will be retained."
-            )
-        # reset the output directory variable if we're using output directories per test
-        if self.test_dependent_output_dirs:
-            self.output_dir = None
-
-
 class TestWithUploadDataFile(TestWithLogger):
     """
     Base class for tests that need to upload single files
@@ -224,8 +116,26 @@ class TestWithUploadDataFile(TestWithLogger):
             chunk_size=chunk_size,
         )
 
+class TestWithOpenMSIStreamOutputLocation(TestWithOutputLocation):
+    """
+    A test with an output location.
+    Overrides the default to be this package's "test" directory.
+    """
 
-class TestWithDataFileUploadDirectory(TestWithOutputLocation):
+    def setUp(self):
+        """
+        Set the default output_dir to one inside the OpenMSIStream package's
+        "test" directory
+        """
+        # If output directory isn't set, set it to a directory named for the test function
+        if self.output_dir is None:
+            self.output_dir = (
+                TEST_CONST.TEST_DIR_PATH
+                / f"{self._testMethodName}_output_{TEST_CONST.PY_VERSION}"
+            )
+        super().setUp()
+
+class TestWithDataFileUploadDirectory(TestWithOpenMSIStreamOutputLocation):
     """
     Base class for tests that need to run a DataFileUploadDirectory
     """
@@ -354,7 +264,7 @@ class TestWithDataFileUploadDirectory(TestWithOutputLocation):
             )
 
 
-class TestWithDataFileDownloadDirectory(TestWithOutputLocation):
+class TestWithDataFileDownloadDirectory(TestWithOpenMSIStreamOutputLocation):
     """
     Base class for tests that need to do things with download directories
     """
@@ -529,7 +439,7 @@ class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
         pass
 
 
-class TestWithStreamProcessor(TestWithOutputLocation):
+class TestWithStreamProcessor(TestWithOpenMSIStreamOutputLocation):
     """
     Base class for tests that need to run stream processors
     """
@@ -685,7 +595,7 @@ class TestWithStreamProcessor(TestWithOutputLocation):
             self.output_dir.mkdir(parents=True)
 
 
-class TestWithStreamReproducer(TestWithOutputLocation):
+class TestWithStreamReproducer(TestWithOpenMSIStreamOutputLocation):
     """
     Base class for tests that need to run stream reproducers
     """

@@ -1,7 +1,7 @@
 """A set of Consumers and Producers that share share the same KafkaCrypto key-passing instance"""
 
 # imports
-from ..utilities.logging import LogOwner
+from openmsitoolbox import LogOwner
 from .consumer_group import ConsumerGroup
 from .producer_group import ProducerGroup
 

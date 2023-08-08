@@ -11,7 +11,7 @@ from threading import Lock
 from dataclasses import fields, is_dataclass
 import methodtools
 from atomicwrites import atomic_write
-from .logging import LogOwner
+from openmsitoolbox import LogOwner
 
 
 def get_nested_types():

@@ -5,7 +5,7 @@ import pathlib, datetime
 from dataclasses import dataclass
 from threading import RLock
 from watchdog.events import FileSystemEventHandler
-from ...utilities import LogOwner
+from openmsitoolbox import LogOwner
 
 
 @dataclass

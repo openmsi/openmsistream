@@ -9,8 +9,9 @@ import datetime, warnings
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto.message import KafkaCryptoMessage
+from openmsitoolbox import Runnable
+from ...utilities import OpenMSIStreamArgumentParser
 from ...utilities.config import RUN_CONST
-from ...utilities import Runnable
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_key_and_value_filenames
 from .. import DataFileDirectory, DownloadDataFileToDisk
@@ -38,6 +39,8 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
     :raises ValueError: if `datafile_type` is not a subclass of
         :class:`~.data_file_io.DownloadDataFileToDisk`
     """
+
+    ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
 
     #################### PUBLIC FUNCTIONS ####################
 

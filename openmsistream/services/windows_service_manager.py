@@ -3,7 +3,7 @@
 # imports
 import sys, os, pathlib, shutil, ctypes.util
 from subprocess import CalledProcessError
-from ..utilities.misc import change_dir
+from openmsitoolbox.utilities.misc import change_dir
 from .config import SERVICE_CONST
 from .utilities import run_cmd_in_subprocess
 from .service_manager_base import ServiceManagerBase

@@ -4,7 +4,9 @@
 import sys, pathlib, textwrap, importlib
 from abc import abstractmethod
 from subprocess import CalledProcessError
-from ..utilities import LogOwner, HasArgumentParser, Runnable, OpenMSIStreamArgumentParser
+from openmsitoolbox import LogOwner, Runnable
+from openmsitoolbox.argument_parsing.has_argument_parser import HasArgumentParser
+from ..utilities.argument_parsing import OpenMSIStreamArgumentParser
 from ..utilities.config_file_parser import ConfigFileParser
 from .config import SERVICE_CONST
 from .utilities import set_env_vars, remove_env_var
@@ -17,13 +19,14 @@ class ServiceManagerBase(LogOwner, HasArgumentParser):
     :param service_name: The name of the Service/daemon as installed
     :type service_name: str
     :param service_spec_string: A string specifying which code should be run as a Service.
-        Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code.
-        Custom Services can also specify a :class:`~Runnable` class name, and/or a function
-        in the file using special formatting like [class_name]=[path.to.file]:[function_name].
-        Only needed to initially install the Service/daemon.
+        Could be the name of an OpenMSI Runnable class, or the path to a custom Python code.
+        Custom Services can also specify a :class:`OpenMSIToolbox.Runnable` class name,
+        and/or a function in the file using special formatting like
+        [class_name]=[path.to.file]:[function_name]. Only needed to initially install
+        the Service/daemon.
     :type service_spec_string: str, optional
     :param argslist: The list of arguments (as from the command line) to pass to the
-        :class:`~Runnable` class. Only needed to initially install the Service/daemon.
+        :class:`OpenMSIToolbox.Runnable` class. Only needed to initially install the Service/daemon.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do
     :type interactive: bool, optional

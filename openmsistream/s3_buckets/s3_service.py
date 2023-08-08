@@ -2,7 +2,7 @@
 
 import hashlib
 import boto3
-from ..utilities import LogOwner
+from openmsitoolbox import LogOwner
 
 
 class S3Service(LogOwner):

@@ -7,11 +7,11 @@ in the process of being produced/have been fully produced
 import pathlib, datetime
 from typing import Set
 from dataclasses import dataclass
+from openmsitoolbox import LogOwner
 from ....utilities import (
     DataclassTableReadOnly,
     DataclassTableAppendOnly,
     DataclassTable,
-    LogOwner,
 )
 
 

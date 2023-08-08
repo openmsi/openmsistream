@@ -5,7 +5,7 @@ from dataclasses import dataclass, fields
 from openmsistream.utilities.dataclass_table import DataclassTable
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOutputLocation
+from test_base_classes import TestWithOpenMSIStreamOutputLocation
 
 
 @dataclass
@@ -26,7 +26,7 @@ class TableLineForTesting:
     timestamp_field: datetime.datetime
 
 
-class TestDataclassTable(TestWithOutputLocation):
+class TestDataclassTable(TestWithOpenMSIStreamOutputLocation):
     """
     Class for testing DataclassTable utility
     """

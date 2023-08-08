@@ -4,7 +4,7 @@
 import os, pathlib, importlib
 from inspect import isclass
 import pkg_resources
-from ..utilities import Logger
+from openmsitoolbox.logging import OpenMSILogger
 
 
 class ServicesConstants:
@@ -69,7 +69,7 @@ class ServicesConstants:
                     }
                 )
         # make the logger to use
-        self.logger = Logger(
+        self.logger = OpenMSILogger(
             "Services", logger_filepath=self.WORKING_DIR / "Services.log"
         )
 

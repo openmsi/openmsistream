@@ -7,7 +7,7 @@ KafkaCrypto instance for key passing
 import kafka
 from confluent_kafka.admin import AdminClient
 from confluent_kafka import TopicPartition
-from ..utilities import LogOwner
+from openmsitoolbox import LogOwner
 from .utilities import reset_to_beginning_on_assign
 from .config_file_parser import KafkaConfigFileParser
 from .openmsistream_consumer import OpenMSIStreamConsumer

@@ -11,13 +11,13 @@ import urllib.request
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     import kafkacrypto
+from openmsitoolbox.logging import OpenMSILogger
+from openmsitoolbox.utilities.misc import change_dir
 from ..utilities.config import RUN_CONST
-from .logging import Logger
 from .config_file_parser import ConfigFileParser
-from .misc import change_dir
 
 # constants
-LOGGER = Logger("ProvisionNode", logging.INFO)
+LOGGER = OpenMSILogger("ProvisionNode", logging.INFO)
 KC_PATH = kafkacrypto.__path__
 SP_NAME = "simple-provision.py"
 OP_NAME = "online-provision.py"

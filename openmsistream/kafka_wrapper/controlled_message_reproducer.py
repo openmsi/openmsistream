@@ -35,7 +35,7 @@ class ControlledMessageReproducer(
         *,
         filepath_regex=None,
         n_producer_threads=1,
-        n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,
+        n_consumer_threads=RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         **kwargs,
     ):
         """

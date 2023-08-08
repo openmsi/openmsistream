@@ -2,7 +2,7 @@
 
 # imports
 import os, configparser
-from .logging import LogOwner
+from openmsitoolbox import LogOwner
 
 
 class ConfigFileParser(LogOwner):

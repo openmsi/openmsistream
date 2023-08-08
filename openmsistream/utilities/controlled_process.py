@@ -7,9 +7,8 @@ import datetime
 from queue import Queue, Empty
 from threading import Thread
 from abc import ABC, abstractmethod
+from openmsitoolbox import LogOwner, OpenMSIArgumentParser
 from ..utilities.misc import add_user_input
-from ..utilities.logging import LogOwner
-from .config import RUN_CONST
 
 
 class ControlledProcess(LogOwner, ABC):
@@ -34,7 +33,7 @@ class ControlledProcess(LogOwner, ABC):
     #################### PUBLIC FUNCTIONS ####################
 
     def __init__(
-        self, *args, update_secs=RUN_CONST.DEFAULT_UPDATE_SECONDS, **other_kwargs
+        self, *args, update_secs=OpenMSIArgumentParser.DEF_UPDATE_SECS, **other_kwargs
     ):
         self.__update_secs = update_secs
         # start up a Queue that will hold the control commands

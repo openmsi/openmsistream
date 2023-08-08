@@ -7,11 +7,11 @@ being reconstructed from the topic and files that have been fully handled
 import pathlib, datetime, re, threading
 from abc import ABC
 from dataclasses import dataclass
+from openmsitoolbox import LogOwner
 from ....utilities import (
     DataclassTableReadOnly,
     DataclassTableAppendOnly,
     DataclassTable,
-    LogOwner,
 )
 from ...utilities import get_message_prepend
 

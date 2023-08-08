@@ -1,8 +1,8 @@
 """A single data file"""
 
 # imports
-from ...utilities import LogOwner
-from ...utilities.misc import populated_kwargs
+from openmsitoolbox import LogOwner
+from openmsitoolbox.utilities.misc import populated_kwargs
 
 
 class DataFile(LogOwner):

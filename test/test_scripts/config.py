@@ -1,5 +1,7 @@
 # imports
-import os, pathlib, sys
+import os
+import pathlib
+import sys
 from openmsistream.utilities.config import RUN_CONST
 
 
@@ -112,6 +114,5 @@ class TestRoutineConstants:
     # Version tag to use for separating output locations, consumer group IDs, etc.
     # for concurrently-running tests
     PY_VERSION = f"python_{sys.version.split()[0].replace('.','_')}"
-
 
 TEST_CONST = TestRoutineConstants()

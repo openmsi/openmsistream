@@ -1,6 +1,6 @@
 # imports
 import pathlib, logging, shutil, filecmp, urllib, importlib, pickle
-from openmsistream.utilities.logging import Logger
+from openmsitoolbox.logging import OpenMSILogger
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.download_data_file import DownloadDataFileToMemory
 from openmsistream.kafka_wrapper.serialization import DataFileChunkSerializer
@@ -11,7 +11,7 @@ from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
 # constants
 EXISTING_TEST_DATA_DIR = (pathlib.Path(__file__).parent / "data").resolve()
 NEW_TEST_DATA_DIR = (pathlib.Path(__file__).parent / "new_test_data").resolve()
-LOGGER = Logger(pathlib.Path(__file__).name.split(".")[0], logging.INFO)
+LOGGER = OpenMSILogger(pathlib.Path(__file__).name.split(".")[0], logging.INFO)
 
 #################### OTHER HELPER FUNCTIONS ####################
 
