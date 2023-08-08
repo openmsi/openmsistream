@@ -18,7 +18,9 @@ class ControlledProcessMultiThreaded(ControlledProcess, ABC):
     """
 
     DEF_N_THREADS = 2
-    SHUTDOWN_THREAD_TIMEOUT = 10 # time in seconds to wait for threads to join in shutdown
+    SHUTDOWN_THREAD_TIMEOUT = (
+        10  # time in seconds to wait for threads to join in shutdown
+    )
 
     def __init__(self, *args, n_threads=DEF_N_THREADS, **kwargs):
         self.n_threads = n_threads
