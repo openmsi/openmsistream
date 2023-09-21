@@ -7,9 +7,9 @@ import time
 import datetime
 import subprocess
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsistream.utilities.config import RUN_CONST
-from openmsistream.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import (
     DataFileUploadDirectory,
     DataFileDownloadDirectory,

@@ -3,9 +3,7 @@
 # imports
 import json
 from datetime import datetime
-from openmsistream.metadata_extraction.metadata_json_reproducer import (
-    MetadataJSONReproducer,
-)
+from openmsistream import MetadataJSONReproducer
 
 
 class XRDCSVMetadataReproducer(MetadataJSONReproducer):

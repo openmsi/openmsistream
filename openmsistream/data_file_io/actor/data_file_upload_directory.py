@@ -10,10 +10,11 @@ from queue import Queue
 from watchdog.observers import Observer
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+from openmsitoolbox import ControlledProcessSingleThread
+from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
 from ...utilities.config import RUN_CONST
-from ...utilities import ControlledProcessSingleThread, OpenMSIStreamArgumentParser
-from ...utilities.exception_tracking_thread import ExceptionTrackingThread
 from .. import DataFileDirectory
 from .file_registry.producer_file_registry import ProducerFileRegistry
 from ..entity.upload_data_file import UploadDataFile

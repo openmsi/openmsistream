@@ -1,4 +1,4 @@
-"""Example of a general script that can be installed as a Service/daemon"""
+" Example of a general script that can be installed as a Service/daemon "
 
 # imports
 import pathlib, datetime, time
