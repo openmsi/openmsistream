@@ -22,7 +22,7 @@ from .serialization import DataFileChunkSerializer, DataFileChunkDeserializer
 
 class KafkaConfigFileParser(ConfigFileParser):
     """
-    A class to parse Kafka configurations from files
+    A ConfigFileParser to parse Kafka configurations from files
     """
 
     #################### CONSTANTS ####################

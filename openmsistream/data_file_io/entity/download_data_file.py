@@ -313,8 +313,8 @@ class DownloadDataFileToMemory(DownloadDataFile):
 
 class DownloadDataFileToMemoryAndDisk(DownloadDataFileToMemory, DownloadDataFileToDisk):
     """
-    A class for a file that should be written to disk as its messages are read
-    from a topic, but that should also have a bytestring created for it.
+    A file that's written to disk as its messages are read
+    from a topic, while also having a bytestring created for it.
 
     :param filepath: Path to the file
     :type filepath: :class:`pathlib.Path`

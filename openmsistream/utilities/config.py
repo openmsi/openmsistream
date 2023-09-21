@@ -17,8 +17,6 @@ class RunConstants:
             pathlib.Path(__file__).parent.parent / "kafka_wrapper" / "config_files"
         ).resolve()
     )
-    DEFAULT_N_THREADS = 2
-    DEFAULT_UPDATE_SECONDS = 300
     # name of the config file that will be used by default
     DEFAULT_CONFIG_FILE = "test"
     # name of the topic to produce to by default

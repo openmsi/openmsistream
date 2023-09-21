@@ -1,7 +1,7 @@
 """A set of Producers sharing an optional KafkaCrypto instance for key passing"""
 
 # imports
-from ..utilities import LogOwner
+from openmsitoolbox import LogOwner
 from .openmsistream_producer import OpenMSIStreamProducer
 
 

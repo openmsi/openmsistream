@@ -7,8 +7,8 @@ is managed using the ControlledProcessInfrastructure
 import time
 from abc import ABC, abstractmethod
 from queue import Queue
+from openmsitoolbox import ControlledProcessMultiThreaded
 from ..utilities.config import RUN_CONST
-from ..utilities import ControlledProcessMultiThreaded
 from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 
@@ -16,8 +16,8 @@ class ControlledMessageReproducer(
     ControlledProcessMultiThreaded, ConsumerAndProducerGroup, ABC
 ):
     """
-    An abstract base class combining and ControlledProcessMultiThreaded and a
-    ConsumerAndProducerGroup to systematically read messages and produce others.
+    A ControlledProcessMultiThreaded combined with a ConsumerAndProducerGroup to
+    systematically read messages from one topic and produce new messages to another.
     """
 
     CONSUMER_POLL_TIMEOUT = 0.050
@@ -35,7 +35,7 @@ class ControlledMessageReproducer(
         *,
         filepath_regex=None,
         n_producer_threads=1,
-        n_consumer_threads=RUN_CONST.DEFAULT_N_THREADS,
+        n_consumer_threads=RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS,
         **kwargs,
     ):
         """

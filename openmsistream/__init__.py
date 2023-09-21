@@ -7,6 +7,7 @@ from .data_file_io.actor.data_file_upload_directory import DataFileUploadDirecto
 from .data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
 from .data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from .data_file_io.actor.data_file_stream_reproducer import DataFileStreamReproducer
+from .metadata_extraction.metadata_json_reproducer import MetadataJSONReproducer
 from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
 from .girder.girder_upload_stream_processor import GirderUploadStreamProcessor
 from .version import __version__
@@ -18,8 +19,9 @@ __all__ = [
     "DataFileDownloadDirectory",
     "DataFileStreamProcessor",
     "DataFileStreamReproducer",
-    "S3TransferStreamProcessor",
     "GirderUploadStreamProcessor",
+    "MetadataJSONReproducer",
+    "S3TransferStreamProcessor",
 ]
 
 # If running on Windows, try to pre-load the librdkafka.dll file

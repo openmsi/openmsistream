@@ -7,11 +7,11 @@ being reconstructed from the topic and files that have been fully handled
 import pathlib, datetime, re, threading
 from abc import ABC
 from dataclasses import dataclass
+from openmsitoolbox import LogOwner
 from ....utilities import (
     DataclassTableReadOnly,
     DataclassTableAppendOnly,
     DataclassTable,
-    LogOwner,
 )
 from ...utilities import get_message_prepend
 
@@ -45,7 +45,7 @@ class StreamHandlerRegistryLineSucceeded:
 
 class StreamHandlerRegistry(LogOwner, ABC):
     """
-    A general base class to keep track of the status of files read during stream handling
+    Keeps track of the status of files read during stream handling
     """
 
     IN_PROGRESS = "in_progress"
@@ -272,7 +272,7 @@ class StreamHandlerRegistry(LogOwner, ABC):
 
 class StreamProcessorRegistry(StreamHandlerRegistry):
     """
-    A class to keep track of the status of files read during stream processing
+    Keeps track of the status of files read during stream processing
     """
 
     FAILED = "failed"
@@ -337,7 +337,7 @@ class StreamProcessorRegistry(StreamHandlerRegistry):
 
 class StreamReproducerRegistry(StreamHandlerRegistry):
     """
-    A class to keep track of the status of files read from one topic with associated
+    Keeps track of the status of files read from one topic with associated
     information created and re-produced to a different topic
     """
 

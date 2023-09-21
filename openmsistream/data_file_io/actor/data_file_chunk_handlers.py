@@ -8,7 +8,7 @@ from threading import Lock
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaCryptoMessage
-from ...utilities import LogOwner
+from openmsitoolbox import LogOwner
 from ...kafka_wrapper.controlled_message_processor import ControlledMessageProcessor
 from ...kafka_wrapper.controlled_message_reproducer import ControlledMessageReproducer
 from ..config import DATA_FILE_HANDLING_CONST
@@ -18,7 +18,7 @@ from ..entity.download_data_file import DownloadDataFile
 
 class DataFileChunkHandler(LogOwner, ABC):
     """
-    A base class to perform some handling of DataFileChunk objects read from a topic.
+    Performs some generic handling of DataFileChunk objects read from a topic.
     """
 
     #################### CONSTANTS ####################

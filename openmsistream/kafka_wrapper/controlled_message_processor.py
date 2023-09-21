@@ -4,7 +4,7 @@ A ConsumerGroup whose receipt of messages is governed using the ControlledProces
 
 # imports
 from abc import ABC, abstractmethod
-from ..utilities import ControlledProcessMultiThreaded
+from openmsitoolbox import ControlledProcessMultiThreaded
 from .consumer_group import ConsumerGroup
 
 

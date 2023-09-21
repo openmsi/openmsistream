@@ -8,11 +8,13 @@ import datetime, time
 from threading import Lock
 from queue import Queue
 from watchdog.observers import Observer
+from openmsitoolbox import Runnable
+from openmsitoolbox.utilities.misc import populated_kwargs
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+from openmsitoolbox import ControlledProcessSingleThread
+from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
 from ...utilities.config import RUN_CONST
-from ...utilities import Runnable, ControlledProcessSingleThread
-from ...utilities.misc import populated_kwargs
-from ...utilities.exception_tracking_thread import ExceptionTrackingThread
 from .. import DataFileDirectory
 from .file_registry.producer_file_registry import ProducerFileRegistry
 from ..entity.upload_data_file import UploadDataFile
@@ -45,6 +47,7 @@ class DataFileUploadDirectory(
 
     #################### CONSTANTS ####################
 
+    ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
     # starting point for how long to wait between pinging the directory looking for new files
     MIN_WAIT_TIME = 0.005
     # never wait more than a minute to check again for new files

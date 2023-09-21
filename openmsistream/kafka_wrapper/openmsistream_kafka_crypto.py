@@ -8,7 +8,7 @@ import pathlib, uuid, warnings, logging
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
-from ..utilities.misc import change_dir
+from openmsitoolbox.utilities.misc import change_dir
 
 
 class OpenMSIStreamKafkaCrypto:

@@ -11,10 +11,10 @@ from openmsistream.data_file_io.entity.download_data_file import (
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOutputLocation
+from test_base_classes import TestWithOpenMSIStreamOutputLocation
 
 
-class TestDownloadDataFile(TestWithOutputLocation):
+class TestDownloadDataFile(TestWithOpenMSIStreamOutputLocation):
     """
     Class for testing DownloadDataFile functions
     (without interacting with the Kafka broker)

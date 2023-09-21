@@ -1,5 +1,7 @@
 # imports
-import os, pathlib, sys
+import os
+import pathlib
+import sys
 from openmsistream.utilities.config import RUN_CONST
 
 

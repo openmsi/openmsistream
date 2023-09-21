@@ -7,11 +7,11 @@ in the process of being produced/have been fully produced
 import pathlib, datetime
 from typing import Set
 from dataclasses import dataclass
+from openmsitoolbox import LogOwner
 from ....utilities import (
     DataclassTableReadOnly,
     DataclassTableAppendOnly,
     DataclassTable,
-    LogOwner,
 )
 
 
@@ -46,7 +46,7 @@ class RegistryLineCompleted:
 
 class ProducerFileRegistry(LogOwner):
     """
-    A class to manage two atomic csv files listing which portions
+    Manages two atomic csv files listing which portions
     of which files have been uploaded to a particular topic
     """
 

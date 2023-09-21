@@ -9,9 +9,9 @@ from ..utilities.config import RUN_CONST
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
     """
-    A class to reconstruct data files read as messages from a topic, hold them in memory
-    or on disk, and upload them to a Girder instance when all of their messages have been
-    received
+    A stream processor to reconstruct data files read as messages from a topic, hold them
+    in memory or on disk, and upload them to a Girder instance when all of their messages
+    have been received
 
     :param girder_api_url: URL of the REST API endpoint for the Girder instance to which
         files should be uploaded

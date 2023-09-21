@@ -11,7 +11,7 @@ from threading import Lock
 from dataclasses import fields, is_dataclass
 import methodtools
 from atomicwrites import atomic_write
-from .logging import LogOwner
+from openmsitoolbox import LogOwner
 
 
 def get_nested_types():
@@ -34,7 +34,7 @@ def get_nested_types():
 
 class DataclassTableBase(LogOwner, ABC):
     """
-    A base class for DataclassTable objects
+    Common methods for any DataclassTable object
 
     :param dataclass_type: The :class:`dataclasses.dataclass` defining the entries
         in the table/csv file
@@ -404,7 +404,7 @@ class DataclassTableBase(LogOwner, ABC):
 
 class DataclassTableReadOnly(DataclassTableBase):
     """
-    A class to read dataclass objects stored in a csv file
+    Reads dataclass objects stored in a csv file
     """
 
     def __init__(self, dataclass_type, *, filepath=None, **kwargs):
@@ -432,9 +432,10 @@ class DataclassTableReadOnly(DataclassTableBase):
 
 class DataclassTableAppendOnly(DataclassTableBase):
     """
-    A class to work with an atomic csv file that's holding dataclass entries. Only includes
+    Wrapper around an atomic csv file that's holding dataclass entries. Only includes
     methods to add lines to the file like a log and not to edit the objects themselves,
-    which can be much more efficient.
+    which can be much more efficient if lines/objects don't need to be modified or
+    deleted.
     """
 
     def __init__(self, dataclass_type, *, filepath=None, **kwargs):
@@ -486,7 +487,8 @@ class DataclassTableAppendOnly(DataclassTableBase):
 
 class DataclassTable(DataclassTableAppendOnly):
     """
-    A class to work with an atomic csv file that's holding dataclass entries in a thread-safe way
+    An atomic csv file linked to a set of dataclass entries. Provides methods for
+    interacting with the set of objects and the file in a thread-safe way.
 
     :param dataclass_type: The :class:`dataclasses.dataclass` defining the entries
         in the table/csv file

@@ -7,8 +7,8 @@ from confluent_kafka import DeserializingConsumer, Message
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaConsumer
-from ..utilities import LogOwner
-from ..utilities.misc import (
+from openmsitoolbox import LogOwner
+from openmsitoolbox.utilities.misc import (
     raise_err_with_optional_logger,
     debug_msg_with_optional_logger,
 )

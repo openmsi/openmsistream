@@ -1,5 +1,6 @@
 # imports
-import setuptools, pathlib
+import pathlib
+import setuptools
 
 # read version tag
 version = None
@@ -56,6 +57,7 @@ setupkwargs = dict(
         "matplotlib",
         "methodtools",
         "msgpack",
+        "openmsitoolbox>=1.1.1",
         "watchdog>=3.0.0",
     ],
     extras_require={
@@ -66,6 +68,7 @@ setupkwargs = dict(
             "gitpython",
             "lxml",
             "marko[toc]==1.3.0",
+            "packaging",
             "pyflakes>=3.0.1",
             "pylint>=2.16.3",
             "requests",

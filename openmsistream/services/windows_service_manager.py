@@ -3,7 +3,7 @@
 # imports
 import sys, os, pathlib, shutil, ctypes.util
 from subprocess import CalledProcessError
-from ..utilities.misc import change_dir
+from openmsitoolbox.utilities.misc import change_dir
 from .config import SERVICE_CONST
 from .utilities import run_cmd_in_subprocess
 from .service_manager_base import ServiceManagerBase
@@ -17,12 +17,12 @@ class WindowsServiceManager(ServiceManagerBase):
     :type service_name: str
     :param service_spec_string: A string specifying which code should be run as a Service.
         Could be the name of an OpenMSIStream Runnable class, or the path to a custom Python code.
-        Custom Services can also specify a :class:`~.utilities.Runnable` class name,
+        Custom Services can also specify a :class:`OpenMSIToolbox.Runnable` class name,
         and/or a function in the file using special formatting like
         [class_name]=[path.to.file]:[function_name]. Only needed to initially install the Service.
     :type service_spec_string: str, optional
     :param argslist: The list of arguments (as from the command line) to pass to the
-        :class:`~.utilities.Runnable` class.
+        :class:`OpenMSIToolbox.Runnable` class.
         Only needed to initially install the Service.
     :type argslist: list, optional
     :param interactive: if True, a few more messages/prompts will come up telling a user what to do

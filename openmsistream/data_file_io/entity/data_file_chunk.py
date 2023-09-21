@@ -3,7 +3,7 @@
 # imports
 import pathlib
 from hashlib import sha512
-from ...utilities.logging import Logger
+from openmsitoolbox.logging import OpenMSILogger
 from ...kafka_wrapper.producible import Producible
 from ..utilities import get_message_prepend
 
@@ -221,7 +221,7 @@ class DataFileChunk(Producible):
 
         :param logger: a logger object to use to log errors that may arise
             in populating the file chunk
-        :type logger: :class:`~.utilities.Logger`, optional
+        :type logger: :class:`OpenMSIToolbox.logging.OpenMSILogger`, optional
 
         :raises FileNotFoundError: if the file doesn't exist on disk at ``self.filepath``
         :raises ValueError: if the data read from the file is not of the expected size,
@@ -229,7 +229,7 @@ class DataFileChunk(Producible):
         """
         # create a new logger if one isn't given
         if logger is None:
-            logger = Logger(self.__class__.__name__)
+            logger = OpenMSILogger(self.__class__.__name__)
         # make sure the file exists
         if not self.filepath.is_file():
             logger.error(

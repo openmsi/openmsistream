@@ -10,8 +10,9 @@ from abc import ABC
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto.message import KafkaCryptoMessage
-from ...utilities.misc import populated_kwargs
-from ...utilities import Runnable
+from openmsitoolbox import Runnable
+from openmsitoolbox.utilities.misc import populated_kwargs
+from ...utilities import OpenMSIStreamArgumentParser
 from ..config import DATA_FILE_HANDLING_CONST
 from ..utilities import get_encrypted_message_timestamp_string
 from ..entity.download_data_file import (
@@ -24,10 +25,10 @@ from .data_file_chunk_handlers import DataFileChunkHandler
 
 class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     """
-    Generic base class for consuming file chunks into memory and then doing something
-    once entire files are available
+    Consumes file chunks into memory and then does something once entire files are available
     """
 
+    ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
     LOG_SUBDIR_NAME = "LOGS"  # name of the directory that holds the logs
 
     def __init__(

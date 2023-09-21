@@ -2,12 +2,12 @@
 
 # imports
 import os, configparser
-from .logging import LogOwner
+from openmsitoolbox import LogOwner
 
 
 class ConfigFileParser(LogOwner):
     """
-    A class to parse configurations from files
+    Parses configurations from files
     """
 
     #################### PROPERTIES ####################

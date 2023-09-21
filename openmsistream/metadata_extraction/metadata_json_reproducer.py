@@ -11,8 +11,8 @@ from .metadata_json_message import MetadataJSONMessage
 
 class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
     """
-    A class to extend for processing a stream of DataFileChunks, extracting metadata from
-    fully-reconstructed files, and producing those metadata fields as JSON to a different topic.
+    Processes a stream of DataFileChunks, extracting metadata from fully-reconstructed
+    files, and producing those metadata fields as JSON to a different topic.
 
     This is a base class that cannot be instantiated on its own.
 

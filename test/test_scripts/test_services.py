@@ -11,13 +11,13 @@ from openmsistream.services.manage_service import main as manage_service_main
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithOutputLocation
+from test_base_classes import TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation
 
 # some classes to skip because they're more complex
 SKIP_CLASS_NAMES = ["GirderUploadStreamProcessor"]
 
 
-class TestServices(TestWithKafkaTopics, TestWithOutputLocation):
+class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
     """
     Class for testing that Services can be installed/started/stopped/removed
     without any errors on Linux OS

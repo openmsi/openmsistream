@@ -5,8 +5,9 @@ import time, datetime
 from threading import Thread
 from queue import Queue
 from hashlib import sha512
+from openmsitoolbox import Runnable
+from ...utilities import OpenMSIStreamArgumentParser
 from ...utilities.config import RUN_CONST
-from ...utilities import Runnable
 from ...kafka_wrapper import ProducerGroup
 from .. import DataFile
 from .data_file_chunk import DataFileChunk
@@ -32,6 +33,8 @@ class UploadDataFile(DataFile, Runnable):
         to distinguish the file that's produced from its original file on disk
     :type filename_append: None or str, optional
     """
+
+    ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser
 
     #################### PUBLIC FUNCTIONS ####################
 
