@@ -7,8 +7,7 @@ from openmsitoolbox import Runnable
 
 class RunnableExample(Runnable):
     """
-    A class that extends Runnable as an example of installing a Runnable's
-    "run_from_command_line" method as a Service/daemon
+    An example of installing a Runnable's "run_from_command_line" method as a Service/daemon
     """
 
     @classmethod

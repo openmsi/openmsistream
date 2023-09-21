@@ -13,7 +13,7 @@ from .file_registry.stream_handler_registries import StreamReproducerRegistry
 
 class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, ABC):
     """
-    A class to consume :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
+    Consumes :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
     into memory, compute some processing result when entire files are available,
     and produce that result to a different topic.
 

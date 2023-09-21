@@ -45,7 +45,7 @@ class StreamHandlerRegistryLineSucceeded:
 
 class StreamHandlerRegistry(LogOwner, ABC):
     """
-    A general base class to keep track of the status of files read during stream handling
+    Keeps track of the status of files read during stream handling
     """
 
     IN_PROGRESS = "in_progress"
@@ -272,7 +272,7 @@ class StreamHandlerRegistry(LogOwner, ABC):
 
 class StreamProcessorRegistry(StreamHandlerRegistry):
     """
-    A class to keep track of the status of files read during stream processing
+    Keeps track of the status of files read during stream processing
     """
 
     FAILED = "failed"
@@ -337,7 +337,7 @@ class StreamProcessorRegistry(StreamHandlerRegistry):
 
 class StreamReproducerRegistry(StreamHandlerRegistry):
     """
-    A class to keep track of the status of files read from one topic with associated
+    Keeps track of the status of files read from one topic with associated
     information created and re-produced to a different topic
     """
 

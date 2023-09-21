@@ -15,8 +15,8 @@ plt.switch_backend("Agg")
 
 class XRDCSVPlotter(DataFileStreamProcessor):
     """
-    A class to make simple plots of XRD intensity vs. angle data
-    based on the .csv files used in the OpenMSIStream tutorial
+    Makes simple plots of XRD intensity vs. angle data based on the .csv files
+    used in the OpenMSIStream tutorial
     """
 
     def _process_downloaded_data_file(self, datafile, lock):

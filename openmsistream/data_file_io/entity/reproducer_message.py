@@ -8,7 +8,7 @@ from ..utilities import get_message_prepend
 
 class ReproducerMessage(Producible, ABC):
     """
-    Abstract base class for messages that are computed from data files and produced to a new topic
+    Any message that is computed from a data file and produced to a new topic
 
     :param datafile: The DataFile object used to compute this message
     :type datafile: :class:`~.data_file_io.DownloadDataFileToMemory`

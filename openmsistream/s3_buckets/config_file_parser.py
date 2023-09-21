@@ -6,7 +6,7 @@ from ..utilities.config_file_parser import ConfigFileParser
 
 class S3ConfigFileParser(ConfigFileParser):
     """
-    A class to parse S3 bucket configurations from files
+    Parses S3 bucket configurations from files
     """
 
     @property

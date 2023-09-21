@@ -18,7 +18,7 @@ from ..entity.download_data_file import DownloadDataFile
 
 class DataFileChunkHandler(LogOwner, ABC):
     """
-    A base class to perform some handling of DataFileChunk objects read from a topic.
+    Performs some generic handling of DataFileChunk objects read from a topic.
     """
 
     #################### CONSTANTS ####################

@@ -7,7 +7,7 @@ from ..data_file_io.entity.reproducer_message import ReproducerMessage
 
 class MetadataJSONMessage(ReproducerMessage):
     """
-    A class to represent the json metadata from a file as a Producible
+    JSON metadata from a file as a Producible
     """
 
     @property

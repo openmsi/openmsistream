@@ -11,7 +11,7 @@ from .file_registry.stream_handler_registries import StreamProcessorRegistry
 
 class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC):
     """
-    A class to consume :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
+    Consumes :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
     into memory and perform some operation(s) when entire files are available.
     This is a base class that cannot be instantiated on its own.
 

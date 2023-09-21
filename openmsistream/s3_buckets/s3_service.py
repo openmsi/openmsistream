@@ -7,7 +7,7 @@ from openmsitoolbox import LogOwner
 
 class S3Service(LogOwner):
     """
-    A class to work with an S3 connection session
+    Wrapper around an S3 connection session
     """
 
     def __init__(self, s3_config, *args, **kwargs):

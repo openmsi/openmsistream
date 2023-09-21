@@ -25,8 +25,7 @@ from .data_file_chunk_handlers import DataFileChunkHandler
 
 class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     """
-    Generic base class for consuming file chunks into memory and then doing something
-    once entire files are available
+    Consumes file chunks into memory and then does something once entire files are available
     """
 
     ARGUMENT_PARSER_TYPE = OpenMSIStreamArgumentParser

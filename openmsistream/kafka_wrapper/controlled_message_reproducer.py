@@ -16,8 +16,8 @@ class ControlledMessageReproducer(
     ControlledProcessMultiThreaded, ConsumerAndProducerGroup, ABC
 ):
     """
-    An abstract base class combining and ControlledProcessMultiThreaded and a
-    ConsumerAndProducerGroup to systematically read messages and produce others.
+    A ControlledProcessMultiThreaded combined with a ConsumerAndProducerGroup to
+    systematically read messages from one topic and produce new messages to another.
     """
 
     CONSUMER_POLL_TIMEOUT = 0.050

@@ -11,9 +11,8 @@ from .s3_data_transfer import S3DataTransfer
 
 class S3TransferStreamProcessor(DataFileStreamProcessor):
     """
-    A class to reconstruct data files read as messages from a topic, hold them in memory
-    or on disk, and transfer them to an S3 bucket when all of their messages have been
-    received
+    Reconstructs data files read as messages from a topic, holds them in memory or on
+    disk, and transfers them to an S3 bucket when all of their messages have been received
 
     :param bucket_name: Name of the S3 bucket into which reconstructed files should be transferred
     :type bucket_name: str
