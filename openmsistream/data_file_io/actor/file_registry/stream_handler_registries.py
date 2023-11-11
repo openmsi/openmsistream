@@ -90,7 +90,7 @@ class StreamHandlerRegistry(LogOwner, ABC):
         regex_str = r"^("
         for fp in self.filepaths_to_rerun:
             subdir_str = str(fp.parent.as_posix()) if fp != fp.name else None
-            msg_prepend = get_message_prepend(subdir_str,fp.name)
+            msg_prepend = get_message_prepend(subdir_str, fp.name)
             regex_part = re.escape(msg_prepend)
             regex_str += f"{regex_part}|"
         regex_str = f"{regex_str[:-1]})_.*$"
