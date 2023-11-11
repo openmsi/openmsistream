@@ -171,6 +171,8 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                     while len(self.recent_processed_filepaths) > self.N_RECENT_FILES:
                         self.recent_processed_filepaths.pop(0)
                     self.n_processed_files += 1
+                    _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
+                    _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = True
             # warn if it wasn't processed correctly and invoke the callback
             else:
@@ -194,11 +196,10 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                 self._failed_processing_callback(
                     self.files_in_progress_by_path[dfc.relative_filepath], lock
                 )
+                with lock:
+                    _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
+                    _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = False
-            # stop tracking the file
-            with lock:
-                del self.files_in_progress_by_path[dfc.relative_filepath]
-                del self.locks_by_fp[dfc.relative_filepath]
             return to_return
         # otherwise the file is just in progress
         return True
