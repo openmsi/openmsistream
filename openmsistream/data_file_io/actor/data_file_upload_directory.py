@@ -379,12 +379,21 @@ class DataFileUploadDirectory(
                 ) and self.filepath_should_be_uploaded(filepath):
                     # wait until the file is actually available
                     file_ready = False
-                    while not file_ready:
+                    total_time_waited = 0.0
+                    while (not file_ready) and total_time_waited < 10.0:
                         try:
                             with open(filepath) as _:
                                 file_ready = True
                         except PermissionError:
                             time.sleep(0.05)
+                            total_time_waited += 0.05
+                    if not file_ready:
+                        warnmsg = (
+                            f"WARNING: failed to open {filepath} for more than 10 secs "
+                            "due to permission errors, skipping it for now"
+                        )
+                        self.logger.warning(warnmsg)
+                        continue
                     self.__add_active_datafile_for_path(filepath)
         except FileNotFoundError as exc:
             if retries_left > 0:
