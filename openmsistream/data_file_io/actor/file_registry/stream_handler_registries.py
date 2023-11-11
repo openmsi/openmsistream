@@ -373,7 +373,6 @@ class StreamReproducerRegistry(StreamHandlerRegistry):
         existing_entry_addr = self._get_in_progress_address_for_rel_filepath(rel_filepath)
         if existing_entry_addr is not None:
             attrs = self._in_progress_table.get_entry_attrs(existing_entry_addr)
-            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(
                 attrs["filename"],
                 attrs["rel_filepath"],
@@ -381,8 +380,13 @@ class StreamReproducerRegistry(StreamHandlerRegistry):
                 attrs["first_message"],
                 datetime.datetime.now(),
             )
+            self._add_to_succeeded_table(new_entry, f"p{prodid}")
+            try:
+                self._in_progress_table.remove_entries(existing_entry_addr)
+                self._in_progress_table.dump_to_file()
+            except ValueError:
+                pass
         else:
-            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(
                 filename,
                 rel_filepath,
@@ -390,15 +394,8 @@ class StreamReproducerRegistry(StreamHandlerRegistry):
                 datetime.datetime.now(),
                 datetime.datetime.now(),
             )
-        self._add_to_succeeded_table(new_entry, f"p{prodid}")
-        if existing_entry_addr is not None:
-            self._in_progress_table.lock.acquire()
-            try:
-                self._in_progress_table.remove_entries(existing_entry_addr)
-                self._in_progress_table.dump_to_file()
-            except ValueError:
-                pass
-            self._in_progress_table.lock.release()
+            self._add_to_succeeded_table(new_entry, f"p{prodid}")
+        self._in_progress_table.lock.release()
 
     def register_file_computing_result_failed(
         self, filename, rel_filepath, n_total_chunks
