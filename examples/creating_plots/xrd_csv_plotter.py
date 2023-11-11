@@ -5,8 +5,8 @@ for the example files used in the OpenMSIStream tutorial
 
 # imports
 import datetime
-import matplotlib.pyplot as plt
 from io import BytesIO
+import matplotlib.pyplot as plt
 from openmsistream import DataFileStreamProcessor
 
 # prevent pyplot from trying to pop GUI windows
