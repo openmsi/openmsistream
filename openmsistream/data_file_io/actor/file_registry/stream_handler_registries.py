@@ -303,7 +303,6 @@ class StreamProcessorRegistry(StreamHandlerRegistry):
         )
         if existing_entry_addr is not None:
             attrs = self._in_progress_table.get_entry_attrs(existing_entry_addr)
-            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(
                 attrs["filename"],
                 attrs["rel_filepath"],
@@ -311,8 +310,13 @@ class StreamProcessorRegistry(StreamHandlerRegistry):
                 attrs["first_message"],
                 datetime.datetime.now(),
             )
+            self._add_to_succeeded_table(new_entry)
+            try:
+                self._in_progress_table.remove_entries(existing_entry_addr)
+                self._in_progress_table.dump_to_file()
+            except ValueError:
+                pass
         else:
-            self._in_progress_table.lock.release()
             new_entry = StreamHandlerRegistryLineSucceeded(
                 dfc.filename,
                 dfc.relative_filepath,
@@ -320,15 +324,8 @@ class StreamProcessorRegistry(StreamHandlerRegistry):
                 datetime.datetime.now(),
                 datetime.datetime.now(),
             )
-        self._add_to_succeeded_table(new_entry)
-        if existing_entry_addr is not None:
-            self._in_progress_table.lock.acquire()
-            try:
-                self._in_progress_table.remove_entries(existing_entry_addr)
-                self._in_progress_table.dump_to_file()
-            except ValueError:
-                pass
-            self._in_progress_table.lock.release()
+            self._add_to_succeeded_table(new_entry)
+        self._in_progress_table.lock.release()
 
     def register_file_processing_failed(self, dfc):
         """
