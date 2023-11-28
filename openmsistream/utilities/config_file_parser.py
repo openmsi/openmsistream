@@ -1,7 +1,7 @@
 """Wrapper around a Python ConfigParser to simplify some commonly-used operations"""
 
 # imports
-import os, configparser
+import os, pathlib, configparser
 from openmsitoolbox import LogOwner
 
 
@@ -43,6 +43,8 @@ class ConfigFileParser(LogOwner):
         config_path = path to the config file to parse
         """
         super().__init__(*args, **kwargs)
+        if isinstance(config_path, str):
+            config_path = pathlib.Path(config_path)
         self.filepath = config_path
         if not config_path.is_file():
             self.logger.error(
@@ -54,9 +56,10 @@ class ConfigFileParser(LogOwner):
 
     def get_config_dict_for_groups(self, group_names):
         """
-        Return a config dictionary populated with configurations from groups with the given names
+        Return a config dictionary populated with configurations from groups with the
+        given names
 
-        group_names = the list of group names to add to the dictionary (or a single string)
+        group_names = the list of group names to add to the dictionary (or one string)
         """
         if isinstance(group_names, str):
             group_names = [group_names]
@@ -69,15 +72,17 @@ class ConfigFileParser(LogOwner):
                 self.logger.error(errmsg, exc_type=ValueError)
             for key, value in self._config[group_name].items():
                 # don't add the 'node_id' to groups for brokers, producers, or consumers
-                if key == "node_id" and group_name in ["broker", "producer", "consumer"]:
+                if key == "node_id" and any(
+                    stem in group_name for stem in ("broker", "producer", "consumer")
+                ):
                     continue
                 # if the value is an environment variable, expand it on the current system
                 if value.startswith("$"):
                     exp_value = os.path.expandvars(value)
                     if exp_value == value:
                         errmsg = (
-                            f"ERROR: Expanding {value} in {self.filepath} as an environment "
-                            "variable failed (must be set on system)"
+                            f"ERROR: Expanding {value} in {self.filepath} as an "
+                            "environment variable failed (must be set on system)"
                         )
                         self.logger.error(errmsg, exc_type=ValueError)
                     else:

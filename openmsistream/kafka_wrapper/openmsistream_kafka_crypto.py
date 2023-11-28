@@ -9,6 +9,7 @@ with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto
 from openmsitoolbox.utilities.misc import change_dir
+from ..utilities.config_file_parser import ConfigFileParser
 
 
 class OpenMSIStreamKafkaCrypto:
@@ -62,17 +63,23 @@ class OpenMSIStreamKafkaCrypto:
         """
         Constructor method
         """
-        producer_configs = broker_configs.copy()
-        consumer_configs = broker_configs.copy()
+        cfg_parser = ConfigFileParser(config_file)
+        node_id = cfg_parser.get_config_dict_for_groups("DEFAULT")["node_id"]
+        kc_producer_section_name = f"{node_id}-kafka-producer"
+        kc_consumer_section_name = f"{node_id}-kafka-consumer"
+        kcp_cfgs = cfg_parser.get_config_dict_for_groups(kc_producer_section_name)
+        kcc_cfgs = cfg_parser.get_config_dict_for_groups(kc_consumer_section_name)
+        kcp_cfgs.update(broker_configs.copy())
+        kcc_cfgs.update(broker_configs.copy())
         # figure out a consumer group ID to use (KafkaCrypto Consumers need one)
-        if "group.id" not in consumer_configs.keys():
-            consumer_configs["group.id"] = str(uuid.uuid1())
+        if "group.id" not in kcc_cfgs:
+            kcc_cfgs["group.id"] = str(uuid.uuid1())
         with change_dir(pathlib.Path(config_file).parent):
             kc_logger = logging.getLogger("kafkacrypto")
             kc_logger.setLevel(logging.ERROR)
             # start up the producer and consumer
-            self._kcp = KafkaProducer(**producer_configs)
-            self._kcc = KafkaConsumer(**consumer_configs)
+            self._kcp = KafkaProducer(**kcp_cfgs)
+            self._kcc = KafkaConsumer(**kcc_cfgs)
             # initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None, self._kcp, self._kcc, config_file)
             kc_logger.setLevel(logging.WARNING)
