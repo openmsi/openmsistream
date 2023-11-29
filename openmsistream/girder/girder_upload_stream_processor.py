@@ -300,7 +300,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             args.topic_name,
             girder_root_folder_id=args.girder_root_folder_id,
             collection_name=args.collection_name,
-            girder_root_folder=args.girder_root_folder,
+            girder_root_folder_path=args.girder_root_folder_path,
             provider=args.provider,
             output_dir=args.output_dir,
             mode=args.mode,
