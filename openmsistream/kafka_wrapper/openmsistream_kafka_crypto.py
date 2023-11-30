@@ -63,14 +63,7 @@ class OpenMSIStreamKafkaCrypto:
         """
         Constructor method
         """
-        cfg_parser = ConfigFileParser(config_file)
-        node_id = cfg_parser.get_config_dict_for_groups("DEFAULT")["node_id"]
-        kc_producer_section_name = f"{node_id}-kafka-producer"
-        kc_consumer_section_name = f"{node_id}-kafka-consumer"
-        kcp_cfgs = cfg_parser.get_config_dict_for_groups(kc_producer_section_name)
-        kcc_cfgs = cfg_parser.get_config_dict_for_groups(kc_consumer_section_name)
-        kcp_cfgs.update(broker_configs.copy())
-        kcc_cfgs.update(broker_configs.copy())
+        kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file)
         # figure out a consumer group ID to use (KafkaCrypto Consumers need one)
         if "group.id" not in kcc_cfgs:
             kcc_cfgs["group.id"] = str(uuid.uuid1())
@@ -97,3 +90,24 @@ class OpenMSIStreamKafkaCrypto:
             self._kc = None
             self._kcp = None
             self._kcc = None
+
+    def __get_configs_from_file(self, broker_configs, config_file):
+        """Return the dictionaries of crypto producer and consumer configs determined
+        from the KafkaCrypto config file and overwritten with the given broker configs
+        from the OpenMSIStream config file
+        """
+        cfg_parser = ConfigFileParser(config_file)
+        node_id = cfg_parser.get_config_dict_for_groups("DEFAULT")["node_id"]
+        kcp_cfgs = {}
+        kcc_cfgs = {}
+        for section_name_stem in (f"{node_id}-kafka", f"{node_id}-kafka-crypto"):
+            kafka_cs = cfg_parser.get_config_dict_for_groups(section_name_stem)
+            p_cs = cfg_parser.get_config_dict_for_groups(f"{section_name_stem}-producer")
+            c_cs = cfg_parser.get_config_dict_for_groups(f"{section_name_stem}-consumer")
+            kcp_cfgs.update(kafka_cs)
+            kcc_cfgs.update(kafka_cs)
+            kcp_cfgs.update(p_cs)
+            kcc_cfgs.update(c_cs)
+        kcp_cfgs.update(broker_configs.copy())
+        kcc_cfgs.update(broker_configs.copy())
+        return kcp_cfgs, kcc_cfgs
