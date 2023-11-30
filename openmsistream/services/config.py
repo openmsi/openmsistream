@@ -40,6 +40,7 @@ class ServicesConstants:
                     "InstallService",
                     "ManageService",
                     "ProvisionNode",
+                    "ReproduceUndecryptableMessages",
                     "UploadDataFile",
                 ):
                     continue

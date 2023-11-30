@@ -55,6 +55,14 @@ If any messages cannot be successfully decrypted by a :doc:`DataFileDownloadDire
 
 If any undercryptable messages are found, warnings will be logged with the paths to the encrypted key/value files.
 
+It is absolutely possible that transient issues may affect the key-passing necessary to successfully decrypt encrypted messages. In many of these cases, when those issues are resolved, the encrypted messages would only need to be produced to the topic a second time and any online consumers would then be able to process them successfully. For cases such as these, OpenMSIStream includes a small script to read the encrypted key/value files written to the ``ENCRYPTED_MESSAGES`` directory and re-produce them to the topic from which they originated. You can run it using the following command::
+
+    ReproduceUndecryptableMessages [config_file] [path_to_encrypted_messages_dir]
+
+where ``[config_file]`` is the path to a **KakfaCrypo-formatted config file** like the `example available in the repository <https://github.com/openmsi/openmsistream/blob/main/openmsistream/tools/undecryptable_messages/reproduce-encrypted-letters-example.config>`_, and ``[path_to_encrypted_dir]`` is the path to the ``ENCRYPTED_MESSAGES`` directory holding key/value files to re-produce to their original topics.
+
+The script will run until all messages have been re-produced, and the original files will not be deleted from the ``ENCRYPTED_MESSAGES`` directory.
+
 .. rubric:: Footnotes
 
 .. [#f1] Experienced users are also welcome to move the files from any other previously-run node provision into a new directory named for the node ID inside the config_files directory, though this may be more complicated than using :ref:`the second option discussed for dealing with config files <Additional configurations needed>`, depending on how OpenMSIStream was installed.

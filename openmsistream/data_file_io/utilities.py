@@ -16,7 +16,14 @@ def get_encrypted_message_timestamp_string(msg):
     return a string describing the timestamp in local time.
     """
     format_string = "on_%b_%d_%Y_at_%H_%M_%S_%f"
-    if (hasattr(msg, "key") and hasattr(msg, "value") and (isinstance(msg.key, KafkaCryptoMessage) or isinstance(msg.value, KafkaCryptoMessage))):
+    if (
+        hasattr(msg, "key")
+        and hasattr(msg, "value")
+        and (
+            isinstance(msg.key, KafkaCryptoMessage)
+            or isinstance(msg.value, KafkaCryptoMessage)
+        )
+    ):
         ts_type, timestamp = msg.timestamp
     else:
         ts_type, timestamp = msg.timestamp()

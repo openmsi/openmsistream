@@ -1,15 +1,12 @@
 # imports
-import pathlib, time, filecmp, shutil, os, configparser
-from confluent_kafka import Consumer
-from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
-from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
-    RegistryLineInProgress,
-    RegistryLineCompleted,
-)
-from openmsistream import DataFileUploadDirectory
+import pathlib, time, filecmp, os, configparser
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
-from openmsistream.data_file_io.utilities import get_encrypted_message_key_and_value_filenames
-from openmsistream.tools.undecryptable_messages.reproduce_undecryptable_messages import main
+from openmsistream.data_file_io.utilities import (
+    get_encrypted_message_key_and_value_filenames,
+)
+from openmsistream.tools.undecryptable_messages.reproduce_undecryptable_messages import (
+    main,
+)
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
@@ -67,7 +64,7 @@ class TestUndecryptableMessages(
         )
         self.start_download_thread()
         time.sleep(10)
-        self.assertFalse((self.reco_dir/test_rel_filepath).is_file())
+        self.assertFalse((self.reco_dir / test_rel_filepath).is_file())
         # run the tool to reproduce the encrypted messages
         tool_config_file_path = self.__write_tool_config_file()
         tool_args = [str(arg) for arg in [tool_config_file_path, enc_msgs_dir]]
@@ -78,7 +75,7 @@ class TestUndecryptableMessages(
             self.wait_for_files_to_reconstruct(test_rel_filepath, timeout_secs=300)
             # shut down the Producer
             self.stop_upload_thread()
-            # make sure the reconstructed file exists with the same name and content as the original
+            # make sure the reconstructed file exists same name as the original
             reco_fp = self.reco_dir / test_rel_filepath
             self.assertTrue(reco_fp.is_file())
             if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False):
@@ -89,7 +86,7 @@ class TestUndecryptableMessages(
                 raise RuntimeError(errmsg)
         except Exception as exc:
             raise exc
-        self.success = True # pylint: disable=attribute-defined-outside-init
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def __write_out_encrypted_messages(self, enc_msgs_dir, consumer_group_id):
         """Use a regular consumer (with the given group ID) to get the encrypted
@@ -97,20 +94,24 @@ class TestUndecryptableMessages(
         """
         if not enc_msgs_dir.is_dir():
             enc_msgs_dir.mkdir(parents=True)
-        consumer_args, consumer_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(TEST_CONST.TEST_CFG_FILE_PATH)
+        consumer_args, consumer_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            TEST_CONST.TEST_CFG_FILE_PATH
+        )
         configs = consumer_args[1]
         configs.pop("key.deserializer")
         configs.pop("value.deserializer")
         configs["group.id"] = consumer_group_id
         adj_consumer_args = [consumer_args[0], configs]
-        if len(consumer_args)>2:
-            adj_consumer_args+=consumer_args[2:]
+        if len(consumer_args) > 2:
+            adj_consumer_args += consumer_args[2:]
         consumer = OpenMSIStreamConsumer(*consumer_args, **consumer_kwargs)
         consumer.subscribe([self.TOPIC_NAME])
         n_msgs_consumed = 0
-        while n_msgs_consumed<12:
+        while n_msgs_consumed < 12:
             msg = consumer.get_next_message()
-            key_fn, value_fn = get_encrypted_message_key_and_value_filenames(msg,self.TOPIC_NAME)
+            key_fn, value_fn = get_encrypted_message_key_and_value_filenames(
+                msg, self.TOPIC_NAME
+            )
             key_fp = enc_msgs_dir / key_fn
             value_fp = enc_msgs_dir / value_fn
             with open(key_fp, "wb") as fp:
@@ -119,7 +120,7 @@ class TestUndecryptableMessages(
             with open(value_fp, "wb") as fp:
                 fp.write(bytes(msg.value()))
             self.assertTrue(value_fp.is_file())
-            n_msgs_consumed+=1
+            n_msgs_consumed += 1
             consumer.commit(message=msg, asynchronous=False)
         consumer.close()
 
@@ -139,17 +140,21 @@ class TestUndecryptableMessages(
             "USE_LOCAL_KAFKA_BROKER_IN_TESTS"
         ):
             tool_configs[f"{tool_node_id}-kafka"] = {
-                "bootstrap_servers": os.path.expandvars("$LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"),
+                "bootstrap_servers": os.path.expandvars(
+                    "$LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"
+                ),
             }
         else:
             tool_configs[f"{tool_node_id}-kafka"] = {
-                "bootstrap_servers": os.path.expandvars("$KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"),
-                "sasl_mechanism":"PLAIN",
-                "security_protocol":"SASL_SSL",
-                "sasl_username":os.path.expandvars("$KAFKA_TEST_CLUSTER_USERNAME"),
-                "sasl_password":os.path.expandvars("$KAFKA_TEST_CLUSTER_PASSWORD"),
+                "bootstrap_servers": os.path.expandvars(
+                    "$KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"
+                ),
+                "sasl_mechanism": "PLAIN",
+                "security_protocol": "SASL_SSL",
+                "sasl_username": os.path.expandvars("$KAFKA_TEST_CLUSTER_USERNAME"),
+                "sasl_password": os.path.expandvars("$KAFKA_TEST_CLUSTER_PASSWORD"),
             }
-        with open(tool_config_file_path,"w") as tool_config_file:
+        with open(tool_config_file_path, "w") as tool_config_file:
             tool_configs.write(tool_config_file)
         self.assertTrue(tool_config_file_path.is_file())
         return tool_config_file_path

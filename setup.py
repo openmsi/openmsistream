@@ -43,6 +43,7 @@ setupkwargs = dict(
             "InstallService=openmsistream.services.install_service:main",
             "ManageService=openmsistream.services.manage_service:main",
             "ProvisionNode=openmsistream.tools.provision_wrapper:main",
+            "ReproduceUndecryptableMessages=openmsistream.tools.undecryptable_messages.reproduce_undecryptable_messages:main",
             "S3TransferStreamProcessor=openmsistream.s3_buckets.s3_transfer_stream_processor:main",
             "GirderUploadStreamProcessor=openmsistream.girder.girder_upload_stream_processor:main",
         ],
