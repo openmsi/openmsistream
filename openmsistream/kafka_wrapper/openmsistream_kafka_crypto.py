@@ -108,6 +108,8 @@ class OpenMSIStreamKafkaCrypto:
         if "group.id" not in kcc_cfgs:
             kcc_cfgs["group.id"] = str(uuid.uuid1())
         # pop the node_ID
-        kcp_cfgs.pop("node_id")
-        kcc_cfgs.pop("node_id")
+        if "node_id" in "kcp_cfgs":
+            kcp_cfgs.pop("node_id")
+        if "node_id" in kcc_cfgs:
+            kcc_cfgs.pop("node_id")
         return kcp_cfgs, kcc_cfgs
