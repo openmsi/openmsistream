@@ -64,9 +64,6 @@ class OpenMSIStreamKafkaCrypto:
         Constructor method
         """
         kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file)
-        # figure out a consumer group ID to use (KafkaCrypto Consumers need one)
-        if "group.id" not in kcc_cfgs:
-            kcc_cfgs["group.id"] = str(uuid.uuid1())
         with change_dir(pathlib.Path(config_file).parent):
             kc_logger = logging.getLogger("kafkacrypto")
             kc_logger.setLevel(logging.ERROR)
@@ -110,4 +107,10 @@ class OpenMSIStreamKafkaCrypto:
             kcc_cfgs.update(c_cs)
         kcp_cfgs.update(broker_configs.copy())
         kcc_cfgs.update(broker_configs.copy())
+        # figure out a consumer group ID to use (KafkaCrypto Consumers need one)
+        if "group.id" not in kcc_cfgs:
+            kcc_cfgs["group.id"] = str(uuid.uuid1())
+        # pop the node_ID
+        kcp_cfgs.pop("node_id")
+        kcc_cfgs.pop("node_id")
         return kcp_cfgs, kcc_cfgs
