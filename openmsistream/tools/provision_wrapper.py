@@ -14,7 +14,7 @@ with warnings.catch_warnings():
 from openmsitoolbox.logging import OpenMSILogger
 from openmsitoolbox.utilities.misc import change_dir
 from ..utilities.config import RUN_CONST
-from .config_file_parser import ConfigFileParser
+from ..utilities.config_file_parser import ConfigFileParser
 
 # constants
 LOGGER = OpenMSILogger("ProvisionNode", logging.INFO)

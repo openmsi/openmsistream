@@ -277,10 +277,15 @@ def skip_kafka_tests_and_get_temp_env(args, suites):
 
 def skip_unmatched_tests(args, suites):
     """
-    If a regex was given to specify which tests to run, set any that don't match it to skip
+    If a regex was given to specify which tests to run, set any that don't match it to
+    skip. Returns a TestSuite that contains only the suites to run
     """
+    if args.test_regex is None:
+        return suites
+    filtered_suites = []
     if args.test_regex is not None:
         for suite in suites:
+            some_test_will_run = False
             for test_group in suite._tests:  # pylint: disable=protected-access
                 for test in test_group:
                     # pylint: disable=protected-access
@@ -294,6 +299,11 @@ def skip_unmatched_tests(args, suites):
                         setattr(
                             test, test_name, unittest.skip(msg)(getattr(test, test_name))
                         )
+                    else:
+                        some_test_will_run = True
+            if some_test_will_run:
+                filtered_suites.append(suite)
+    return unittest.TestSuite(filtered_suites)
 
 
 def teardown_local_broker():
@@ -338,7 +348,7 @@ def run_script_tests(args):
         # and set some tests to skip
         temp_no_kafka_env = skip_kafka_tests_and_get_temp_env(args, suites)
         # otherwise, if only some tests will be run. Set any that don't match the regex to skip
-        skip_unmatched_tests(args, suites)
+        suites = skip_unmatched_tests(args, suites)
         # actually run all of the requested tests
         runner_kwargs = {"verbosity": 3}
         if args.failfast:

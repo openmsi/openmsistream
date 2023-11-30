@@ -117,8 +117,9 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
                 or isinstance(retval.value, KafkaCryptoMessage)
             )
         ):
-            if not self.__encrypted_messages_subdir.is_dir():
-                self.__encrypted_messages_subdir.mkdir(parents=True)
+            with lock:
+                if not self.__encrypted_messages_subdir.is_dir():
+                    self.__encrypted_messages_subdir.mkdir(parents=True)
             key_fn, value_fn = get_encrypted_message_key_and_value_filenames(
                 retval, self.topic_name
             )

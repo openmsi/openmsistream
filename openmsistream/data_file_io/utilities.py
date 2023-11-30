@@ -7,6 +7,7 @@ from confluent_kafka import (
     TIMESTAMP_CREATE_TIME,
     TIMESTAMP_LOG_APPEND_TIME,
 )
+from kafkacrypto import KafkaCryptoMessage
 
 
 def get_encrypted_message_timestamp_string(msg):
@@ -15,7 +16,17 @@ def get_encrypted_message_timestamp_string(msg):
     return a string describing the timestamp in local time.
     """
     format_string = "on_%b_%d_%Y_at_%H_%M_%S_%f"
-    ts_type, timestamp = msg.timestamp
+    if (
+        hasattr(msg, "key")
+        and hasattr(msg, "value")
+        and (
+            isinstance(msg.key, KafkaCryptoMessage)
+            or isinstance(msg.value, KafkaCryptoMessage)
+        )
+    ):
+        ts_type, timestamp = msg.timestamp
+    else:
+        ts_type, timestamp = msg.timestamp()
     if ts_type == TIMESTAMP_NOT_AVAILABLE:
         timestamp_string = f"consumed_{datetime.datetime.now().strftime(format_string)}"
     elif ts_type in (TIMESTAMP_CREATE_TIME, TIMESTAMP_LOG_APPEND_TIME):
