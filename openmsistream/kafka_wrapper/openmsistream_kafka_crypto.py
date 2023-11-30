@@ -98,11 +98,8 @@ class OpenMSIStreamKafkaCrypto:
         kcp_cfgs = {}
         kcc_cfgs = {}
         for section_name_stem in (f"{node_id}-kafka", f"{node_id}-kafka-crypto"):
-            kafka_cs = cfg_parser.get_config_dict_for_groups(section_name_stem)
             p_cs = cfg_parser.get_config_dict_for_groups(f"{section_name_stem}-producer")
             c_cs = cfg_parser.get_config_dict_for_groups(f"{section_name_stem}-consumer")
-            kcp_cfgs.update(kafka_cs)
-            kcc_cfgs.update(kafka_cs)
             kcp_cfgs.update(p_cs)
             kcc_cfgs.update(c_cs)
         kcp_cfgs.update(broker_configs.copy())
