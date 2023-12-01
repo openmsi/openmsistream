@@ -269,12 +269,12 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
-        "provider": [
+        "metadata": [
             "optional",
             {
                 "help": (
-                    'Adding this argument will add a corresponding "provider" metadata '
-                    "field to all created folders and items"
+                    "Adding this argument will add a corresponding metadata "
+                    "field to all created folders and items. Assumes JSON serialized string."
                 ),
             },
         ],
