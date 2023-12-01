@@ -1,5 +1,6 @@
 # imports
 from io import BytesIO
+import json
 from hashlib import sha256
 import girder_client
 from ..version import __version__
@@ -37,9 +38,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         argument is not, a Folder named after the topic will be created within the
         Collection.
     :type girder_root_folder_path: str
-    :param provider: If this argument is given, an extra "provider" metadata field with
+    :param metadata: If this argument is given, an extra metadata field with
         the given value will be added to uploaded Files and Folders.
-    :type provider: str
+    :type metadata: str (JSON-serializable)
     :param filepath_regex: If given, only messages associated with files whose paths match
         this regex will be consumed
     :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
@@ -55,7 +56,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         girder_root_folder_id=None,
         collection_name=None,
         girder_root_folder_path=None,
-        provider=None,
+        metadata=None,
         **other_kwargs,
     ):
         super().__init__(config_file, topic_name, **other_kwargs)
@@ -74,8 +75,15 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "OpenMSIStreamVersion": __version__,
             "KafkaTopic": topic_name,
         }
-        if provider:
-            self.minimal_metadata_dict["provider"] = provider
+        if metadata:
+            try:
+                self.minimal_metadata_dict.update(json.loads(metadata))
+            except Exception as exc:
+                errmsg = (
+                    "ERROR: failed to parse the given metadata as JSON. "
+                    "Exception will be re-raised."
+                )
+                self.logger.error(errmsg, exc_info=exc, reraise=True)
         # if a root folder ID was given, just use that
         if girder_root_folder_id:
             self.__root_folder_id = girder_root_folder_id
@@ -273,7 +281,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "girder_root_folder_id",
             "collection_name",
             "girder_root_folder_path",
-            "provider",
+            "metadata",
         ]
         return ret_args, superkwargs
 
@@ -301,7 +309,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             girder_root_folder_id=args.girder_root_folder_id,
             collection_name=args.collection_name,
             girder_root_folder_path=args.girder_root_folder_path,
-            provider=args.provider,
+            metadata=args.metadata,
             output_dir=args.output_dir,
             mode=args.mode,
             n_threads=args.n_threads,

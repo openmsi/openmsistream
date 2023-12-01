@@ -1,4 +1,5 @@
 # imports
+import json
 import time, subprocess, unittest
 from hashlib import sha512
 import requests, docker, girder_client  # pylint: disable=wrong-import-order
@@ -145,7 +146,7 @@ class TestGirderUploadStreamProcessor(
             ),
             other_init_kwargs={
                 "collection_name": COLLECTION_NAME,
-                "provider": "test_provider",
+                "metadata": json.dumps({"somekey": "somevalue"}),
             },
         )
         self.start_stream_processor_thread()
@@ -198,6 +199,7 @@ class TestGirderUploadStreamProcessor(
             resps = girder.listItem(topic_folder_id)
             item_id = None
             for resp in resps:
+                self.assertEqual(resp["meta"].get("somekey"), "somevalue")
                 item_id = resp["_id"]
             if not item_id:
                 raise RuntimeError(f"Couldn't find Item! Responses: {list(resps)}")
