@@ -75,6 +75,13 @@ class DataFileUploadDirectory(
         """
         # create a subdirectory for the logs
         self._logs_subdir = dirpath / self.LOG_SUBDIR_NAME
+        if "logger_file" in kwargs and kwargs["logger_file"] is not None:
+            logger_file_arg = kwargs["logger_file"].resolve()
+            if "." in logger_file_arg.name:
+                self._logs_subdir = logger_file_arg.parent
+            else:
+                self._logs_subdir = logger_file_arg
+            kwargs["logger_file"] = self._logs_subdir
         if not self._logs_subdir.is_dir():
             self._logs_subdir.mkdir(parents=True)
         # put the log file in the subdirectory
@@ -605,6 +612,7 @@ class DataFileUploadDirectory(
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # listen for new files in the directory and run uploads until shut down
         run_start = datetime.datetime.now()
