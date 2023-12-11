@@ -119,6 +119,7 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # cls.bucket_name = args.bucket_name
         msg = (

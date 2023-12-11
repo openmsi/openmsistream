@@ -125,6 +125,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
             consumer_group_id=args.consumer_group_id,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # cls.bucket_name = args.bucket_name
         msg = (

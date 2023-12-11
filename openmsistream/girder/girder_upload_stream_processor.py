@@ -315,6 +315,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             n_threads=args.n_threads,
             update_secs=args.update_seconds,
             consumer_group_id=args.consumer_group_id,
+            streamlevel=args.logger_stream_level,
+            filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # start the processor running
         msg = (
