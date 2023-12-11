@@ -229,6 +229,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # start the reconstructor running
         run_start = datetime.datetime.now()

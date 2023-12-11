@@ -45,6 +45,13 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
             self._output_dir.mkdir(parents=True)
         # create a subdirectory for the logs
         self._logs_subdir = self._output_dir / self.LOG_SUBDIR_NAME
+        if "logger_file" in kwargs and kwargs["logger_file"] is not None:
+            logger_file_arg = kwargs["logger_file"].resolve()
+            if "." in logger_file_arg.name:
+                self._logs_subdir = logger_file_arg.parent
+            else:
+                self._logs_subdir = logger_file_arg
+            kwargs["logger_file"] = self._logs_subdir
         if not self._logs_subdir.is_dir():
             self._logs_subdir.mkdir(parents=True)
         # put the log file in the subdirectory

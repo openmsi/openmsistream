@@ -321,6 +321,7 @@ class UploadDataFile(DataFile, Runnable):
             args.filepath,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
+            logger_file=args.logger_file_path,
         )
         # chunk and upload the file
         upload_file.upload_whole_file(
