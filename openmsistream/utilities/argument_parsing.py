@@ -221,6 +221,18 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
+        "use_polling_observer": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "Add this flag to use a PollingObserver to trigger watchdog events "
+                    "instead of the default Observer. This is recommended when reading "
+                    "files from CIFS/SMB mounted directories, or if the default Observer "
+                    "causes any problems in a deployment."
+                ),
+            },
+        ],
         "consumer_group_id": [
             "optional",
             {"default": "create_new", "help": "ID to use for all consumers in the group"},

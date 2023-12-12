@@ -8,6 +8,7 @@ import datetime, time
 from threading import Lock
 from queue import Queue
 from watchdog.observers import Observer
+from watchdog.observers.polling import PollingObserver
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
@@ -68,6 +69,7 @@ class DataFileUploadDirectory(
         upload_regex=RUN_CONST.DEFAULT_UPLOAD_REGEX,
         datafile_type=UploadDataFile,
         watchdog_lag_time=RUN_CONST.DEFAULT_WATCHDOG_LAG_TIME,
+        use_polling_observer=False,
         **kwargs,
     ):
         """
@@ -96,7 +98,14 @@ class DataFileUploadDirectory(
         self.__datafile_type = datafile_type
         self.__wait_time = self.MIN_WAIT_TIME
         self.__lock = Lock()
-        self.__observer = Observer(timeout=self.WATCHDOG_OBSERVER_TIMEOUT)
+        if use_polling_observer:
+            self.logger.debug(
+                "Using a PollingObserver instead of the default watchdog Observer"
+            )
+            observer_class = PollingObserver
+        else:
+            observer_class = Observer
+        self.__observer = observer_class(timeout=self.WATCHDOG_OBSERVER_TIMEOUT)
         self.__event_handler = UploadDirectoryEventHandler(
             upload_regex=upload_regex,
             logs_subdir=self._logs_subdir,
@@ -586,6 +595,7 @@ class DataFileUploadDirectory(
             "update_seconds",
             "upload_existing",
             "watchdog_lag_time",
+            "use_polling_observer",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_UPLOAD_THREADS}
         return args, kwargs
@@ -609,6 +619,7 @@ class DataFileUploadDirectory(
             args.config,
             upload_regex=args.upload_regex,
             watchdog_lag_time=args.watchdog_lag_time,
+            use_polling_observer=args.use_polling_observer,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,
