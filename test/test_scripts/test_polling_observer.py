@@ -119,7 +119,7 @@ class TestPollingObserver(
         except Exception as exc:
             raise exc
 
-    def test_upload_and_download_directories_kafka(self):
+    def test_polling_observer_kafka(self):
         """
         Test the upload and download directories while applying regular expressions
         """
