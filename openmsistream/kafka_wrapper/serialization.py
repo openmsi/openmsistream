@@ -84,6 +84,7 @@ class CompoundDeserializer(Deserializer):
     """
 
     MAX_WAIT_PER_DECRYPT = 60.0  # in seconds
+    TREAT_AS_PLAINTEXT_IF_NEVER_DECRYPTABLE = True
 
     def __init__(self, *args):
         self.__steps = list(args)
@@ -120,16 +121,20 @@ class CompoundDeserializer(Deserializer):
             if isinstance(data, KafkaCryptoMessage):
                 success = False
                 elapsed = 0
-                while (not success) and elapsed < self.MAX_WAIT_PER_DECRYPT:
+                while (not success) and elapsed < self.MAX_WAIT_PER_DECRYPT and data.isPossiblyDecryptable():
                     try:
                         data = data.getMessage()
                         success = True
                     except KafkaCryptoMessageError:
                         time.sleep(0.1)
                         elapsed += 0.1
-                # if the message could not be decrypted, return the Message object itself
+                # if the message could not be decrypted, return the Message object itself, or,
+                # the raw bytes if never decryptable and tunable above is True
                 if not success:
-                    return data
+                    if (not data.isPossiblyDecryptable()) and self.TREAT_AS_PLAINTEXT_IF_NEVER_DECRYPTABLE:
+                        return bytes(data)
+                    else:
+                        return data
         # if a previous step failed to deserialize a KafkaCrypto message,
         # don't bother trying this next step
         elif not isinstance(data, KafkaCryptoMessage):
