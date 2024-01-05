@@ -140,8 +140,7 @@ class CompoundDeserializer(Deserializer):
                         not data.isPossiblyDecryptable()
                     ) and self.treat_undecryptable_as_plaintext:
                         return bytes(data)
-                    else:
-                        return data
+                    return data
         # if a previous step failed to deserialize a KafkaCrypto message,
         # don't bother trying this next step
         elif not isinstance(data, KafkaCryptoMessage):
