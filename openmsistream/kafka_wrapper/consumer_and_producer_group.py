@@ -19,6 +19,16 @@ class ConsumerAndProducerGroup(LogOwner):
     :param consumer_group_id: The ID string that should be used for each Consumer in the group.
         "create_new" (the defaults) will create a new UID to use.
     :type consumer_group_id: str, optional
+    :param kafkacrypto: The :class:`~OpenMSIStreamKafkaCrypto` object that should be used
+        to instantiate Consumers. Only needed if a single specific
+        :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
+    :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+    :param treat_undecryptable_as_plaintext: If True, the KafkaCrypto Deserializers
+        will immediately return any keys/values that are not possibly decryptable as
+        binary data. This allows faster handling of messages that will never be
+        decryptable, such as when enabling or disabling encryption across a platform,
+        or when unencrypted messages are mixed in a topic with encrypted messages.
+    :type treat_undecryptable_as_plaintext: boolean, optional
     """
 
     @property
@@ -41,6 +51,8 @@ class ConsumerAndProducerGroup(LogOwner):
         consumer_topic_name,
         *,
         consumer_group_id="create_new",
+        kafkacrypto=None,
+        treat_undecryptable_as_plaintext=False,
         **kwargs,
     ):
         """
@@ -51,6 +63,8 @@ class ConsumerAndProducerGroup(LogOwner):
             config_path,
             consumer_topic_name,
             consumer_group_id=consumer_group_id,
+            kafkacrypto=kafkacrypto,
+            treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
             logger=self.logger,
         )
         self.__producer_group = ProducerGroup(

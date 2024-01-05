@@ -48,6 +48,11 @@ If provisioning has been performed without using the ``ProvisionNode`` command, 
 
 An example of a config file used to set up producers/consumers passing encrypted messages `can be found here <https://github.com/openmsi/openmsistream/blob/main/openmsistream/kafka_wrapper/config_files/test_encrypted.config>`_, referencing the same example "testing_node" node as linked to above.
 
+Mixing encrypted and unencrypted messages in topics (not recommended)
+---------------------------------------------------------------------
+
+For rare use cases where encryption is being enabled or disabled across a platform, or when encrypted and unencrypted messages get mixed up in topics, the "``--treat_undecryptable_as_plaintext``" flag can be added to any consumer program to speed up processing of messages that will **never** be able to be decrypted. When that flag is added, undecryptable message keys and values will be returned as raw binary, which may or may not work as expected downstream (messages that were not encrypted *should* get processed normally). Be warned that adding this flag voids all guarantees of using encryption.
+
 Undecryptable messages (for ``DataFileDownloadDirectory``)
 ----------------------------------------------------------
 

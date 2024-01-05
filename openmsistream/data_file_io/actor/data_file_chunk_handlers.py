@@ -128,6 +128,21 @@ class DataFileChunkHandler(LogOwner, ABC):
         # otherwise just return the code from add_chunk
         return retval
 
+    #################### CLASS METHODS ####################
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        """
+        Anything extending this class should be able to access the
+        "treat_undecryptable_as_plaintext" flag
+        """
+        superargs, superkwargs = super().get_command_line_arguments()
+        args = [
+            *superargs,
+            "treat_undecryptable_as_plaintext",
+        ]
+        return args, superkwargs
+
 
 class DataFileChunkProcessor(DataFileChunkHandler, ControlledMessageProcessor):
     """

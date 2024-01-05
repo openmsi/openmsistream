@@ -237,6 +237,20 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
             "optional",
             {"default": "create_new", "help": "ID to use for all consumers in the group"},
         ],
+        "treat_undecryptable_as_plaintext": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "If this flag is present, Consumer(s) will return message "
+                    "keys/values that will never be decryptable as plaintext. "
+                    "This speeds up processing of messages that will never be "
+                    "decryptable. For use in cases like enabling/disabling encryption "
+                    "across a platform, or when encrypted and unencrypted messages are "
+                    "mixed in the same topic."
+                ),
+            },
+        ],
         "girder_api_url": [
             "positional",
             {
