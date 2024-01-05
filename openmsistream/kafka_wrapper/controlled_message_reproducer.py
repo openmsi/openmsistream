@@ -1,6 +1,6 @@
 """
 A ConsumerAndProducerGroup whose receipt and production of messages
-is managed using the ControlledProcessInfrastructure
+is managed using the ControlledProcess infrastructure
 """
 
 # imports

@@ -105,7 +105,11 @@ class OpenMSIStreamConsumer(LogOwner):
 
     @staticmethod
     def get_consumer_args_kwargs(
-        config_file_path, logger=None, kafkacrypto=None, **kwargs
+        config_file_path,
+        logger=None,
+        kafkacrypto=None,
+        treat_undecryptable_as_plaintext=False,
+        **kwargs,
     ):
         """
         Return the list of arguments and dictionary or keyword arguments that should be used
@@ -122,6 +126,13 @@ class OpenMSIStreamConsumer(LogOwner):
             that should be used to instantiate Consumers. Only needed if a single specific
             :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto` instance should be shared.
         :type kafkacrypto: :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
+        :param treat_undecryptable_as_plaintext: If True, the KafkaCrypto
+            Deserializers will immediately return any keys/values that are not possibly
+            decryptable as binary data. This allows faster handling of messages that
+            will never be decryptable, such as when enabling or disabling encryption
+            across a platform, or when unencrypted messages are mixed in a topic with
+            encrypted messages.
+        :type treat_undecryptable_as_plaintext: boolean, optional
         :param kwargs: Any extra keyword arguments are added to the configuration dict for
             the Consumers, with underscores in their names replaced by dots
         :type kwargs: dict
@@ -169,13 +180,17 @@ class OpenMSIStreamConsumer(LogOwner):
             )
         if "key.deserializer" in all_configs:
             keydes = CompoundDeserializer(
-                k_c.key_deserializer, all_configs.pop("key.deserializer")
+                k_c.key_deserializer,
+                all_configs.pop("key.deserializer"),
+                treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
             )
         else:
             keydes = k_c.key_deserializer
         if "value.deserializer" in all_configs:
             valdes = CompoundDeserializer(
-                k_c.value_deserializer, all_configs.pop("value.deserializer")
+                k_c.value_deserializer,
+                all_configs.pop("value.deserializer"),
+                treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
             )
         else:
             valdes = k_c.value_deserializer
