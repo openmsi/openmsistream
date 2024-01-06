@@ -226,6 +226,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
             n_threads=args.n_threads,
             filepath_regex=args.download_regex,
             consumer_group_id=args.consumer_group_id,
+            treat_undecryptable_as_plaintext=args.treat_undecryptable_as_plaintext,
             update_secs=args.update_seconds,
             streamlevel=args.logger_stream_level,
             filelevel=args.logger_file_level,

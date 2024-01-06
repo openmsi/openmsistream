@@ -29,6 +29,12 @@ class ConsumerGroup(LogOwner):
         to instantiate Consumers. Only needed if a single specific
         :class:`~OpenMSIStreamKafkaCrypto` instance should be shared.
     :type kafkacrypto: :class:`~OpenMSIStreamKafkaCrypto`, optional
+    :param treat_undecryptable_as_plaintext: If True, the KafkaCrypto Deserializers
+        will immediately return any keys/values that are not possibly decryptable as
+        binary data. This allows faster handling of messages that will never be
+        decryptable, such as when enabling or disabling encryption across a platform,
+        or when unencrypted messages are mixed in a topic with encrypted messages.
+    :type treat_undecryptable_as_plaintext: boolean, optional
     :param kwargs: Other keyword arguments will be added to the underlying Consumer's
         configurations, with underscores in their names replaced with dots.
     :type kwargs: dict
@@ -65,6 +71,7 @@ class ConsumerGroup(LogOwner):
         *,
         consumer_group_id="create_new",
         kafkacrypto=None,
+        treat_undecryptable_as_plaintext=False,
         **kwargs,
     ):
         """
@@ -80,6 +87,7 @@ class ConsumerGroup(LogOwner):
             group_id=consumer_group_id,
             logger=self.logger,
             kafkacrypto=kafkacrypto,
+            treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
         )
         if len(self.__c_args) > 1 and "group.id" in self.__c_args[1]:
             self.__consumer_group_id = self.__c_args[1]["group.id"]
