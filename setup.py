@@ -54,7 +54,7 @@ setupkwargs = dict(
         "boto3>=1.26.84",
         "confluent-kafka>=2.0.2",
         "girder-client>=3.1.20",
-        "kafkacrypto>=0.9.10.2",
+        "kafkacrypto>=0.9.10.3",
         "matplotlib",
         "methodtools",
         "msgpack",
