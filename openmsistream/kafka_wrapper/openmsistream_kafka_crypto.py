@@ -3,13 +3,12 @@ Wrapper around the KafkaCrypto producer/consumer pair communicating with the key
 """
 
 # imports
-import pathlib, uuid, warnings, logging
+import pathlib, warnings, logging
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
 from openmsitoolbox.utilities.misc import change_dir
-from ..utilities.config_file_parser import ConfigFileParser
 
 
 class OpenMSIStreamKafkaCrypto:
