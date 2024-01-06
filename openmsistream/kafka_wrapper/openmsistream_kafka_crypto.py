@@ -10,6 +10,7 @@ with warnings.catch_warnings():
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
 from openmsitoolbox.utilities.misc import change_dir
 
+
 class OpenMSIStreamKafkaCrypto:
     """
     A wrapper class to own and work with the Producers, Consumers, and other objects needed
@@ -93,9 +94,9 @@ class OpenMSIStreamKafkaCrypto:
         the crypto config file to ensure options (and clearing of options) is properly
         handled.
         """
-        cfg_parser = KafkaCryptoStore(config_file,conf_global_logger=False)
-        kcc_cfgs = cfg_parser.get_kafka_config('consumer',extra='crypto')
-        kcp_cfgs = cfg_parser.get_kafka_config('producer',extra='crypto')
+        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False)
+        kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
+        kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
         cfg_parser.close()
 
         # Overwrite with OpenMSIStream broker configs
