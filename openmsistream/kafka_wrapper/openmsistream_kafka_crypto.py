@@ -10,7 +10,6 @@ with warnings.catch_warnings():
     from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
 from openmsitoolbox.utilities.misc import change_dir
 
-
 class OpenMSIStreamKafkaCrypto:
     """
     A wrapper class to own and work with the Producers, Consumers, and other objects needed
