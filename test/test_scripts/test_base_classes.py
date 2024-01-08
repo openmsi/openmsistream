@@ -8,7 +8,6 @@ import datetime
 import subprocess
 import configparser
 import ssl
-import subprocess
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
