@@ -91,7 +91,7 @@ class TestEditCAFilePath(unittest.TestCase):
                 subprocess.check_output(
                     ["openssl", "x509", "-in", "cert.pem", "-noout", "-text"]
                 )
-                default_ca_file_path = pathlib.Path(".") / "cert.pem"
+                default_ca_file_path = pathlib.Path(".").resolve() / "cert.pem"
                 default_ca_file_loc = str(default_ca_file_path)
             if config.get(section_name, option_name) != default_ca_file_loc:
                 config.set(section_name, option_name, default_ca_file_loc)
