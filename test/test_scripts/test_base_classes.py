@@ -56,6 +56,11 @@ class TestEditCAFilePath(unittest.TestCase):
         option_name = "ssl_cafile"
         if config.has_option(section_name, option_name):
             default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
+            print(f"default ca file loc = {default_ca_file_loc}")
+            print(f"is file? {default_ca_file_loc.is_file()}")
+            print(f"parent is dir? {default_ca_file_loc.parent.is_dir()}")
+            for filepath in default_ca_file_loc.parent.glob("*"):
+                print(f"found file: {filepath}")
             if config.get(section_name, option_name) != default_ca_file_loc:
                 config.set(section_name, option_name, default_ca_file_loc)
                 with open(config_file_path, "w") as configfile:
