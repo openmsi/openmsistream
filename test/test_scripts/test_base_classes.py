@@ -69,7 +69,7 @@ class TestEditCAFilePath(unittest.TestCase):
                         "-out",
                         "csr.pem",
                         "-subj",
-                        '"/CN=openmsistream_testing"',
+                        "/CN=openmsistreamtesting",
                     ]
                 )
                 subprocess.check_output(
