@@ -98,6 +98,7 @@ class TestEditCAFilePath(unittest.TestCase):
         #         config.set(section_name, option_name, default_ca_file_loc)
         #         with open(config_file_path, "w") as configfile:
         #             config.write(configfile)
+        config_file_path = config_file_path  # pylint: disable=self-assigning-variable
         return None
 
 
