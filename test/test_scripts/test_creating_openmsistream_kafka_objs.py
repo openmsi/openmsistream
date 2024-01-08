@@ -7,11 +7,16 @@ from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithLogger, TestWithEnvVars
+from test_base_classes import (
+    TestWithKafkaTopics,
+    TestWithLogger,
+    TestWithEnvVars,
+    TestEditCAFilePath,
+)
 
 
 class TestCreateOpenMSIStreamKafkaObjects(
-    TestWithKafkaTopics, TestWithLogger, TestWithEnvVars
+    TestWithKafkaTopics, TestWithLogger, TestWithEnvVars, TestEditCAFilePath
 ):
     """
     Class for testing that objects in openmsistream.kafka_wrapper can
@@ -19,6 +24,12 @@ class TestCreateOpenMSIStreamKafkaObjects(
     """
 
     TOPICS = {RUN_CONST.DEFAULT_TOPIC_NAME: {}}
+
+    def setUp(self):
+        """Reset the ca file locations in the encrypted config files"""
+        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC)
+        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2)
+        super().setUp()
 
     def test_create_openmsistream_producer(self):
         """

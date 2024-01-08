@@ -6,6 +6,8 @@ import os
 import time
 import datetime
 import subprocess
+import configparser
+import ssl
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
@@ -17,6 +19,44 @@ from openmsistream import (
     UploadDataFile,
 )
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+
+class TestEditCAFilePath(unittest.TestCase):
+    """Any test that needs to overwrite the default ca file location in a KafkaCrypto
+    config file
+    """
+
+    def reset_ca_file_location(self, config_file_path):
+        """Read the given config file to find the corresponding kafkacrypto config file
+        and make sure that it includes a "[filename]-kafka" section listing a
+        "ssl_cafile" parameter containing the system's default ca file path
+        """
+        # Read the given file
+        if not config_file_path.is_file():
+            raise FileNotFoundError(f"ERROR: {config_file_path} does not exist!")
+        config = configparser.ConfigParser()
+        config.read(config_file_path)
+        # If it's a "main" config file path, call this function again with the path to
+        # the KafkaCrypto config file instead
+        if config.has_section("kafkacrypto"):
+            node_id = config.get("kafkacrypto","node_id")
+            kc_cfg_file_path = config_file_path.parent/node_id/f"{node_id}.config"
+            self.reset_ca_file_location(kc_cfg_file_path)
+        # Make sure it has the "node_id-kafka" section
+        section_name = f"{config_file_path.name}-kafka"
+        if not config.has_section(section_name):
+            raise ValueError(
+                f"ERROR: {config_file_path} has no '{section_name}' section!"
+            )
+        # If that section has the "ssl_cafile" option, make sure it's set to the default
+        # ca file location on the system
+        option_name = "ssl_cafile"
+        if config.has_option(section_name, option_name):
+            default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
+            if config.get(section_name, option_name) != default_ca_file_loc:
+                config.set(section_name, option_name, default_ca_file_loc)
+                with open(config_file_path, "w") as configfile:
+                    config.write(configfile)
 
 
 class TestWithKafkaTopics(unittest.TestCase):

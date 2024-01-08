@@ -14,6 +14,7 @@ from test_base_classes import (
     TestWithKafkaTopics,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
+    TestEditCAFilePath,
 )
 
 
@@ -21,6 +22,7 @@ class TestUndecryptableMessages(
     TestWithKafkaTopics,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
+    TestEditCAFilePath,
 ):
     """
     Test behavior of messages that fail to be decrypted
@@ -34,6 +36,12 @@ class TestUndecryptableMessages(
         f"{TOPIC_NAME}.reqs": {"--partitions": 1},
         f"{TOPIC_NAME}.subs": {"--partitions": 1},
     }
+
+    def setUp(self):
+        """Reset the ca file locations in the encrypted config files"""
+        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC)
+        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2)
+        super().setUp()
 
     def test_undecryptable_messages_kafka(self):
         """
