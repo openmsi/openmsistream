@@ -39,8 +39,8 @@ class TestEditCAFilePath(unittest.TestCase):
         # If it's a "main" config file path, call this function again with the path to
         # the KafkaCrypto config file instead
         if config.has_section("kafkacrypto"):
-            node_id = config.get("kafkacrypto","node_id")
-            kc_cfg_file_path = config_file_path.parent/node_id/f"{node_id}.config"
+            node_id = config.get("kafkacrypto", "node_id")
+            kc_cfg_file_path = config_file_path.parent / node_id / f"{node_id}.config"
             self.reset_ca_file_location(kc_cfg_file_path)
         # Make sure it has the "node_id-kafka" section
         section_name = f"{config_file_path.name}-kafka"
