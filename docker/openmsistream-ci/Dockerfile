@@ -15,7 +15,7 @@ RUN apt-get update && \
 
 # Install OpenMSIStream
 RUN pip install --upgrade pip && \
-    pip install openmsistream && \
+    pip install openmsistream[test] && \
     pip cache purge
 
 # Set the timezone

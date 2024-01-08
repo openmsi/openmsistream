@@ -52,7 +52,7 @@ jobs:
   # Build the repo and check the code using pyflakes and pylint
   build-and-code-check:
     docker:
-      - image: openmsi/openmsistream-ci:1.5
+      - image: openmsi/openmsistream-ci:1.6
     steps:
       - checkout
       - python/install-packages:
@@ -74,7 +74,7 @@ jobs:
   # Run non-Kafka tests in the CI image
   run-tests-no-kafka:
     docker:
-      - image: openmsi/openmsistream-ci:1.5
+      - image: openmsi/openmsistream-ci:1.6
     steps:
       - attach_workspace:
           at: .
@@ -82,7 +82,9 @@ jobs:
           <<: *pip_install_block
       - run:
           name: run "no Kafka" tests
-          command: cd ~/project; python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
+          command: |
+            cd ~/project
+            python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
       - persist_to_workspace:
           root: .
           paths:
@@ -100,10 +102,10 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: set Python version to 3.9.16
+          name: set Python version to 3.9.17
           command: |
-            pyenv install 3.9.16
-            pyenv global 3.9.16
+            pyenv install 3.9.17
+            pyenv global 3.9.17
       - python/install-packages:
           <<: *pip_install_block
       - run:
@@ -114,10 +116,10 @@ jobs:
       - run:
           <<: *kafka_teardown
       - run:
-          name: set Python version to 3.7.12
+          name: set Python version to 3.7.17
           command: |
-            pyenv install 3.7.12
-            pyenv global 3.7.12
+            pyenv install 3.7.17
+            pyenv global 3.7.17
       - python/install-packages:
           <<: *pip_install_block
       - run:
@@ -134,7 +136,7 @@ jobs:
   # Make sure that the repository is clean after all tests have been run
   check-repo:
     docker:
-      - image: openmsi/openmsistream-ci:1.5
+      - image: openmsi/openmsistream-ci:1.6
     steps:
       - attach_workspace:
           at: .
