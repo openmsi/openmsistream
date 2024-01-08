@@ -43,7 +43,7 @@ class TestEditCAFilePath(unittest.TestCase):
             kc_cfg_file_path = config_file_path.parent / node_id / f"{node_id}.config"
             self.reset_ca_file_location(kc_cfg_file_path)
         # Make sure it has the "node_id-kafka" section
-        section_name = f"{config_file_path.name}-kafka"
+        section_name = f"{config_file_path.stem}-kafka"
         if not config.has_section(section_name):
             raise ValueError(
                 f"ERROR: {config_file_path} has no '{section_name}' section!"
