@@ -18,10 +18,10 @@ from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithLogger, TestEditCAFilePath
+from test_base_classes import TestWithKafkaTopics, TestWithLogger
 
 
-class TestSerialization(TestWithKafkaTopics, TestWithLogger, TestEditCAFilePath):
+class TestSerialization(TestWithKafkaTopics, TestWithLogger):
     """
     Class for testing classes in openmsistream.kafka_wrapper.serialization
     """
@@ -37,11 +37,9 @@ class TestSerialization(TestWithKafkaTopics, TestWithLogger, TestEditCAFilePath)
 
     def setUp(self):  # pylint: disable=invalid-name
         """
-        Reset CA file locations, and make the dictionary of reference serialized binaries
+        Make the dictionary of reference serialized binaries
         from the existing reference files
         """
-        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC)
-        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2)
         super().setUp()
         self.test_chunk_binaries = {}
         glob_pattern = f"{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_*.bin"

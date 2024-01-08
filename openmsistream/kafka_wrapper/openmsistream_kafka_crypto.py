@@ -3,7 +3,7 @@ Wrapper around the KafkaCrypto producer/consumer pair communicating with the key
 """
 
 # imports
-import pathlib, warnings, logging
+import pathlib, warnings, logging, configparser
 
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
@@ -94,15 +94,25 @@ class OpenMSIStreamKafkaCrypto:
         the crypto config file to ensure options (and clearing of options) is properly
         handled.
         """
+        # If ssl.ca.location is set in the broker configs, make sure it's written to the
+        # KafkaCrypto config file as well in the right place
+        if "ssl.ca.location" in broker_configs:
+            config = configparser.ConfigParser(delimiters=":")
+            config.read(config_file)
+            section_name = f"{config_file.stem}-kafka"
+            option_name = "ssl_cafile"
+            if config.has_option(section_name, option_name):
+                config.set(section_name, option_name, broker_configs["ssl.ca.location"])
+                with open(config_file, "w") as cfg_fp:
+                    config.write(cfg_fp)
+        # Parse the config file and get consumer and producer configs
         cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False)
         kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
         kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
         cfg_parser.close()
-
         # Overwrite with OpenMSIStream broker configs
         kcc_cfgs.update(broker_configs.copy())
         kcp_cfgs.update(broker_configs.copy())
-
         # KafkaCryptoStore automatically handles settings a group id if not already set
         # and makes sure unnecessary defaults (such as node_id) are not included.
         return kcp_cfgs, kcc_cfgs

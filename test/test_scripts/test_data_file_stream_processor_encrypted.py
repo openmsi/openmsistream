@@ -7,7 +7,6 @@ from test_base_classes import (
     TestWithKafkaTopics,
     TestWithDataFileUploadDirectory,
     TestWithStreamProcessor,
-    TestEditCAFilePath,
 )
 
 
@@ -15,7 +14,6 @@ class TestDataFileStreamProcessorEncrypted(
     TestWithKafkaTopics,
     TestWithStreamProcessor,
     TestWithDataFileUploadDirectory,
-    TestEditCAFilePath,
 ):
     """
     Class for testing behavior of an encrypted DataFileStreamProcessor
@@ -29,12 +27,6 @@ class TestDataFileStreamProcessorEncrypted(
         f"{TOPIC_NAME}.reqs": {"--partitions": 1},
         f"{TOPIC_NAME}.subs": {"--partitions": 1},
     }
-
-    def setUp(self):  # pylint: disable=invalid-name
-        """Reset the ca file locations in the encrypted config files"""
-        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC)
-        self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2)
-        super().setUp()
 
     def test_data_file_stream_processor_restart_encrypted_kafka(self):
         """
