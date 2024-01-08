@@ -31,72 +31,72 @@ class TestEditCAFilePath(unittest.TestCase):
         and make sure that it includes a "[filename]-kafka" section listing a
         "ssl_cafile" parameter containing the system's default ca file path
         """
-        # Read the given file
-        if not config_file_path.is_file():
-            raise FileNotFoundError(f"ERROR: {config_file_path} does not exist!")
-        config = configparser.ConfigParser()
-        config.read(config_file_path)
-        # If it's a "main" config file path, call this function again with the path to
-        # the KafkaCrypto config file instead
-        if config.has_section("kafkacrypto"):
-            node_id = config.get("kafkacrypto", "node_id")
-            kc_cfg_file_path = config_file_path.parent / node_id / f"{node_id}.config"
-            return self.reset_ca_file_location(kc_cfg_file_path)
-        # Read the file again expecting colon delimeters
-        config = configparser.ConfigParser(delimiters=":")
-        config.read(config_file_path)
-        # Make sure it has the "node_id-kafka" section
-        section_name = f"{config_file_path.stem}-kafka"
-        if not config.has_section(section_name):
-            raise ValueError(
-                f"ERROR: {config_file_path} has no '{section_name}' section!"
-            )
-        # If that section has the "ssl_cafile" option, make sure it's set to the default
-        # ca file location on the system
-        option_name = "ssl_cafile"
-        if config.has_option(section_name, option_name):
-            default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
-            # write out a self-signed cert file if it doesn't exist already and edit path
-            default_ca_file_path = pathlib.Path(default_ca_file_loc)
-            if not default_ca_file_path.is_file():
-                subprocess.check_output(["openssl", "genrsa", "-out", "key.pem", "2048"])
-                subprocess.check_output(
-                    [
-                        "openssl",
-                        "req",
-                        "-new",
-                        "-key",
-                        "key.pem",
-                        "-out",
-                        "csr.pem",
-                        "-subj",
-                        "/CN=openmsistreamtesting",
-                    ]
-                )
-                subprocess.check_output(
-                    [
-                        "openssl",
-                        "x509",
-                        "-req",
-                        "-days",
-                        "5",
-                        "-in",
-                        "csr.pem",
-                        "-signkey",
-                        "key.pem",
-                        "-out",
-                        "cert.pem",
-                    ]
-                )
-                subprocess.check_output(
-                    ["openssl", "x509", "-in", "cert.pem", "-noout", "-text"]
-                )
-                default_ca_file_path = pathlib.Path(".").resolve() / "cert.pem"
-                default_ca_file_loc = str(default_ca_file_path)
-            if config.get(section_name, option_name) != default_ca_file_loc:
-                config.set(section_name, option_name, default_ca_file_loc)
-                with open(config_file_path, "w") as configfile:
-                    config.write(configfile)
+        # # Read the given file
+        # if not config_file_path.is_file():
+        #     raise FileNotFoundError(f"ERROR: {config_file_path} does not exist!")
+        # config = configparser.ConfigParser()
+        # config.read(config_file_path)
+        # # If it's a "main" config file path, call this function again with the path to
+        # # the KafkaCrypto config file instead
+        # if config.has_section("kafkacrypto"):
+        #     node_id = config.get("kafkacrypto", "node_id")
+        #     kc_cfg_file_path = config_file_path.parent / node_id / f"{node_id}.config"
+        #     return self.reset_ca_file_location(kc_cfg_file_path)
+        # # Read the file again expecting colon delimeters
+        # config = configparser.ConfigParser(delimiters=":")
+        # config.read(config_file_path)
+        # # Make sure it has the "node_id-kafka" section
+        # section_name = f"{config_file_path.stem}-kafka"
+        # if not config.has_section(section_name):
+        #     raise ValueError(
+        #         f"ERROR: {config_file_path} has no '{section_name}' section!"
+        #     )
+        # # If that section has the "ssl_cafile" option, make sure it's set to the default
+        # # ca file location on the system
+        # option_name = "ssl_cafile"
+        # if config.has_option(section_name, option_name):
+        #     default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
+        #     # write out a self-signed cert file if it doesn't exist already and edit path
+        #     default_ca_file_path = pathlib.Path(default_ca_file_loc)
+        #     if not default_ca_file_path.is_file():
+        #         subprocess.check_output(["openssl", "genrsa", "-out", "key.pem", "2048"])
+        #         subprocess.check_output(
+        #             [
+        #                 "openssl",
+        #                 "req",
+        #                 "-new",
+        #                 "-key",
+        #                 "key.pem",
+        #                 "-out",
+        #                 "csr.pem",
+        #                 "-subj",
+        #                 "/CN=openmsistreamtesting",
+        #             ]
+        #         )
+        #         subprocess.check_output(
+        #             [
+        #                 "openssl",
+        #                 "x509",
+        #                 "-req",
+        #                 "-days",
+        #                 "5",
+        #                 "-in",
+        #                 "csr.pem",
+        #                 "-signkey",
+        #                 "key.pem",
+        #                 "-out",
+        #                 "cert.pem",
+        #             ]
+        #         )
+        #         subprocess.check_output(
+        #             ["openssl", "x509", "-in", "cert.pem", "-noout", "-text"]
+        #         )
+        #         default_ca_file_path = pathlib.Path(".").resolve() / "cert.pem"
+        #         default_ca_file_loc = str(default_ca_file_path)
+        #     if config.get(section_name, option_name) != default_ca_file_loc:
+        #         config.set(section_name, option_name, default_ca_file_loc)
+        #         with open(config_file_path, "w") as configfile:
+        #             config.write(configfile)
         return None
 
 
