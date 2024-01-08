@@ -42,6 +42,9 @@ class TestEditCAFilePath(unittest.TestCase):
             node_id = config.get("kafkacrypto", "node_id")
             kc_cfg_file_path = config_file_path.parent / node_id / f"{node_id}.config"
             return self.reset_ca_file_location(kc_cfg_file_path)
+        # Read the file again expecting colon delimeters
+        config = configparser.ConfigParser(delimiters=":")
+        config.read(config_file_path)
         # Make sure it has the "node_id-kafka" section
         section_name = f"{config_file_path.stem}-kafka"
         if not config.has_section(section_name):
