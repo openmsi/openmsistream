@@ -8,6 +8,7 @@ import datetime
 import subprocess
 import configparser
 import ssl
+import subprocess
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
@@ -57,11 +58,40 @@ class TestEditCAFilePath(unittest.TestCase):
         if config.has_option(section_name, option_name):
             default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
             default_ca_file_path = pathlib.Path(default_ca_file_loc)
-            print(f"default ca file path = {default_ca_file_path}")
-            print(f"is file? {default_ca_file_path.is_file()}")
-            print(f"parent is dir? {default_ca_file_path.parent.is_dir()}")
-            for filepath in default_ca_file_path.parent.glob("*"):
-                print(f"found file: {filepath}")
+            if not default_ca_file_path.is_file():
+                subprocess.check_output(["openssl", "genrsa", "-out", "key.pem", "2048"])
+                subprocess.check_output(
+                    [
+                        "openssl",
+                        "req",
+                        "-new",
+                        "-key",
+                        "key.pem",
+                        "-out",
+                        "csr.pem",
+                        "-subj",
+                        '"/CN=openmsistream_testing"',
+                    ]
+                )
+                subprocess.check_output(
+                    [
+                        "openssl",
+                        "x509",
+                        "-req",
+                        "-days",
+                        "5",
+                        "-in",
+                        "csr.pem",
+                        "-signkey",
+                        "key.pem",
+                        "-out",
+                        "cert.pem",
+                    ]
+                )
+                subprocess.check_output(
+                    ["openssl", "x509", "-in", "cert.pem", "-noout", "-text"]
+                )
+                subprocess.check_output(["mv", "cert.pem", default_ca_file_loc])
             if config.get(section_name, option_name) != default_ca_file_loc:
                 config.set(section_name, option_name, default_ca_file_loc)
                 with open(config_file_path, "w") as configfile:
