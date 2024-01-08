@@ -11,7 +11,9 @@ from test_base_classes import (
 
 
 class TestDataFileStreamProcessorEncrypted(
-    TestWithKafkaTopics, TestWithStreamProcessor, TestWithDataFileUploadDirectory
+    TestWithKafkaTopics,
+    TestWithStreamProcessor,
+    TestWithDataFileUploadDirectory,
 ):
     """
     Class for testing behavior of an encrypted DataFileStreamProcessor
