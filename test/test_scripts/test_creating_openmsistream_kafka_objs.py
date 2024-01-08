@@ -25,7 +25,7 @@ class TestCreateOpenMSIStreamKafkaObjects(
 
     TOPICS = {RUN_CONST.DEFAULT_TOPIC_NAME: {}}
 
-    def setUp(self):
+    def setUp(self):  # pylint: disable=invalid-name
         """Reset the ca file locations in the encrypted config files"""
         self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC)
         self.reset_ca_file_location(TEST_CONST.TEST_CFG_FILE_PATH_ENC_2)
