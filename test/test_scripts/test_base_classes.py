@@ -56,6 +56,7 @@ class TestEditCAFilePath(unittest.TestCase):
         option_name = "ssl_cafile"
         if config.has_option(section_name, option_name):
             default_ca_file_loc = ssl.get_default_verify_paths().openssl_cafile
+            # write out a self-signed cert file if it doesn't exist already
             default_ca_file_path = pathlib.Path(default_ca_file_loc)
             if not default_ca_file_path.is_file():
                 subprocess.check_output(["openssl", "genrsa", "-out", "key.pem", "2048"])
