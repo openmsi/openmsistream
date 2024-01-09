@@ -95,18 +95,8 @@ class XRDCSVPlotter(DataFileStreamProcessor):
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         # make the plot maker
-        plot_maker = cls(
-            args.config,
-            args.topic_name,
-            n_threads=args.n_threads,
-            filepath_regex=args.download_regex,
-            consumer_group_id=args.consumer_group_id,
-            output_dir=args.output_dir,
-            mode=args.mode,
-            update_secs=args.update_seconds,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        plot_maker = cls(*init_args,**init_kwargs)
         # start the plot maker running
         run_start = datetime.datetime.now()
         plot_maker.logger.info(
