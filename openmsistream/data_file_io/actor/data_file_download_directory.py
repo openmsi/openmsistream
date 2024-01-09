@@ -195,14 +195,18 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         args = [
             *superargs,
             "output_dir",
-            "config",
-            "topic_name",
-            "update_seconds",
-            "consumer_group_id",
-            "download_regex",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.output_dir,
+            *superargs,
+        ]
+        return args, superkwargs
 
     @classmethod
     def run_from_command_line(cls, args=None):
@@ -219,19 +223,8 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         # make the download directory
-        reconstructor_directory = cls(
-            args.output_dir,
-            args.config,
-            args.topic_name,
-            n_threads=args.n_threads,
-            filepath_regex=args.download_regex,
-            consumer_group_id=args.consumer_group_id,
-            treat_undecryptable_as_plaintext=args.treat_undecryptable_as_plaintext,
-            update_secs=args.update_seconds,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        reconstructor_directory = cls(*init_args, **init_kwargs)
         # start the reconstructor running
         run_start = datetime.datetime.now()
         reconstructor_directory.logger.info(

@@ -274,7 +274,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         Return the names of arguments needed to run the program from the command line
         """
         superargs, superkwargs = super().get_command_line_arguments()
-        ret_args = [
+        args = [
             "girder_api_url",
             "girder_api_key",
             *superargs,
@@ -283,7 +283,24 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "girder_root_folder_path",
             "metadata",
         ]
-        return ret_args, superkwargs
+        return args, superkwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.girder_api_url,
+            parsed_args.girder_api_key,
+            *superargs,
+        ]
+        kwargs = {
+            **superkwargs,
+            "girder_root_folder_id": parsed_args.girder_root_folder_id,
+            "collection_name": parsed_args.collection_name,
+            "girder_root_folder_path": parsed_args.girder_root_folder_path,
+            "metadata": parsed_args.metadata,
+        }
+        return args, kwargs
 
     @classmethod
     def run_from_command_line(cls, args=None):
@@ -301,24 +318,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         # make the stream processor
-        girder_uploader = cls(
-            args.girder_api_url,
-            args.girder_api_key,
-            args.config,
-            args.topic_name,
-            girder_root_folder_id=args.girder_root_folder_id,
-            collection_name=args.collection_name,
-            girder_root_folder_path=args.girder_root_folder_path,
-            metadata=args.metadata,
-            output_dir=args.output_dir,
-            mode=args.mode,
-            n_threads=args.n_threads,
-            update_secs=args.update_seconds,
-            consumer_group_id=args.consumer_group_id,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        girder_uploader = cls(*init_args, **init_kwargs)
         # start the processor running
         msg = (
             f"Listening to the {args.topic_name} topic for files to upload to "

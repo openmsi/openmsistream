@@ -113,3 +113,34 @@ class ConsumerAndProducerGroup(LogOwner):
         """
         self.__consumer_group.close()
         self.__producer_group.close()
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        """
+        Anything extending this class should be able to access the
+        "treat_undecryptable_as_plaintext" flag
+        """
+        superargs, superkwargs = super().get_command_line_arguments()
+        args = [
+            *superargs,
+            "config",
+            "consumer_topic_name",
+            "consumer_group_id",
+            "treat_undecryptable_as_plaintext",
+        ]
+        return args, superkwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            *superargs,
+            parsed_args.config,
+            parsed_args.consumer_topic_name,
+        ]
+        kwargs = {
+            **superkwargs,
+            "consumer_group_id": parsed_args.consumer_group_id,
+            "treat_undecryptable_as_plaintext": parsed_args.treat_undecryptable_as_plaintext,
+        }
+        return args, kwargs

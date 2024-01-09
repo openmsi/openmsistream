@@ -140,3 +140,21 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
                 "Error will be logged below but not re-raised."
             )
             self.logger.warning(warnmsg, exc_info=exc)
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        superargs, superkwargs = super().get_command_line_arguments()
+        args = [
+            *superargs,
+            "download_regex",
+        ]
+        return args, superkwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        kwargs = {
+            **superkwargs,
+            "filepath_regex": parsed_args.download_regex,
+        }
+        return superargs, kwargs

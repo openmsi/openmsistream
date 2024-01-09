@@ -76,7 +76,6 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
             self.bucket_name, object_key, datafile
         ):
             self.logger.debug(object_key + " matched with consumer datafile")
-            # self.s3d.delete_object_from_bucket(self.bucket_name, object_key)
         else:
             warnmsg = (
                 f"WARNING: {object_key} transferred to bucket but the file in the bucket "
@@ -99,6 +98,15 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
         return args, kwargs
 
     @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.bucket_name,
+            *superargs,
+        ]
+        return args, superkwargs
+
+    @classmethod
     def run_from_command_line(cls, args=None):
         """
         Run a :class:`~S3TransferStreamProcessor` directly from the command line
@@ -113,21 +121,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
         # make the argument parser
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
-        s3_stream_proc = cls(
-            args.bucket_name,
-            args.config,
-            args.topic_name,
-            output_dir=args.output_dir,
-            mode=args.mode,
-            n_threads=args.n_threads,
-            filepath_regex=args.download_regex,
-            update_secs=args.update_seconds,
-            consumer_group_id=args.consumer_group_id,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
-        # cls.bucket_name = args.bucket_name
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        s3_stream_proc = cls(*init_args, **init_kwargs)
         msg = (
             f"Listening to the {args.topic_name} topic for files to add to the "
             f"{args.bucket_name} bucket...."
