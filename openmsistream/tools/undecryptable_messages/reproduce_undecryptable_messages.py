@@ -29,7 +29,7 @@ def main(given_args=None):
     )
     args = parser.parse_args(given_args)
     # Process configuration file
-    kcs = KafkaCryptoStore(str(args.config))
+    kcs = KafkaCryptoStore(str(args.config), conf_global_logger=False)
     # Setup Kafka Producer *without* crypto ser (msgs are already serialized)
     kafka_config = kcs.get_kafka_config("producer")
     producer = KafkaProducer(**kafka_config)

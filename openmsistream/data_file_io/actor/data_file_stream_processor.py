@@ -257,6 +257,5 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "topic_name", "download_regex"]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
-        return args, kwargs
+        return superargs, kwargs

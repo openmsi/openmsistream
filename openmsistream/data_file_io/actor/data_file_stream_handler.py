@@ -180,9 +180,19 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "config", "consumer_group_id", "update_seconds", "mode"]
+        args = [*superargs, "mode"]
         kwargs = {
             **superkwargs,
             "optional_output_dir": cls._get_auto_output_dir(),
         }
         return args, kwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        kwargs = {
+            **superkwargs,
+            "mode": parsed_args.mode,
+            "output_dir": parsed_args.output_dir,
+        }
+        return superargs, kwargs

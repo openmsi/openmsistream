@@ -237,3 +237,31 @@ class ControlledMessageReproducer(
                 "Error will be logged below but not re-raised."
             )
             self.logger.warning(warnmsg, exc_info=exc)
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        superargs, superkwargs = super().get_command_line_arguments()
+        superkwargs.pop("n_threads")
+        args = [
+            *superargs,
+            "producer_topic_name",
+            "n_consumer_threads",
+            "n_producer_threads",
+            "download_regex",
+        ]
+        return args, superkwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            *superargs,
+            parsed_args.producer_topic_name,
+        ]
+        kwargs = {
+            **superkwargs,
+            "n_producer_threads": parsed_args.n_producer_threads,
+            "n_consumer_threads": parsed_args.n_consumer_threads,
+            "filepath_regex": parsed_args.download_regex,
+        }
+        return args, kwargs

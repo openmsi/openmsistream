@@ -367,17 +367,3 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
     def _on_shutdown(self):
         super()._on_shutdown()
         self.file_registry.consolidate_succeeded_files()
-
-    @classmethod
-    def get_command_line_arguments(cls):
-        superargs, superkwargs = super().get_command_line_arguments()
-        args = [
-            *superargs,
-            "consumer_topic_name",
-            "producer_topic_name",
-            "n_consumer_threads",
-            "n_producer_threads",
-            "download_regex",
-        ]
-        kwargs = {**superkwargs}
-        return args, kwargs

@@ -587,17 +587,30 @@ class DataFileUploadDirectory(
         args = [
             *superargs,
             "upload_dir",
-            "config",
             "topic_name",
             "upload_regex",
             "chunk_size",
             "queue_max_size",
-            "update_seconds",
             "upload_existing",
             "watchdog_lag_time",
             "use_polling_observer",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_UPLOAD_THREADS}
+        return args, kwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.upload_dir,
+            *superargs,
+        ]
+        kwargs = {
+            **superkwargs,
+            "upload_regex": parsed_args.upload_regex,
+            "watchdog_lag_time": parsed_args.watchdog_lag_time,
+            "use_polling_observer": parsed_args.use_polling_observer,
+        }
         return args, kwargs
 
     @classmethod
@@ -614,17 +627,8 @@ class DataFileUploadDirectory(
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         # make the DataFileDirectory for the specified directory
-        upload_file_directory = cls(
-            args.upload_dir,
-            args.config,
-            upload_regex=args.upload_regex,
-            watchdog_lag_time=args.watchdog_lag_time,
-            use_polling_observer=args.use_polling_observer,
-            update_secs=args.update_seconds,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        upload_file_directory = cls(*init_args, **init_kwargs)
         # listen for new files in the directory and run uploads until shut down
         run_start = datetime.datetime.now()
         if not args.upload_existing:

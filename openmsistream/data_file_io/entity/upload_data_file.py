@@ -302,6 +302,15 @@ class UploadDataFile(DataFile, Runnable):
         return args, kwargs
 
     @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.filepath,
+            *superargs,
+        ]
+        return args, superkwargs
+
+    @classmethod
     def run_from_command_line(cls, args=None):
         """
         Run an :class:`~UploadDataFile` directly from the command line
@@ -317,12 +326,8 @@ class UploadDataFile(DataFile, Runnable):
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
         # make the DataFile for the single specified file
-        upload_file = cls(
-            args.filepath,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        upload_file = cls(*init_args, **init_kwargs)
         # chunk and upload the file
         upload_file.upload_whole_file(
             args.config,

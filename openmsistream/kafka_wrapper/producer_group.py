@@ -59,3 +59,25 @@ class ProducerGroup(LogOwner):
             pass
         finally:
             self.__p_kwargs["kafkacrypto"] = None
+
+    @classmethod
+    def get_command_line_arguments(cls):
+        """
+        Anything extending this class should be able to access the
+        "treat_undecryptable_as_plaintext" flag
+        """
+        superargs, superkwargs = super().get_command_line_arguments()
+        args = [
+            *superargs,
+            "config",
+        ]
+        return args, superkwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        args = [
+            parsed_args.config,
+            *superargs,
+        ]
+        return args, superkwargs
