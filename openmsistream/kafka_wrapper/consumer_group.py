@@ -132,6 +132,8 @@ class ConsumerGroup(LogOwner):
         """
         Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
+        if "kafkacrypto" not in self.__c_kwargs:
+            return
         # try:
         self.__c_kwargs["kafkacrypto"].close()
         # except Exception:
