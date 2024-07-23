@@ -66,7 +66,6 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
         ):
             self.__commit_last_message_offset(consumer)
         # shut down the Consumer that was created once the process isn't alive anymore
-        print(f"closing consumer {consumer}")
         consumer.close()
 
     def _on_shutdown(self):

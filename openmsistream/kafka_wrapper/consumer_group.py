@@ -134,11 +134,7 @@ class ConsumerGroup(LogOwner):
         """
         if "kafkacrypto" not in self.__c_kwargs:
             return
-        # try:
         self.__c_kwargs["kafkacrypto"].close()
-        # except Exception:
-        #    pass
-        # finally:
         self.__c_kwargs["kafkacrypto"] = None
 
     def __get_group_starting_offsets(

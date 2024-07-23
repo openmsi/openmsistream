@@ -102,20 +102,20 @@ jobs:
     steps:
       - attach_workspace:
           at: .
-      # - run:
-      #     name: set Python version to 3.9.17
-      #     command: |
-      #       pyenv install 3.9.17
-      #       pyenv global 3.9.17
-      # - python/install-packages:
-      #     <<: *pip_install_block
-      # - run:
-      #     <<: *kafka_setup
-      # - run:
-      #     name: run tests in Python 3.9
-      #     <<: *run_tests_cmd
-      # - run:
-      #     <<: *kafka_teardown
+      - run:
+          name: set Python version to 3.9.17
+          command: |
+            pyenv install 3.9.17
+            pyenv global 3.9.17
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
+      - run:
+          name: run tests in Python 3.9
+          <<: *run_tests_cmd
+      - run:
+          <<: *kafka_teardown
       - run:
           name: set Python version to 3.7.17
           command: |
