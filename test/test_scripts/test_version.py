@@ -45,12 +45,12 @@ class TestVersion(unittest.TestCase):
                 f"Version string {openmsistream.__version__} is not valid!"
             ) from exc
         current_time = datetime.datetime.now().astimezone(datetime.timezone.utc)
-        if (current_time - release_date).total_seconds() / 60.0 < 10.0:
+        if (current_time - release_date).total_seconds() / 60.0 < 720.0:
             self.assertTrue(
                 pypi_version == current_version,
                 (
                     f"PyPI version ({pypi_version}) does not match the current version "
-                    f"({current_version}) but the release is less than ten minutes old."
+                    f"({current_version}) but the release is less than twelve hours old."
                 ),
             )
         else:
