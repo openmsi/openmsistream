@@ -1,6 +1,5 @@
 ---
 name: local-girder
-version: '3'
 services:
   mongodb:
     image: mongo:3.6

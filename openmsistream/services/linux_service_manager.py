@@ -38,8 +38,7 @@ class LinuxServiceManager(ServiceManagerBase):
                 linesplit = (line.strip()).split("=")
                 if len(linesplit) == 2:
                     env_var_names.add(linesplit[0])
-        for evn in env_var_names:
-            yield evn
+        yield from env_var_names
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)

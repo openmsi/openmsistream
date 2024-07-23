@@ -8,7 +8,7 @@ from watchdog.events import FileSystemEventHandler
 from openmsitoolbox import LogOwner
 
 
-@dataclass
+@dataclass(eq=True, frozen=True)
 class EventHandlerActiveFile:
     """
     A small dataclass to hold active files recognized by the event handler,

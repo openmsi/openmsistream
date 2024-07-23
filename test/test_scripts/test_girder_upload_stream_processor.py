@@ -101,13 +101,18 @@ class TestGirderUploadStreamProcessor(
             params={
                 "type": 0,
                 "name": "Base",
-                "root": "/srv/data/base",
+                # Girder container no longer running as root, use different folder
+                # for assetstore root
+                "root": "/home/girder/data/base",  # /srv/data/base
             },
             timeout=GIRDER_TIMEOUT,
         )
         if resp.status_code != 200:
             raise RuntimeError(
-                f"ERROR: failed to create Girder assetstore! Status: {resp.status_code}"
+                (
+                    f"ERROR: failed to create Girder assetstore! Status: "
+                    f"{resp.status_code} Text: {resp.text}"
+                )
             )
         # Save the assetstore ID so we can delete it after the test
         self.assetstore_id = resp.json()["_id"]
