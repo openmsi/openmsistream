@@ -132,12 +132,12 @@ class ConsumerGroup(LogOwner):
         """
         Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
-        try:
-            self.__c_kwargs["kafkacrypto"].close()
-        except Exception:
-            pass
-        finally:
-            self.__c_kwargs["kafkacrypto"] = None
+        #try:
+        self.__c_kwargs["kafkacrypto"].close()
+        #except Exception:
+        #    pass
+        #finally:
+        self.__c_kwargs["kafkacrypto"] = None
 
     def __get_group_starting_offsets(
         self, config_path, topic_name, consumer_group_id, n_retries=10

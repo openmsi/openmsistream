@@ -146,7 +146,7 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
                 for run_mode in ("start", "status", "stop", "remove", "reinstall"):
                     time.sleep(5)
                     self.log_at_info(f"Running {run_mode} for {service_name}....")
-                    manager.run_manage_command(run_mode, True, True)
+                    manager.run_manage_command(run_mode, False, False)
                 time.sleep(5)
                 self.assertFalse(
                     (

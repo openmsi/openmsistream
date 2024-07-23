@@ -113,6 +113,7 @@ class TestMetadataReproducer(
             consumer_group_id=CONSUMER_GROUP_ID,
         )
         self.start_stream_reproducer_thread()
+        consumer = None
         try:
             self.run_metadata_reproducer()
             # consume messages from the destination topic and make sure the metadata
@@ -168,4 +169,7 @@ class TestMetadataReproducer(
                 raise RuntimeError(errmsg)
         except Exception as exc:
             raise exc
+        finally:
+            if consumer is not None:
+                consumer.close()
         self.success = True  # pylint: disable=attribute-defined-outside-init
