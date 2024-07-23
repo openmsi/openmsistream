@@ -1,6 +1,5 @@
 ---
 name: local-kafka
-version: '3'
 services:
   zookeeper:
     image: confluentinc/cp-zookeeper:7.3.0

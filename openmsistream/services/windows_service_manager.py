@@ -40,8 +40,7 @@ class WindowsServiceManager(ServiceManagerBase):
                 linestrip = line.strip()
                 if linestrip != "":
                     env_var_names.add(linestrip)
-        for evn in env_var_names:
-            yield evn
+        yield from env_var_names
 
     def install_service(self):
         """
