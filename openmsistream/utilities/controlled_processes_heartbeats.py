@@ -29,8 +29,8 @@ class DefaultHeartbeatProducible(Producible):
 class ControlledProcessHeartbeats(ControlledProcess, ABC):
     "A long-running process that occasionally produces messages to a heartbeat topic"
 
-    def __init__(self, config_path, **kwargs):
-        super().__init__(config_path, **kwargs)
+    def __init__(self, config_path, *args, **kwargs):
+        super().__init__(config_path, *args, **kwargs)
         self.__heartbeat_topic_name = None
         self.__heartbeat_interval_secs = None
         self.__heartbeat_producer = None

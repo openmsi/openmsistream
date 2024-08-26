@@ -4,11 +4,11 @@ A ConsumerGroup whose receipt of messages is governed using the ControlledProces
 
 # imports
 from abc import ABC, abstractmethod
-from openmsitoolbox import ControlledProcessMultiThreaded
+from ..utilities.controlled_processes_heartbeats import ControlledProcessMultiThreadedHeartbeats
 from .consumer_group import ConsumerGroup
 
 
-class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, ABC):
+class ControlledMessageProcessor(ControlledProcessMultiThreadedHeartbeats, ConsumerGroup, ABC):
     """
     Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a
     single interface for reading and processing individual messages
@@ -16,13 +16,13 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
 
     CONSUMER_POLL_TIMEOUT = 5.0
 
-    def __init__(self, *args, filepath_regex=None, **kwargs):
+    def __init__(self, config_path, topic_name, filepath_regex=None, **kwargs):
         """
         Hang onto the number of messages read and processed
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
-        super().__init__(*args, **kwargs)
+        super().__init__(config_path, topic_name, **kwargs)
         # set below to true to reset new consumers to their earliest offsets
         self.restart_at_beginning = False
         # set below to some regex to filter messages by their keys

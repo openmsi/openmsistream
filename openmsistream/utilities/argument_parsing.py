@@ -96,8 +96,8 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
             {
                 "type": detect_bucket_name,
                 "help": (
-                    "Name of the object store bucket to which consumed files should be transferred."
-                    "Name should only contain valid characters"
+                    "Name of the object store bucket to which consumed files should be "
+                    "transferred. Name should only contain valid characters"
                 ),
             },
         ],

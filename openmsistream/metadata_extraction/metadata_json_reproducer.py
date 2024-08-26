@@ -121,7 +121,6 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
             filelevel=args.logger_file_level,
             logger_file=args.logger_file_path,
         )
-        # cls.bucket_name = args.bucket_name
         msg = (
             f"Listening to the {args.consumer_topic_name} topic for XRD CSV files to "
             f"send their metadata to the {args.producer_topic_name} topic...."

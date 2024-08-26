@@ -7,13 +7,13 @@ is managed using the ControlledProcess infrastructure
 import time
 from abc import ABC, abstractmethod
 from queue import Queue
-from openmsitoolbox import ControlledProcessMultiThreaded
+from ..utilities.controlled_processes_heartbeats import ControlledProcessMultiThreadedHeartbeats
 from ..utilities.config import RUN_CONST
 from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 
 class ControlledMessageReproducer(
-    ControlledProcessMultiThreaded, ConsumerAndProducerGroup, ABC
+    ControlledProcessMultiThreadedHeartbeats, ConsumerAndProducerGroup, ABC
 ):
     """
     A ControlledProcessMultiThreaded combined with a ConsumerAndProducerGroup to
@@ -241,7 +241,14 @@ class ControlledMessageReproducer(
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        superkwargs.pop("n_threads")
+        try:
+            superkwargs.pop("n_threads")
+        except KeyError:
+            pass
+        try:
+            superargs.pop(superargs.index("n_threads"))
+        except ValueError:
+            pass
         args = [
             *superargs,
             "producer_topic_name",
