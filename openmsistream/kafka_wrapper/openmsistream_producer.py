@@ -36,9 +36,6 @@ class OpenMSIStreamProducer(LogOwner):
         should be used to instantiate the Producer. Only needed if `producer_type` is
         :class:`kafkacrypto.KafkaProducer`.
     :type kafkacrypto: :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
-    :param kwargs: Any extra keyword arguments (other than "logger") are added to the
-        configuration dict for the Producer, with underscores in their names replaced by dots
-    :type kwargs: dict
 
     :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer`
         or :class:`kafkacrypto.KafkaProducer`

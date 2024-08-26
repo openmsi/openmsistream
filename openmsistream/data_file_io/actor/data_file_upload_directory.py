@@ -12,7 +12,7 @@ from watchdog.observers.polling import PollingObserver
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsitoolbox import ControlledProcessSingleThread
+from ...utilities.controlled_processes_heartbeats import ControlledProcessSingleThreadHeartbeats
 from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
 from ...utilities.config import RUN_CONST
@@ -23,7 +23,7 @@ from ..entity.upload_directory_event_handler import UploadDirectoryEventHandler
 
 
 class DataFileUploadDirectory(
-    DataFileDirectory, ControlledProcessSingleThread, ProducerGroup, Runnable
+    DataFileDirectory, ControlledProcessSingleThreadHeartbeats, ProducerGroup, Runnable
 ):
     """
     Class representing a directory being watched for new files to be added.
