@@ -99,9 +99,10 @@ class ControlledProcessHeartbeats(ControlledProcess, ABC):
 
     def _on_shutdown(self):
         super()._on_shutdown()
-        self.logger.info("Flushing heartbeat producer")
-        self.__heartbeat_producer.flush()
-        self.__heartbeat_producer.close()
+        if self.__heartbeat_producer is not None:
+            self.logger.info("Flushing heartbeat producer")
+            self.__heartbeat_producer.flush()
+            self.__heartbeat_producer.close()
 
 class ControlledProcessSingleThreadHeartbeats(
     ControlledProcessHeartbeats, ControlledProcessSingleThread

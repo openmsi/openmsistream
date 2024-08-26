@@ -242,7 +242,6 @@ class OpenMSIStreamProducer(LogOwner):
                 self.logger.warning(warnmsg)
             # get the next object in the Queue
             obj = queue.get()
-        queue.task_done()
 
     def produce_object(
         self, obj, topic_name, callback=None, print_every=1000, timeout=60, retry_sleep=5
