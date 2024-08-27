@@ -12,14 +12,17 @@ from watchdog.observers.polling import PollingObserver
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from ...utilities.controlled_processes_heartbeats import ControlledProcessSingleThreadHeartbeats
+from ...utilities.controlled_processes_heartbeats import (
+    ControlledProcessSingleThreadHeartbeats,
+)
 from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
 from ...utilities.config import RUN_CONST
 from .. import DataFileDirectory
-from .file_registry.producer_file_registry import ProducerFileRegistry
+from ..entity.heartbeat_producibles import UploadDirectoryHeartbeatProducible
 from ..entity.upload_data_file import UploadDataFile
 from ..entity.upload_directory_event_handler import UploadDirectoryEventHandler
+from .file_registry.producer_file_registry import ProducerFileRegistry
 
 
 class DataFileUploadDirectory(
@@ -120,6 +123,8 @@ class DataFileUploadDirectory(
         self.__upload_queue = None
         self.__producers = []
         self.__upload_threads = []
+        self.__n_messages_produced_since_heartbeat = 0
+        self.__n_bytes_produced_since_heartbeat = 0
 
     def upload_files_as_added(
         self,
@@ -237,6 +242,9 @@ class DataFileUploadDirectory(
             fully_produced = self.__file_registry.register_chunk(
                 filename, rel_filepath, n_total_chunks, chunk_i, prodid
             )
+            with self.__lock:
+                self.__n_messages_produced_since_heartbeat += 1
+                self.__n_bytes_produced_since_heartbeat += len(msg)
             # If the file has now been fully produced to the topic,
             # set the variable for the file and log a line
             if fully_produced:
@@ -264,6 +272,17 @@ class DataFileUploadDirectory(
         :raises TypeError: if `filepath` isn't a :class:`pathlib.Path` object
         """
         return self.__event_handler.filepath_matched(filepath)
+
+    def get_heartbeat_message(self):
+        new_msg = UploadDirectoryHeartbeatProducible(
+            self._heartbeat_program_id,
+            self.__n_messages_produced_since_heartbeat,
+            self.__n_bytes_produced_since_heartbeat,
+        )
+        with self.__lock:
+            self.__n_messages_produced_since_heartbeat = 0
+            self.__n_bytes_produced_since_heartbeat = 0
+        return new_msg
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
@@ -354,6 +373,7 @@ class DataFileUploadDirectory(
             producer.close()
         self.close()
         self.__file_registry.consolidate_completed_files()
+        super()._on_shutdown()
 
     def __add_active_datafile_for_path(self, filepath):
         """
