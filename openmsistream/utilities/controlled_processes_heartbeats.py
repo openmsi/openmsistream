@@ -24,7 +24,10 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
         heartbeat_interval_secs=None,
         **kwargs,
     ):
-        super().__init__(config_path, *args, **kwargs)
+        try:
+            super().__init__(config_path, *args, **kwargs)
+        except TypeError:
+            super().__init__(*args, **kwargs)
         self.__heartbeat_topic_name = heartbeat_topic_name
         self._heartbeat_program_id = heartbeat_program_id
         self.__heartbeat_interval_secs = heartbeat_interval_secs
@@ -34,16 +37,16 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
         if self.__heartbeat_topic_name is None:
             return
         cfp = KafkaConfigFileParser(config_path, logger=self.logger)
-        if "heartbeat" not in cfp.available_group_names:
-            self.logger.error(
+        if "heartbeat" in cfp.available_group_names:
+            heartbeat_config_dict = cfp.heartbeat_configs
+        else:
+            self.logger.warning(
                 (
-                    f"ERROR: config file at {config_path} has no 'heartbeat' section but "
+                    f"WARNING: config file at {config_path} has no 'heartbeat' section but "
                     "a heartbeat topic name was given."
                 ),
-                RuntimeError,
-                reraise=True,
             )
-        heartbeat_config_dict = cfp.heartbeat_configs
+            heartbeat_config_dict = {}
         if "key.serializer" not in heartbeat_config_dict:
             heartbeat_config_dict["key.serializer"] = StringSerializer()
         if "value.serializer" not in heartbeat_config_dict:
