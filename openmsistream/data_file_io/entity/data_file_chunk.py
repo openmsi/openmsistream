@@ -196,7 +196,7 @@ class DataFileChunk(Producible):
 
     def __hash__(self):
         return super().__hash__()
-    
+
     def __len__(self):
         return self.chunk_size
 

@@ -51,7 +51,7 @@ class KafkaConfigFileParser(ConfigFileParser):
         if self.__broker_configs is None:
             self.__broker_configs = self._get_config_dict("broker")
         return self.__convert_floats(self.__broker_configs)
-    
+
     @property
     def heartbeat_configs(self):
         """

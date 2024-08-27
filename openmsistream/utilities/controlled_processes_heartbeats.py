@@ -71,6 +71,9 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
             self._heartbeat_program_id = self.__heartbeat_producer.producer_id
 
     def get_heartbeat_message(self):
+        """ Return the HeartbeatProducible-type object that should be produced to the
+        heartbeat topic
+        """
         return HeartbeatProducible(self._heartbeat_program_id)
 
     def _print_still_alive(self):

@@ -24,6 +24,7 @@ class HeartbeatProducible(Producible):
 
 
 class UploadDirectoryHeartbeatProducible(HeartbeatProducible):
+    "The heartbeat Producible sent by DataFileUploadDirectory programs."
 
     def __init__(self, program_id, n_msgs, n_bytes):
         super().__init__(program_id)
@@ -39,6 +40,9 @@ class UploadDirectoryHeartbeatProducible(HeartbeatProducible):
 
 
 class MessageProcessorHeartbeatProducible(HeartbeatProducible):
+    """The heartbeat Producible sent by any programs that extend the
+    ControlledMessageProcessor class
+    """
 
     def __init__(
         self, program_id, n_msgs_read, n_msgs_processed, n_bytes_read, n_bytes_processed
@@ -57,11 +61,22 @@ class MessageProcessorHeartbeatProducible(HeartbeatProducible):
         value_dict["n_bytes_read"] = self.__n_bytes_read
         value_dict["n_bytes_processed"] = self.__n_bytes_processed
         return f"{value_dict}"
-    
+
+
 class MessageReproducerHeartbeatProducible(HeartbeatProducible):
+    """The heartbeat Producible sent by any programs that extend the
+    ControlledMessageReproducer class
+    """
 
     def __init__(
-        self, program_id, n_msgs_read, n_msgs_processed, n_msgs_produced, n_bytes_read, n_bytes_processed, n_bytes_produced,
+        self,
+        program_id,
+        n_msgs_read,
+        n_msgs_processed,
+        n_msgs_produced,
+        n_bytes_read,
+        n_bytes_processed,
+        n_bytes_produced,
     ):
         super().__init__(program_id)
         self.__n_msgs_read = n_msgs_read

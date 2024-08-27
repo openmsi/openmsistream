@@ -124,6 +124,7 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
             }
         }
         # call the run loop
+        # pylint: disable=unexpected-keyword-arg
         self.run(
             args_per_thread=run_worker_args_per_thread,
             kwargs_per_thread=run_worker_kwargs_per_thread,
