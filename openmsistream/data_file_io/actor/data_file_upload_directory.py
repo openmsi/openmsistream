@@ -18,8 +18,8 @@ from ...utilities.controlled_processes_heartbeats import (
 from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
 from ...utilities.config import RUN_CONST
+from ...utilities.heartbeat_producibles import UploadDirectoryHeartbeatProducible
 from .. import DataFileDirectory
-from ..entity.heartbeat_producibles import UploadDirectoryHeartbeatProducible
 from ..entity.upload_data_file import UploadDataFile
 from ..entity.upload_directory_event_handler import UploadDirectoryEventHandler
 from .file_registry.producer_file_registry import ProducerFileRegistry

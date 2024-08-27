@@ -10,7 +10,7 @@ from openmsitoolbox.controlled_process.controlled_process import ControlledProce
 from openmsitoolbox import ControlledProcessSingleThread, ControlledProcessMultiThreaded
 from ..kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from ..kafka_wrapper import OpenMSIStreamProducer
-from .heartbeat_producible import HeartbeatProducible
+from .heartbeat_producibles import HeartbeatProducible
 
 class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
     "A long-running process that occasionally produces messages to a heartbeat topic"
