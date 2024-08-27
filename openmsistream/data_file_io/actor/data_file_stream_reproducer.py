@@ -173,6 +173,8 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
         if err is None and msg.error() is None:
             with self.lock:
                 self.n_msgs_produced += 1
+                self.n_msgs_produced_since_last_heartbeat += 1
+                self.n_bytes_produced_since_last_heartbeat += len(msg)
         # If any error occured, log a warning and re-enqueue the message to be produced again
         if err is None and msg.error() is not None:
             err = msg.error()

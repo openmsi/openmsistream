@@ -33,8 +33,8 @@ class UploadDirectoryHeartbeatProducible(HeartbeatProducible):
     @property
     def msg_value(self):
         value_dict = json.loads(super().msg_value)
-        value_dict["n_messages"] = self.__n_msgs
-        value_dict["n_bytes"] = self.__n_bytes
+        value_dict["n_messages_produced"] = self.__n_msgs
+        value_dict["n_bytes_produced"] = self.__n_bytes
         return f"{value_dict}"
 
 
@@ -56,4 +56,28 @@ class MessageProcessorHeartbeatProducible(HeartbeatProducible):
         value_dict["n_messages_processed"] = self.__n_msgs_processed
         value_dict["n_bytes_read"] = self.__n_bytes_read
         value_dict["n_bytes_processed"] = self.__n_bytes_processed
+        return f"{value_dict}"
+    
+class MessageReproducerHeartbeatProducible(HeartbeatProducible):
+
+    def __init__(
+        self, program_id, n_msgs_read, n_msgs_processed, n_msgs_produced, n_bytes_read, n_bytes_processed, n_bytes_produced,
+    ):
+        super().__init__(program_id)
+        self.__n_msgs_read = n_msgs_read
+        self.__n_msgs_processed = n_msgs_processed
+        self.__n_msgs_produced = n_msgs_produced
+        self.__n_bytes_read = n_bytes_read
+        self.__n_bytes_processed = n_bytes_processed
+        self.__n_bytes_produced = n_bytes_produced
+
+    @property
+    def msg_value(self):
+        value_dict = json.loads(super().msg_value)
+        value_dict["n_messages_read"] = self.__n_msgs_read
+        value_dict["n_messages_processed"] = self.__n_msgs_processed
+        value_dict["n_messages_produced"] = self.__n_msgs_produced
+        value_dict["n_bytes_read"] = self.__n_bytes_read
+        value_dict["n_bytes_processed"] = self.__n_bytes_processed
+        value_dict["n_bytes_produced"] = self.__n_bytes_produced
         return f"{value_dict}"

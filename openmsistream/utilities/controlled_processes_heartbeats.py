@@ -24,7 +24,12 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
         heartbeat_interval_secs=None,
         **kwargs,
     ):
+        print("hello before")
         super().__init__(config_path, *args, **kwargs)
+        print(f"heartbeat_topic_name = {heartbeat_topic_name}")
+        print(f"heartbeat_program_id = {heartbeat_program_id}")
+        print(f"heartbeat_interval_secs = {heartbeat_interval_secs}")
+        print("hello after")
         self.__heartbeat_topic_name = heartbeat_topic_name
         self._heartbeat_program_id = heartbeat_program_id
         self.__heartbeat_interval_secs = heartbeat_interval_secs
