@@ -1,5 +1,5 @@
 # imports
-import pathlib, shutil, filecmp, re
+import pathlib, shutil, filecmp, re, json, datetime
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -12,7 +12,7 @@ from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 # pylint: disable=import-error,wrong-import-order
 from test_base_classes import (
-    TestWithKafkaTopics,
+    TestWithHeartbeats,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
     TestWithEnvVars,
@@ -20,7 +20,7 @@ from test_base_classes import (
 
 
 class TestDataFileDirectories(
-    TestWithKafkaTopics,
+    TestWithHeartbeats,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
     TestWithEnvVars,
@@ -30,8 +30,12 @@ class TestDataFileDirectories(
     """
 
     TOPIC_NAME = "test_data_file_directories"
+    HEARTBEAT_TOPIC_NAME = "heartbeats"
 
-    TOPICS = {TOPIC_NAME: {}}
+    TOPICS = {
+        TOPIC_NAME: {},
+        HEARTBEAT_TOPIC_NAME: {"--partitions": 1},
+    }
 
     def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
         """
@@ -150,6 +154,86 @@ class TestDataFileDirectories(
             consumer_group_id=consumer_group_id,
             filepath_regex=download_regex,
         )
+        self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    def test_upload_and_download_directories_heartbeats_kafka(self):
+        """
+        Test the upload and download directories while sending heartbeats
+        """
+        files_roots = {
+            TEST_CONST.TEST_DATA_FILE_PATH: {
+                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+                "upload_expected": True,
+                "download_expected": True,
+            },
+        }
+        producer_program_id = "upload"
+        consumer_program_id = "download"
+        start_time = datetime.datetime.now()
+        self.run_data_file_upload_directory(
+            files_roots,
+            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
+            heartbeat_program_id=producer_program_id,
+            heartbeat_interval_secs=1,
+            )
+        consumer_group_id = (
+            f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
+        )
+        self.run_data_file_download_directory(
+            files_roots,
+            consumer_group_id=consumer_group_id,
+            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
+            heartbeat_program_id=consumer_program_id,
+            heartbeat_interval_secs=1,
+        )
+        # validate the producer heartbeats
+        producer_heartbeat_msgs = self.get_heartbeat_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            self.HEARTBEAT_TOPIC_NAME,
+            producer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(producer_heartbeat_msgs) > 0)
+        total_msgs_produced = 0
+        total_bytes_produced = 0
+        for msg in producer_heartbeat_msgs:
+            msg_dict = json.loads(msg.value())
+            msg_timestamp = datetime.datetime.strptime(
+                msg_dict["timestamp"], self.TIMESTAMP_FMT
+            )
+            self.assertTrue(msg_timestamp > start_time)
+            total_msgs_produced += msg_dict["n_messages_produced"]
+            total_bytes_produced += msg_dict["n_bytes_produced"]
+        test_file_size = TEST_CONST.TEST_DATA_FILE_PATH.stat().st_size
+        test_file_n_chunks = int(test_file_size / TEST_CONST.TEST_CHUNK_SIZE)
+        self.assertTrue(total_msgs_produced >= test_file_n_chunks)
+        self.assertTrue(total_bytes_produced >= test_file_size)
+        # validate the consumer heartbeats
+        consumer_heartbeat_msgs = self.get_heartbeat_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            self.HEARTBEAT_TOPIC_NAME,
+            consumer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(consumer_heartbeat_msgs) > 0)
+        total_msgs_read = 0
+        total_msgs_processed = 0
+        total_bytes_read = 0
+        total_bytes_processed = 0
+        for msg in consumer_heartbeat_msgs:
+            msg_dict = json.loads(msg.value())
+            msg_timestamp = datetime.datetime.strptime(
+                msg_dict["timestamp"], self.TIMESTAMP_FMT
+            )
+            self.assertTrue(msg_timestamp > start_time)
+            total_msgs_read += msg_dict["n_messages_read"]
+            total_msgs_processed += msg_dict["n_messages_processed"]
+            total_bytes_read += msg_dict["n_bytes_read"]
+            total_bytes_processed += msg_dict["n_bytes_processed"]
+        self.assertTrue(total_msgs_read >= test_file_n_chunks)
+        self.assertTrue(total_msgs_processed >= test_file_n_chunks)
+        self.assertTrue(total_bytes_read >= test_file_size)
+        self.assertTrue(total_bytes_processed >= test_file_size)
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):

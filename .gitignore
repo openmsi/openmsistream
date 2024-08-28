@@ -11,7 +11,9 @@
 /openmsistream/kafka_wrapper/config_files/*/*.seed
 /openmsistream/kafka_wrapper/config_files/*/*.crypto
 !/openmsistream/kafka_wrapper/config_files/test.config
+!/openmsistream/kafka_wrapper/config_files/test_heartbeats.config
 !/openmsistream/kafka_wrapper/config_files/local_broker_test.config
+!/openmsistream/kafka_wrapper/config_files/local_broker_test_heartbeats.config
 !/openmsistream/kafka_wrapper/config_files/test_encrypted.config
 !/openmsistream/kafka_wrapper/config_files/local_broker_test_encrypted.config
 !/openmsistream/kafka_wrapper/config_files/test_encrypted_2.config

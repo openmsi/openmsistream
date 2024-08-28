@@ -36,7 +36,7 @@ class UploadDirectoryHeartbeatProducible(HeartbeatProducible):
         value_dict = json.loads(super().msg_value)
         value_dict["n_messages_produced"] = self.__n_msgs
         value_dict["n_bytes_produced"] = self.__n_bytes
-        return f"{value_dict}"
+        return json.dumps(value_dict)
 
 
 class MessageProcessorHeartbeatProducible(HeartbeatProducible):
@@ -60,7 +60,7 @@ class MessageProcessorHeartbeatProducible(HeartbeatProducible):
         value_dict["n_messages_processed"] = self.__n_msgs_processed
         value_dict["n_bytes_read"] = self.__n_bytes_read
         value_dict["n_bytes_processed"] = self.__n_bytes_processed
-        return f"{value_dict}"
+        return json.dumps(value_dict)
 
 
 class MessageReproducerHeartbeatProducible(HeartbeatProducible):
@@ -95,4 +95,4 @@ class MessageReproducerHeartbeatProducible(HeartbeatProducible):
         value_dict["n_bytes_read"] = self.__n_bytes_read
         value_dict["n_bytes_processed"] = self.__n_bytes_processed
         value_dict["n_bytes_produced"] = self.__n_bytes_produced
-        return f"{value_dict}"
+        return json.dumps(value_dict)

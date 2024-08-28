@@ -91,6 +91,10 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
 
     def _on_shutdown(self):
         if self.__heartbeat_producer is not None:
+            # send a final heartbeat
+            self.__heartbeat_producer.produce_object(
+                self.get_heartbeat_message(), self.__heartbeat_topic_name
+            )
             self.logger.info("Flushing heartbeat producer")
             self.__heartbeat_producer.flush()
             self.__heartbeat_producer.close()

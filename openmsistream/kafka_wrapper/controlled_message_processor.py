@@ -9,6 +9,7 @@ from abc import ABC, abstractmethod
 with warnings.catch_warnings():
     warnings.simplefilter("ignore")
     from kafkacrypto import KafkaCryptoMessage
+    from kafkacrypto.confluent_kafka_wrapper import Message
 from ..utilities.heartbeat_producibles import MessageProcessorHeartbeatProducible
 from ..utilities.controlled_processes_heartbeats import (
     ControlledProcessMultiThreadedHeartbeats,
@@ -135,6 +136,8 @@ class ControlledMessageProcessor(
                 )
             ):
                 self.n_bytes_read_since_last_heartbeat += len(bytes(msg))
+            elif isinstance(msg, Message):
+                self.n_bytes_read_since_last_heartbeat += len(msg.value)
             else:
                 self.n_bytes_read_since_last_heartbeat += len(msg)
             self.last_message = msg
@@ -154,6 +157,8 @@ class ControlledMessageProcessor(
                     )
                 ):
                     self.n_bytes_processed_since_last_heartbeat += len(bytes(msg))
+                elif isinstance(msg, Message):
+                    self.n_bytes_processed_since_last_heartbeat += len(msg.value)
                 else:
                     self.n_bytes_processed_since_last_heartbeat += len(msg)
             if not consumer.message_consumed_before(msg):
