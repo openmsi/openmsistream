@@ -72,6 +72,7 @@ def main(given_args=None):
             sleep(0.2)
     os.chdir(return_dir)
     print("Waiting for producer to send all files to Broker...")
+    producer.flush()
     producer.close()
     kcs.close()
     print("Done!")
