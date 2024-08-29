@@ -29,6 +29,8 @@ The sections on this page below provide further information necessary to work wi
 
 .. include:: config_files.rst
 
+.. include:: heartbeats.rst
+
 Installing programs as Services or daemons
 ------------------------------------------
 
@@ -37,4 +39,4 @@ Instances of each of the main programs can also be installed as Windows Services
 Encrypting data (optional)
 --------------------------
 
-The messages sent and received by the main programs above (running either interactively or as Services/daemons) can optionally be encrypted while stored on the broker, so that only the Producer/Consumer endpoints need to be trusted. OpenMSIStream includes a wrapper around `KafkaCrypto <https://github.com/tmcqueen-materials/kafkacrypto>`_ to facilitate this encryption. Please see :doc:`the page on message encryption <encryption>` for more information, including how to provision nodes and set up configuration files to encrypt messages.
+The messages sent and received by the main programs above (running either interactively or as Services/daemons) can optionally be encrypted while stored on the broker, so that only the Producer/Consumer endpoints need to be trusted. OpenMSIStream includes a wrapper around `KafkaCrypto <https://github.com/tmcqueen-materials/kafkacrypto>`_ to facilitate this encryption. Please see :doc:`the page on message encryption <encryption>` for more information, including how to provision nodes and set up configuration files to encrypt messages. Note that "heartbeat" messages (as described above) cannot be encrypted.

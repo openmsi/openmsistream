@@ -1,15 +1,13 @@
 # imports
-import pathlib
-import shutil
-import unittest
-import os
-import time
-import datetime
-import subprocess
+import pathlib, shutil, unittest, os, time, datetime, subprocess, re, uuid
+from confluent_kafka.serialization import StringDeserializer
+from confluent_kafka import DeserializingConsumer
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsistream.utilities.config import RUN_CONST
+from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
+from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
 from openmsistream import (
     DataFileUploadDirectory,
     DataFileDownloadDirectory,
@@ -787,3 +785,56 @@ class TestWithEnvVars(unittest.TestCase):
         for env_var_name in cls.ENV_VARS_TO_RESET:
             os.environ.pop(env_var_name)
         super().tearDownClass()
+
+
+class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
+    """
+    Class for running tests that might produce heartbeat messages to a topic
+    """
+
+    TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
+
+    def get_heartbeat_messages(
+        self, config_path, heartbeat_topic_name, program_id, wait_secs=10
+    ):
+        """Return a list of all the heartbeat messages sent to a particular topic with
+        a particular program ID
+        """
+        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
+        heartbeat_consumer_configs = {
+            "key.deserializer": StringDeserializer(),
+            "value.deserializer": StringDeserializer(),
+            "group.id": str(uuid.uuid4()),
+            "auto.offset.reset": "earliest",
+        }
+        if "heartbeat" in cfp.available_group_names:
+            heartbeat_config_dict = cfp.heartbeat_configs
+        else:
+            heartbeat_config_dict = {}
+        heartbeat_producer_configs = {}
+        if "bootstrap.servers" not in heartbeat_config_dict:
+            heartbeat_producer_configs.update(cfp.broker_configs)
+        heartbeat_producer_configs.update(heartbeat_config_dict)
+        for key, value in heartbeat_producer_configs.items():
+            if (
+                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
+                or key.startswith("ssl.")
+                or key.startswith("sasl.")
+            ):
+                heartbeat_consumer_configs[key] = value
+        heartbeat_consumer = OpenMSIStreamConsumer(
+            DeserializingConsumer,
+            heartbeat_consumer_configs,
+            message_key_regex=re.compile(f"{program_id}_heartbeat"),
+            filter_new_message_keys=True,
+        )
+        heartbeat_consumer.subscribe([heartbeat_topic_name])
+        heartbeat_msgs = []
+        start_time = datetime.datetime.now()
+        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+            msg = heartbeat_consumer.get_next_message(1)
+            if msg is not None:
+                heartbeat_msgs.append(msg)
+                start_time = datetime.datetime.now()
+        heartbeat_consumer.close()
+        return heartbeat_msgs

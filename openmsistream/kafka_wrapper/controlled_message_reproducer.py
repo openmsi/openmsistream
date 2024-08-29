@@ -4,16 +4,24 @@ is managed using the ControlledProcess infrastructure
 """
 
 # imports
-import time
+import time, warnings
 from abc import ABC, abstractmethod
 from queue import Queue
-from openmsitoolbox import ControlledProcessMultiThreaded
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto import KafkaCryptoMessage
+    from kafkacrypto.confluent_kafka_wrapper import Message
 from ..utilities.config import RUN_CONST
+from ..utilities.heartbeat_producibles import MessageReproducerHeartbeatProducible
+from ..utilities.controlled_processes_heartbeats import (
+    ControlledProcessMultiThreadedHeartbeats,
+)
 from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 
 class ControlledMessageReproducer(
-    ControlledProcessMultiThreaded, ConsumerAndProducerGroup, ABC
+    ControlledProcessMultiThreadedHeartbeats, ConsumerAndProducerGroup, ABC
 ):
     """
     A ControlledProcessMultiThreaded combined with a ConsumerAndProducerGroup to
@@ -47,7 +55,6 @@ class ControlledMessageReproducer(
         super().__init__(
             config_path,
             consumer_topic_name,
-            n_threads=max(n_producer_threads, n_consumer_threads),
             **kwargs,
         )
         # set to true to reset new consumers to their earliest offsets
@@ -64,6 +71,32 @@ class ControlledMessageReproducer(
         self.n_producer_threads = n_producer_threads
         self.n_consumer_threads = n_consumer_threads
         self.producer_message_queue = Queue()
+        # variables for heartbeat messages
+        self.n_msgs_read_since_last_heartbeat = 0
+        self.n_bytes_read_since_last_heartbeat = 0
+        self.n_msgs_processed_since_last_heartbeat = 0
+        self.n_bytes_processed_since_last_heartbeat = 0
+        self.n_msgs_produced_since_last_heartbeat = 0
+        self.n_bytes_produced_since_last_heartbeat = 0
+
+    def get_heartbeat_message(self):
+        new_msg = MessageReproducerHeartbeatProducible(
+            self._heartbeat_program_id,
+            self.n_msgs_read_since_last_heartbeat,
+            self.n_msgs_processed_since_last_heartbeat,
+            self.n_msgs_produced_since_last_heartbeat,
+            self.n_bytes_read_since_last_heartbeat,
+            self.n_bytes_processed_since_last_heartbeat,
+            self.n_bytes_produced_since_last_heartbeat,
+        )
+        with self.lock:
+            self.n_msgs_read_since_last_heartbeat = 0
+            self.n_bytes_read_since_last_heartbeat = 0
+            self.n_msgs_processed_since_last_heartbeat = 0
+            self.n_bytes_processed_since_last_heartbeat = 0
+            self.n_msgs_produced_since_last_heartbeat = 0
+            self.n_bytes_produced_since_last_heartbeat = 0
+        return new_msg
 
     def _run_worker(
         self,
@@ -111,8 +144,8 @@ class ControlledMessageReproducer(
             producer.close()
 
     def _on_shutdown(self):
-        super()._on_shutdown()
         self.close()
+        super()._on_shutdown()
 
     @abstractmethod
     def _process_message(self, lock, msg, *args, **kwargs):
@@ -168,6 +201,20 @@ class ControlledMessageReproducer(
             return
         with self.lock:
             self.n_msgs_read += 1
+            self.n_msgs_read_since_last_heartbeat += 1
+            if (
+                hasattr(msg, "key")
+                and hasattr(msg, "value")
+                and (
+                    isinstance(msg.key, KafkaCryptoMessage)
+                    or isinstance(msg.value, KafkaCryptoMessage)
+                )
+            ):
+                self.n_bytes_read_since_last_heartbeat += len(bytes(msg))
+            elif isinstance(msg, Message):
+                self.n_bytes_read_since_last_heartbeat += len(msg.value)
+            else:
+                self.n_bytes_read_since_last_heartbeat += len(msg)
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -175,6 +222,20 @@ class ControlledMessageReproducer(
         if retval:
             with self.lock:
                 self.n_msgs_processed += 1
+                self.n_msgs_processed_since_last_heartbeat += 1
+                if (
+                    hasattr(msg, "key")
+                    and hasattr(msg, "value")
+                    and (
+                        isinstance(msg.key, KafkaCryptoMessage)
+                        or isinstance(msg.value, KafkaCryptoMessage)
+                    )
+                ):
+                    self.n_bytes_processed_since_last_heartbeat += len(bytes(msg))
+                elif isinstance(msg, Message):
+                    self.n_bytes_processed_since_last_heartbeat += len(msg.value)
+                else:
+                    self.n_bytes_processed_since_last_heartbeat += len(msg)
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:
@@ -241,7 +302,14 @@ class ControlledMessageReproducer(
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        superkwargs.pop("n_threads")
+        try:
+            superkwargs.pop("n_threads")
+        except KeyError:
+            pass
+        try:
+            superargs.pop(superargs.index("n_threads"))
+        except ValueError:
+            pass
         args = [
             *superargs,
             "producer_topic_name",
@@ -253,6 +321,9 @@ class ControlledMessageReproducer(
 
     @classmethod
     def get_init_args_kwargs(cls, parsed_args):
+        parsed_args.n_threads = max(
+            parsed_args.n_producer_threads, parsed_args.n_consumer_threads
+        )
         superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
         args = [
             *superargs,

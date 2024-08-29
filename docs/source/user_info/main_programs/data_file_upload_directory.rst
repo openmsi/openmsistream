@@ -35,6 +35,11 @@ While the main process is running, a line with a "." character will be printed o
 
 The processes can be shut down by typing "quit" or "q" into the console. Note that the process won't actually shut down until all currently enqueued messages have been delivered to the broker (or return unrecoverable errors). Also note that the files will have all of their chunks enqueued almost immediately, but actually producing the chunks to the broker may take slightly more time depending on how many files are being uploaded at once.
 
+Heartbeat messages
+------------------
+
+If configured as described on the main program page, the heartbeat messages sent by a DataFileUploadDirectory will contain fields for the number of messages and bytes produced since the previous heartbeat message was sent. The fields in the JSON-formatted string value of each message are called "``n_messages_produced``", "``n_bytes_produced``".
+
 Directory monitoring with watchdog
 ----------------------------------
 

@@ -3,12 +3,23 @@ A ConsumerGroup whose receipt of messages is governed using the ControlledProces
 """
 
 # imports
+import warnings
 from abc import ABC, abstractmethod
-from openmsitoolbox import ControlledProcessMultiThreaded
+
+with warnings.catch_warnings():
+    warnings.simplefilter("ignore")
+    from kafkacrypto import KafkaCryptoMessage
+    from kafkacrypto.confluent_kafka_wrapper import Message
+from ..utilities.heartbeat_producibles import MessageProcessorHeartbeatProducible
+from ..utilities.controlled_processes_heartbeats import (
+    ControlledProcessMultiThreadedHeartbeats,
+)
 from .consumer_group import ConsumerGroup
 
 
-class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, ABC):
+class ControlledMessageProcessor(
+    ControlledProcessMultiThreadedHeartbeats, ConsumerGroup, ABC
+):
     """
     Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a
     single interface for reading and processing individual messages
@@ -16,13 +27,13 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
 
     CONSUMER_POLL_TIMEOUT = 5.0
 
-    def __init__(self, *args, filepath_regex=None, **kwargs):
+    def __init__(self, config_path, topic_name, filepath_regex=None, **kwargs):
         """
         Hang onto the number of messages read and processed
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
-        super().__init__(*args, **kwargs)
+        super().__init__(config_path, topic_name, **kwargs)
         # set below to true to reset new consumers to their earliest offsets
         self.restart_at_beginning = False
         # set below to some regex to filter messages by their keys
@@ -33,6 +44,26 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
         self.filepath_regex = filepath_regex
         # hold onto the last consumed message to manually commit its offset on shutdown
         self.last_message = None
+        # variables for heartbeat messages
+        self.n_msgs_read_since_last_heartbeat = 0
+        self.n_msgs_processed_since_last_heartbeat = 0
+        self.n_bytes_read_since_last_heartbeat = 0
+        self.n_bytes_processed_since_last_heartbeat = 0
+
+    def get_heartbeat_message(self):
+        new_msg = MessageProcessorHeartbeatProducible(
+            self._heartbeat_program_id,
+            self.n_msgs_read_since_last_heartbeat,
+            self.n_msgs_processed_since_last_heartbeat,
+            self.n_bytes_read_since_last_heartbeat,
+            self.n_bytes_processed_since_last_heartbeat,
+        )
+        with self.lock:
+            self.n_msgs_read_since_last_heartbeat = 0
+            self.n_msgs_processed_since_last_heartbeat = 0
+            self.n_bytes_read_since_last_heartbeat = 0
+            self.n_bytes_processed_since_last_heartbeat = 0
+        return new_msg
 
     def _run_worker(self):
         """
@@ -69,8 +100,8 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
         consumer.close()
 
     def _on_shutdown(self):
-        super()._on_shutdown()
         self.close()
+        super()._on_shutdown()
 
     @abstractmethod
     def _process_message(self, lock, msg, *args, **kwargs):
@@ -95,6 +126,20 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
             return
         with self.lock:
             self.n_msgs_read += 1
+            self.n_msgs_read_since_last_heartbeat += 1
+            if (
+                hasattr(msg, "key")
+                and hasattr(msg, "value")
+                and (
+                    isinstance(msg.key, KafkaCryptoMessage)
+                    or isinstance(msg.value, KafkaCryptoMessage)
+                )
+            ):
+                self.n_bytes_read_since_last_heartbeat += len(bytes(msg))
+            elif isinstance(msg, Message):
+                self.n_bytes_read_since_last_heartbeat += len(msg.value)
+            else:
+                self.n_bytes_read_since_last_heartbeat += len(msg)
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -102,6 +147,20 @@ class ControlledMessageProcessor(ControlledProcessMultiThreaded, ConsumerGroup, 
         if retval:
             with self.lock:
                 self.n_msgs_processed += 1
+                self.n_msgs_processed_since_last_heartbeat += 1
+                if (
+                    hasattr(msg, "key")
+                    and hasattr(msg, "value")
+                    and (
+                        isinstance(msg.key, KafkaCryptoMessage)
+                        or isinstance(msg.value, KafkaCryptoMessage)
+                    )
+                ):
+                    self.n_bytes_processed_since_last_heartbeat += len(bytes(msg))
+                elif isinstance(msg, Message):
+                    self.n_bytes_processed_since_last_heartbeat += len(msg.value)
+                else:
+                    self.n_bytes_processed_since_last_heartbeat += len(msg)
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:

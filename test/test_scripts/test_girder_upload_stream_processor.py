@@ -1,6 +1,5 @@
 # imports
-import json
-import time, subprocess, unittest
+import json, time, subprocess, unittest
 from hashlib import sha512
 import requests, docker, girder_client  # pylint: disable=wrong-import-order
 from openmsistream import GirderUploadStreamProcessor

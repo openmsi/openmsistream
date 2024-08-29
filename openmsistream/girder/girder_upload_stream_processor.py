@@ -1,6 +1,6 @@
 # imports
-from io import BytesIO
 import json
+from io import BytesIO
 from hashlib import sha256
 import girder_client
 from ..version import __version__

@@ -53,6 +53,15 @@ class KafkaConfigFileParser(ConfigFileParser):
         return self.__convert_floats(self.__broker_configs)
 
     @property
+    def heartbeat_configs(self):
+        """
+        Configs for the producer to the heartbeat topic
+        """
+        if self.__heartbeat_configs is None:
+            self.__heartbeat_configs = self._get_config_dict("heartbeat")
+        return self.__convert_floats(self.__heartbeat_configs)
+
+    @property
     def producer_configs(self):
         """
         Configs for setting up Producers
@@ -80,6 +89,7 @@ class KafkaConfigFileParser(ConfigFileParser):
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.__broker_configs = None
+        self.__heartbeat_configs = None
         self.__producer_configs = None
         self.__consumer_configs = None
         self.kc_config_file_str = self.__get_kc_config_file_str()

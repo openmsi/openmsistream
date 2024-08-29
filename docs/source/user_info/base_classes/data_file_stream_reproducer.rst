@@ -27,3 +27,5 @@ to the bottom of the file will allow the class to be run as a module, with::
     >>> python -m path.to.class.file [arguments]
 
 Please see :doc:`the page about the S3TransferStreamProcessor <../main_programs/s3_transfer_stream_processor>` to better understand the structure of the logging files that a DataFileStreamReproducer-type program will create, how offsets are manually committed, and guarantees for restarting in the case of an abrupt shutdown of the program.
+
+The heartbeat messages sent by a DataFileStreamReproducer-type program will include fields in the JSON-formatted string value of each message called "``n_messages_read``", "``n_bytes_read``", "``n_messages_processed``", "``n_bytes_processed``", "``n_messages_produced``", and "``n_bytes_produced``".

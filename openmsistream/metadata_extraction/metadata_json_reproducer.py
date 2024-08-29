@@ -106,22 +106,8 @@ class MetadataJSONReproducer(DataFileStreamReproducer, ABC):
         # make the argument parser
         parser = cls.get_argument_parser()
         args = parser.parse_args(args=args)
-        metadata_reproducer = cls(
-            args.config,
-            args.consumer_topic_name,
-            args.producer_topic_name,
-            consumer_group_id=args.consumer_group_id,
-            n_consumer_threads=args.n_consumer_threads,
-            n_producer_threads=args.n_producer_threads,
-            output_dir=args.output_dir,
-            mode=args.mode,
-            filepath_regex=args.download_regex,
-            update_secs=args.update_seconds,
-            streamlevel=args.logger_stream_level,
-            filelevel=args.logger_file_level,
-            logger_file=args.logger_file_path,
-        )
-        # cls.bucket_name = args.bucket_name
+        init_args, init_kwargs = cls.get_init_args_kwargs(args)
+        metadata_reproducer = cls(*init_args, **init_kwargs)
         msg = (
             f"Listening to the {args.consumer_topic_name} topic for XRD CSV files to "
             f"send their metadata to the {args.producer_topic_name} topic...."

@@ -34,6 +34,7 @@ def main(given_args=None):
     kafka_config = kcs.get_kafka_config("producer")
     producer = KafkaProducer(**kafka_config)
     # Get all of the files in the encrypted files directory
+    return_dir = os.getcwd()
     os.chdir(str(args.encrypted_messages_dir))
     files = sorted(filter(os.path.isfile, os.listdir(".")), key=os.path.getmtime)
     # Produce a message for each pair of encrypted key/value files
@@ -69,7 +70,9 @@ def main(given_args=None):
             producer.send(tpc, key=nkv, value=nvv).get()
             producer.poll()
             sleep(0.2)
+    os.chdir(return_dir)
     print("Waiting for producer to send all files to Broker...")
+    producer.flush()
     producer.close()
     kcs.close()
     print("Done!")

@@ -197,6 +197,9 @@ class DataFileChunk(Producible):
     def __hash__(self):
         return super().__hash__()
 
+    def __len__(self):
+        return self.chunk_size
+
     def get_log_msg(self, print_every=None):
         """
         If the chunk's index mod ``print_every`` is 0, or if the chunk is the last one for the file,

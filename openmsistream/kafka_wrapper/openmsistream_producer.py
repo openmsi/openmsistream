@@ -1,7 +1,7 @@
 """A wrapped Kafka Producer. May produce encrypted messages."""
 
 # imports
-import time, warnings
+import time, warnings, gc
 from confluent_kafka import SerializingProducer
 
 with warnings.catch_warnings():
@@ -36,9 +36,6 @@ class OpenMSIStreamProducer(LogOwner):
         should be used to instantiate the Producer. Only needed if `producer_type` is
         :class:`kafkacrypto.KafkaProducer`.
     :type kafkacrypto: :class:`~.kafka_wrapper.OpenMSIStreamKafkaCrypto`, optional
-    :param kwargs: Any extra keyword arguments (other than "logger") are added to the
-        configuration dict for the Producer, with underscores in their names replaced by dots
-    :type kwargs: dict
 
     :raises ValueError: if `producer_type` is not :class:`confluent_kafka.SerializingProducer`
         or :class:`kafkacrypto.KafkaProducer`
@@ -245,7 +242,6 @@ class OpenMSIStreamProducer(LogOwner):
                 self.logger.warning(warnmsg)
             # get the next object in the Queue
             obj = queue.get()
-        queue.task_done()
 
     def produce_object(
         self, obj, topic_name, callback=None, print_every=1000, timeout=60, retry_sleep=5
@@ -365,3 +361,5 @@ class OpenMSIStreamProducer(LogOwner):
             pass
         finally:
             self.__kafkacrypto = None
+        self._producer = None
+        gc.collect()

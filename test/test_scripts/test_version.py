@@ -1,8 +1,6 @@
 " Testing the __version__ attribute w.r.t. the current PyPI release "
 
-import datetime
-import unittest
-import requests
+import datetime, unittest, requests
 from packaging.version import parse, InvalidVersion
 import openmsistream
 

@@ -33,3 +33,8 @@ Consumer offset commits
 -----------------------
 
 OpenMSIStream manually registers Consumer offset commits to guarantee that every message is received and written to disk "at least once." This guarantee is only valid if ``enable.auto.commit = False`` is set in the ``[consumer]`` section of the config file used. If this parameter isn't set to enable the "at least once" guarantee a warning will be logged, and it's possible that some messages may be dropped or consumed multiple times from the topic.
+
+Heartbeat messages
+------------------
+
+If configured as described on the main program page, the heartbeat messages sent by a DataFileDownloadDirectory will contain fields for the number of messages and bytes read (consumed from the topic) and processed (written to disk) since the previous heartbeat message was sent. The fields in the JSON-formatted string value of each message are called "``n_messages_read``", "``n_bytes_read``", "``n_messages_processed``", and "``n_bytes_processed``".

@@ -66,6 +66,16 @@ def detect_bucket_name(argstring):
     return argstring
 
 
+def positive_float(argval):
+    """
+    make sure a given value is a positive float
+    """
+    argval = float(argval)
+    if (not isinstance(argval, float)) or (argval < 0):
+        raise ValueError(f"ERROR: invalid argument: {argval} must be a positive float!")
+    return argval
+
+
 #################### MYARGUMENTPARSER CLASS ####################
 
 
@@ -82,6 +92,8 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
     to send to :func:`argparse.ArgumentParser.add_argument`.
     """
 
+    DEF_HEARTBEAT_INTERVAL = 15 * 60  # send heartbeats every 15 minutes by default
+
     ARGUMENTS = {
         **OpenMSIArgumentParser.ARGUMENTS,
         "upload_dir": [
@@ -96,8 +108,8 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
             {
                 "type": detect_bucket_name,
                 "help": (
-                    "Name of the object store bucket to which consumed files should be transferred."
-                    "Name should only contain valid characters"
+                    "Name of the object store bucket to which consumed files should be "
+                    "transferred. Name should only contain valid characters"
                 ),
             },
         ],
@@ -301,6 +313,38 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 "help": (
                     "Adding this argument will add a corresponding metadata "
                     "field to all created folders and items. Assumes JSON serialized string."
+                ),
+            },
+        ],
+        "heartbeat_topic_name": [
+            "optional",
+            {
+                "help": (
+                    "Name of the topic to which heartbeat messages for the long-running "
+                    "program should be produced. This argument must be included to "
+                    "produce heartbeat messages"
+                ),
+            },
+        ],
+        "heartbeat_program_id": [
+            "optional",
+            {
+                "help": (
+                    "ID to include in keys of heartbeat messages to uniquely identify "
+                    "this particular long-running program instance. (Default is the hex "
+                    "code of the heartbeat producer's address in memory which is NOT "
+                    "static)"
+                ),
+            },
+        ],
+        "heartbeat_interval_secs": [
+            "optional",
+            {
+                "default": DEF_HEARTBEAT_INTERVAL,
+                "type": positive_float,
+                "help": (
+                    "How often (in seconds) messages should be produced to the "
+                    "heartbeat topic configured for the long-running program"
                 ),
             },
         ],

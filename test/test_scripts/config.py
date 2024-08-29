@@ -1,7 +1,5 @@
 # imports
-import os
-import pathlib
-import sys
+import os, pathlib, sys
 from openmsistream.utilities.config import RUN_CONST
 
 
@@ -55,6 +53,10 @@ class TestRoutineConstants:
     TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH.with_name(
         f"test_metadata_rep_consumer{TEST_CFG_FILE_PATH.suffix}"
     )
+    # Same as above except it includes a node_id to test encryption
+    TEST_CFG_FILE_PATH_HEARTBEATS = TEST_CFG_FILE_PATH.with_name(
+        f"test_heartbeats{TEST_CFG_FILE_PATH.suffix}"
+    )
     # If an environment variable indicates that a local broker is being used,
     # prepend "local_broker_" to the names of the above config files used in tests
     if os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS") and os.environ.get(
@@ -74,6 +76,9 @@ class TestRoutineConstants:
         )
         TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH_MDC.with_name(
             f"local_broker_{TEST_CFG_FILE_PATH_MDC.name}"
+        )
+        TEST_CFG_FILE_PATH_HEARTBEATS = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
+            f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS.name}"
         )
     # The path to the "prod" Kafka config file to use
     PROD_CONFIG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
