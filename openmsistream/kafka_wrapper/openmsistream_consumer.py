@@ -1,7 +1,8 @@
 """A wrapped Kafka Consumer. May consume encrypted messages."""
 
 # imports
-import uuid, warnings, methodtools, gc
+import uuid, warnings, gc
+import methodtools
 from confluent_kafka import DeserializingConsumer, Message
 
 with warnings.catch_warnings():
