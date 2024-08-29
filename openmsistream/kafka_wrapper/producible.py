@@ -41,7 +41,7 @@ class Producible(ABC):
         """
         return {}
 
-    def get_log_msg(self, print_every=None): # pylint: disable=unused-argument
+    def get_log_msg(self, print_every=None):  # pylint: disable=unused-argument
         """
         Given some (optional) "print_every" variable, return the string that should be
         logged (at debug level) for this message.

@@ -65,15 +65,14 @@ def detect_bucket_name(argstring):
             raise RuntimeError(f"ERROR: Illegal characters in bucket_name {argstring}")
     return argstring
 
+
 def positive_float(argval):
     """
     make sure a given value is a positive float
     """
     argval = float(argval)
     if (not isinstance(argval, float)) or (argval < 0):
-        raise ValueError(
-            f"ERROR: invalid argument: {argval} must be a positive float!"
-        )
+        raise ValueError(f"ERROR: invalid argument: {argval} must be a positive float!")
     return argval
 
 
@@ -93,7 +92,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
     to send to :func:`argparse.ArgumentParser.add_argument`.
     """
 
-    DEF_HEARTBEAT_INTERVAL = 15*60 # send heartbeats every 15 minutes by default
+    DEF_HEARTBEAT_INTERVAL = 15 * 60  # send heartbeats every 15 minutes by default
 
     ARGUMENTS = {
         **OpenMSIArgumentParser.ARGUMENTS,
@@ -325,7 +324,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                     "program should be produced. This argument must be included to "
                     "produce heartbeat messages"
                 ),
-            }
+            },
         ],
         "heartbeat_program_id": [
             "optional",
@@ -336,7 +335,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                     "code of the heartbeat producer's address in memory which is NOT "
                     "static)"
                 ),
-            }
+            },
         ],
         "heartbeat_interval_secs": [
             "optional",
@@ -347,6 +346,6 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                     "How often (in seconds) messages should be produced to the "
                     "heartbeat topic configured for the long-running program"
                 ),
-            }
+            },
         ],
     }

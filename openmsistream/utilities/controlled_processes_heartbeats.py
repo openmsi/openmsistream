@@ -12,6 +12,7 @@ from ..kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from ..kafka_wrapper import OpenMSIStreamProducer
 from .heartbeat_producibles import HeartbeatProducible
 
+
 class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
     "A long-running process that occasionally produces messages to a heartbeat topic"
 
@@ -69,7 +70,7 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
             self._heartbeat_program_id = self.__heartbeat_producer.producer_id
 
     def get_heartbeat_message(self):
-        """ Return the HeartbeatProducible-type object that should be produced to the
+        """Return the HeartbeatProducible-type object that should be produced to the
         heartbeat topic
         """
         return HeartbeatProducible(self._heartbeat_program_id)
