@@ -90,7 +90,10 @@ class ControlledProcessHeartbeats(ControlledProcess, HasArguments, ABC):
             self.__last_heartbeat = datetime.datetime.now()
 
     def _on_shutdown(self):
-        super()._on_shutdown()
+        try:
+            super()._on_shutdown()
+        except NotImplementedError:
+            pass
         if self.__heartbeat_producer is not None:
             # send a final heartbeat
             self.__heartbeat_producer.produce_object(

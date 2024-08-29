@@ -27,7 +27,7 @@ class TestDataFileStreamProcessor(
 
     def run_stream_processor_test(self, topic_name, mode):
         """
-        Run the stream processor downloading files to memory
+        Run the stream processor
         """
         self.create_stream_processor(
             topic_name=topic_name,

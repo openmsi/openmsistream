@@ -372,8 +372,8 @@ class DataFileUploadDirectory(
             producer.flush(timeout=-1)
             producer.close()
         self.close()
-        self.__file_registry.consolidate_completed_files()
         super()._on_shutdown()
+        self.__file_registry.consolidate_completed_files()
 
     def __add_active_datafile_for_path(self, filepath):
         """

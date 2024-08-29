@@ -106,54 +106,64 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
             self.assertTrue(test_rel_filepath in addrs_by_fp)
-            # validate the producer heartbeats
-            producer_heartbeat_msgs = self.get_heartbeat_messages(
-                TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-                self.HEARTBEAT_TOPIC_NAME,
-                producer_program_id,
-                wait_secs=5,
+            self.validate_heartbeats(
+                producer_program_id, consumer_program_id, start_time, chunk_size
             )
-            self.assertTrue(len(producer_heartbeat_msgs) > 0)
-            total_msgs_produced = 0
-            total_bytes_produced = 0
-            for msg in producer_heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
-                total_msgs_produced += msg_dict["n_messages_produced"]
-                total_bytes_produced += msg_dict["n_bytes_produced"]
-            test_file_size = TEST_CONST.TEST_DATA_FILE_PATH.stat().st_size
-            test_file_n_chunks = int(test_file_size / chunk_size)
-            self.assertTrue(total_msgs_produced >= test_file_n_chunks)
-            self.assertTrue(total_bytes_produced >= test_file_size)
-            # validate the consumer heartbeats
-            consumer_heartbeat_msgs = self.get_heartbeat_messages(
-                TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-                self.HEARTBEAT_TOPIC_NAME,
-                consumer_program_id,
-                wait_secs=5,
-            )
-            self.assertTrue(len(consumer_heartbeat_msgs) > 0)
-            total_msgs_read = 0
-            total_msgs_processed = 0
-            total_bytes_read = 0
-            total_bytes_processed = 0
-            for msg in consumer_heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
-                total_msgs_read += msg_dict["n_messages_read"]
-                total_msgs_processed += msg_dict["n_messages_processed"]
-                total_bytes_read += msg_dict["n_bytes_read"]
-                total_bytes_processed += msg_dict["n_bytes_processed"]
-            self.assertTrue(total_msgs_read >= test_file_n_chunks)
-            self.assertTrue(total_msgs_processed >= test_file_n_chunks)
-            self.assertTrue(total_bytes_read >= test_file_size)
-            self.assertTrue(total_bytes_processed >= test_file_size)
         except Exception as exc:
             raise exc
         self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    def validate_heartbeats(
+        self, producer_program_id, consumer_program_id, start_time, chunk_size
+    ):
+        """Validate that the producer and consumer both successfully sent heartbeat
+        messages with the right structure and content
+        """
+        # validate the producer heartbeats
+        producer_heartbeat_msgs = self.get_heartbeat_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            self.HEARTBEAT_TOPIC_NAME,
+            producer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(producer_heartbeat_msgs) > 0)
+        total_msgs_produced = 0
+        total_bytes_produced = 0
+        for msg in producer_heartbeat_msgs:
+            msg_dict = json.loads(msg.value())
+            msg_timestamp = datetime.datetime.strptime(
+                msg_dict["timestamp"], self.TIMESTAMP_FMT
+            )
+            self.assertTrue(msg_timestamp > start_time)
+            total_msgs_produced += msg_dict["n_messages_produced"]
+            total_bytes_produced += msg_dict["n_bytes_produced"]
+        test_file_size = TEST_CONST.TEST_DATA_FILE_PATH.stat().st_size
+        test_file_n_chunks = int(test_file_size / chunk_size)
+        self.assertTrue(total_msgs_produced >= test_file_n_chunks)
+        self.assertTrue(total_bytes_produced >= test_file_size)
+        # validate the consumer heartbeats
+        consumer_heartbeat_msgs = self.get_heartbeat_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            self.HEARTBEAT_TOPIC_NAME,
+            consumer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(consumer_heartbeat_msgs) > 0)
+        total_msgs_read = 0
+        total_msgs_processed = 0
+        total_bytes_read = 0
+        total_bytes_processed = 0
+        for msg in consumer_heartbeat_msgs:
+            msg_dict = json.loads(msg.value())
+            msg_timestamp = datetime.datetime.strptime(
+                msg_dict["timestamp"], self.TIMESTAMP_FMT
+            )
+            self.assertTrue(msg_timestamp > start_time)
+            total_msgs_read += msg_dict["n_messages_read"]
+            total_msgs_processed += msg_dict["n_messages_processed"]
+            total_bytes_read += msg_dict["n_bytes_read"]
+            total_bytes_processed += msg_dict["n_bytes_processed"]
+        self.assertTrue(total_msgs_read >= test_file_n_chunks)
+        self.assertTrue(total_msgs_processed >= test_file_n_chunks)
+        self.assertTrue(total_bytes_read >= test_file_size)
+        self.assertTrue(total_bytes_processed >= test_file_size)

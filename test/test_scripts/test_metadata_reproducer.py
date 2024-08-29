@@ -177,42 +177,48 @@ class TestMetadataReproducer(
                 )
                 raise RuntimeError(errmsg)
             # validate the heartbeat messages
-            heartbeat_msgs = self.get_heartbeat_messages(
-                TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-                self.HEARTBEAT_TOPIC_NAME,
-                program_id,
-                wait_secs=5,
-            )
-            self.assertTrue(len(heartbeat_msgs) > 0)
-            total_msgs_read = 0
-            total_bytes_read = 0
-            total_msgs_processed = 0
-            total_bytes_processed = 0
-            total_msgs_produced = 0
-            total_bytes_produced = 0
-            for msg in heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
-                total_msgs_read += msg_dict["n_messages_read"]
-                total_bytes_read += msg_dict["n_bytes_read"]
-                total_msgs_processed += msg_dict["n_messages_processed"]
-                total_bytes_processed += msg_dict["n_bytes_processed"]
-                total_msgs_produced += msg_dict["n_messages_produced"]
-                total_bytes_produced += msg_dict["n_bytes_produced"]
-            test_file_size = UPLOAD_FILE.stat().st_size
-            test_file_n_chunks = int(test_file_size / TEST_CONST.TEST_CHUNK_SIZE)
-            self.assertTrue(total_msgs_read >= test_file_n_chunks)
-            self.assertTrue(total_bytes_read >= test_file_size)
-            self.assertTrue(total_msgs_processed >= test_file_n_chunks)
-            self.assertTrue(total_bytes_processed >= test_file_size)
-            self.assertTrue(total_msgs_produced==1)
-            self.assertTrue(total_bytes_produced>700) # hardcoded from one example run
+            self.validate_heartbeats(program_id, start_time)
         except Exception as exc:
             raise exc
         finally:
             if consumer is not None:
                 consumer.close()
         self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    def validate_heartbeats(self, program_id, start_time):
+        """ Validate that the metadata reproducer sent heartbeat messages with the
+        correct structure and content
+        """
+        heartbeat_msgs = self.get_heartbeat_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            self.HEARTBEAT_TOPIC_NAME,
+            program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(heartbeat_msgs) > 0)
+        total_msgs_read = 0
+        total_bytes_read = 0
+        total_msgs_processed = 0
+        total_bytes_processed = 0
+        total_msgs_produced = 0
+        total_bytes_produced = 0
+        for msg in heartbeat_msgs:
+            msg_dict = json.loads(msg.value())
+            msg_timestamp = datetime.datetime.strptime(
+                msg_dict["timestamp"], self.TIMESTAMP_FMT
+            )
+            self.assertTrue(msg_timestamp > start_time)
+            total_msgs_read += msg_dict["n_messages_read"]
+            total_bytes_read += msg_dict["n_bytes_read"]
+            total_msgs_processed += msg_dict["n_messages_processed"]
+            total_bytes_processed += msg_dict["n_bytes_processed"]
+            total_msgs_produced += msg_dict["n_messages_produced"]
+            total_bytes_produced += msg_dict["n_bytes_produced"]
+        test_file_size = UPLOAD_FILE.stat().st_size
+        test_file_n_chunks = int(test_file_size / TEST_CONST.TEST_CHUNK_SIZE)
+        self.assertTrue(total_msgs_read >= test_file_n_chunks)
+        self.assertTrue(total_bytes_read >= test_file_size)
+        self.assertTrue(total_msgs_processed >= test_file_n_chunks)
+        self.assertTrue(total_bytes_processed >= test_file_size)
+        self.assertTrue(total_msgs_produced==1)
+        self.assertTrue(total_bytes_produced>700) # hardcoded from one example run

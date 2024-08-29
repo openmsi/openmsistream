@@ -100,8 +100,8 @@ class ControlledMessageProcessor(
         consumer.close()
 
     def _on_shutdown(self):
-        super()._on_shutdown()
         self.close()
+        super()._on_shutdown()
 
     @abstractmethod
     def _process_message(self, lock, msg, *args, **kwargs):
