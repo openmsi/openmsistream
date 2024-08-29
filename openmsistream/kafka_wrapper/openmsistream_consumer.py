@@ -1,7 +1,7 @@
 """A wrapped Kafka Consumer. May consume encrypted messages."""
 
 # imports
-import uuid, warnings, methodtools
+import uuid, warnings, methodtools, gc
 from confluent_kafka import DeserializingConsumer, Message
 
 with warnings.catch_warnings():
@@ -332,6 +332,8 @@ class OpenMSIStreamConsumer(LogOwner):
             pass
         finally:
             self.__kafkacrypto = None
+        self._consumer = None
+        gc.collect()
 
     def _filter_message(self, msg):
         """

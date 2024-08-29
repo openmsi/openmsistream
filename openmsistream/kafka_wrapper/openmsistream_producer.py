@@ -1,7 +1,7 @@
 """A wrapped Kafka Producer. May produce encrypted messages."""
 
 # imports
-import time, warnings
+import time, warnings, gc
 from confluent_kafka import SerializingProducer
 
 with warnings.catch_warnings():
@@ -361,3 +361,5 @@ class OpenMSIStreamProducer(LogOwner):
             pass
         finally:
             self.__kafkacrypto = None
+        self._producer = None
+        gc.collect()
