@@ -1,13 +1,5 @@
 # imports
-import pathlib
-import shutil
-import unittest
-import os
-import time
-import datetime
-import subprocess
-import re
-import uuid
+import pathlib, shutil, unittest, os, time, datetime, subprocess, re, uuid
 from confluent_kafka.serialization import StringDeserializer
 from confluent_kafka import DeserializingConsumer
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation

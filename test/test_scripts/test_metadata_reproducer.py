@@ -116,9 +116,9 @@ class TestMetadataReproducer(
             dest_topic_name=self.DEST_TOPIC_NAME,
             consumer_group_id=CONSUMER_GROUP_ID,
             other_init_kwargs={
-                "heartbeat_topic_name":self.HEARTBEAT_TOPIC_NAME,
-                "heartbeat_program_id":program_id,
-                "heartbeat_interval_secs":1,
+                "heartbeat_topic_name": self.HEARTBEAT_TOPIC_NAME,
+                "heartbeat_program_id": program_id,
+                "heartbeat_interval_secs": 1,
             },
         )
         self.start_stream_reproducer_thread()
@@ -186,7 +186,7 @@ class TestMetadataReproducer(
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def validate_heartbeats(self, program_id, start_time):
-        """ Validate that the metadata reproducer sent heartbeat messages with the
+        """Validate that the metadata reproducer sent heartbeat messages with the
         correct structure and content
         """
         heartbeat_msgs = self.get_heartbeat_messages(
@@ -220,5 +220,5 @@ class TestMetadataReproducer(
         self.assertTrue(total_bytes_read >= test_file_size)
         self.assertTrue(total_msgs_processed >= test_file_n_chunks)
         self.assertTrue(total_bytes_processed >= test_file_size)
-        self.assertTrue(total_msgs_produced==1)
-        self.assertTrue(total_bytes_produced>700) # hardcoded from one example run
+        self.assertTrue(total_msgs_produced == 1)
+        self.assertTrue(total_bytes_produced > 700)  # hardcoded from one example run

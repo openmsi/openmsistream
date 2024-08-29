@@ -175,7 +175,7 @@ class TestDataFileDirectories(
             heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
             heartbeat_program_id=producer_program_id,
             heartbeat_interval_secs=1,
-            )
+        )
         consumer_group_id = (
             f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
         )

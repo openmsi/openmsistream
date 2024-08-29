@@ -1,8 +1,8 @@
 " ControlledProcess classes that periodically also produce messages to heartbeat topics "
 
 # imports
-from abc import ABC
 import datetime
+from abc import ABC
 from confluent_kafka.serialization import StringSerializer
 from confluent_kafka import SerializingProducer
 from openmsitoolbox.argument_parsing.has_arguments import HasArguments
