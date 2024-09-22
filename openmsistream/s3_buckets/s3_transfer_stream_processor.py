@@ -142,7 +142,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
                 f"transferred to the {args.bucket_name} bucket.\nTransferred filepaths "
                 f"(up to {cls.N_RECENT_FILES} most recent):\n\t"
             )
-            msg += "\n\t".join(complete_filenames)
+            msg += "\n\t".join(str(path) for path in complete_filenames)
             s3_stream_proc.logger.debug(msg)
 
     def _on_check(self):
