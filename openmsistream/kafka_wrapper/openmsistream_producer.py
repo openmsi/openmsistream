@@ -15,6 +15,7 @@ from openmsitoolbox.utilities.misc import (
 from .utilities import add_kwargs_to_configs, default_producer_callback, make_callback
 from .producible import Producible
 from .config_file_parser import KafkaConfigFileParser
+from .octopus import update_configs_if_use_octopus
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundSerializer
 
@@ -105,6 +106,7 @@ class OpenMSIStreamProducer(LogOwner):
         # all_configs['debug']='broker,topic,msg'
         # use a SerializingProducer by default
         if kafkacrypto is None and parser.kc_config_file_str is None:
+            update_configs_if_use_octopus(all_configs)
             ret_args = [SerializingProducer, all_configs]
             return ret_args, ret_kwargs
         # if "kafkacrypto" is given, or there are configs for KafkaCrypto, use a KafkaProducer

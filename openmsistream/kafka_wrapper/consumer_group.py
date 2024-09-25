@@ -10,6 +10,7 @@ from confluent_kafka import TopicPartition
 from openmsitoolbox import LogOwner
 from .utilities import reset_to_beginning_on_assign
 from .config_file_parser import KafkaConfigFileParser
+from .octopus import find_starting_offsets_if_use_octopus
 from .openmsistream_consumer import OpenMSIStreamConsumer
 
 
@@ -155,6 +156,10 @@ class ConsumerGroup(LogOwner):
             cfp = KafkaConfigFileParser(config_path)
             starting_offsets = []
             try:
+                octopus_offsets = find_starting_offsets_if_use_octopus(topic_name)
+                if octopus_offsets:
+                    return octopus_offsets
+                
                 cluster_metadata = AdminClient(cfp.broker_configs).list_topics(
                     topic=topic_name
                 )

@@ -16,6 +16,7 @@ from openmsitoolbox.utilities.misc import (
 from ..data_file_io.entity.data_file_chunk import DataFileChunk
 from .utilities import add_kwargs_to_configs, KCCommitOffsetDictKey, KCCommitOffset
 from .config_file_parser import KafkaConfigFileParser
+from .octopus import update_configs_if_use_octopus
 from .openmsistream_kafka_crypto import OpenMSIStreamKafkaCrypto
 from .serialization import CompoundDeserializer
 
@@ -157,6 +158,7 @@ class OpenMSIStreamConsumer(LogOwner):
             all_configs["group.id"] = str(uuid.uuid1())
         # Use a DeserializingConsumer by default
         if kafkacrypto is None and parser.kc_config_file_str is None:
+            update_configs_if_use_octopus(all_configs)
             ret_args = [DeserializingConsumer, all_configs]
             return ret_args, ret_kwargs
         # if "kafkacrypto" was given, or there are configs for KafkaCrypto, use a KafkaConsumer
