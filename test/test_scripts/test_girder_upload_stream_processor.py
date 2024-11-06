@@ -1,16 +1,25 @@
 # imports
-import json, time, subprocess, unittest
+import json
+import pathlib
+import subprocess
+import tempfile
+import time
+import unittest
 from hashlib import sha512
-import requests, docker, girder_client  # pylint: disable=wrong-import-order
-from openmsistream import GirderUploadStreamProcessor
+
+import girder_client
+import requests  # pylint: disable=wrong-import-order
 from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
 # pylint: disable=import-error, wrong-import-order
 from test_base_classes import (
     TestWithKafkaTopics,
-    TestWithUploadDataFile,
     TestWithStreamProcessor,
+    TestWithUploadDataFile,
 )
+
+import docker
+from openmsistream import GirderUploadStreamProcessor
 
 # constants
 GIRDER_COMPOSE_FILE_PATH = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
@@ -128,6 +137,60 @@ class TestGirderUploadStreamProcessor(
         # Save the key and its ID so we can delete it after the test
         self.api_key = resp.json()["key"]
         self.api_key_id = resp.json()["_id"]
+
+    def test_girder_mimetype(self):
+        """
+        Test if Girder stream processor sets a proper mimeType
+        """
+        with tempfile.NamedTemporaryFile(
+            dir=TEST_CONST.TEST_DATA_DIR_PATH, suffix=".png"
+        ) as mock_png:
+            mock_png.write(b"Pretend to be a PNG")
+            mock_png.flush()
+            self.upload_single_file(
+                mock_png.name,
+                topic_name=self.TOPIC_NAME,
+                rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+            )
+            self.create_stream_processor(
+                stream_processor_type=GirderUploadStreamProcessor,
+                topic_name=self.TOPIC_NAME,
+                consumer_group_id=f"test_girder_upload_stream_processor_{TEST_CONST.PY_VERSION}",
+                other_init_args=(
+                    GIRDER_API_URL,
+                    self.api_key,
+                ),
+                other_init_kwargs={
+                    "collection_name": COLLECTION_NAME,
+                },
+            )
+            self.start_stream_processor_thread()
+            try:
+                rel_filepath = pathlib.Path(mock_png.name).relative_to(
+                    TEST_CONST.TEST_DATA_DIR_PATH
+                )
+                self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
+
+                girder = girder_client.GirderClient(apiUrl=GIRDER_API_URL)
+                girder.authenticate(apiKey=self.api_key)
+
+                gpath = (
+                    f"/collection/{COLLECTION_NAME}/{self.TOPIC_NAME}/{rel_filepath.name}"
+                )
+
+                item = girder.get(
+                    "resource/lookup",
+                    parameters={"path": gpath},
+                )
+                if not item or item["_modelType"] != "item":
+                    raise RuntimeError(f"ERROR: Item {rel_filepath.name} not found")
+                fobj = next(girder.listFile(item["_id"]), None)
+                if not fobj or fobj["_modelType"] != "file":
+                    raise RuntimeError(f"ERROR: File {rel_filepath.name} not found")
+                self.assertEqual(fobj["mimeType"], "image/png")
+            except Exception as exc:
+                raise exc
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_girder_upload_stream_processor_kafka(self):
         """
