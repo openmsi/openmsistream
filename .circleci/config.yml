@@ -49,9 +49,6 @@ workflows:
                 - "3.7"   # last version supported by older Windows machines
           requires:
             - run-tests-no-kafka
-      - check-repo:
-          requires:
-            - run-tests
 
 ################# JOBS #################
 jobs:
@@ -125,18 +122,8 @@ jobs:
           name: run tests in Python << parameters.python-version >>
           <<: *run_tests_cmd
       - run:
-          <<: *kafka_teardown
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-  # Make sure that the repository is clean after all tests have been run
-  check-repo:
-    docker:
-      - image: openmsi/openmsistream-ci:1.6
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: check repo
+          # Make sure that the repository is clean after all tests have been run
+          name: Check if the repo is clean
           command: cd ~/project; sh test/test_repo_status.sh
+      - run:
+          <<: *kafka_teardown
