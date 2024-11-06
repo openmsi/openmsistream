@@ -46,6 +46,7 @@ workflows:
               python-version:
                 - "3.11"  # latest possible
                 - "3.9"   # oldest not EOL
+                - "3.7"   # last version supported by older Windows machines
           requires:
             - run-tests-no-kafka
       - check-repo:
