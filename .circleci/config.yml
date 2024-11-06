@@ -68,8 +68,8 @@ jobs:
           command: |
             cd ~/project
             python -m pyflakes .
-            black openmsistream --check
-            black test --check
+            black openmsistream --check --diff
+            black test --check --diff
             python -m pylint openmsistream
             python -m pylint --recursive=y test
             cd -
