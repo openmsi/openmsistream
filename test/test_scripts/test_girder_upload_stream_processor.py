@@ -50,12 +50,9 @@ class TestGirderUploadStreamProcessor(
 
     HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.assetstore_id = None
-        self.api_key = None
-        self.api_key_id = None
-        self.file_id = None
+    assetstore_id = None
+    api_key = None
+    api_key_id = None
 
     @classmethod
     def setUpClass(cls):  # pylint: disable=invalid-name
@@ -67,7 +64,16 @@ class TestGirderUploadStreamProcessor(
         cmd = ["docker", "compose", "-f", str(GIRDER_COMPOSE_FILE_PATH), "up", "-d"]
         subprocess.check_output(cmd)
         # wait for it to be available
-        time.sleep(5)
+        counter = 0
+        while counter < 30:
+            try:
+                resp = requests.get(GIRDER_API_URL, timeout=GIRDER_TIMEOUT)
+                if resp.status_code == 200:
+                    break
+            except requests.exceptions.ConnectionError:
+                pass
+            time.sleep(1)
+            counter += 1
         # create the admin user
         resp = requests.post(
             f"{GIRDER_API_URL}/user",
@@ -89,23 +95,11 @@ class TestGirderUploadStreamProcessor(
         # Store token for future requests
         cls.HEADERS["Girder-Token"] = resp.json()["authToken"]["token"]
 
-    def setUp(self):  # pylint: disable=invalid-name
-        """
-        Create the assetstore to use, and an API key
-        """
-        super().setUp()
         # Give girder time to start
-        self.logger.info("Waiting for Girder to start")
-        while True:
-            resp = requests.get(GIRDER_API_URL, timeout=GIRDER_TIMEOUT)
-            if resp.status_code == 200:
-                break
-            time.sleep(1)
         # Create the assetstore
-        self.logger.info("Creating default assetstore")
         resp = requests.post(
             f"{GIRDER_API_URL}/assetstore",
-            headers=self.HEADERS,
+            headers=cls.HEADERS,
             params={
                 "type": 0,
                 "name": "Base",
@@ -123,11 +117,11 @@ class TestGirderUploadStreamProcessor(
                 )
             )
         # Save the assetstore ID so we can delete it after the test
-        self.assetstore_id = resp.json()["_id"]
+        cls.assetstore_id = resp.json()["_id"]
         # Create an API key
         resp = requests.post(
             f"{GIRDER_API_URL}/api_key",
-            headers=self.HEADERS,
+            headers=cls.HEADERS,
             timeout=GIRDER_TIMEOUT,
         )
         if resp.status_code != 200:
@@ -135,8 +129,8 @@ class TestGirderUploadStreamProcessor(
                 f"ERROR: Failed to create a Girder API key! Status: {resp.status_code}"
             )
         # Save the key and its ID so we can delete it after the test
-        self.api_key = resp.json()["key"]
-        self.api_key_id = resp.json()["_id"]
+        cls.api_key = resp.json()["key"]
+        cls.api_key_id = resp.json()["_id"]
 
     def test_girder_mimetype(self):
         """
@@ -147,8 +141,10 @@ class TestGirderUploadStreamProcessor(
         ) as mock_png:
             mock_png.write(b"Pretend to be a PNG")
             mock_png.flush()
+            png_path = pathlib.Path(mock_png.name)
+
             self.upload_single_file(
-                mock_png.name,
+                png_path,
                 topic_name=self.TOPIC_NAME,
                 rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
             )
@@ -166,18 +162,16 @@ class TestGirderUploadStreamProcessor(
             )
             self.start_stream_processor_thread()
             try:
-                rel_filepath = pathlib.Path(mock_png.name).relative_to(
-                    TEST_CONST.TEST_DATA_DIR_PATH
-                )
+                rel_filepath = png_path.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
                 self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
 
                 girder = girder_client.GirderClient(apiUrl=GIRDER_API_URL)
                 girder.authenticate(apiKey=self.api_key)
 
                 gpath = (
-                    f"/collection/{COLLECTION_NAME}/{self.TOPIC_NAME}/{rel_filepath.name}"
+                    f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/"
+                    f"{self.TOPIC_NAME}/{rel_filepath.name}"
                 )
-
                 item = girder.get(
                     "resource/lookup",
                     parameters={"path": gpath},
@@ -263,7 +257,7 @@ class TestGirderUploadStreamProcessor(
                     f"in the collection folder! Responses: {list(resps)}"
                 )
                 raise RuntimeError(errmsg)
-            resps = girder.listItem(topic_folder_id)
+            resps = girder.listItem(topic_folder_id, name=rel_filepath.name)
             item_id = None
             for resp in resps:
                 self.assertEqual(resp["meta"].get("somekey"), "somevalue")
@@ -272,10 +266,10 @@ class TestGirderUploadStreamProcessor(
                 raise RuntimeError(f"Couldn't find Item! Responses: {list(resps)}")
             resps = girder.listFile(item_id)
             for resp in resps:
-                self.file_id = resp["_id"]
-            if not self.file_id:
+                file_id = resp["_id"]
+            if not file_id:
                 raise RuntimeError(f"Couldn't find File! Responses: {list(resps)}")
-            file_stream = girder.downloadFileAsIterator(self.file_id)
+            file_stream = girder.downloadFileAsIterator(file_id)
             girder_hash = sha512()
             for chunk in file_stream:
                 girder_hash.update(chunk)
@@ -285,47 +279,19 @@ class TestGirderUploadStreamProcessor(
             raise exc
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
-    def tearDown(self):  # pylint: disable=invalid-name
-        """
-        Delete the created API key and the file/assetstore
-        """
-        self.logger.info("Deleting API key")
-        resp = requests.delete(
-            f"{GIRDER_API_URL}/api_key/{self.api_key_id}",
-            headers=self.HEADERS,
-            timeout=GIRDER_TIMEOUT,
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(
-                f"ERROR: Failed to delete Girder API key! Status: {resp.status_code}"
-            )
-        self.logger.info("Deleting file")
-        resp = requests.delete(
-            f"{GIRDER_API_URL}/file/{self.file_id}",
-            headers=self.HEADERS,
-            timeout=GIRDER_TIMEOUT,
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(
-                f"ERROR: Failed to delete file! Status: {resp.status_code}"
-            )
-        self.logger.info("Deleting assetstore")
-        resp = requests.delete(
-            f"{GIRDER_API_URL}/assetstore/{self.assetstore_id}",
-            headers=self.HEADERS,
-            timeout=GIRDER_TIMEOUT,
-        )
-        if resp.status_code != 200:
-            raise RuntimeError(
-                f"ERROR: Failed to delete assetstore! Status: {resp.status_code}"
-            )
-        super().tearDown()
-
     @classmethod
     def tearDownClass(cls):  # pylint: disable=invalid-name
         """
         Call Docker compose to remove the local Girder instance
         """
-        cmd = ["docker", "compose", "-f", str(GIRDER_COMPOSE_FILE_PATH), "down"]
+        cmd = [
+            "docker",
+            "compose",
+            "-f",
+            str(GIRDER_COMPOSE_FILE_PATH),
+            "down",
+            "-t",
+            "0",
+        ]
         subprocess.check_output(cmd)
         super().tearDownClass()
