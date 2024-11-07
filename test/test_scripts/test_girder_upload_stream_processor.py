@@ -8,7 +8,8 @@ import unittest
 from hashlib import sha512
 
 import girder_client
-import requests  # pylint: disable=wrong-import-order
+import requests
+import responses
 from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
 # pylint: disable=import-error, wrong-import-order
@@ -132,6 +133,30 @@ class TestGirderUploadStreamProcessor(
         cls.api_key = resp.json()["key"]
         cls.api_key_id = resp.json()["_id"]
 
+    def _produce_single_file(self, filepath):
+        """
+        Produce a single file to the Kafka topic
+        """
+        self.upload_single_file(
+            filepath,
+            topic_name=self.TOPIC_NAME,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+        )
+        self.create_stream_processor(
+            stream_processor_type=GirderUploadStreamProcessor,
+            topic_name=self.TOPIC_NAME,
+            consumer_group_id=f"test_girder_upload_stream_processor_{TEST_CONST.PY_VERSION}",
+            other_init_args=(
+                GIRDER_API_URL,
+                self.api_key,
+            ),
+            other_init_kwargs={
+                "collection_name": COLLECTION_NAME,
+                "metadata": json.dumps({"somekey": "somevalue"}),
+            },
+        )
+        self.start_stream_processor_thread()
+
     def test_girder_mimetype(self):
         """
         Test if Girder stream processor sets a proper mimeType
@@ -143,24 +168,7 @@ class TestGirderUploadStreamProcessor(
             mock_png.flush()
             png_path = pathlib.Path(mock_png.name)
 
-            self.upload_single_file(
-                png_path,
-                topic_name=self.TOPIC_NAME,
-                rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-            )
-            self.create_stream_processor(
-                stream_processor_type=GirderUploadStreamProcessor,
-                topic_name=self.TOPIC_NAME,
-                consumer_group_id=f"test_girder_upload_stream_processor_{TEST_CONST.PY_VERSION}",
-                other_init_args=(
-                    GIRDER_API_URL,
-                    self.api_key,
-                ),
-                other_init_kwargs={
-                    "collection_name": COLLECTION_NAME,
-                },
-            )
-            self.start_stream_processor_thread()
+            self._produce_single_file(png_path)
             try:
                 rel_filepath = png_path.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
                 self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
@@ -182,35 +190,68 @@ class TestGirderUploadStreamProcessor(
                 if not fobj or fobj["_modelType"] != "file":
                     raise RuntimeError(f"ERROR: File {rel_filepath.name} not found")
                 self.assertEqual(fobj["mimeType"], "image/png")
+                girder.delete(f"/item/{item['_id']}")
             except Exception as exc:
                 raise exc
+        self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    @responses.activate
+    def test_girder_handle_timeout(self):
+        """
+        Test if Girder stream processor handles server errors
+        """
+        # Allow the Girder API to be called
+        responses.add_passthru(f"{GIRDER_API_URL}")
+        # First call to /file should return 502 though
+        responses.add(
+            responses.POST,
+            f"{GIRDER_API_URL}/file",
+            status=502,
+        )
+        # but work after retry
+        responses.add(
+            responses.PassthroughResponse(responses.POST, f"{GIRDER_API_URL}/file")
+        )
+
+        self._produce_single_file(TEST_CONST.TEST_DATA_FILE_2_PATH)
+        rel_filepath = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
+            TEST_CONST.TEST_DATA_DIR_PATH
+        )
+        self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
+        self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    def test_girder_repeated_upload(self):
+        """
+        Test if Girder stream processor can handle an attempt to re-upload the same file
+        """
+        # wait until the file has been processed
+        for _ in range(2):
+            self._produce_single_file(TEST_CONST.TEST_DATA_FILE_2_PATH)
+            rel_filepath = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
+                TEST_CONST.TEST_DATA_DIR_PATH
+            )
+            self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
+            # simulate re-runing the stream processor
+            self.reset_stream_processor()
+
+        girder = girder_client.GirderClient(apiUrl=GIRDER_API_URL)
+        girder.authenticate(apiKey=self.api_key)
+        gpath = (
+            f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/"
+            f"{self.TOPIC_NAME}/{rel_filepath.name} (1)"
+        )
+        item = girder.get(
+            "/resource/lookup",
+            parameters={"path": gpath, "test": True},
+        )
+        self.assertIsNone(item, "Item should not exist")
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_girder_upload_stream_processor_kafka(self):
         """
         Test using a stream processor to upload a file to the Girder instance
         """
-        # upload the test file
-        self.upload_single_file(
-            TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=self.TOPIC_NAME,
-            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-        )
-        # start up a stream processor to read its data back into memory
-        self.create_stream_processor(
-            stream_processor_type=GirderUploadStreamProcessor,
-            topic_name=self.TOPIC_NAME,
-            consumer_group_id=f"test_girder_upload_stream_processor_{TEST_CONST.PY_VERSION}",
-            other_init_args=(
-                GIRDER_API_URL,
-                self.api_key,
-            ),
-            other_init_kwargs={
-                "collection_name": COLLECTION_NAME,
-                "metadata": json.dumps({"somekey": "somevalue"}),
-            },
-        )
-        self.start_stream_processor_thread()
+        self._produce_single_file(TEST_CONST.TEST_DATA_FILE_2_PATH)
         try:
             # wait until the file has been processed
             rel_filepath = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
@@ -275,6 +316,7 @@ class TestGirderUploadStreamProcessor(
                 girder_hash.update(chunk)
             girder_hash = girder_hash.digest()
             self.assertEqual(original_hash, girder_hash)
+            girder.delete(f"/item/{item_id}")
         except Exception as exc:
             raise exc
         self.success = True  # pylint: disable=attribute-defined-outside-init

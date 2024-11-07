@@ -5,6 +5,8 @@ from hashlib import sha256
 from io import BytesIO
 
 import girder_client
+from requests.adapters import HTTPAdapter
+from urllib3.util.retry import Retry
 
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from ..utilities.config import RUN_CONST
@@ -120,6 +122,22 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
         :return: None if upload was successful, a caught Exception otherwise
         """
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=0.1,
+            status_forcelist=[403, 429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
+        )
+        retry_adapter = HTTPAdapter(max_retries=retry_strategy)
+        with self.__girder_client.session() as session:
+            session.mount("http://", retry_adapter)
+            session.mount("https://", retry_adapter)
+            return self.__process_downloaded_data_file(datafile, lock)
+
+    def __process_downloaded_data_file(self, datafile, lock):
+        """
+        Actual process_downloaded_data_file method used in the wrapper above
+        """
         # Create the nested subdirectories that should hold this file
         parent_id = self.__root_folder_id
         if datafile.subdir_str != "":
@@ -144,6 +162,21 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 parent_id = new_folder_id
         else:
             subdir_str_split = []
+        # Calculate the checksum of the file
+        checksum_hash = sha256()
+        checksum_hash.update(datafile.bytestring)
+        # Check if a file with the same name and checksum already exists in the folder
+        for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
+            existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
+            if existing_sha256 == checksum_hash.hexdigest():
+                errmsg = (
+                    f"WARNING: found an existing Item named {datafile.filename} with the same "
+                    f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
+                )
+                self.logger.warning(errmsg)
+                print(f"File {datafile.filename} already exists with the same checksum")
+                return None
+
         # Upload the file from its bytestring or file on disk
         try:
             with lock:
@@ -181,8 +214,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 f"at {datafile.relative_filepath}"
             )
             return RuntimeError(errmsg)
-        checksum_hash = sha256()
-        checksum_hash.update(datafile.bytestring)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
             "sha256": checksum_hash.hexdigest(),
