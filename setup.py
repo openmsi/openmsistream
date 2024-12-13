@@ -48,7 +48,7 @@ setupkwargs = dict(
             "GirderUploadStreamProcessor=openmsistream.girder.girder_upload_stream_processor:main",
         ],
     },
-    python_requires=">=3.7,<3.10",
+    python_requires=">=3.7,<3.12",
     install_requires=[
         "atomicwrites>=1.4.1",
         "boto3>=1.26.84",

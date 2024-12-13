@@ -41,11 +41,14 @@ workflows:
           requires:
             - build-and-code-check
       - run-tests:
+          matrix:
+            parameters:
+              python-version:
+                - "3.11"  # latest possible
+                - "3.9"   # oldest not EOL
+                - "3.7"   # last version supported by older Windows machines
           requires:
             - run-tests-no-kafka
-      - check-repo:
-          requires:
-            - run-tests
 
 ################# JOBS #################
 jobs:
@@ -62,8 +65,8 @@ jobs:
           command: |
             cd ~/project
             python -m pyflakes .
-            black openmsistream --check
-            black test --check
+            black openmsistream --check --diff
+            black test --check --diff
             python -m pylint openmsistream
             python -m pylint --recursive=y test
             cd -
@@ -91,6 +94,10 @@ jobs:
             - .
   # Run all tests in a Linux VM with a local Kafka broker
   run-tests:
+    parameters:
+      python-version:
+        type: string
+        default: "3.9"
     machine:
       image: ubuntu-2204:current
     parallelism: 15
@@ -103,44 +110,20 @@ jobs:
       - attach_workspace:
           at: .
       - run:
-          name: set Python version to 3.9.17
+          name: set Python version to << parameters.python-version >>
           command: |
-            pyenv install 3.9.17
-            pyenv global 3.9.17
+            pyenv install << parameters.python-version >>
+            pyenv global << parameters.python-version >>
       - python/install-packages:
           <<: *pip_install_block
       - run:
           <<: *kafka_setup
       - run:
-          name: run tests in Python 3.9
+          name: run tests in Python << parameters.python-version >>
           <<: *run_tests_cmd
       - run:
-          <<: *kafka_teardown
-      - run:
-          name: set Python version to 3.7.17
-          command: |
-            pyenv install 3.7.17
-            pyenv global 3.7.17
-      - python/install-packages:
-          <<: *pip_install_block
-      - run:
-          <<: *kafka_setup
-      - run:
-          name: run tests in Python 3.7
-          <<: *run_tests_cmd
-      - run:
-          <<: *kafka_teardown
-      - persist_to_workspace:
-          root: .
-          paths:
-            - .
-  # Make sure that the repository is clean after all tests have been run
-  check-repo:
-    docker:
-      - image: openmsi/openmsistream-ci:1.6
-    steps:
-      - attach_workspace:
-          at: .
-      - run:
-          name: check repo
+          # Make sure that the repository is clean after all tests have been run
+          name: Check if the repo is clean
           command: cd ~/project; sh test/test_repo_status.sh
+      - run:
+          <<: *kafka_teardown
