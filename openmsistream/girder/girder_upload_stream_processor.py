@@ -1,11 +1,14 @@
 # imports
 import json
-from io import BytesIO
+import mimetypes
 from hashlib import sha256
+from io import BytesIO
+
 import girder_client
-from ..version import __version__
+
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from ..utilities.config import RUN_CONST
+from ..version import __version__
 
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
@@ -144,16 +147,19 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         # Upload the file from its bytestring or file on disk
         try:
             with lock:
+                mimetype, _ = mimetypes.guess_type(datafile.filename)
+                mimetype = mimetype or "application/octet-stream"
                 try:
                     self.__girder_client.uploadStreamToFolder(
                         parent_id,
                         BytesIO(datafile.bytestring),
                         datafile.filename,
                         len(datafile.bytestring),
+                        mimeType=mimetype,
                     )
                 except AttributeError:
                     self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath
+                        parent_id, datafile.full_filepath, mimeType=mimetype
                     )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
