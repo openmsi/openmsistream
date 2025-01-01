@@ -18,5 +18,5 @@ def get_message_length(msg):
     if keylen == 0 and vallen == 0:
         return len(msg)
     else:
-        return (keylen + vallen)
+        return keylen + vallen
 
