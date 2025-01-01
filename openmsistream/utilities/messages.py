@@ -1,4 +1,6 @@
 " Various message helpers "
+
+
 def get_message_length(msg):
     #
     # This accounting seems imprecise and incomplete.
@@ -19,4 +21,3 @@ def get_message_length(msg):
         return len(msg)
     else:
         return keylen + vallen
-
