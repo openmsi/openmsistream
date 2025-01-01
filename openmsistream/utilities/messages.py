@@ -2,6 +2,9 @@
 
 
 def get_message_length(msg):
+    """
+    returns length of a message
+    """
     #
     # This accounting seems imprecise and incomplete.
     #
@@ -19,5 +22,4 @@ def get_message_length(msg):
             vallen = len(msg.value)
     if keylen == 0 and vallen == 0:
         return len(msg)
-    else:
-        return keylen + vallen
+    return keylen + vallen
