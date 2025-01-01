@@ -10,6 +10,7 @@ from queue import Queue
 
 from ..utilities.config import RUN_CONST
 from ..utilities.heartbeat_producibles import MessageReproducerHeartbeatProducible
+from ..utilities.messages import get_message_length
 from ..utilities.controlled_processes_heartbeats import (
     ControlledProcessMultiThreadedHeartbeats,
 )
@@ -198,25 +199,8 @@ class ControlledMessageReproducer(
         with self.lock:
             self.n_msgs_read += 1
             self.n_msgs_read_since_last_heartbeat += 1
-            #
-            # This accounting seems imprecise and incomplete.
-            #
-            keylen = 0
-            vallen = 0
-            if hasattr(msg, "key"):
-                try:
-                    keylen = len(bytes(msg.key))
-                except:
-                    keylen = len(msg.key)
-            if hasattr(msg, "value"):
-                try:
-                    vallen = len(bytes(msg.value))
-                except:
-                    vallen = len(msg.value)
-            if keylen == 0 and vallen == 0:
-                self.n_bytes_read_since_last_heartbeat += len(msg)
-            else:
-                self.n_bytes_read_since_last_heartbeat += keylen + vallen
+            self.n_bytes_read_since_last_heartbeat +=
+                get_message_length(msg)
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -225,25 +209,8 @@ class ControlledMessageReproducer(
             with self.lock:
                 self.n_msgs_processed += 1
                 self.n_msgs_processed_since_last_heartbeat += 1
-                #
-                # This accounting seems imprecise and incomplete.
-                #
-                keylen = 0
-                vallen = 0
-                if hasattr(msg, "key"):
-                    try:
-                        keylen = len(bytes(msg.key))
-                    except:
-                        keylen = len(msg.key)
-                if hasattr(msg, "value"):
-                    try:
-                        vallen = len(bytes(msg.value))
-                    except:
-                        vallen = len(msg.value)
-                if keylen == 0 and vallen == 0:
-                    self.n_bytes_read_since_last_heartbeat += len(msg)
-                else:
-                    self.n_bytes_read_since_last_heartbeat += keylen + vallen
+                self.n_bytes_read_since_last_heartbeat +=
+                    get_message_length(msg)
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:
