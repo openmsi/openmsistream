@@ -199,8 +199,7 @@ class ControlledMessageReproducer(
         with self.lock:
             self.n_msgs_read += 1
             self.n_msgs_read_since_last_heartbeat += 1
-            self.n_bytes_read_since_last_heartbeat +=
-                get_message_length(msg)
+            self.n_bytes_read_since_last_heartbeat += get_message_length(msg)
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -209,8 +208,7 @@ class ControlledMessageReproducer(
             with self.lock:
                 self.n_msgs_processed += 1
                 self.n_msgs_processed_since_last_heartbeat += 1
-                self.n_bytes_read_since_last_heartbeat +=
-                    get_message_length(msg)
+                self.n_bytes_read_since_last_heartbeat += get_message_length(msg)
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:
