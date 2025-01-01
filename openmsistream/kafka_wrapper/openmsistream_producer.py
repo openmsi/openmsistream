@@ -1,12 +1,10 @@
 """A wrapped Kafka Producer. May produce encrypted messages."""
 
 # imports
-import time, warnings, gc
+import time, gc
 from confluent_kafka import SerializingProducer
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaProducer
+from kafkacrypto import KafkaProducer
 from openmsitoolbox import LogOwner
 from openmsitoolbox.utilities.misc import (
     raise_err_with_optional_logger,

@@ -4,14 +4,10 @@ is managed using the ControlledProcess infrastructure
 """
 
 # imports
-import time, warnings
+import time
 from abc import ABC, abstractmethod
 from queue import Queue
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaCryptoMessage
-    from kafkacrypto.confluent_kafka_wrapper import Message
 from ..utilities.config import RUN_CONST
 from ..utilities.heartbeat_producibles import MessageReproducerHeartbeatProducible
 from ..utilities.controlled_processes_heartbeats import (
@@ -202,19 +198,25 @@ class ControlledMessageReproducer(
         with self.lock:
             self.n_msgs_read += 1
             self.n_msgs_read_since_last_heartbeat += 1
-            if (
-                hasattr(msg, "key")
-                and hasattr(msg, "value")
-                and (
-                    isinstance(msg.key, KafkaCryptoMessage)
-                    or isinstance(msg.value, KafkaCryptoMessage)
-                )
-            ):
-                self.n_bytes_read_since_last_heartbeat += len(bytes(msg))
-            elif isinstance(msg, Message):
-                self.n_bytes_read_since_last_heartbeat += len(msg.value)
-            else:
+            #
+            # This accounting seems imprecise and incomplete.
+            #
+            keylen = 0
+            vallen = 0
+            if hasattr(msg, "key"):
+                try:
+                    keylen = len(bytes(msg.key))
+                except:
+                    keylen = len(msg.key)
+            if hasattr(msg, "value"):
+                try:
+                    vallen = len(bytes(msg.value))
+                except:
+                    vallen = len(msg.value)
+            if keylen == 0 and vallen == 0:
                 self.n_bytes_read_since_last_heartbeat += len(msg)
+            else:
+                self.n_bytes_read_since_last_heartbeat += keylen+vallen
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -223,19 +225,25 @@ class ControlledMessageReproducer(
             with self.lock:
                 self.n_msgs_processed += 1
                 self.n_msgs_processed_since_last_heartbeat += 1
-                if (
-                    hasattr(msg, "key")
-                    and hasattr(msg, "value")
-                    and (
-                        isinstance(msg.key, KafkaCryptoMessage)
-                        or isinstance(msg.value, KafkaCryptoMessage)
-                    )
-                ):
-                    self.n_bytes_processed_since_last_heartbeat += len(bytes(msg))
-                elif isinstance(msg, Message):
-                    self.n_bytes_processed_since_last_heartbeat += len(msg.value)
+                #
+                # This accounting seems imprecise and incomplete.
+                #
+                keylen = 0
+                vallen = 0
+                if hasattr(msg, "key"):
+                    try:
+                        keylen = len(bytes(msg.key))
+                    except:
+                        keylen = len(msg.key)
+                if hasattr(msg, "value"):
+                    try:
+                        vallen = len(bytes(msg.value))
+                    except:
+                        vallen = len(msg.value)
+                if keylen == 0 and vallen == 0:
+                    self.n_bytes_read_since_last_heartbeat += len(msg)
                 else:
-                    self.n_bytes_processed_since_last_heartbeat += len(msg)
+                    self.n_bytes_read_since_last_heartbeat += keylen+vallen
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:

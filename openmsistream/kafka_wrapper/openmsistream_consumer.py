@@ -1,13 +1,11 @@
 """A wrapped Kafka Consumer. May consume encrypted messages."""
 
 # imports
-import uuid, warnings, gc
+import uuid, gc
 import methodtools
 from confluent_kafka import DeserializingConsumer, Message
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaConsumer
+from kafkacrypto import KafkaConsumer
 from openmsitoolbox import LogOwner
 from openmsitoolbox.utilities.misc import (
     raise_err_with_optional_logger,

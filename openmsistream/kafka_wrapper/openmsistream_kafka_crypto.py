@@ -3,11 +3,9 @@ Wrapper around the KafkaCrypto producer/consumer pair communicating with the key
 """
 
 # imports
-import pathlib, warnings, logging, configparser
+import pathlib, configparser
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
+from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
 from openmsitoolbox.utilities.misc import change_dir
 
 
@@ -62,16 +60,14 @@ class OpenMSIStreamKafkaCrypto:
         """
         Constructor method
         """
+        # get kafka crypto configs, and set logging level for kafkacrypto loggers
         kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file)
         with change_dir(pathlib.Path(config_file).parent):
-            kc_logger = logging.getLogger("kafkacrypto")
-            kc_logger.setLevel(logging.ERROR)
             # start up the producer and consumer
             self._kcp = KafkaProducer(**kcp_cfgs)
             self._kcc = KafkaConsumer(**kcc_cfgs)
             # initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None, self._kcp, self._kcc, config_file)
-            kc_logger.setLevel(logging.WARNING)
         self.__config_file = config_file
 
     def close(self):
@@ -106,7 +102,7 @@ class OpenMSIStreamKafkaCrypto:
                 with open(config_file, "w") as cfg_fp:
                     config.write(cfg_fp)
         # Parse the config file and get consumer and producer configs
-        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False)
+        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False) # this sets logging levels for kafkacrypto loggers only
         kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
         kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
         cfg_parser.close()

@@ -1,13 +1,9 @@
 """Miscellaneous functions/classes used elsewhere in the Kafka wrapper"""
 
 # imports
-import warnings
 from collections import namedtuple
 from confluent_kafka import OFFSET_BEGINNING
-
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaConsumer
+from kafkacrypto import KafkaConsumer
 
 
 def add_kwargs_to_configs(configs, logger, **kwargs):

@@ -4,11 +4,9 @@ Preserve subdirectory structure if applicable
 """
 
 # imports
-import datetime, warnings
+import datetime
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto.message import KafkaCryptoMessage
+from kafkacrypto.message import KafkaCryptoMessage
 from openmsitoolbox import Runnable
 from ...utilities import OpenMSIStreamArgumentParser
 from ...utilities.config import RUN_CONST
