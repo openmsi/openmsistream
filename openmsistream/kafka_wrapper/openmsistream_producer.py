@@ -125,7 +125,7 @@ class OpenMSIStreamProducer(LogOwner):
             k_c = OpenMSIStreamKafkaCrypto(
                 parser.broker_configs,
                 parser.kc_config_file_str,
-                logging.WARNING if (logger is None) else logger.level
+                logging.WARNING if (logger is None) else logger.level,
             )
         if "key.serializer" in all_configs:
             keyser = CompoundSerializer(
