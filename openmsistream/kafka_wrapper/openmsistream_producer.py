@@ -1,7 +1,7 @@
 """A wrapped Kafka Producer. May produce encrypted messages."""
 
 # imports
-import time, gc
+import time, gc, logging
 from confluent_kafka import SerializingProducer
 
 from kafkacrypto import KafkaProducer
@@ -123,7 +123,7 @@ class OpenMSIStreamProducer(LogOwner):
             )
             debug_msg_with_optional_logger(logger, debugmsg)
             k_c = OpenMSIStreamKafkaCrypto(
-                parser.broker_configs, parser.kc_config_file_str, self.logger().level if (logging is None) else logging.level
+                parser.broker_configs, parser.kc_config_file_str, logging.WARNING if (logger is None) else logger.level
             )
         if "key.serializer" in all_configs:
             keyser = CompoundSerializer(
