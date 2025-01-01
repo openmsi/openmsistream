@@ -140,7 +140,7 @@ class ControlledMessageProcessor(
             if keylen == 0 and vallen == 0:
                 self.n_bytes_read_since_last_heartbeat += len(msg)
             else:
-                self.n_bytes_read_since_last_heartbeat += keylen+vallen
+                self.n_bytes_read_since_last_heartbeat += keylen + vallen
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -167,7 +167,7 @@ class ControlledMessageProcessor(
                 if keylen == 0 and vallen == 0:
                     self.n_bytes_read_since_last_heartbeat += len(msg)
                 else:
-                    self.n_bytes_read_since_last_heartbeat += keylen+vallen
+                    self.n_bytes_read_since_last_heartbeat += keylen + vallen
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:
