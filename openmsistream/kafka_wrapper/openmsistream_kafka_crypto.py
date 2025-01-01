@@ -56,12 +56,12 @@ class OpenMSIStreamKafkaCrypto:
         """
         return self._kc.getValueDeserializer()
 
-    def __init__(self, broker_configs, config_file):
+    def __init__(self, broker_configs, config_file, log_level):
         """
         Constructor method
         """
         # get kafka crypto configs, and set logging level for kafkacrypto loggers
-        kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file)
+        kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file, log_level)
         with change_dir(pathlib.Path(config_file).parent):
             # start up the producer and consumer
             self._kcp = KafkaProducer(**kcp_cfgs)
@@ -83,13 +83,18 @@ class OpenMSIStreamKafkaCrypto:
             self._kcp = None
             self._kcc = None
 
-    def __get_configs_from_file(self, broker_configs, config_file):
+    def __get_configs_from_file(self, broker_configs, config_file, default_log_level):
         """Return the dictionaries of crypto producer and consumer configs determined
         from the KafkaCrypto config file and overwritten with the given broker configs
         from the OpenMSIStream config file. KafkaCryptoStore must be used when parsing
         the crypto config file to ensure options (and clearing of options) is properly
         handled.
         """
+        # Make updates to kafkaconfig file according to what we are passed
+        config = configparser.ConfigParser(delimiters=":")
+        config.read(config_file)
+        # Unilaterally pdate default log_level (can be overridden in -crypto subsection by user)
+        config.set("{config_file.stem}", "log_level", default_log_level)
         # If ssl.ca.location is set in the broker configs, make sure it's written to the
         # KafkaCrypto config file as well in the right place
         if "ssl.ca.location" in broker_configs:
@@ -99,10 +104,11 @@ class OpenMSIStreamKafkaCrypto:
             option_name = "ssl_cafile"
             if config.has_option(section_name, option_name):
                 config.set(section_name, option_name, broker_configs["ssl.ca.location"])
-                with open(config_file, "w") as cfg_fp:
-                    config.write(cfg_fp)
+        # Save changes to config_file
+        with open(config_file, "w") as cfg_fp:
+            config.write(cfg_fp)
         # Parse the config file and get consumer and producer configs
-        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False) # this sets logging levels for kafkacrypto loggers only
+        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False) # this sets logging levels for kafkacrypto loggers
         kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
         kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
         cfg_parser.close()

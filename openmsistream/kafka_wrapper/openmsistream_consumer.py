@@ -175,7 +175,7 @@ class OpenMSIStreamConsumer(LogOwner):
             )
             debug_msg_with_optional_logger(logger, debugmsg)
             k_c = OpenMSIStreamKafkaCrypto(
-                parser.broker_configs, parser.kc_config_file_str
+                parser.broker_configs, parser.kc_config_file_str, self.logger().level if (logging is None) else logging.level
             )
         if "key.deserializer" in all_configs:
             keydes = CompoundDeserializer(
