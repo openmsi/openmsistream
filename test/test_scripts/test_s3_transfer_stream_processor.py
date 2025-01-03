@@ -2,14 +2,25 @@
 import pathlib, hashlib
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithStreamProcessor,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
 
 
 class TestS3TransferStreamProcessor(

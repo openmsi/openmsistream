@@ -14,7 +14,11 @@ from openmsistream import (
     DataFileStreamProcessor,
     UploadDataFile,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
 
 class TestWithKafkaTopics(unittest.TestCase):

@@ -36,6 +36,13 @@
 # pip install build directory
 build/*
 
+# test results for CircleCI
+/test-results/*
+
+# Common venv dirs
+.venv
+venv
+
 # Misc. other stuff I don't like
 __pycache__/
 *.pyc

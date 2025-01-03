@@ -8,10 +8,21 @@ from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithOpenMSIStreamOutputLocation,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation
+
 
 # some classes to skip because they're more complex
 SKIP_CLASS_NAMES = ["GirderUploadStreamProcessor"]

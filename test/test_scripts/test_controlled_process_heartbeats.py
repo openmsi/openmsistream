@@ -9,10 +9,17 @@ from openmsistream.utilities.controlled_processes_heartbeats import (
     ControlledProcessSingleThreadHeartbeats,
     ControlledProcessMultiThreadedHeartbeats,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithHeartbeats
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithHeartbeats
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithHeartbeats
 
 # some constants
 TIMEOUT_SECS = 10

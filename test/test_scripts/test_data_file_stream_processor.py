@@ -1,13 +1,24 @@
 # imports
 import time
-from config import TEST_CONST  # pylint: disable=import-error
 
-# pylint: disable=import-error
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithUploadDataFile,
-    TestWithStreamProcessor,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error
+
+    # pylint: disable=import-error
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithUploadDataFile,
+        TestWithStreamProcessor,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error
+
+    # pylint: disable=import-error
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithUploadDataFile,
+        TestWithStreamProcessor,
+    )
 
 
 class TestDataFileStreamProcessor(

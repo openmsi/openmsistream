@@ -4,8 +4,12 @@ from typing import List, Set, Tuple
 from dataclasses import dataclass, fields
 from openmsistream.utilities.dataclass_table import DataclassTable
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOpenMSIStreamOutputLocation
+try:
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithOpenMSIStreamOutputLocation
+except ImportError:
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithOpenMSIStreamOutputLocation
 
 
 @dataclass

@@ -10,14 +10,25 @@ from hashlib import sha512
 import girder_client
 import requests
 import responses
-from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
 
-# pylint: disable=import-error, wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithStreamProcessor,
-    TestWithUploadDataFile,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
+
+    # pylint: disable=import-error, wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithStreamProcessor,
+        TestWithUploadDataFile,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error, wrong-import-order
+
+    # pylint: disable=import-error, wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithStreamProcessor,
+        TestWithUploadDataFile,
+    )
 
 import docker
 from openmsistream import GirderUploadStreamProcessor

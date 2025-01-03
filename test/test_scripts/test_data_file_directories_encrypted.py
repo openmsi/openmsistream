@@ -6,14 +6,25 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
     RegistryLineCompleted,
 )
 from openmsistream import DataFileUploadDirectory
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+    )
 
 
 class TestDataFileDirectoriesEncrypted(

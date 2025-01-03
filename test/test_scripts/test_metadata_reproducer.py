@@ -2,14 +2,26 @@
 import pathlib, datetime, json, pickle, urllib.request, os, time
 import importlib.machinery, importlib.util
 from openmsistream.kafka_wrapper import ConsumerGroup
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithHeartbeats,
-    TestWithUploadDataFile,
-    TestWithStreamReproducer,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithHeartbeats,
+        TestWithUploadDataFile,
+        TestWithStreamReproducer,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithHeartbeats,
+        TestWithUploadDataFile,
+        TestWithStreamReproducer,
+    )
+
 
 # import the XRDCSVMetadataReproducer from the examples directory
 class_path = (

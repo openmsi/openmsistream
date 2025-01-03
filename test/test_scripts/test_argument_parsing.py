@@ -5,10 +5,17 @@ from openmsistream.utilities.argument_parsing import (
     OpenMSIStreamArgumentParser,
     config_path,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithOpenMSIStreamOutputLocation
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithOpenMSIStreamOutputLocation
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithOpenMSIStreamOutputLocation
 
 
 class TestArgumentParsing(TestWithOpenMSIStreamOutputLocation):

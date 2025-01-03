@@ -1,11 +1,20 @@
 # imports
-import unittest, subprocess, pathlib, re
+import os
+import pathlib
+import re
+import subprocess
+import unittest
 from argparse import ArgumentParser
-from tempenv import TemporaryEnvironment
+
+import xmlrunner
 from openmsitoolbox.logging import OpenMSILogger
+from tempenv import TemporaryEnvironment
+
 import docker
 from openmsistream.services.utilities import run_cmd_in_subprocess
-from test_scripts.config import TEST_CONST  # pylint: disable=wrong-import-order
+
+# pylint: disable=wrong-import-order,import-error
+from test_scripts.config import TEST_CONST
 
 # constants
 TEST_DIR_PATH = pathlib.Path(__file__).resolve().parent
@@ -350,10 +359,12 @@ def run_script_tests(args):
         # otherwise, if only some tests will be run. Set any that don't match the regex to skip
         suites = skip_unmatched_tests(args, suites)
         # actually run all of the requested tests
-        runner_kwargs = {"verbosity": 3}
+        runner_kwargs = {"verbosity": 3, "output": "test-results"}
         if args.failfast:
             runner_kwargs["failfast"] = True
-        runner = unittest.TextTestRunner(**runner_kwargs)
+        if not os.path.isdir("test-results"):
+            os.mkdir("test-results")
+        runner = xmlrunner.XMLTestRunner(**runner_kwargs)
         result = runner.run(suites)
         # exit the "no_kafka" TemporaryEnvironment
         if temp_no_kafka_env:
