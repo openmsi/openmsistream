@@ -18,7 +18,7 @@ class OpenMSIStreamKafkaCrypto:
         to the broker
     :type broker_configs: dict
     :param config_file: the path to the KafkaCrypto config file for the node being used
-    :type config_file: :class:`pathlib.Path`
+    :type config_file: str
     """
 
     @property
@@ -62,7 +62,7 @@ class OpenMSIStreamKafkaCrypto:
         """
         # get kafka crypto configs, and set logging level for kafkacrypto loggers
         kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(
-            broker_configs, config_file, log_level
+            broker_configs, pathlib.Path(config_file), log_level
         )
         with change_dir(pathlib.Path(config_file).parent):
             # start up the producer and consumer
@@ -96,12 +96,12 @@ class OpenMSIStreamKafkaCrypto:
         config = configparser.ConfigParser(delimiters=":")
         config.read(config_file)
         # Unilaterally pdate default log_level (can be overridden in -crypto subsection by user)
-        section_name = f"{config.stem}"
+        section_name = f"{config_file.stem}"
         config.set(section_name, "log_level", str(default_log_level))
         # If ssl.ca.location is set in the broker configs, make sure it's written to the
         # KafkaCrypto config file as well in the right place
         if "ssl.ca.location" in broker_configs:
-            section_name = f"{config.stem}-kafka"
+            section_name = f"{config_file.stem}-kafka"
             option_name = "ssl_cafile"
             if config.has_option(section_name, option_name):
                 config.set(section_name, option_name, broker_configs["ssl.ca.location"])
