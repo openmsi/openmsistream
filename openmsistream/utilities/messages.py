@@ -24,7 +24,7 @@ def get_message_length(msg):
         except TypeError:
             try:
                 vallen = len(msg.value)
-            except:
+            except TypeError:
                 pass
     if keylen == 0 and vallen == 0:
         return len(msg)
