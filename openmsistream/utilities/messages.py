@@ -34,4 +34,4 @@ def get_message_length(msg):
             totlen = len(msg)
         except TypeError:
             pass
-    return max(keylen+vallen, totlen)
+    return max(keylen + vallen, totlen)
