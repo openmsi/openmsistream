@@ -110,7 +110,7 @@ class OpenMSIStreamKafkaCrypto:
             config.write(cfg_fp)
         # Parse the config file and get consumer and producer configs
         cfg_parser = KafkaCryptoStore(
-            config_file, conf_global_logger=False
+            str(config_file), conf_global_logger=False
         )  # this sets logging levels for kafkacrypto loggers
         kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
         kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
