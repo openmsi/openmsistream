@@ -14,12 +14,18 @@ def get_message_length(msg):
         try:
             keylen = len(bytes(msg.key))
         except TypeError:
-            keylen = len(msg.key)
+            try:
+                keylen = len(msg.key)
+            except TypeError:
+                pass
     if hasattr(msg, "value"):
         try:
             vallen = len(bytes(msg.value))
         except TypeError:
-            vallen = len(msg.value)
+            try:
+                vallen = len(msg.value)
+            except:
+                pass
     if keylen == 0 and vallen == 0:
         return len(msg)
     return keylen + vallen
