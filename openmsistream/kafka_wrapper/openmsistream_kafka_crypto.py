@@ -96,12 +96,12 @@ class OpenMSIStreamKafkaCrypto:
         config = configparser.ConfigParser(delimiters=":")
         config.read(config_file)
         # Unilaterally pdate default log_level (can be overridden in -crypto subsection by user)
-        section_name = f"{config_file.stem}"
+        section_name = f"{config.stem}"
         config.set(section_name, "log_level", str(default_log_level))
         # If ssl.ca.location is set in the broker configs, make sure it's written to the
         # KafkaCrypto config file as well in the right place
         if "ssl.ca.location" in broker_configs:
-            section_name = f"{config_file.stem}-kafka"
+            section_name = f"{config.stem}-kafka"
             option_name = "ssl_cafile"
             if config.has_option(section_name, option_name):
                 config.set(section_name, option_name, broker_configs["ssl.ca.location"])
