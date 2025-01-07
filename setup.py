@@ -59,7 +59,7 @@ setupkwargs = dict(
         "matplotlib",
         "methodtools",
         "msgpack",
-        "openmsitoolbox>=1.2.3",
+        "openmsitoolbox>=1.2.4",
         "watchdog>=3.0.0",
     ],
     extras_require={
