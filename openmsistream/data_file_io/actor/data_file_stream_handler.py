@@ -4,12 +4,10 @@
 """
 
 # imports
-import pathlib, warnings
+import pathlib
 from abc import ABC
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto.message import KafkaCryptoMessage
+from kafkacrypto.message import KafkaCryptoMessage
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from ...utilities import OpenMSIStreamArgumentParser

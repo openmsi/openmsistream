@@ -3,14 +3,10 @@ A ConsumerGroup whose receipt of messages is governed using the ControlledProces
 """
 
 # imports
-import warnings
 from abc import ABC, abstractmethod
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaCryptoMessage
-    from kafkacrypto.confluent_kafka_wrapper import Message
 from ..utilities.heartbeat_producibles import MessageProcessorHeartbeatProducible
+from ..utilities.messages import get_message_length
 from ..utilities.controlled_processes_heartbeats import (
     ControlledProcessMultiThreadedHeartbeats,
 )
@@ -127,19 +123,7 @@ class ControlledMessageProcessor(
         with self.lock:
             self.n_msgs_read += 1
             self.n_msgs_read_since_last_heartbeat += 1
-            if (
-                hasattr(msg, "key")
-                and hasattr(msg, "value")
-                and (
-                    isinstance(msg.key, KafkaCryptoMessage)
-                    or isinstance(msg.value, KafkaCryptoMessage)
-                )
-            ):
-                self.n_bytes_read_since_last_heartbeat += len(bytes(msg))
-            elif isinstance(msg, Message):
-                self.n_bytes_read_since_last_heartbeat += len(msg.value)
-            else:
-                self.n_bytes_read_since_last_heartbeat += len(msg)
+            self.n_bytes_read_since_last_heartbeat += get_message_length(msg)
             self.last_message = msg
         # send the message to the _process_message function
         retval = self._process_message(self.lock, msg)
@@ -148,19 +132,7 @@ class ControlledMessageProcessor(
             with self.lock:
                 self.n_msgs_processed += 1
                 self.n_msgs_processed_since_last_heartbeat += 1
-                if (
-                    hasattr(msg, "key")
-                    and hasattr(msg, "value")
-                    and (
-                        isinstance(msg.key, KafkaCryptoMessage)
-                        or isinstance(msg.value, KafkaCryptoMessage)
-                    )
-                ):
-                    self.n_bytes_processed_since_last_heartbeat += len(bytes(msg))
-                elif isinstance(msg, Message):
-                    self.n_bytes_processed_since_last_heartbeat += len(msg.value)
-                else:
-                    self.n_bytes_processed_since_last_heartbeat += len(msg)
+                self.n_bytes_read_since_last_heartbeat += get_message_length(msg)
             if not consumer.message_consumed_before(msg):
                 tps = consumer.commit(msg)
                 if tps is None:

@@ -1,15 +1,13 @@
 """Classes for serialization and deserialization operations"""
 
 # imports
-import pathlib, inspect, time, warnings
+import pathlib, inspect, time
 from hashlib import sha512
 import msgpack
 from confluent_kafka.error import SerializationError
 from confluent_kafka.serialization import Serializer, Deserializer
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto.message import KafkaCryptoMessage, KafkaCryptoMessageError
+from kafkacrypto.message import KafkaCryptoMessage, KafkaCryptoMessageError
 from ..data_file_io.entity.data_file_chunk import DataFileChunk
 
 ####################### COMPOUND (DE)SERIALIZERS FOR STACKING MULTIPLE STEPS #######################

@@ -1,13 +1,11 @@
 """A wrapped Kafka Consumer. May consume encrypted messages."""
 
 # imports
-import uuid, warnings, gc
+import uuid, gc, logging
 import methodtools
 from confluent_kafka import DeserializingConsumer, Message
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaConsumer
+from kafkacrypto import KafkaConsumer
 from openmsitoolbox import LogOwner
 from openmsitoolbox.utilities.misc import (
     raise_err_with_optional_logger,
@@ -177,7 +175,9 @@ class OpenMSIStreamConsumer(LogOwner):
             )
             debug_msg_with_optional_logger(logger, debugmsg)
             k_c = OpenMSIStreamKafkaCrypto(
-                parser.broker_configs, parser.kc_config_file_str
+                parser.broker_configs,
+                parser.kc_config_file_str,
+                logging.WARNING if (logger.level is None) else logger.level,
             )
         if "key.deserializer" in all_configs:
             keydes = CompoundDeserializer(

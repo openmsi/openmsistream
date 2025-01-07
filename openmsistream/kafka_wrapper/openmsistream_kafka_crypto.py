@@ -3,11 +3,9 @@ Wrapper around the KafkaCrypto producer/consumer pair communicating with the key
 """
 
 # imports
-import pathlib, warnings, logging, configparser
+import pathlib, configparser
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
+from kafkacrypto import KafkaProducer, KafkaConsumer, KafkaCrypto, KafkaCryptoStore
 from openmsitoolbox.utilities.misc import change_dir
 
 
@@ -20,7 +18,7 @@ class OpenMSIStreamKafkaCrypto:
         to the broker
     :type broker_configs: dict
     :param config_file: the path to the KafkaCrypto config file for the node being used
-    :type config_file: :class:`pathlib.Path`
+    :type config_file: str
     """
 
     @property
@@ -58,20 +56,20 @@ class OpenMSIStreamKafkaCrypto:
         """
         return self._kc.getValueDeserializer()
 
-    def __init__(self, broker_configs, config_file):
+    def __init__(self, broker_configs, config_file, log_level):
         """
         Constructor method
         """
-        kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(broker_configs, config_file)
+        # get kafka crypto configs, and set logging level for kafkacrypto loggers
+        kcp_cfgs, kcc_cfgs = self.__get_configs_from_file(
+            broker_configs, pathlib.Path(config_file), log_level
+        )
         with change_dir(pathlib.Path(config_file).parent):
-            kc_logger = logging.getLogger("kafkacrypto")
-            kc_logger.setLevel(logging.ERROR)
             # start up the producer and consumer
             self._kcp = KafkaProducer(**kcp_cfgs)
             self._kcc = KafkaConsumer(**kcc_cfgs)
             # initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None, self._kcp, self._kcc, config_file)
-            kc_logger.setLevel(logging.WARNING)
         self.__config_file = config_file
 
     def close(self):
@@ -87,26 +85,33 @@ class OpenMSIStreamKafkaCrypto:
             self._kcp = None
             self._kcc = None
 
-    def __get_configs_from_file(self, broker_configs, config_file):
+    def __get_configs_from_file(self, broker_configs, config_file, default_log_level):
         """Return the dictionaries of crypto producer and consumer configs determined
         from the KafkaCrypto config file and overwritten with the given broker configs
         from the OpenMSIStream config file. KafkaCryptoStore must be used when parsing
         the crypto config file to ensure options (and clearing of options) is properly
         handled.
         """
+        # Make updates to kafkaconfig file according to what we are passed
+        config = configparser.ConfigParser(delimiters=":")
+        config.read(config_file)
+        # Unilaterally pdate default log_level (can be overridden in -crypto subsection by user)
+        section_name = f"{config_file.stem}"
+        config.set(section_name, "log_level", str(default_log_level))
         # If ssl.ca.location is set in the broker configs, make sure it's written to the
         # KafkaCrypto config file as well in the right place
         if "ssl.ca.location" in broker_configs:
-            config = configparser.ConfigParser(delimiters=":")
-            config.read(config_file)
             section_name = f"{config_file.stem}-kafka"
             option_name = "ssl_cafile"
             if config.has_option(section_name, option_name):
                 config.set(section_name, option_name, broker_configs["ssl.ca.location"])
-                with open(config_file, "w") as cfg_fp:
-                    config.write(cfg_fp)
+        # Save changes to config_file
+        with open(config_file, "w") as cfg_fp:
+            config.write(cfg_fp)
         # Parse the config file and get consumer and producer configs
-        cfg_parser = KafkaCryptoStore(config_file, conf_global_logger=False)
+        cfg_parser = KafkaCryptoStore(
+            str(config_file), conf_global_logger=False
+        )  # this sets logging levels for kafkacrypto loggers
         kcc_cfgs = cfg_parser.get_kafka_config("consumer", extra="crypto")
         kcp_cfgs = cfg_parser.get_kafka_config("producer", extra="crypto")
         cfg_parser.close()

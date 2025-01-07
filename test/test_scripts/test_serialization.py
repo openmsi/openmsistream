@@ -1,5 +1,5 @@
 # imports
-import pathlib, time
+import pathlib, time, logging
 from confluent_kafka.error import SerializationError
 from openmsistream import UploadDataFile
 from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
@@ -120,11 +120,15 @@ class TestSerialization(TestWithKafkaTopics, TestWithLogger):
         parser1 = KafkaConfigFileParser(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=self.logger
         )
-        kc1 = OpenMSIStreamKafkaCrypto(parser1.broker_configs, parser1.kc_config_file_str)
+        kc1 = OpenMSIStreamKafkaCrypto(
+            parser1.broker_configs, parser1.kc_config_file_str, logging.WARNING
+        )
         parser2 = KafkaConfigFileParser(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC_2, logger=self.logger
         )
-        kc2 = OpenMSIStreamKafkaCrypto(parser2.broker_configs, parser2.kc_config_file_str)
+        kc2 = OpenMSIStreamKafkaCrypto(
+            parser2.broker_configs, parser2.kc_config_file_str, logging.WARNING
+        )
         dfcs = DataFileChunkSerializer()
         dfcds = DataFileChunkDeserializer()
         comp_ser = CompoundSerializer(dfcs, kc1.value_serializer)

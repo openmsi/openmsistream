@@ -4,20 +4,20 @@ move the output in the location expected by OpenMSIStream
 """
 
 # imports
-import pathlib, shutil, logging, warnings
+import pathlib, shutil, logging
 from argparse import ArgumentParser
 import urllib.request
 
-with warnings.catch_warnings():
-    warnings.simplefilter("ignore")
-    import kafkacrypto
+import kafkacrypto
 from openmsitoolbox.logging import OpenMSILogger
 from openmsitoolbox.utilities.misc import change_dir
 from ..utilities.config import RUN_CONST
 from ..utilities.config_file_parser import ConfigFileParser
 
 # constants
-LOGGER = OpenMSILogger("ProvisionNode", logging.INFO)
+LOGGER = OpenMSILogger(
+    "ProvisionNode", logging.INFO
+)  # Instead of INFO, load from a file somewhere?
 KC_PATH = kafkacrypto.__path__
 SP_NAME = "simple-provision.py"
 OP_NAME = "online-provision.py"
