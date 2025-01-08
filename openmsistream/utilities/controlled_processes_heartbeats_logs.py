@@ -14,6 +14,7 @@ from .heartbeat_producibles import HeartbeatProducible
 from .log_producibles import LogProducible
 from .log_handler import LoggingHandler
 
+
 class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
     "A long-running process that occasionally produces messages to a heartbeat topic and/or self-produces own logs"
 
@@ -121,7 +122,6 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
         """
         return LogProducible(self.__log_program_id)
 
-
     def _print_still_alive(self):
         """Print the "still alive" character to the console like a regular
         ControlledProcess, but also produce messages to the heartbeat and/or
@@ -137,7 +137,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                 self.get_heartbeat_message(), self.__heartbeat_topic_name
             )
             self.__last_heartbeat = datetime.datetime.now()
-       if (
+        if (
             self.__log_producer is not None
             and (datetime.datetime.now() - self.__last_log).total_seconds()
             > self.__log_interval_secs
@@ -191,9 +191,9 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             "heartbeat_topic_name": parsed_args.heartbeat_topic_name,
             "heartbeat_program_id": parsed_args.heartbeat_program_id,
             "heartbeat_interval_secs": parsed_args.heartbeat_interval_secs,
-            "log_topic_name", parsed_args.log_topic_name,
-            "log_program_id", parsed_args.log_program_id,
-            "log_interval_secs", parsed_args.log_interval_secs,
+            "log_topic_name": parsed_args.log_topic_name,
+            "log_program_id": parsed_args.log_program_id,
+            "log_interval_secs": parsed_args.log_interval_secs,
         }
         return superargs, kwargs
 

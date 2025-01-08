@@ -94,7 +94,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
 
     DEF_HEARTBEAT_INTERVAL = 15 * 60  # send heartbeats every 15 minutes by default
 
-    DEF_LOG_INTERVAL = 60 # send logs every 1 minute by default
+    DEF_LOG_INTERVAL = 60  # send logs every 1 minute by default
 
     ARGUMENTS = {
         **OpenMSIArgumentParser.ARGUMENTS,

@@ -26,7 +26,10 @@ from .file_registry.producer_file_registry import ProducerFileRegistry
 
 
 class DataFileUploadDirectory(
-    DataFileDirectory, ControlledProcessSingleThreadHeartbeatsLogs, ProducerGroup, Runnable
+    DataFileDirectory,
+    ControlledProcessSingleThreadHeartbeatsLogs,
+    ProducerGroup,
+    Runnable,
 ):
     """
     Class representing a directory being watched for new files to be added.

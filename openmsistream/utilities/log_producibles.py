@@ -1,9 +1,9 @@
 " Various Producibles for main program/base class log messages "
 
 # imports
-import datetime, json
 from ..kafka_wrapper import Producible
 from .log_handler import LoggingHandler
+
 
 class LogProducible(Producible):
     """A Producible for log messages. The key is a program ID and the value

@@ -2,8 +2,9 @@
 
 # Before anything else, add hooks to capture all logs (does not interfere
 # with later added handlers, etc).
-import warnings,logging
+import warnings, logging
 from .utilities.log_handler import LoggingHandler
+
 warnings.showwarning = LoggingHandler.showwarning
 logging.getLogger().addHandler(LoggingHandler)
 
