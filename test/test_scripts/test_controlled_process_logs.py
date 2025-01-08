@@ -19,7 +19,9 @@ TIMEOUT_SECS = 10
 N_THREADS = 3
 
 
-class ControlledProcessSingleThreadForTesting(ControlledProcessSingleThreadHeartbeatsLogs):
+class ControlledProcessSingleThreadForTesting(
+    ControlledProcessSingleThreadHeartbeatsLogs
+):
     "Utility class for testing the single-threaded controlled process with logs"
 
     def __init__(self, *args, **kwargs):
@@ -40,7 +42,9 @@ class ControlledProcessSingleThreadForTesting(ControlledProcessSingleThreadHeart
             self.counter += 1
 
 
-class ControlledProcessMultiThreadedForTesting(ControlledProcessMultiThreadedHeartbeatsLogs):
+class ControlledProcessMultiThreadedForTesting(
+    ControlledProcessMultiThreadedHeartbeatsLogs
+):
     "Utility class for testing the multi-threaded controlled process with logs"
 
     def __init__(self, *args, **kwargs):
