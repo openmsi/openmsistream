@@ -70,7 +70,7 @@ class TestDataFileDirectoriesEncryptedLogs(
         )
         self.start_download_thread()
         # generate at least one log message
-        logger.getLogger("").warn("Test Log Message")
+        logging.getLogger("").warn("Test Log Message")
         time.sleep(10)
         try:
             # put the "check" command into the input queues a couple times to test them
