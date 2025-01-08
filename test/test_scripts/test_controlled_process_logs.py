@@ -74,7 +74,7 @@ class TestControlledProcessLogs(TestWithLogs):
     TOPICS = {TOPIC_NAME: {"--partitions": 1}}
 
     def test_controlled_process_single_thread_kafka(self):
-        "Test the single-thread ControlledProcess with ogs"
+        "Test the single-thread ControlledProcess with logs"
         program_id = "test_controlled_process_single_thread"
         cpst = ControlledProcessSingleThreadForTesting(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,

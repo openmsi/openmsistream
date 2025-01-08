@@ -298,6 +298,7 @@ class TestDataFileDirectories(
             wait_secs=5,
         )
         self.assertTrue(len(consumer_log_msgs) > 0)
+        self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):
         """
