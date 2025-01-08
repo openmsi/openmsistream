@@ -3,8 +3,9 @@
 # imports
 from logging import Handler
 from warnings import formatwarning
-# from sys import stderr
 from threading import Lock
+
+# from sys import stderr
 
 
 class LoggingHandlerClass(Handler):
@@ -26,7 +27,7 @@ class LoggingHandlerClass(Handler):
         self.__read_lock = Lock()  # protects read_pointers
 
     def set_max_messages(self, max_messages):
-        "Change log ring buffer size "
+        "Change log ring buffer size"
         with self.__read_lock:
             with self.__write_lock:
                 # Try to preserve logs even when shrinking
@@ -70,7 +71,7 @@ class LoggingHandlerClass(Handler):
                     self.__write_pointer = [0, 0]
                 self.__buffer_size = max_messages
                 # update read pointers
-                for rpn in self.__read_pointers: # pylint: disable=C0206
+                for rpn in self.__read_pointers:  # pylint: disable=C0206
                     self.__read_pointers[rpn][0] -= lag_read_pointer
                     self.__read_pointers[rpn][1] = 0
                     if self.__read_pointers[rpn][0] < 0:
@@ -86,7 +87,7 @@ class LoggingHandlerClass(Handler):
                 self.__write_pointer[0] = 0
 
     def showwarning(self, message, category, filename, lineno, file=None, line=None):
-        "Python warnings showwarning implementation "
+        "Python warnings showwarning implementation"
         msg = formatwarning(message, category, filename, lineno, line)
         with self.__write_lock:
             self.__buffer[self.__write_pointer[0]] = msg
@@ -100,7 +101,7 @@ class LoggingHandlerClass(Handler):
         # print(msg, file=file, flush=True)
 
     def get_messages(self, reader_id="default"):
-        "Get unread messages for given reader "
+        "Get unread messages for given reader"
         start_pos = None
         end_pos = None
         rv = []
