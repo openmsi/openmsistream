@@ -3,7 +3,7 @@
 # imports
 from logging import Handler
 from warnings import formatwarning
-from sys import stderr
+# from sys import stderr
 from threading import Lock
 
 
