@@ -48,7 +48,7 @@ class ControlledMessageProcessor(
 
     def get_heartbeat_message(self):
         new_msg = MessageProcessorHeartbeatProducible(
-            self._heartbeat_program_id,
+            self.__heartbeat_program_id,
             self.n_msgs_read_since_last_heartbeat,
             self.n_msgs_processed_since_last_heartbeat,
             self.n_bytes_read_since_last_heartbeat,

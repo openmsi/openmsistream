@@ -1,4 +1,6 @@
-" ControlledProcess classes that periodically also produce messages to heartbeat topics and/or self-produces own logs"
+"""ControlledProcess classes that periodically also produce messages to heartbeat topics
+and/or self-produces own logs
+"""
 
 # imports
 import datetime
@@ -16,7 +18,9 @@ from .log_handler import LoggingHandler
 
 
 class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
-    "A long-running process that occasionally produces messages to a heartbeat topic and/or self-produces own logs"
+    """A long-running process that occasionally produces messages
+    to a heartbeat topic and/or self-produces own logs
+    """
 
     def __init__(
         self,
@@ -37,11 +41,12 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
         self.__heartbeat_topic_name = heartbeat_topic_name
         self.__heartbeat_program_id = heartbeat_program_id
         self.__heartbeat_interval_secs = heartbeat_interval_secs
-        self.__heartbeat_log_producer = None
+        self.__heartbeat_producer = None
         self.__last_heartbeat = 0
         self.__log_topic_name = log_topic_name
         self.__log_program_id = log_program_id
         self.__log_interval_secs = log_interval_secs
+        self.__log_producer = None
         self.__last_log = 0
         cfp = KafkaConfigFileParser(config_path, logger=self.logger)
         # Handle heartbeat first

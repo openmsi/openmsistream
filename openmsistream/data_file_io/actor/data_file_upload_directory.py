@@ -278,7 +278,7 @@ class DataFileUploadDirectory(
 
     def get_heartbeat_message(self):
         new_msg = UploadDirectoryHeartbeatProducible(
-            self._heartbeat_program_id,
+            self.__heartbeat_program_id,
             self.__n_messages_produced_since_heartbeat,
             self.__n_bytes_produced_since_heartbeat,
         )

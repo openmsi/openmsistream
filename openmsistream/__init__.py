@@ -9,7 +9,8 @@ warnings.showwarning = LoggingHandler.showwarning
 logging.getLogger().addHandler(LoggingHandler)
 
 # imports
-import os
+#pylint: disable=C0413
+import os  #pylint: disable=C0411
 from .data_file_io.entity.upload_data_file import UploadDataFile
 from .data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
 from .data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory
