@@ -39,12 +39,12 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
         except TypeError:
             super().__init__(*args, **kwargs)
         self.__heartbeat_topic_name = heartbeat_topic_name
-        self.__heartbeat_program_id = heartbeat_program_id
+        self._heartbeat_program_id = heartbeat_program_id
         self.__heartbeat_interval_secs = heartbeat_interval_secs
         self.__heartbeat_producer = None
         self.__last_heartbeat = datetime.datetime.fromtimestamp(0)
         self.__log_topic_name = log_topic_name
-        self.__log_program_id = log_program_id
+        self._log_program_id = log_program_id
         self.__log_interval_secs = log_interval_secs
         self.__log_producer = None
         self.__last_log = datetime.datetime.fromtimestamp(0)
@@ -79,8 +79,8 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                     f"{self.__heartbeat_interval_secs} seconds"
                 )
             )
-            if self.__heartbeat_program_id is None:
-                self.__heartbeat_program_id = self.__heartbeat_producer.producer_id
+            if self._heartbeat_program_id is None:
+                self._heartbeat_program_id = self.__heartbeat_producer.producer_id
         # Handle log second
         if self.__log_topic_name is not None:
             LoggingHandler.set_max_messages(65536)
@@ -112,20 +112,20 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                     f"{self.__log_interval_secs} seconds"
                 )
             )
-            if self.__log_program_id is None:
-                self.__log_program_id = self.__log_producer.producer_id
+            if self._log_program_id is None:
+                self._log_program_id = self.__log_producer.producer_id
 
     def get_heartbeat_message(self):
         """Return the HeartbeatProducible-type object that should be produced to the
         heartbeat topic
         """
-        return HeartbeatProducible(self.__heartbeat_program_id)
+        return HeartbeatProducible(self._heartbeat_program_id)
 
     def get_log_message(self):
         """Return the LogProducible-type object that should be produced to the
         log topic
         """
-        return LogProducible(self.__log_program_id)
+        return LogProducible(self._log_program_id)
 
     def _print_still_alive(self):
         """Print the "still alive" character to the console like a regular
