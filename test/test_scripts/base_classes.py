@@ -850,9 +850,7 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
 
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
-    def get_log_messages(
-        self, config_path, log_topic_name, program_id, wait_secs=10
-    ):
+    def get_log_messages(self, config_path, log_topic_name, program_id, wait_secs=10):
         """Return a list of all the log messages sent to a particular topic with
         a particular program ID
         """
@@ -894,4 +892,3 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
                 start_time = datetime.datetime.now()
         log_consumer.close()
         return log_msgs
-
