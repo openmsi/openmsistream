@@ -42,12 +42,12 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
         self.__heartbeat_program_id = heartbeat_program_id
         self.__heartbeat_interval_secs = heartbeat_interval_secs
         self.__heartbeat_producer = None
-        self.__last_heartbeat = 0
+        self.__last_heartbeat = datetime.datetime.fromtimestamp(0)
         self.__log_topic_name = log_topic_name
         self.__log_program_id = log_program_id
         self.__log_interval_secs = log_interval_secs
         self.__log_producer = None
-        self.__last_log = 0
+        self.__last_log = datetime.datetime.fromtimestamp(0)
         cfp = KafkaConfigFileParser(config_path, logger=self.logger)
         # Handle heartbeat first
         if self.__heartbeat_topic_name is not None:
