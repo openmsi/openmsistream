@@ -1,5 +1,12 @@
 """OpenMSIStream library for simplified data streaming using Apache Kafka"""
 
+# Before anything else, add hooks to capture all logs (does not interfere
+# with later added handlers, etc).
+import warnings,logging
+from .utilities.log_handler import LoggingHandler
+warnings.showwarning = LoggingHandler.showwarning
+logging.getLogger().addHandler(LoggingHandler)
+
 # imports
 import os
 from .data_file_io.entity.upload_data_file import UploadDataFile
