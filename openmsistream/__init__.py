@@ -9,6 +9,8 @@ warnings.showwarning = LoggingHandler.showwarning
 logging.getLogger().addHandler(LoggingHandler)
 
 # imports
+# we diable pylint warnings here because we need to have enabled logging
+# before any of these imports
 # pylint: disable=C0413
 import os  # pylint: disable=C0411
 from .data_file_io.entity.upload_data_file import UploadDataFile

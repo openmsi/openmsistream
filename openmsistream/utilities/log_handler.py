@@ -86,7 +86,8 @@ class LoggingHandlerClass(Handler):
                 self.__write_pointer[1] += 1
                 self.__write_pointer[0] = 0
 
-    def showwarning(self, message, category, filename, lineno, file=None, line=None):
+    # We disable pylint here due as we must match specified showwarning call signature
+    def showwarning(self, message, category, filename, lineno, file=None, line=None):  # pylint: disable=W0613
         "Python warnings showwarning implementation"
         msg = formatwarning(message, category, filename, lineno, line)
         with self.__write_lock:
