@@ -7,14 +7,14 @@ from abc import ABC, abstractmethod
 
 from ..utilities.heartbeat_producibles import MessageProcessorHeartbeatProducible
 from ..utilities.messages import get_message_length
-from ..utilities.controlled_processes_heartbeats import (
-    ControlledProcessMultiThreadedHeartbeats,
+from ..utilities.controlled_processes_heartbeats_logs import (
+    ControlledProcessMultiThreadedHeartbeatsLogs,
 )
 from .consumer_group import ConsumerGroup
 
 
 class ControlledMessageProcessor(
-    ControlledProcessMultiThreadedHeartbeats, ConsumerGroup, ABC
+    ControlledProcessMultiThreadedHeartbeatsLogs, ConsumerGroup, ABC
 ):
     """
     Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a
@@ -60,6 +60,8 @@ class ControlledMessageProcessor(
             self.n_bytes_read_since_last_heartbeat = 0
             self.n_bytes_processed_since_last_heartbeat = 0
         return new_msg
+
+    # No override of get_log_message needed
 
     def _run_worker(self):
         """

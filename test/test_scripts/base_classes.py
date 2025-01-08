@@ -842,3 +842,56 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
                 start_time = datetime.datetime.now()
         heartbeat_consumer.close()
         return heartbeat_msgs
+
+class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
+    """
+    Class for running tests that might produce log messages to a topic
+    """
+
+    TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
+
+    def get_log_messages(
+        self, config_path, log_topic_name, program_id, wait_secs=10
+    ):
+        """Return a list of all the log messages sent to a particular topic with
+        a particular program ID
+        """
+        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
+        log_consumer_configs = {
+            "key.deserializer": StringDeserializer(),
+            "value.deserializer": StringDeserializer(),
+            "group.id": str(uuid.uuid4()),
+            "auto.offset.reset": "earliest",
+        }
+        if "log" in cfp.available_group_names:
+            log_config_dict = cfp.log_configs
+        else:
+            log_config_dict = {}
+        log_producer_configs = {}
+        if "bootstrap.servers" not in log_config_dict:
+            log_producer_configs.update(cfp.broker_configs)
+        log_producer_configs.update(log_config_dict)
+        for key, value in log_producer_configs.items():
+            if (
+                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
+                or key.startswith("ssl.")
+                or key.startswith("sasl.")
+            ):
+                log_consumer_configs[key] = value
+        log_consumer = OpenMSIStreamConsumer(
+            DeserializingConsumer,
+            log_consumer_configs,
+            message_key_regex=re.compile(f"{program_id}_log"),
+            filter_new_message_keys=True,
+        )
+        log_consumer.subscribe([log_topic_name])
+        log_msgs = []
+        start_time = datetime.datetime.now()
+        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+            msg = log_consumer.get_next_message(1)
+            if msg is not None:
+                log_msgs.append(msg)
+                start_time = datetime.datetime.now()
+        log_consumer.close()
+        return log_msgs
+

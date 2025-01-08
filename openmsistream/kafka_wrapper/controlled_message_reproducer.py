@@ -11,14 +11,14 @@ from queue import Queue
 from ..utilities.config import RUN_CONST
 from ..utilities.heartbeat_producibles import MessageReproducerHeartbeatProducible
 from ..utilities.messages import get_message_length
-from ..utilities.controlled_processes_heartbeats import (
-    ControlledProcessMultiThreadedHeartbeats,
+from ..utilities.controlled_processes_heartbeats_logs import (
+    ControlledProcessMultiThreadedHeartbeatsLogs,
 )
 from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 
 class ControlledMessageReproducer(
-    ControlledProcessMultiThreadedHeartbeats, ConsumerAndProducerGroup, ABC
+    ControlledProcessMultiThreadedHeartbeatsLogs, ConsumerAndProducerGroup, ABC
 ):
     """
     A ControlledProcessMultiThreaded combined with a ConsumerAndProducerGroup to
@@ -94,6 +94,8 @@ class ControlledMessageReproducer(
             self.n_msgs_produced_since_last_heartbeat = 0
             self.n_bytes_produced_since_last_heartbeat = 0
         return new_msg
+
+    # no override of get_log_message
 
     def _run_worker(
         self,

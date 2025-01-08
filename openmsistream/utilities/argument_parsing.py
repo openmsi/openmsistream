@@ -94,6 +94,8 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
 
     DEF_HEARTBEAT_INTERVAL = 15 * 60  # send heartbeats every 15 minutes by default
 
+    DEF_LOG_INTERVAL = 60 # send logs every 1 minute by default
+
     ARGUMENTS = {
         **OpenMSIArgumentParser.ARGUMENTS,
         "upload_dir": [
@@ -345,6 +347,38 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 "help": (
                     "How often (in seconds) messages should be produced to the "
                     "heartbeat topic configured for the long-running program"
+                ),
+            },
+        ],
+        "log_topic_name": [
+            "optional",
+            {
+                "help": (
+                    "Name of the topic to which log messages for the long-running "
+                    "program should be produced. This argument must be included to "
+                    "produce log messages"
+                ),
+            },
+        ],
+        "log_program_id": [
+            "optional",
+            {
+                "help": (
+                    "ID to include in keys of log messages to uniquely identify "
+                    "this particular long-running program instance. (Default is the hex "
+                    "code of the log producer's address in memory which is NOT "
+                    "static)"
+                ),
+            },
+        ],
+        "log_interval_secs": [
+            "optional",
+            {
+                "default": DEF_LOG_INTERVAL,
+                "type": positive_float,
+                "help": (
+                    "How often (in seconds) messages should be produced to the "
+                    "log topic configured for the long-running program"
                 ),
             },
         ],
