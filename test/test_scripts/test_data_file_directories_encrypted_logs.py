@@ -1,5 +1,5 @@
 # imports
-import pathlib, time, filecmp, datetime, json
+import pathlib, time, filecmp
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -27,7 +27,7 @@ class TestDataFileDirectoriesEncryptedLogs(
     """
 
     TOPIC_NAME = "test_oms_encrypted_logs"
-    HEARTBEAT_TOPIC_NAME = "logs"
+    LOG_TOPIC_NAME = "logs"
 
     TOPICS = {
         TOPIC_NAME: {},
@@ -51,7 +51,6 @@ class TestDataFileDirectoriesEncryptedLogs(
             log_interval_secs=1,
         )
         # start the upload thread
-        start_time = datetime.datetime.now()
         chunk_size = 16 * TEST_CONST.TEST_CHUNK_SIZE
         self.start_upload_thread(self.TOPIC_NAME, chunk_size=chunk_size)
         # copy the test file into the watched directory

@@ -266,7 +266,6 @@ class TestDataFileDirectories(
         }
         producer_program_id = "upload"
         consumer_program_id = "download"
-        start_time = datetime.datetime.now()
         self.run_data_file_upload_directory(
             files_roots,
             log_topic_name=self.LOG_TOPIC_NAME,

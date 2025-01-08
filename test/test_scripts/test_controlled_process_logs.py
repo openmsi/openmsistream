@@ -3,7 +3,7 @@ messages
 """
 
 # imports
-import time, json, datetime
+import time
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
@@ -80,7 +80,6 @@ class TestControlledProcessLogs(TestWithLogs):
             logger=self.logger,
         )
         self.assertEqual(cpst.counter, 0)
-        start_time = datetime.datetime.now()
         run_thread = ExceptionTrackingThread(target=cpst.run)
         run_thread.start()
         try:
@@ -139,7 +138,6 @@ class TestControlledProcessLogs(TestWithLogs):
             n_threads=N_THREADS,
         )
         self.assertEqual(cpmt.counter, 0)
-        start_time = datetime.datetime.now()
         run_thread = ExceptionTrackingThread(target=cpmt.run)
         run_thread.start()
         try:
