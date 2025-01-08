@@ -3,12 +3,11 @@
 # imports
 import datetime, json
 from ..kafka_wrapper import Producible
-
+from .log_handler import LoggingHandler
 
 class LogProducible(Producible):
     """A Producible for log messages. The key is a program ID and the value
     are all of the logs (as provided by handler)
-    TO BE IMPLEMENTED (for now, just a timestamp)
     """
 
     def __init__(self, program_id):
@@ -20,5 +19,4 @@ class LogProducible(Producible):
 
     @property
     def msg_value(self):
-        value_dict = {"timestamp": str(datetime.datetime.now())}
-        return json.dumps(value_dict)
+        return LoggingHandler.get_messages(self.__program_id)
