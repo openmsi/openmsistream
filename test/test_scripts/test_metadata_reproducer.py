@@ -9,6 +9,7 @@ try:
     # pylint: disable=import-error,wrong-import-order
     from .base_classes import (
         TestWithHeartbeats,
+        TestWithLogs,
         TestWithUploadDataFile,
         TestWithStreamReproducer,
     )
@@ -18,10 +19,10 @@ except ImportError:
     # pylint: disable=import-error,wrong-import-order
     from base_classes import (
         TestWithHeartbeats,
+        TestWithLogs,
         TestWithUploadDataFile,
         TestWithStreamReproducer,
     )
-
 
 # import the XRDCSVMetadataReproducer from the examples directory
 class_path = (
@@ -49,7 +50,7 @@ CONSUMER_GROUP_ID = f"test_metadata_reproducer_{TEST_CONST.PY_VERSION}"
 
 
 class TestMetadataReproducer(
-    TestWithHeartbeats, TestWithUploadDataFile, TestWithStreamReproducer
+    TestWithHeartbeats, TestWithLogs, TestWithUploadDataFile, TestWithStreamReproducer
 ):
     """
     Class for testing that an uploaded file can be read back from the topic
@@ -60,11 +61,13 @@ class TestMetadataReproducer(
     SOURCE_TOPIC_NAME = "test_metadata_extractor_source"
     DEST_TOPIC_NAME = "test_metadata_extractor_dest"
     HEARTBEAT_TOPIC_NAME = "heartbeats"
+    LOG_TOPIC_NAME = "logs"
 
     TOPICS = {
         SOURCE_TOPIC_NAME: {},
         DEST_TOPIC_NAME: {},
         HEARTBEAT_TOPIC_NAME: {"--partitions": 1},
+        LOG_TOPIC_NAME: {"--partitions": 1},
     }
 
     def setUp(self):  # pylint: disable=invalid-name
@@ -131,6 +134,9 @@ class TestMetadataReproducer(
                 "heartbeat_topic_name": self.HEARTBEAT_TOPIC_NAME,
                 "heartbeat_program_id": program_id,
                 "heartbeat_interval_secs": 1,
+                "log_topic_name": self.LOG_TOPIC_NAME,
+                "log_program_id": program_id,
+                "log_interval_secs": 1,
             },
         )
         self.start_stream_reproducer_thread()
@@ -190,6 +196,8 @@ class TestMetadataReproducer(
                 raise RuntimeError(errmsg)
             # validate the heartbeat messages
             self.validate_heartbeats(program_id, start_time)
+            # validate the log messages
+            self.validate_logs(program_id)
         except Exception as exc:
             raise exc
         finally:
@@ -234,3 +242,15 @@ class TestMetadataReproducer(
         self.assertTrue(total_bytes_processed >= test_file_size)
         self.assertTrue(total_msgs_produced == 1)
         self.assertTrue(total_bytes_produced > 700)  # hardcoded from one example run
+
+    def validate_logs(self, program_id):
+        """Validate that the metadata reproducer sent log messages with
+        content
+        """
+        log_msgs = self.get_log_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            self.LOGS_TOPIC_NAME,
+            program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(log_msgs) > 0)

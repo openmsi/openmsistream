@@ -15,6 +15,7 @@ try:
     # pylint: disable=import-error,wrong-import-order
     from .base_classes import (
         TestWithHeartbeats,
+        TestWithLogs,
         TestWithDataFileUploadDirectory,
         TestWithDataFileDownloadDirectory,
         TestWithEnvVars,
@@ -25,6 +26,7 @@ except ImportError:
     # pylint: disable=import-error,wrong-import-order
     from base_classes import (
         TestWithHeartbeats,
+        TestWithLogs,
         TestWithDataFileUploadDirectory,
         TestWithDataFileDownloadDirectory,
         TestWithEnvVars,
@@ -33,6 +35,7 @@ except ImportError:
 
 class TestDataFileDirectories(
     TestWithHeartbeats,
+    TestWithLogs,
     TestWithDataFileUploadDirectory,
     TestWithDataFileDownloadDirectory,
     TestWithEnvVars,
@@ -43,10 +46,12 @@ class TestDataFileDirectories(
 
     TOPIC_NAME = "test_data_file_directories"
     HEARTBEAT_TOPIC_NAME = "heartbeats"
+    LOG_TOPIC_NAME = "logs"
 
     TOPICS = {
         TOPIC_NAME: {},
         HEARTBEAT_TOPIC_NAME: {"--partitions": 1},
+        LOG_TOPIC_NAME: {"--partitions": 1},
     }
 
     def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
@@ -189,7 +194,7 @@ class TestDataFileDirectories(
             heartbeat_interval_secs=1,
         )
         consumer_group_id = (
-            f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
+            f"run_data_file_download_directory_with_heartbeats_{TEST_CONST.PY_VERSION}"
         )
         self.run_data_file_download_directory(
             files_roots,
@@ -247,6 +252,53 @@ class TestDataFileDirectories(
         self.assertTrue(total_bytes_read >= test_file_size)
         self.assertTrue(total_bytes_processed >= test_file_size)
         self.success = True  # pylint: disable=attribute-defined-outside-init
+
+    def test_upload_and_download_directories_logs_kafka(self):
+        """
+        Test the upload and download directories while sending logs
+        """
+        files_roots = {
+            TEST_CONST.TEST_DATA_FILE_PATH: {
+                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+                "upload_expected": True,
+                "download_expected": True,
+            },
+        }
+        producer_program_id = "upload"
+        consumer_program_id = "download"
+        start_time = datetime.datetime.now()
+        self.run_data_file_upload_directory(
+            files_roots,
+            log_topic_name=self.LOG_TOPIC_NAME,
+            log_program_id=producer_program_id,
+            log_interval_secs=1,
+        )
+        consumer_group_id = (
+            f"run_data_file_download_directory_with_logs_{TEST_CONST.PY_VERSION}"
+        )
+        self.run_data_file_download_directory(
+            files_roots,
+            consumer_group_id=consumer_group_id,
+            log_topic_name=self.LOG_TOPIC_NAME,
+            log_program_id=consumer_program_id,
+            log_interval_secs=1,
+        )
+        # validate the producer logs
+        producer_log_msgs = self.get_log_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            self.LOG_TOPIC_NAME,
+            producer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(producer_log_msgs) > 0)
+        # validate the consumer heartbeats
+        consumer_log_msgs = self.get_log_messages(
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            self.LOG_TOPIC_NAME,
+            consumer_program_id,
+            wait_secs=5,
+        )
+        self.assertTrue(len(consumer_log_msgs) > 0)
 
     def test_filepath_should_be_uploaded(self):
         """

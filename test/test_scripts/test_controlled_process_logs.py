@@ -1,4 +1,4 @@
-""" Tests for the 'ControlledProcess' classes adapted to include producing heartbeat
+""" Tests for the 'ControlledProcess' classes adapted to include producing log
 messages
 """
 
@@ -9,17 +9,10 @@ from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
+from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import TestWithHeartbeats
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import TestWithHeartbeats
+# pylint: disable=import-error,wrong-import-order
+from test_base_classes import TestWithLogs
 
 # some constants
 TIMEOUT_SECS = 10
@@ -27,7 +20,7 @@ N_THREADS = 3
 
 
 class ControlledProcessSingleThreadForTesting(ControlledProcessSingleThreadHeartbeatsLogs):
-    "Utility class for testing the single-threaded controlled process with heartbeats"
+    "Utility class for testing the single-threaded controlled process with logs"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -48,7 +41,7 @@ class ControlledProcessSingleThreadForTesting(ControlledProcessSingleThreadHeart
 
 
 class ControlledProcessMultiThreadedForTesting(ControlledProcessMultiThreadedHeartbeatsLogs):
-    "Utility class for testing the multi-threaded controlled process with heartbeats"
+    "Utility class for testing the multi-threaded controlled process with logs"
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
@@ -70,20 +63,20 @@ class ControlledProcessMultiThreadedForTesting(ControlledProcessMultiThreadedHea
                     self.counter += 1
 
 
-class TestControlledProcessHeartbeats(TestWithHeartbeats):
-    "Tests for the ControlledProcesses that use heartbeats"
+class TestControlledProcessLogs(TestWithLogs):
+    "Tests for the ControlledProcesses that use logs"
 
-    TOPIC_NAME = "heartbeats"
+    TOPIC_NAME = "logs"
     TOPICS = {TOPIC_NAME: {"--partitions": 1}}
 
     def test_controlled_process_single_thread_kafka(self):
-        "Test the single-thread ControlledProcess with heartbeats"
+        "Test the single-thread ControlledProcess with ogs"
         program_id = "test_controlled_process_single_thread"
         cpst = ControlledProcessSingleThreadForTesting(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            heartbeat_topic_name=self.TOPIC_NAME,
-            heartbeat_program_id=program_id,
-            heartbeat_interval_secs=1,
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            log_topic_name=self.TOPIC_NAME,
+            log_program_id=program_id,
+            log_interval_secs=1,
             logger=self.logger,
         )
         self.assertEqual(cpst.counter, 0)
@@ -111,19 +104,13 @@ class TestControlledProcessHeartbeats(TestWithHeartbeats):
                 )
                 raise TimeoutError(errmsg)
             self.assertEqual(cpst.counter, 5)
-            heartbeat_msgs = self.get_heartbeat_messages(
-                TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            log_msgs = self.get_log_messages(
+                TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
                 wait_secs=5,
             )
-            self.assertTrue(len(heartbeat_msgs) > 0)
-            for msg in heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
+            self.assertTrue(len(log_msgs) > 0)
         except Exception as exc:
             raise exc
         finally:
@@ -141,13 +128,13 @@ class TestControlledProcessHeartbeats(TestWithHeartbeats):
                     raise exc
 
     def test_controlled_process_multi_threaded_kafka(self):
-        "Test the multi-threaded ControlledProcess with heartbeats"
+        "Test the multi-threaded ControlledProcess with logs"
         program_id = "test_controlled_process_multi_threaded"
         cpmt = ControlledProcessMultiThreadedForTesting(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            heartbeat_topic_name=self.TOPIC_NAME,
-            heartbeat_program_id=program_id,
-            heartbeat_interval_secs=1,
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            log_topic_name=self.TOPIC_NAME,
+            log_program_id=program_id,
+            log_interval_secs=1,
             logger=self.logger,
             n_threads=N_THREADS,
         )
@@ -175,19 +162,13 @@ class TestControlledProcessHeartbeats(TestWithHeartbeats):
                 )
                 raise TimeoutError(errmsg)
             self.assertEqual(cpmt.counter, 5)
-            heartbeat_msgs = self.get_heartbeat_messages(
-                TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            log_msgs = self.get_log_messages(
+                TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
                 wait_secs=5,
             )
-            self.assertTrue(len(heartbeat_msgs) > 0)
-            for msg in heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
+            self.assertTrue(len(log_msgs) > 0)
         except Exception as exc:
             raise exc
         finally:
