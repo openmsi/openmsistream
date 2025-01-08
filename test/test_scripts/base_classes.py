@@ -843,6 +843,7 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         heartbeat_consumer.close()
         return heartbeat_msgs
 
+
 class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
     """
     Class for running tests that might produce log messages to a topic
