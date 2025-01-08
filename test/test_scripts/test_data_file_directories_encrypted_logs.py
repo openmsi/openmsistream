@@ -1,5 +1,5 @@
 # imports
-import pathlib, time, filecmp
+import pathlib, time, filecmp, logging
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -69,6 +69,8 @@ class TestDataFileDirectoriesEncryptedLogs(
             log_interval_secs=1,
         )
         self.start_download_thread()
+        # generate at least one log message
+        logger.getLogger("").warn("Test Log Message")
         time.sleep(10)
         try:
             # put the "check" command into the input queues a couple times to test them
