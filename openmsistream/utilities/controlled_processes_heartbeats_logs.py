@@ -12,6 +12,7 @@ from ..kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from ..kafka_wrapper import OpenMSIStreamProducer
 from .heartbeat_producibles import HeartbeatProducible
 from .log_producibles import LogProducible
+from .log_handler import LoggingHandler
 
 class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
     "A long-running process that occasionally produces messages to a heartbeat topic and/or self-produces own logs"
@@ -76,6 +77,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                 self.__heartbeat_program_id = self.__heartbeat_producer.producer_id
         # Handle log second
         if self.__log_topic_name is not None:
+            LoggingHandler.set_max_messages(65536)
             if "log" in cfp.available_group_names:
                 log_config_dict = cfp.log_configs
             else:
