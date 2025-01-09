@@ -1,5 +1,5 @@
 # imports
-import pathlib, shutil, filecmp, re, json, datetime
+import pathlib, shutil, filecmp, re, json, datetime, time
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -294,7 +294,7 @@ class TestDataFileDirectories(
         for msg in producer_log_msgs:
             msg_dict = json.loads(msg.value())
             self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
-        # validate the consumer heartbeats
+        # validate the consumer logs
         consumer_log_msgs = self.get_log_messages(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
             self.LOG_TOPIC_NAME,
