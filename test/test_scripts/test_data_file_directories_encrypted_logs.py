@@ -26,7 +26,7 @@ class TestDataFileDirectoriesEncryptedLogs(
     functions while using logs for both
     """
 
-    TOPIC_NAME = "test_oms_encrypted_heartbeats"
+    TOPIC_NAME = "test_oms_encrypted_logs"
     LOG_TOPIC_NAME = "logs"
 
     TOPICS = {
