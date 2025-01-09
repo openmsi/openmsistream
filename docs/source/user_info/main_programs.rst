@@ -31,6 +31,8 @@ The sections on this page below provide further information necessary to work wi
 
 .. include:: heartbeats.rst
 
+.. include:: logs.rst
+
 Installing programs as Services or daemons
 ------------------------------------------
 

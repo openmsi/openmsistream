@@ -1,6 +1,8 @@
 " Various Producibles for main program/base class log messages "
 
 # imports
+import json
+from time import time
 from ..kafka_wrapper import Producible
 from .log_handler import LoggingHandler
 
@@ -19,4 +21,8 @@ class LogProducible(Producible):
 
     @property
     def msg_value(self):
-        return LoggingHandler.get_messages(self.__program_id)
+        value_dict = {
+            "timestamp": time(),
+            "messages": LoggingHandler.get_messages(self.__program_id),
+        }
+        return json.dumps(value_dict)

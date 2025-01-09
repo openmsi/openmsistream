@@ -134,7 +134,7 @@ class LoggingHandlerClass(Handler):
             # start_pos = end_pos is empty list
         with self.__read_lock:
             self.__read_pointers[reader_id] = end_pos.copy()
-        return "\n".join(rv)
+        return rv
 
     def close(self):
         super().close()
