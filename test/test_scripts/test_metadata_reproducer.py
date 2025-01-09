@@ -122,6 +122,7 @@ class TestMetadataReproducer(
         """
         # make note of the start time
         start_time = datetime.datetime.now()
+        start_time_uts = time.time()
         # start up the reproducer
         program_id = "reproducer"
         self.create_stream_reproducer(
@@ -197,7 +198,7 @@ class TestMetadataReproducer(
             # validate the heartbeat messages
             self.validate_heartbeats(program_id, start_time)
             # validate the log messages
-            self.validate_logs(program_id)
+            self.validate_logs(program_id, start_time_uts)
         except Exception as exc:
             raise exc
         finally:
@@ -243,7 +244,7 @@ class TestMetadataReproducer(
         self.assertTrue(total_msgs_produced == 1)
         self.assertTrue(total_bytes_produced > 700)  # hardcoded from one example run
 
-    def validate_logs(self, program_id):
+    def validate_logs(self, program_id, start_time):
         """Validate that the metadata reproducer sent log messages with
         content
         """
@@ -254,3 +255,6 @@ class TestMetadataReproducer(
             wait_secs=5,
         )
         self.assertTrue(len(log_msgs) > 0)
+        for msg in log_msgs:
+            msg_dict = json.loads(msg.value())
+            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)

@@ -3,7 +3,7 @@ messages
 """
 
 # imports
-import time
+import time, json
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
@@ -84,6 +84,7 @@ class TestControlledProcessLogs(TestWithLogs):
             logger=self.logger,
         )
         self.assertEqual(cpst.counter, 0)
+        start_time = time.time()
         run_thread = ExceptionTrackingThread(target=cpst.run)
         run_thread.start()
         try:
@@ -114,6 +115,9 @@ class TestControlledProcessLogs(TestWithLogs):
                 wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
+            for msg in log_msgs:
+                msg_dict = json.loads(msg.value())
+                self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
         except Exception as exc:
             raise exc
         finally:
@@ -142,6 +146,7 @@ class TestControlledProcessLogs(TestWithLogs):
             n_threads=N_THREADS,
         )
         self.assertEqual(cpmt.counter, 0)
+        start_time = time.time()
         run_thread = ExceptionTrackingThread(target=cpmt.run)
         run_thread.start()
         try:
@@ -171,6 +176,9 @@ class TestControlledProcessLogs(TestWithLogs):
                 wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
+            for msg in log_msgs:
+                msg_dict = json.loads(msg.value())
+                self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
         except Exception as exc:
             raise exc
         finally:

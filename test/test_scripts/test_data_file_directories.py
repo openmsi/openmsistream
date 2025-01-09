@@ -266,6 +266,7 @@ class TestDataFileDirectories(
         }
         producer_program_id = "upload"
         consumer_program_id = "download"
+        start_time = time.time()
         self.run_data_file_upload_directory(
             files_roots,
             log_topic_name=self.LOG_TOPIC_NAME,
@@ -290,6 +291,9 @@ class TestDataFileDirectories(
             wait_secs=5,
         )
         self.assertTrue(len(producer_log_msgs) > 0)
+        for msg in producer_log_msgs:
+            msg_dict = json.loads(msg.value())
+            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
         # validate the consumer heartbeats
         consumer_log_msgs = self.get_log_messages(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
@@ -298,6 +302,9 @@ class TestDataFileDirectories(
             wait_secs=5,
         )
         self.assertTrue(len(consumer_log_msgs) > 0)
+        for msg in consumer_log_msgs:
+            msg_dict = json.loads(msg.value())
+            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
     def test_filepath_should_be_uploaded(self):

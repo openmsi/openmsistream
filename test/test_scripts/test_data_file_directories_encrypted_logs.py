@@ -1,5 +1,5 @@
 # imports
-import pathlib, time, filecmp, logging
+import pathlib, time, json, filecmp, logging
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -26,7 +26,7 @@ class TestDataFileDirectoriesEncryptedLogs(
     functions while using logs for both
     """
 
-    TOPIC_NAME = "test_oms_encrypted_logs"
+    TOPIC_NAME = "test_oms_encrypted_heartbeats"
     LOG_TOPIC_NAME = "logs"
 
     TOPICS = {
@@ -51,6 +51,7 @@ class TestDataFileDirectoriesEncryptedLogs(
             log_interval_secs=1,
         )
         # start the upload thread
+        start_time = time.time()
         chunk_size = 16 * TEST_CONST.TEST_CHUNK_SIZE
         self.start_upload_thread(self.TOPIC_NAME, chunk_size=chunk_size)
         # copy the test file into the watched directory
@@ -107,12 +108,12 @@ class TestDataFileDirectoriesEncryptedLogs(
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
             self.assertTrue(test_rel_filepath in addrs_by_fp)
-            self.validate_logs(producer_program_id, consumer_program_id)
+            self.validate_logs(producer_program_id, consumer_program_id, start_time)
         except Exception as exc:
             raise exc
         self.success = True  # pylint: disable=attribute-defined-outside-init
 
-    def validate_logs(self, producer_program_id, consumer_program_id):
+    def validate_logs(self, producer_program_id, consumer_program_id, start_time):
         """Validate that the producer and consumer both successfully sent log
         messages with content
         """
@@ -124,6 +125,10 @@ class TestDataFileDirectoriesEncryptedLogs(
             wait_secs=5,
         )
         self.assertTrue(len(producer_log_msgs) > 0)
+        for msg in producer_log_msgs:
+            msg_dict = json.loads(msg.value())
+            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
+
         # validate the consumer logs
         consumer_log_msgs = self.get_log_messages(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
@@ -132,3 +137,6 @@ class TestDataFileDirectoriesEncryptedLogs(
             wait_secs=5,
         )
         self.assertTrue(len(consumer_log_msgs) > 0)
+        for msg in consumer_log_msgs:
+            msg_dict = json.loads(msg.value())
+            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
