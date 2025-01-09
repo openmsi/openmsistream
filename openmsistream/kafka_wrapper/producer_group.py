@@ -1,8 +1,11 @@
 """A set of Producers sharing an optional KafkaCrypto instance for key passing"""
 
 # imports
+from confluent_kafka import SerializingProducer
+from kafkacrypto import KafkaProducer
 from openmsitoolbox import LogOwner
 from .openmsistream_producer import OpenMSIStreamProducer
+from .serialization import CompoundSerializer
 
 
 class ProducerGroup(LogOwner):
@@ -36,7 +39,9 @@ class ProducerGroup(LogOwner):
             config_path, logger=self.logger, kafkacrypto=kafkacrypto
         )
 
-    def get_new_producer(self):
+    def get_new_producer(
+        self, key_serializer_override=None, value_serializer_override=None
+    ):
         """
         Return a new :class:`~OpenMSIStreamProducer` object.
         Call this function from a child thread to get thread-independent Producers.
@@ -46,7 +51,23 @@ class ProducerGroup(LogOwner):
         :return: a Producer created using the config set in the constructor
         :rtype: :class:`~OpenMSIStreamProducer`
         """
-        producer = OpenMSIStreamProducer(*self.__p_args, **self.__p_kwargs)
+        p_args = self.__p_args.copy()
+        p_args[1] = p_args[1].copy()
+        if p_args[0] == SerializingProducer:
+            if key_serializer_override is not None:
+                p_args[1]["key.serializer"] = key_serializer_override
+            if value_serializer_override is not None:
+                p_args[1]["value.serializer"] = value_serializer_override
+        if p_args[0] == KafkaProducer:
+            if key_serializer_override is not None:
+                p_args[1]["key_serializer"] = CompoundSerializer(
+                    key_serializer_override, self.kafkacrypto.key_serializer
+                )
+            if value_serializer_override is not None:
+                p_args[1]["value_serializer"] = CompoundSerializer(
+                    value_serializer_override, self.kafkacrypto.value_serializer
+                )
+        producer = OpenMSIStreamProducer(*p_args, **self.__p_kwargs)
         return producer
 
     def close(self):

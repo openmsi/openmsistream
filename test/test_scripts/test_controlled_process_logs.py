@@ -33,6 +33,7 @@ class ControlledProcessSingleThreadForTesting(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_log_producer("Separate")
         self.counter = 0
         self.checked = False
         self.on_shutdown_called = False
@@ -56,6 +57,7 @@ class ControlledProcessMultiThreadedForTesting(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_log_producer("Separate")
         self.counter = 0
         self.checked = False
         self.on_shutdown_called = False

@@ -3,7 +3,7 @@ and/or self-produces own logs
 """
 
 # imports
-import datetime
+import datetime, inspect
 from abc import ABC
 from confluent_kafka.serialization import StringSerializer
 from confluent_kafka import SerializingProducer
@@ -65,7 +65,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             self.__log_config_dict = {}
         self.__broker_configs = cfp.broker_configs
 
-    def set_heartbeat_producer(self, producer):
+    def set_heartbeat_producer(self, producer, close_it=False):
         "Set producer instance for generating heartbeats"
         if self.__heartbeat_topic_name is None:
             # Nothing to do
@@ -76,6 +76,8 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             "prefer.separate.producer" in self.__heartbeat_config_dict
             and self.__heartbeat_config_dict["prefer.separate.producer"]
         ):
+            prefer_separate_producer = True
+        if producer == "Separate":
             prefer_separate_producer = True
         # Order of priority:
         # 1. If producer is None, turn off heartbeats.
@@ -90,7 +92,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             and inspect.isroutine(producer.produce_object)
             and hasattr(producer, "producer_id")
         ):
-            self.__set_heartbeat_producer_internal(producer, False)
+            self.__set_heartbeat_producer_internal(producer, close_it)
         else:
             own_producer = self.__get_standalone_heartbeat_producer()
             self.__set_heartbeat_producer_internal(own_producer, True)
@@ -136,6 +138,12 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                 self.get_heartbeat_message(), self.__heartbeat_topic_name
             )
             self.logger.info("Cleaning up heartbeat producer")
+            if (
+                self.__heartbeat_producer == self.__log_producer
+                and self.__heartbeat_producer_owned
+            ):
+                self.__log_producer_owned = True  # Hand off ownership
+                self.__heartbeat_producer_owned = False
             if self.__heartbeat_producer_owned:
                 self.__heartbeat_producer.flush()
                 self.__heartbeat_producer.close()
@@ -156,7 +164,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             if self._heartbeat_program_id is None:
                 self._heartbeat_program_id = self.__heartbeat_producer.producer_id
 
-    def set_log_producer(self, producer):
+    def set_log_producer(self, producer, close_it=True):
         "Set producer instance for generating logs"
         if self.__log_topic_name is None:
             # Nothing to do
@@ -167,6 +175,8 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             "prefer.separate.producer" in self.__log_config_dict
             and self.__log_config_dict["prefer.separate.producer"]
         ):
+            prefer_separate_producer = True
+        if producer == "Separate":
             prefer_separate_producer = True
         # Order of priority:
         # 1. If producer is None, turn off logs.
@@ -181,7 +191,7 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
             and inspect.isroutine(producer.produce_object)
             and hasattr(producer, "producer_id")
         ):
-            self.__set_log_producer_internal(producer, False)
+            self.__set_log_producer_internal(producer, close_it)
         else:
             own_producer = self.__get_standalone_log_producer()
             self.__set_log_producer_internal(own_producer, True)
@@ -218,7 +228,6 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
 
     def __set_log_producer_internal(self, producer, owned):
         "Set/update current log producer, cleaning up old as required"
-        global LoggingHandler
         if self.__log_producer == producer and self.__log_producer_owned == owned:
             # no change
             return
@@ -229,6 +238,12 @@ class ControlledProcessHeartbeatsLogs(ControlledProcess, HasArguments, ABC):
                 self.get_log_message(), self.__log_topic_name
             )
             self.logger.info("Cleaning up log producer")
+            if (
+                self.__heartbeat_producer == self.__log_producer
+                and self.__log_producer_owned
+            ):
+                self.__heartbeat_producer_owned = True  # Hand off ownership
+                self.__log_producer_owned = False
             if self.__log_producer_owned:
                 self.__log_producer.flush()
                 self.__log_producer.close()

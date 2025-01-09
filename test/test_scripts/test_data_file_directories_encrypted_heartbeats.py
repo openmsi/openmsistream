@@ -38,7 +38,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
     """
 
     TOPIC_NAME = "test_oms_encrypted_heartbeats"
-    HEARTBEAT_TOPIC_NAME = "heartbeats"
+    HEARTBEAT_TOPIC_NAME = f"{TOPIC_NAME}.heartbeats"
 
     TOPICS = {
         TOPIC_NAME: {},
@@ -132,7 +132,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         """
         # validate the producer heartbeats
         producer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC,
             self.HEARTBEAT_TOPIC_NAME,
             producer_program_id,
             wait_secs=5,
@@ -154,7 +154,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         self.assertTrue(total_bytes_produced >= test_file_size)
         # validate the consumer heartbeats
         consumer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC,
             self.HEARTBEAT_TOPIC_NAME,
             consumer_program_id,
             wait_secs=5,

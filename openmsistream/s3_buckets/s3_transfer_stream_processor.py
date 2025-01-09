@@ -86,9 +86,8 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
 
     def __get_datafile_object_key(self, datafile):
         sub_dir = datafile.subdir_str
-        return (
-            f'{self.topic_name}{"/" if sub_dir!="" else ""}{sub_dir}/{datafile.filename}'
-        )
+        rv = f'{self.consumer_topic_name}{"/" if sub_dir!="" else ""}{sub_dir}/{datafile.filename}'
+        return rv
 
     @classmethod
     def get_command_line_arguments(cls):

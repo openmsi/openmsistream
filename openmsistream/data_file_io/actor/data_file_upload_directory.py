@@ -9,6 +9,7 @@ from threading import Lock
 from queue import Queue
 from watchdog.observers import Observer
 from watchdog.observers.polling import PollingObserver
+from confluent_kafka.serialization import StringSerializer
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
@@ -16,7 +17,7 @@ from ...utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
 )
 from ...utilities import OpenMSIStreamArgumentParser
-from ...kafka_wrapper import ProducerGroup
+from ...kafka_wrapper import ConsumerAndProducerGroup
 from ...utilities.config import RUN_CONST
 from ...utilities.heartbeat_producibles import UploadDirectoryHeartbeatProducible
 from .. import DataFileDirectory
@@ -28,7 +29,7 @@ from .file_registry.producer_file_registry import ProducerFileRegistry
 class DataFileUploadDirectory(
     DataFileDirectory,
     ControlledProcessSingleThreadHeartbeatsLogs,
-    ProducerGroup,
+    ConsumerAndProducerGroup,
     Runnable,
 ):
     """
@@ -128,6 +129,15 @@ class DataFileUploadDirectory(
         self.__upload_threads = []
         self.__n_messages_produced_since_heartbeat = 0
         self.__n_bytes_produced_since_heartbeat = 0
+        # update heartbeat/log producers
+        prod = super().get_new_producer(
+            key_serializer_override=StringSerializer(),
+            value_serializer_override=StringSerializer(),
+        )
+        # cannot just add to producers list since we need to close it after everything else
+        self.__heartbeat_log_producer = prod
+        self.set_heartbeat_producer(prod, close_it=True)
+        self.set_log_producer(prod, close_it=True)
 
     def upload_files_as_added(
         self,
@@ -310,6 +320,8 @@ class DataFileUploadDirectory(
                 new_callbacks = producer.poll(0)
                 if new_callbacks is not None:
                     n_new_callbacks += new_callbacks
+            # Poll but do not count heartbeat/logs
+            self.__heartbeat_log_producer.poll(0)
             if (not self.have_file_to_upload) and (n_new_callbacks == 0):
                 if self.__wait_time < self.MAX_WAIT_TIME:
                     self.__wait_time *= 1.05
@@ -332,6 +344,7 @@ class DataFileUploadDirectory(
         # poll the producers
         for producer in self.__producers:
             producer.poll(0)
+        self.__heartbeat_log_producer.poll(0)
         # forget inactive files
         with self.__lock:
             self.__forget_inactive_files()

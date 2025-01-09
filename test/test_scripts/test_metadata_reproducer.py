@@ -1,7 +1,7 @@
 # imports
 import pathlib, datetime, json, pickle, urllib.request, os, time
 import importlib.machinery, importlib.util
-from openmsistream.kafka_wrapper import ConsumerGroup
+from openmsistream.kafka_wrapper import ConsumerAndProducerGroup
 
 try:
     from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
@@ -146,9 +146,9 @@ class TestMetadataReproducer(
             self.run_metadata_reproducer()
             # consume messages from the destination topic and make sure the metadata
             # from the test file is there
-            consumer_group = ConsumerGroup(
+            consumer_group = ConsumerAndProducerGroup(
                 TEST_CONST.TEST_CFG_FILE_PATH_MDC,
-                self.DEST_TOPIC_NAME,
+                consumer_topic_name=self.DEST_TOPIC_NAME,
                 consumer_group_id=CONSUMER_GROUP_ID,
             )
             consumer = consumer_group.get_new_subscribed_consumer()

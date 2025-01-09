@@ -7,6 +7,7 @@ is managed using the ControlledProcess infrastructure
 import time
 from abc import ABC, abstractmethod
 from queue import Queue
+from confluent_kafka.serialization import StringSerializer
 
 from ..utilities.config import RUN_CONST
 from ..utilities.heartbeat_producibles import MessageReproducerHeartbeatProducible
@@ -51,9 +52,16 @@ class ControlledMessageReproducer(
         self.n_msgs_produced = 0
         super().__init__(
             config_path,
-            consumer_topic_name,
+            consumer_topic_name=consumer_topic_name,
             **kwargs,
         )
+        # update heartbeat/log producers
+        self.__heartbeat_log_prod = super().get_new_producer(
+            key_serializer_override=StringSerializer(),
+            value_serializer_override=StringSerializer(),
+        )
+        self.set_heartbeat_producer(self.__heartbeat_log_prod, close_it=True)
+        self.set_log_producer(self.__heartbeat_log_prod, close_it=True)
         # set to true to reset new consumers to their earliest offsets
         self.restart_at_beginning = False
         # set to some regex to filter messages by their keys
@@ -62,7 +70,7 @@ class ControlledMessageReproducer(
         self.filter_new_message_keys = False
         # set below to some regex to filter messages by filepath
         self.filepath_regex = filepath_regex
-        # hold onto the last consumed message to commit its offset on shutdown
+        # hold onto the last consumed messagey to commit its offset on shutdown
         self.last_message = None
         self.producer_topic_name = producer_topic_name
         self.n_producer_threads = n_producer_threads
@@ -117,6 +125,7 @@ class ControlledMessageReproducer(
         # start the loop for while the controlled process is alive
         calls_since_producer_flush = 0
         while self.alive:
+            self.__heartbeat_log_prod.poll(0)
             # if this thread has a Consumer side
             if consumer is not None:
                 self.__consume_messages_while_alive(consumer)

@@ -8,7 +8,7 @@ from hashlib import sha512
 from openmsitoolbox import Runnable
 from ...utilities import OpenMSIStreamArgumentParser
 from ...utilities.config import RUN_CONST
-from ...kafka_wrapper import ProducerGroup
+from ...kafka_wrapper import ConsumerAndProducerGroup
 from .. import DataFile
 from .data_file_chunk import DataFileChunk
 
@@ -88,7 +88,7 @@ class UploadDataFile(DataFile, Runnable):
         for _ in range(n_threads):
             upload_queue.put(None)
         # produce all the messages in the queue using multiple threads
-        producer_group = ProducerGroup(config_path, logger=self.logger)
+        producer_group = ConsumerAndProducerGroup(config_path, logger=self.logger)
         producers = []
         upload_threads = []
         for _ in range(n_threads):

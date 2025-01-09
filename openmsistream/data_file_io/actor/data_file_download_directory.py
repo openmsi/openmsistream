@@ -87,8 +87,8 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         :rtype: list
         """
         msg = (
-            f"Will reconstruct files from messages in the {self.topic_name} topic using "
-            f'{self.n_threads} thread{"s" if self.n_threads!=1 else ""}'
+            f"Will reconstruct files from messages in the {self.consumer_topic_name} "
+            f'topic using {self.n_threads} thread{"s" if self.n_threads!=1 else ""}'
         )
         self.logger.info(msg)
         self.run()
@@ -119,7 +119,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
                 if not self.__encrypted_messages_subdir.is_dir():
                     self.__encrypted_messages_subdir.mkdir(parents=True)
             key_fn, value_fn = get_encrypted_message_key_and_value_filenames(
-                retval, self.topic_name
+                retval, self.consumer_topic_name
             )
             key_fp = self.__encrypted_messages_subdir / key_fn
             value_fp = self.__encrypted_messages_subdir / value_fn

@@ -41,11 +41,11 @@ class ConsumerGroup(LogOwner):
     """
 
     @property
-    def topic_name(self):
+    def consumer_topic_name(self):
         """
         Name of the topic to which Consumers are subscribed
         """
-        return self.__topic_name
+        return self.__consumer_topic_name
 
     @property
     def consumer_group_id(self):
@@ -81,7 +81,7 @@ class ConsumerGroup(LogOwner):
         self.__group_starting_offsets = self.__get_group_starting_offsets(
             config_path, topic_name, consumer_group_id
         )
-        self.__topic_name = topic_name
+        self.__consumer_topic_name = topic_name
         self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
             config_path,
             group_id=consumer_group_id,
@@ -122,10 +122,10 @@ class ConsumerGroup(LogOwner):
         )
         if restart_at_beginning:
             consumer.subscribe(
-                [self.__topic_name], on_assign=reset_to_beginning_on_assign
+                [self.__consumer_topic_name], on_assign=reset_to_beginning_on_assign
             )
         else:
-            consumer.subscribe([self.__topic_name])
+            consumer.subscribe([self.__consumer_topic_name])
         return consumer
 
     def close(self):

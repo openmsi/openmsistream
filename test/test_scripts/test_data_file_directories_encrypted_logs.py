@@ -38,7 +38,7 @@ class TestDataFileDirectoriesEncryptedLogs(
     """
 
     TOPIC_NAME = "test_oms_encrypted_logs"
-    LOG_TOPIC_NAME = "logs"
+    LOG_TOPIC_NAME = f"{TOPIC_NAME}.logs"
 
     TOPICS = {
         TOPIC_NAME: {},
@@ -130,7 +130,7 @@ class TestDataFileDirectoriesEncryptedLogs(
         """
         # validate the producer logs
         producer_log_msgs = self.get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC,
             self.LOG_TOPIC_NAME,
             producer_program_id,
             wait_secs=5,
@@ -142,7 +142,7 @@ class TestDataFileDirectoriesEncryptedLogs(
 
         # validate the consumer logs
         consumer_log_msgs = self.get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC,
             self.LOG_TOPIC_NAME,
             consumer_program_id,
             wait_secs=5,

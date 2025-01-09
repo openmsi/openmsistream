@@ -32,24 +32,35 @@ class ConsumerAndProducerGroup(LogOwner):
     """
 
     @property
+    def kafkacrypto(self):
+        """
+        The KafkaCrypto object handling key passing and serdes for encrypted messages
+        """
+        return self.__kafkacrypto
+
+    @property
     def consumer_topic_name(self):
         """
         Name of the topic to which the consumers are subscribed
         """
-        return self.__consumer_group.topic_name
+        if self.__consumer_group is not None:
+            return self.__consumer_group.consumer_topic_name
+        return None
 
     @property
     def consumer_group_id(self):
         """
         Group ID of all consumers in the group
         """
-        return self.__consumer_group.consumer_group_id
+        if self.__consumer_group is not None:
+            return self.__consumer_group.consumer_group_id
+        return None
 
     def __init__(
         self,
         config_path,
-        consumer_topic_name,
         *,
+        consumer_topic_name=None,
         consumer_group_id="create_new",
         kafkacrypto=None,
         treat_undecryptable_as_plaintext=False,
@@ -59,17 +70,20 @@ class ConsumerAndProducerGroup(LogOwner):
         Constructor method
         """
         super().__init__(**kwargs)
-        self.__consumer_group = ConsumerGroup(
-            config_path,
-            consumer_topic_name,
-            consumer_group_id=consumer_group_id,
-            kafkacrypto=kafkacrypto,
-            treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
-            logger=self.logger,
-        )
         self.__producer_group = ProducerGroup(
-            config_path, kafkacrypto=self.__consumer_group.kafkacrypto, logger=self.logger
+            config_path, kafkacrypto=kafkacrypto, logger=self.logger
         )
+        self.__kafkacrypto = self.__producer_group.kafkacrypto
+        self.__consumer_group = None
+        if consumer_topic_name is not None:
+            self.__consumer_group = ConsumerGroup(
+                config_path,
+                consumer_topic_name,
+                consumer_group_id=consumer_group_id,
+                kafkacrypto=self.__producer_group.kafkacrypto,
+                treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
+                logger=self.logger,
+            )
 
     def get_new_subscribed_consumer(self, *, restart_at_beginning=False, **kwargs):
         """
@@ -91,11 +105,13 @@ class ConsumerAndProducerGroup(LogOwner):
             subscribed to the topic
         :rtype: :class:`~OpenMSIStreamConsumer`
         """
+        if self.__consumer_group is None:
+            return None
         return self.__consumer_group.get_new_subscribed_consumer(
             restart_at_beginning=restart_at_beginning, **kwargs
         )
 
-    def get_new_producer(self):
+    def get_new_producer(self, **kwargs):
         """
         Return a new :class:`~OpenMSIStreamProducer` object.
         Call this function from a child thread to get thread-independent Producers.
@@ -105,13 +121,14 @@ class ConsumerAndProducerGroup(LogOwner):
         :return: a Producer created using the config set in the constructor
         :rtype: :class:`~OpenMSIStreamProducer`
         """
-        return self.__producer_group.get_new_producer()
+        return self.__producer_group.get_new_producer(**kwargs)
 
     def close(self):
         """
         Wrapper around :func:`kafkacrypto.KafkaCrypto.close`.
         """
-        self.__consumer_group.close()
+        if self.__consumer_group is not None:
+            self.__consumer_group.close()
         self.__producer_group.close()
 
     @classmethod
@@ -136,10 +153,10 @@ class ConsumerAndProducerGroup(LogOwner):
         args = [
             *superargs,
             parsed_args.config,
-            parsed_args.consumer_topic_name,
         ]
         kwargs = {
             **superkwargs,
+            "consumer_topic_name": parsed_args.consumer_topic_name,
             "consumer_group_id": parsed_args.consumer_group_id,
             "treat_undecryptable_as_plaintext": parsed_args.treat_undecryptable_as_plaintext,
         }
