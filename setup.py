@@ -76,6 +76,7 @@ setupkwargs = dict(
             "requests",
             "responses",
             "tempenv>=2.0.0",
+            "unittest-xml-reporting",
         ],
         "docs": [
             "sphinx>=6.1.3",

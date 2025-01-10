@@ -4,14 +4,25 @@ from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProd
 from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamConsumer
 from openmsistream.kafka_wrapper.producer_group import ProducerGroup
 from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithLogger,
-    TestWithEnvVars,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithLogger,
+        TestWithEnvVars,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithLogger,
+        TestWithEnvVars,
+    )
 
 
 class TestCreateOpenMSIStreamKafkaObjects(

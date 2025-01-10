@@ -1,6 +1,8 @@
 #!/bin/bash
 #Bash script to check the status of the git repo after all other tests are completed
-
+export GIT_PAGER=cat  # Make sure git diff doesn't use less and hang...
+# Reset the openmsistream/kafka_wrapper/config_files/ since the tests may have changed it, but that's okay
+git checkout -- openmsistream/kafka_wrapper/config_files/
 #Check for uncommitted changes
 if ! [ -z "$(git status --porcelain)" ]
 	then echo "tests created uncommitted changes"

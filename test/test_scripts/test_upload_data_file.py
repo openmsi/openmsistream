@@ -2,10 +2,15 @@
 from queue import Queue
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithLogger
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithKafkaTopics, TestWithLogger
+except ImportError:
+    from config import TEST_CONST
+    from base_classes import TestWithKafkaTopics, TestWithLogger
 
 
 class TestUploadDataFile(TestWithKafkaTopics, TestWithLogger):

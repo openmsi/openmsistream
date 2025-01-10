@@ -1,13 +1,24 @@
 # imports
 import pathlib
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithStreamProcessor,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
 
 
 class TestDataFileStreamProcessorEncrypted(

@@ -5,10 +5,17 @@ from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger, TestWithKafkaTopics
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithLogger, TestWithKafkaTopics
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithLogger, TestWithKafkaTopics
 
 
 class TestDataFileChunk(TestWithLogger, TestWithKafkaTopics):

@@ -8,9 +8,10 @@ pip_install_block: &pip_install_block
 ################# Command to run tests #################
 run_tests_cmd: &run_tests_cmd
   command: |
-    cd test/test_scripts
-    TESTCLASSES=$(circleci tests glob "test*.py" | sed -e 's/.py//' | circleci tests split)
-    python -m unittest $TESTCLASSES -v
+    cd ~/project
+    mkdir -p test-results
+    TEST_FILES=$(circleci tests glob "test/test_scripts/test*.py")
+    echo "$TEST_FILES" | circleci tests run --command="xargs python -m xmlrunner -v -o test-results" --verbose --split-by=timings
 
 ################# Kafka broker setup/teardown blocks #################
 
@@ -87,7 +88,10 @@ jobs:
           name: run "no Kafka" tests
           command: |
             cd ~/project
+            mkdir -p test-results
             python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
+      - store_test_results:
+          path: test-results
       - persist_to_workspace:
           root: .
           paths:
@@ -121,9 +125,11 @@ jobs:
       - run:
           name: run tests in Python << parameters.python-version >>
           <<: *run_tests_cmd
+      - store_test_results:
+          path: test-results
+      - run:
+          <<: *kafka_teardown
       - run:
           # Make sure that the repository is clean after all tests have been run
           name: Check if the repo is clean
           command: cd ~/project; sh test/test_repo_status.sh
-      - run:
-          <<: *kafka_teardown

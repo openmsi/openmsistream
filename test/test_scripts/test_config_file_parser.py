@@ -2,10 +2,17 @@
 import os, configparser, string
 from random import choices
 from openmsistream.utilities.config_file_parser import ConfigFileParser
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogger, TestWithEnvVars
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithLogger, TestWithEnvVars
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithLogger, TestWithEnvVars
 
 
 class TestConfigFileParser(TestWithLogger, TestWithEnvVars):

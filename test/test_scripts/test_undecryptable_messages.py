@@ -7,14 +7,25 @@ from openmsistream.data_file_io.utilities import (
 from openmsistream.tools.undecryptable_messages.reproduce_undecryptable_messages import (
     main,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+    )
 
 
 class TestUndecryptableMessages(

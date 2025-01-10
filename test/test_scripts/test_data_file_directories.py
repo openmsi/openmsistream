@@ -8,15 +8,27 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithHeartbeats,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
-    TestWithEnvVars,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithHeartbeats,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+        TestWithEnvVars,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithHeartbeats,
+        TestWithDataFileUploadDirectory,
+        TestWithDataFileDownloadDirectory,
+        TestWithEnvVars,
+    )
 
 
 class TestDataFileDirectories(

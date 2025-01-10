@@ -15,10 +15,17 @@ from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import (
     OpenMSIStreamKafkaCrypto,
 )
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithKafkaTopics, TestWithLogger
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithKafkaTopics, TestWithLogger
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithKafkaTopics, TestWithLogger
 
 
 class TestSerialization(TestWithKafkaTopics, TestWithLogger):

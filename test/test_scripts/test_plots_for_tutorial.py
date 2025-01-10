@@ -1,14 +1,26 @@
 # imports
 import pathlib, urllib.request
 import importlib.machinery, importlib.util
-from config import TEST_CONST  # pylint: disable=import-error
 
-# pylint: disable=import-error
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithUploadDataFile,
-    TestWithStreamProcessor,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error
+
+    # pylint: disable=import-error
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithUploadDataFile,
+        TestWithStreamProcessor,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error
+
+    # pylint: disable=import-error
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithUploadDataFile,
+        TestWithStreamProcessor,
+    )
+
 
 # import the XRDCSVPlotter from the examples directory
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"

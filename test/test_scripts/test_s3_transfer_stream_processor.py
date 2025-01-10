@@ -1,15 +1,28 @@
 # imports
-import pathlib, hashlib
+import hashlib
+import pathlib
+import sys
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import (
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithStreamProcessor,
-)
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import (
+        TestWithKafkaTopics,
+        TestWithDataFileUploadDirectory,
+        TestWithStreamProcessor,
+    )
 
 
 class TestS3TransferStreamProcessor(
@@ -23,6 +36,15 @@ class TestS3TransferStreamProcessor(
 
     TOPICS = {TOPIC_NAME: {}}
 
+    def setUp(self):
+        """
+        Set up the test
+        """
+        super().setUp()
+        prefix = f"py{sys.version_info.major}{sys.version_info.minor}-"
+        fname = prefix + TEST_CONST.TEST_DATA_FILE_NAME
+        self.rel_filepath = pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME) / fname
+
     def run_data_file_upload_directory(self):
         """
         Called by the test method below to upload a test file
@@ -33,11 +55,9 @@ class TestS3TransferStreamProcessor(
         self.start_upload_thread(self.TOPIC_NAME)
         try:
             # copy the test file into the watched directory
-            rel_filepath = (
-                pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
-                / TEST_CONST.TEST_DATA_FILE_NAME
+            self.copy_file_to_watched_dir(
+                TEST_CONST.TEST_DATA_FILE_PATH, self.rel_filepath
             )
-            self.copy_file_to_watched_dir(TEST_CONST.TEST_DATA_FILE_PATH, rel_filepath)
             # stop the upload thread
             self.stop_upload_thread()
         except Exception as exc:
@@ -56,13 +76,9 @@ class TestS3TransferStreamProcessor(
             other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
         )
         self.start_stream_processor_thread(self.stream_processor.make_stream)
-        rel_filepath = (
-            pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
-            / TEST_CONST.TEST_DATA_FILE_NAME
-        )
         try:
             # wait for the test file to be processed
-            self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=300)
+            self.wait_for_files_to_be_processed(self.rel_filepath, timeout_secs=300)
         except Exception as exc:
             raise exc
 
