@@ -1,12 +1,9 @@
 # imports
-import pathlib, shutil, unittest, os, time, datetime, subprocess, re, uuid
-from confluent_kafka.serialization import StringDeserializer
-from confluent_kafka import DeserializingConsumer
+import pathlib, shutil, unittest, os, time, datetime, subprocess, re
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsistream.utilities.config import RUN_CONST
-from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
 from openmsistream import (
     DataFileUploadDirectory,
@@ -804,32 +801,13 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         """Return a list of all the heartbeat messages sent to a particular topic with
         a particular program ID
         """
-        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
-        heartbeat_consumer_configs = {
-            "key.deserializer": StringDeserializer(),
-            "value.deserializer": StringDeserializer(),
-            "group.id": str(uuid.uuid4()),
-            "auto.offset.reset": "earliest",
-        }
-        if "heartbeat" in cfp.available_group_names:
-            heartbeat_config_dict = cfp.heartbeat_configs
-        else:
-            heartbeat_config_dict = {}
-        heartbeat_producer_configs = {}
-        if "bootstrap.servers" not in heartbeat_config_dict:
-            heartbeat_producer_configs.update(cfp.broker_configs)
-        heartbeat_producer_configs.update(heartbeat_config_dict)
-        for key, value in heartbeat_producer_configs.items():
-            if (
-                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
-                or key.startswith("ssl.")
-                or key.startswith("sasl.")
-            ):
-                heartbeat_consumer_configs[key] = value
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path, logger=self.logger, treat_undecryptable_as_plaintext=True
+        )
         heartbeat_consumer = OpenMSIStreamConsumer(
-            DeserializingConsumer,
-            heartbeat_consumer_configs,
-            message_key_regex=re.compile(f"{program_id}_heartbeat"),
+            *c_args,
+            **c_kwargs,
+            message_key_regex=re.compile(f"{program_id}_log"),
             filter_new_message_keys=True,
         )
         heartbeat_consumer.subscribe([heartbeat_topic_name])
@@ -855,31 +833,12 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
         """Return a list of all the log messages sent to a particular topic with
         a particular program ID
         """
-        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
-        log_consumer_configs = {
-            "key.deserializer": StringDeserializer(),
-            "value.deserializer": StringDeserializer(),
-            "group.id": str(uuid.uuid4()),
-            "auto.offset.reset": "earliest",
-        }
-        if "log" in cfp.available_group_names:
-            log_config_dict = cfp.log_configs
-        else:
-            log_config_dict = {}
-        log_producer_configs = {}
-        if "bootstrap.servers" not in log_config_dict:
-            log_producer_configs.update(cfp.broker_configs)
-        log_producer_configs.update(log_config_dict)
-        for key, value in log_producer_configs.items():
-            if (
-                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
-                or key.startswith("ssl.")
-                or key.startswith("sasl.")
-            ):
-                log_consumer_configs[key] = value
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path, logger=self.logger, treat_undecryptable_as_plaintext=True
+        )
         log_consumer = OpenMSIStreamConsumer(
-            DeserializingConsumer,
-            log_consumer_configs,
+            *c_args,
+            **c_kwargs,
             message_key_regex=re.compile(f"{program_id}_log"),
             filter_new_message_keys=True,
         )

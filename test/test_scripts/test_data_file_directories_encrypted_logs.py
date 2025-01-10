@@ -142,7 +142,7 @@ class TestDataFileDirectoriesEncryptedLogs(
 
         # validate the consumer logs
         consumer_log_msgs = self.get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC,
+            TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC_2,
             self.LOG_TOPIC_NAME,
             consumer_program_id,
             wait_secs=5,
