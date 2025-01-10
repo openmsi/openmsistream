@@ -1,7 +1,18 @@
 """OpenMSIStream library for simplified data streaming using Apache Kafka"""
 
+# Before anything else, add hooks to capture all logs (does not interfere
+# with later added handlers, etc).
+import warnings, logging
+from .utilities.log_handler import LoggingHandler
+
+warnings.showwarning = LoggingHandler.showwarning
+logging.getLogger().addHandler(LoggingHandler)
+
 # imports
-import os
+# we diable pylint warnings here because we need to have enabled logging
+# before any of these imports
+# pylint: disable=C0413
+import os  # pylint: disable=C0411
 from .data_file_io.entity.upload_data_file import UploadDataFile
 from .data_file_io.actor.data_file_upload_directory import DataFileUploadDirectory
 from .data_file_io.actor.data_file_download_directory import DataFileDownloadDirectory

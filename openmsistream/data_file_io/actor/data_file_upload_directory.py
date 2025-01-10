@@ -12,8 +12,8 @@ from watchdog.observers.polling import PollingObserver
 from openmsitoolbox import Runnable
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from ...utilities.controlled_processes_heartbeats import (
-    ControlledProcessSingleThreadHeartbeats,
+from ...utilities.controlled_processes_heartbeats_logs import (
+    ControlledProcessSingleThreadHeartbeatsLogs,
 )
 from ...utilities import OpenMSIStreamArgumentParser
 from ...kafka_wrapper import ProducerGroup
@@ -26,7 +26,10 @@ from .file_registry.producer_file_registry import ProducerFileRegistry
 
 
 class DataFileUploadDirectory(
-    DataFileDirectory, ControlledProcessSingleThreadHeartbeats, ProducerGroup, Runnable
+    DataFileDirectory,
+    ControlledProcessSingleThreadHeartbeatsLogs,
+    ProducerGroup,
+    Runnable,
 ):
     """
     Class representing a directory being watched for new files to be added.
@@ -283,6 +286,8 @@ class DataFileUploadDirectory(
             self.__n_messages_produced_since_heartbeat = 0
             self.__n_bytes_produced_since_heartbeat = 0
         return new_msg
+
+    # no override of get_log_message needed
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
