@@ -9,10 +9,16 @@ from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
-from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+try:
+    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
-# pylint: disable=import-error,wrong-import-order
-from test_base_classes import TestWithLogs
+    # pylint: disable=import-error,wrong-import-order
+    from .base_classes import TestWithLogs
+except ImportError:
+    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+
+    # pylint: disable=import-error,wrong-import-order
+    from base_classes import TestWithLogs
 
 # some constants
 TIMEOUT_SECS = 10
