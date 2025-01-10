@@ -9,6 +9,7 @@ from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
+
 try:
     from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 

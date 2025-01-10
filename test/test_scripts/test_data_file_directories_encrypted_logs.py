@@ -6,6 +6,7 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
     RegistryLineCompleted,
 )
 from openmsistream import DataFileUploadDirectory
+
 try:
     from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
 
