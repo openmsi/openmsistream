@@ -807,7 +807,7 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         heartbeat_consumer = OpenMSIStreamConsumer(
             *c_args,
             **c_kwargs,
-            message_key_regex=re.compile(f"{program_id}_log"),
+            message_key_regex=re.compile(f"{program_id}_heartbeat"),
             filter_new_message_keys=True,
         )
         heartbeat_consumer.subscribe([heartbeat_topic_name])
