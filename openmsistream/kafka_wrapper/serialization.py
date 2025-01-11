@@ -81,11 +81,18 @@ class CompoundDeserializer(Deserializer):
     For use with KafkaCrypto since topic names must be passed
     """
 
-    MAX_WAIT_PER_DECRYPT = 60.0  # in seconds
-
-    def __init__(self, *args, treat_undecryptable_as_plaintext=False):
+    def __init__(
+        self,
+        *args,
+        treat_undecryptable_as_plaintext=False,
+        max_wait_per_decrypt=5.0,
+        max_initial_wait_per_decrypt=60.0,
+    ):
         self.__steps = list(args)
         self.treat_undecryptable_as_plaintext = treat_undecryptable_as_plaintext
+        self.max_wait_per_decrypt = max_wait_per_decrypt
+        self.max_initial_wait_per_decrypt = max_initial_wait_per_decrypt
+        self.have_waited = False
 
     def deserialize(self, topic, data):
         """
@@ -121,7 +128,13 @@ class CompoundDeserializer(Deserializer):
                 elapsed = 0
                 while (
                     (not success)
-                    and elapsed < self.MAX_WAIT_PER_DECRYPT
+                    and (
+                        (self.have_waited and elapsed < self.max_wait_per_decrypt)
+                        or (
+                            (not self.have_waited)
+                            and elapsed < self.max_initial_wait_per_decrypt
+                        )
+                    )
                     and data.isPossiblyDecryptable()
                 ):
                     try:
@@ -134,6 +147,7 @@ class CompoundDeserializer(Deserializer):
                 # itself, or the raw bytes if never decryptable and tunable above
                 # is True
                 if not success:
+                    self.have_waited = True
                     if (
                         not data.isPossiblyDecryptable()
                     ) and self.treat_undecryptable_as_plaintext:

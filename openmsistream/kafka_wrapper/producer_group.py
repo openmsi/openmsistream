@@ -84,8 +84,7 @@ class ProducerGroup(LogOwner):
     @classmethod
     def get_command_line_arguments(cls):
         """
-        Anything extending this class should be able to access the
-        "treat_undecryptable_as_plaintext" flag
+        Get commands
         """
         superargs, superkwargs = super().get_command_line_arguments()
         args = [

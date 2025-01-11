@@ -121,7 +121,6 @@ class TestControlledProcessHeartbeats(TestWithHeartbeats):
                 TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(heartbeat_msgs) > 0)
             for msg in heartbeat_msgs:
@@ -185,7 +184,6 @@ class TestControlledProcessHeartbeats(TestWithHeartbeats):
                 TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(heartbeat_msgs) > 0)
             for msg in heartbeat_msgs:

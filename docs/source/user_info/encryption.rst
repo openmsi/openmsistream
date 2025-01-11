@@ -53,6 +53,8 @@ Mixing encrypted and unencrypted messages in topics (not recommended)
 
 For rare use cases where encryption is being enabled or disabled across a platform, or when encrypted and unencrypted messages get mixed up in topics, the "``--treat_undecryptable_as_plaintext``" flag can be added to any consumer program to speed up processing of messages that will **never** be able to be decrypted. When that flag is added, undecryptable message keys and values will be returned as raw binary, which may or may not work as expected downstream (messages that were not encrypted *should* get processed normally). Be warned that adding this flag voids all guarantees of using encryption.
 
+Often paired with "``--max_wait_per_decrypt``" and/or "``--max_initial_wait_per_decrypt``" to cut down hang time on encrypted messages.
+
 Undecryptable messages (for ``DataFileDownloadDirectory``)
 ----------------------------------------------------------
 

@@ -265,6 +265,26 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
+        "max_wait_per_decrypt": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "Setting this allows changing the time a KafkaCrypto deserializer "
+                    "waits before giving up. Default: 5 sec."
+                ),
+            },
+        ],
+        "max_initial_wait_per_decrypt": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "Setting this allows changing the time a KafkaCrypto deserializer "
+                    "waits the first time before giving up. Default: 60 sec."
+                ),
+            },
+        ],
         "girder_api_url": [
             "positional",
             {

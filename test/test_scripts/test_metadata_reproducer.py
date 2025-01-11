@@ -214,7 +214,6 @@ class TestMetadataReproducer(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
             self.HEARTBEAT_TOPIC_NAME,
             program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(heartbeat_msgs) > 0)
         total_msgs_read = 0
@@ -252,7 +251,6 @@ class TestMetadataReproducer(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
             self.LOG_TOPIC_NAME,
             program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(log_msgs) > 0)
         for msg in log_msgs:

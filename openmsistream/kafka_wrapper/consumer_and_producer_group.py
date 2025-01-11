@@ -29,6 +29,12 @@ class ConsumerAndProducerGroup(LogOwner):
         decryptable, such as when enabling or disabling encryption across a platform,
         or when unencrypted messages are mixed in a topic with encrypted messages.
     :type treat_undecryptable_as_plaintext: boolean, optional
+    :param max_wait_per_decrypt: Number of seconds a KafkaCrypto Deserializer
+        waits before giving up.
+    :type max_wait_per_decrypt: float, optional
+    :param max_initial_wait_per_decrypt: Number of seconds a KafkaCrypto Deserializer
+        waits before giving up on the first message it sees.
+    :type max_initial_wait_per_decrypt: float, optional
     """
 
     @property
@@ -64,6 +70,8 @@ class ConsumerAndProducerGroup(LogOwner):
         consumer_group_id="create_new",
         kafkacrypto=None,
         treat_undecryptable_as_plaintext=False,
+        max_wait_per_decrypt=5.0,
+        max_initial_wait_per_decrypt=60.0,
         **kwargs,
     ):
         """
@@ -82,6 +90,8 @@ class ConsumerAndProducerGroup(LogOwner):
                 consumer_group_id=consumer_group_id,
                 kafkacrypto=self.__producer_group.kafkacrypto,
                 treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
+                max_wait_per_decrypt=max_wait_per_decrypt,
+                max_initial_wait_per_decrypt=max_initial_wait_per_decrypt,
                 logger=self.logger,
             )
 
@@ -135,7 +145,8 @@ class ConsumerAndProducerGroup(LogOwner):
     def get_command_line_arguments(cls):
         """
         Anything extending this class should be able to access the
-        "treat_undecryptable_as_plaintext" flag
+        "treat_undecryptable_as_plaintext" flag and the
+        "max(_initial)_wait_per_decrypt" settings
         """
         superargs, superkwargs = super().get_command_line_arguments()
         args = [
@@ -144,6 +155,8 @@ class ConsumerAndProducerGroup(LogOwner):
             "consumer_topic_name",
             "consumer_group_id",
             "treat_undecryptable_as_plaintext",
+            "max_wait_per_decrypt",
+            "max_initial_wait_per_decrypt",
         ]
         return args, superkwargs
 
@@ -159,5 +172,7 @@ class ConsumerAndProducerGroup(LogOwner):
             "consumer_topic_name": parsed_args.consumer_topic_name,
             "consumer_group_id": parsed_args.consumer_group_id,
             "treat_undecryptable_as_plaintext": parsed_args.treat_undecryptable_as_plaintext,
+            "max_wait_per_decrypt": parsed_args.max_wait_per_decrypt,
+            "max_initial_wait_per_decrypt": parsed_args.max_initial_wait_per_decrypt,
         }
         return args, kwargs

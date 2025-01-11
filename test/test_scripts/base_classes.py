@@ -1,5 +1,6 @@
 # imports
 import pathlib, shutil, unittest, os, time, datetime, subprocess, re
+from kafkacrypto import KafkaCryptoMessage
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
@@ -350,7 +351,9 @@ class TestWithDataFileDownloadDirectory(TestWithOpenMSIStreamOutputLocation):
         )
         self.download_thread.start()
 
-    def wait_for_files_to_reconstruct(self, rel_filepaths, timeout_secs=90):
+    def wait_for_files_to_reconstruct(
+        self, rel_filepaths, timeout_secs=90, before_close_callback=lambda *args: None
+    ):
         """
         Keep running the download thread until one or more files are fully recognized,
         then shut down the download thread
@@ -384,6 +387,8 @@ class TestWithDataFileDownloadDirectory(TestWithOpenMSIStreamOutputLocation):
                 if rel_fp in self.download_directory.recent_processed_filepaths:
                     files_found_by_path[rel_fp] = True
             all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
+        # Do any extra work before killing thread
+        before_close_callback()
         # after timing out, stalling, or completely reconstructing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
@@ -796,13 +801,19 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
     def get_heartbeat_messages(
-        self, config_path, heartbeat_topic_name, program_id, wait_secs=10
+        self,
+        config_path,
+        heartbeat_topic_name,
+        program_id,
+        wait_secs=30,
     ):
         """Return a list of all the heartbeat messages sent to a particular topic with
         a particular program ID
         """
         c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
-            config_path, logger=self.logger, treat_undecryptable_as_plaintext=True
+            config_path,
+            logger=self.logger,
+            max_wait_per_decrypt=0.1,
         )
         heartbeat_consumer = OpenMSIStreamConsumer(
             *c_args,
@@ -815,9 +826,8 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         start_time = datetime.datetime.now()
         while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
             msg = heartbeat_consumer.get_next_message(1)
-            if msg is not None:
+            if msg is not None and not isinstance(msg.value, (KafkaCryptoMessage,)):
                 heartbeat_msgs.append(msg)
-                start_time = datetime.datetime.now()
         heartbeat_consumer.close()
         return heartbeat_msgs
 
@@ -829,12 +839,14 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
 
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
-    def get_log_messages(self, config_path, log_topic_name, program_id, wait_secs=10):
+    def get_log_messages(self, config_path, log_topic_name, program_id, wait_secs=30):
         """Return a list of all the log messages sent to a particular topic with
         a particular program ID
         """
         c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
-            config_path, logger=self.logger, treat_undecryptable_as_plaintext=True
+            config_path,
+            logger=self.logger,
+            max_wait_per_decrypt=0.1,
         )
         log_consumer = OpenMSIStreamConsumer(
             *c_args,
@@ -847,8 +859,7 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
         start_time = datetime.datetime.now()
         while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
             msg = log_consumer.get_next_message(1)
-            if msg is not None:
+            if msg is not None and not isinstance(msg.value, (KafkaCryptoMessage,)):
                 log_msgs.append(msg)
-                start_time = datetime.datetime.now()
         log_consumer.close()
         return log_msgs

@@ -208,7 +208,6 @@ class TestDataFileDirectories(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
             self.HEARTBEAT_TOPIC_NAME,
             producer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(producer_heartbeat_msgs) > 0)
         total_msgs_produced = 0
@@ -230,7 +229,6 @@ class TestDataFileDirectories(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
             self.HEARTBEAT_TOPIC_NAME,
             consumer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(consumer_heartbeat_msgs) > 0)
         total_msgs_read = 0
@@ -288,7 +286,6 @@ class TestDataFileDirectories(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
             self.LOG_TOPIC_NAME,
             producer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(producer_log_msgs) > 0)
         for msg in producer_log_msgs:
@@ -299,7 +296,6 @@ class TestDataFileDirectories(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
             self.LOG_TOPIC_NAME,
             consumer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(consumer_log_msgs) > 0)
         for msg in consumer_log_msgs:

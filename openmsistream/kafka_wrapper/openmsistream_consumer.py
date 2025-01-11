@@ -108,6 +108,8 @@ class OpenMSIStreamConsumer(LogOwner):
         logger=None,
         kafkacrypto=None,
         treat_undecryptable_as_plaintext=False,
+        max_wait_per_decrypt=5.0,
+        max_initial_wait_per_decrypt=60.0,
         **kwargs,
     ):
         """
@@ -132,6 +134,12 @@ class OpenMSIStreamConsumer(LogOwner):
             across a platform, or when unencrypted messages are mixed in a topic with
             encrypted messages.
         :type treat_undecryptable_as_plaintext: boolean, optional
+        :param max_wait_per_decrypt: The maximum number of seconds a KafkaCrypto
+            Deserializers will wait before giving up.
+        :type max_wait_per_decrypt: float, optional
+        :param max_initial_wait_per_decrypt: The maximum number of seconds a KafkaCrypto
+            Deserializer will wait on the first encrypted message before giving up.
+        :type max_initial_wait_per_decrypt: float, optional
         :param kwargs: Any extra keyword arguments are added to the configuration dict for
             the Consumers, with underscores in their names replaced by dots
         :type kwargs: dict
@@ -184,6 +192,8 @@ class OpenMSIStreamConsumer(LogOwner):
                 k_c.key_deserializer,
                 all_configs.pop("key.deserializer"),
                 treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
+                max_wait_per_decrypt=max_wait_per_decrypt,
+                max_initial_wait_per_decrypt=max_initial_wait_per_decrypt,
             )
         else:
             keydes = k_c.key_deserializer
@@ -192,6 +202,8 @@ class OpenMSIStreamConsumer(LogOwner):
                 k_c.value_deserializer,
                 all_configs.pop("value.deserializer"),
                 treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
+                max_wait_per_decrypt=max_wait_per_decrypt,
+                max_initial_wait_per_decrypt=max_initial_wait_per_decrypt,
             )
         else:
             valdes = k_c.value_deserializer

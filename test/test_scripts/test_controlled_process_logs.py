@@ -121,7 +121,6 @@ class TestControlledProcessLogs(TestWithLogs):
                 TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
             for msg in log_msgs:
@@ -182,7 +181,6 @@ class TestControlledProcessLogs(TestWithLogs):
                 TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
             for msg in log_msgs:

@@ -65,6 +65,7 @@ class TestUndecryptableMessagesFlag(
             topic_name=self.TOPIC_NAME,
             consumer_group_id=consumer_group_id,
             treat_undecryptable_as_plaintext=True,
+            max_wait_per_decrypt=5.0,
         )
         self.start_download_thread()
         self.wait_for_files_to_reconstruct(test_rel_filepath, timeout_secs=300)
