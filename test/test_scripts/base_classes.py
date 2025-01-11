@@ -805,7 +805,7 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         config_path,
         heartbeat_topic_name,
         program_id,
-        wait_secs=30,
+        per_wait_secs=5,
     ):
         """Return a list of all the heartbeat messages sent to a particular topic with
         a particular program ID
@@ -813,7 +813,7 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
             config_path,
             logger=self.logger,
-            max_wait_per_decrypt=0.1,
+            max_wait_per_decrypt=1,
         )
         heartbeat_consumer = OpenMSIStreamConsumer(
             *c_args,
@@ -824,10 +824,23 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
         heartbeat_consumer.subscribe([heartbeat_topic_name])
         heartbeat_msgs = []
         start_time = datetime.datetime.now()
-        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+        cutoff_time = (time.time() + per_wait_secs) * 1000  # Kafka timestamps in ms
+        last_msg_time = 0
+        while (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < per_wait_secs and last_msg_time < cutoff_time:
             msg = heartbeat_consumer.get_next_message(1)
-            if msg is not None and not isinstance(msg.value, (KafkaCryptoMessage,)):
-                heartbeat_msgs.append(msg)
+            if msg is not None:
+                # extract message timestamp
+                try:
+                    _, last_msg_time = msg.timestamp()
+                except TypeError:
+                    _, last_msg_time = msg.timestamp
+                if not isinstance(msg.value, (KafkaCryptoMessage,)):
+                    heartbeat_msgs.append(msg)
+                    start_time = (
+                        datetime.datetime.now()
+                    )  # reset per wait timer on each success
         heartbeat_consumer.close()
         return heartbeat_msgs
 
@@ -839,7 +852,7 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
 
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
-    def get_log_messages(self, config_path, log_topic_name, program_id, wait_secs=30):
+    def get_log_messages(self, config_path, log_topic_name, program_id, per_wait_secs=30):
         """Return a list of all the log messages sent to a particular topic with
         a particular program ID
         """
@@ -857,9 +870,22 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
         log_consumer.subscribe([log_topic_name])
         log_msgs = []
         start_time = datetime.datetime.now()
-        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+        cutoff_time = (time.time() + per_wait_secs) * 1000  # Kafka timestamps in ms
+        last_msg_time = 0
+        while (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < per_wait_secs and last_msg_time < cutoff_time:
             msg = log_consumer.get_next_message(1)
-            if msg is not None and not isinstance(msg.value, (KafkaCryptoMessage,)):
-                log_msgs.append(msg)
+            if msg is not None:
+                # extract message timestamp
+                try:
+                    _, last_msg_time = msg.timestamp()
+                except TypeError:
+                    _, last_msg_time = msg.timestamp
+                if not isinstance(msg.value, (KafkaCryptoMessage,)):
+                    log_msgs.append(msg)
+                    start_time = (
+                        datetime.datetime.now()
+                    )  # reset per wait timer on each success
         log_consumer.close()
         return log_msgs

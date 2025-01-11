@@ -141,7 +141,6 @@ class TestDataFileDirectoriesEncryptedLogs(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC,
             self.LOG_TOPIC_NAME_P,
             producer_program_id,
-            wait_secs=120,
         )
         self.assertTrue(len(producer_log_msgs) > 0)
         for msg in producer_log_msgs:
@@ -153,7 +152,6 @@ class TestDataFileDirectoriesEncryptedLogs(
             TEST_CONST.TEST_CFG_FILE_PATH_LOGS_ENC_2,
             self.LOG_TOPIC_NAME_C,
             consumer_program_id,
-            wait_secs=120,
         )
         self.assertTrue(len(consumer_log_msgs) > 0)
         for msg in consumer_log_msgs:

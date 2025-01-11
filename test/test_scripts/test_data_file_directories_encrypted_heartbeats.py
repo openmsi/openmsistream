@@ -141,7 +141,6 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC,
             self.HEARTBEAT_TOPIC_NAME_P,
             producer_program_id,
-            wait_secs=120,
         )
         self.assertTrue(len(producer_heartbeat_msgs) > 0)
         total_msgs_produced = 0
@@ -163,7 +162,6 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2,
             self.HEARTBEAT_TOPIC_NAME_C,
             consumer_program_id,
-            wait_secs=120,
         )
         self.assertTrue(len(consumer_heartbeat_msgs) > 0)
         total_msgs_read = 0
