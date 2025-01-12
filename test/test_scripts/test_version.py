@@ -1,7 +1,6 @@
 " Testing the __version__ attribute w.r.t. the current PyPI release "
 
 import datetime, unittest, requests
-from packaging import version
 from packaging.version import parse, InvalidVersion
 import openmsistream
 
@@ -31,18 +30,32 @@ class TestVersion(unittest.TestCase):
                 f"Failed to fetch the latest PyPI version and date for {package_name}: {exc}"
             ) from exc
 
-
     def test_version_incremented(self):
-        """
-        Ensure the current version in the source code is either greater than 
-        or equal to the version published on PyPI.
-        """
-        pypi_version = version.parse("1.8.2.5")  # Replace this with the logic to fetch the actual PyPI version
-        current_version = version.parse("1.8.2.5")  # Replace with your project's current version
-
-     # Assert that the current version is at least equal to or greater than the PyPI version
-        self.assertFalse(
-            pypi_version > current_version,
-            f"PyPI version ({pypi_version}) should not be greater than the current version ({current_version})."
-     )
-
+        """Make sure the current version from PyPI is less than the version from the
+        package as it is right now"""
+        pypi_version, release_date = self.get_latest_pypi_version_and_date(
+            "openmsistream"
+        )
+        try:
+            current_version = parse(openmsistream.__version__)
+        except InvalidVersion as exc:
+            raise ValueError(
+                f"Version string {openmsistream.__version__} is not valid!"
+            ) from exc
+        current_time = datetime.datetime.now().astimezone(datetime.timezone.utc)
+        if (current_time - release_date).total_seconds() / 60.0 < 720.0:
+            self.assertTrue(
+                pypi_version == current_version,
+                (
+                    f"PyPI version ({pypi_version}) does not match the current version "
+                    f"({current_version}) but the release is less than twelve hours old."
+                ),
+            )
+        else:
+            self.assertTrue(
+                pypi_version < current_version,
+                (
+                    f"PyPI version ({pypi_version}) is not less than the current version "
+                    f"({current_version}). Did you update it yet?"
+                ),
+            )
