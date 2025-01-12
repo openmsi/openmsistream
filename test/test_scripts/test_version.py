@@ -34,14 +34,14 @@ class TestVersion(unittest.TestCase):
 
     def test_version_incremented(self):
         """
-     Ensure the current version in the source code is either greater than 
-     or equal to the version published on PyPI.
-     """
+        Ensure the current version in the source code is either greater than 
+        or equal to the version published on PyPI.
+        """
         pypi_version = version.parse("1.8.2.5")  # Replace this with the logic to fetch the actual PyPI version
-     current_version = version.parse("1.8.2.5")  # Replace with your project's current version
+        current_version = version.parse("1.8.2.5")  # Replace with your project's current version
 
      # Assert that the current version is at least equal to or greater than the PyPI version
-     self.assertFalse(
+        self.assertFalse(
             pypi_version > current_version,
             f"PyPI version ({pypi_version}) should not be greater than the current version ({current_version})."
      )
