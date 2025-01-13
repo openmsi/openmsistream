@@ -296,7 +296,6 @@ class ControlledMessageReproducer(
             pass
         args = [
             *superargs,
-            "producer_topic_name",
             "n_consumer_threads",
             "n_producer_threads",
             "download_regex",

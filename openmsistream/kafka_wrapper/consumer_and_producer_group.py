@@ -77,7 +77,12 @@ class ConsumerAndProducerGroup(LogOwner):
         """
         Constructor method
         """
-        super().__init__(**kwargs)
+        # must remove producer_topic_name since we define it as
+        # part of this class even though we do not use it in init.
+        other_kwargs = kwargs.copy()
+        if "producer_topic_name" in other_kwargs:
+            del other_kwargs["producer_topic_name"]
+        super().__init__(**other_kwargs)
         self.__producer_group = ProducerGroup(
             config_path, kafkacrypto=kafkacrypto, logger=self.logger
         )
@@ -152,8 +157,10 @@ class ConsumerAndProducerGroup(LogOwner):
         args = [
             *superargs,
             "config",
+            "topic_name",
             "consumer_topic_name",
             "consumer_group_id",
+            "producer_topic_name",
             "treat_undecryptable_as_plaintext",
             "max_wait_per_decrypt",
             "max_initial_wait_per_decrypt",
@@ -171,6 +178,7 @@ class ConsumerAndProducerGroup(LogOwner):
             **superkwargs,
             "consumer_topic_name": parsed_args.consumer_topic_name,
             "consumer_group_id": parsed_args.consumer_group_id,
+            "producer_topic_name": parsed_args.producer_topic_name,
             "treat_undecryptable_as_plaintext": parsed_args.treat_undecryptable_as_plaintext,
             "max_wait_per_decrypt": parsed_args.max_wait_per_decrypt,
             "max_initial_wait_per_decrypt": parsed_args.max_initial_wait_per_decrypt,
