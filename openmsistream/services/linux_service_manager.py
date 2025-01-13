@@ -85,7 +85,7 @@ class LinuxServiceManager(ServiceManagerBase):
         """
         self.__check_systemd_installed()
         result = run_cmd_in_subprocess(
-            ["sudo", "systemctl", "status", f"{self.service_name}.service"],
+            ["sudo", "systemctl", "status", f"{self.service_name}.service", "--full"],
             logger=self.logger,
         )
         if not result:

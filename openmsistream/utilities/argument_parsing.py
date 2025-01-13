@@ -410,11 +410,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
         producer_topic_name when the former is specified and the latter is not.
         """
         rns = super().parse_args(*args, **kwargs)
-        if (
-            hasattr(rns, "topic_name")
-            and rns.topic_name is not None
-            and rns.topic_name != RUN_CONST.DEFAULT_TOPIC_NAME
-        ):
+        if hasattr(rns, "topic_name") and rns.topic_name is not None:
             if (
                 not hasattr(rns, "consumer_topic_name")
                 or rns.consumer_topic_name is None
