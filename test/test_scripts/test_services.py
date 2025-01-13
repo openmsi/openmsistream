@@ -68,6 +68,23 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
             ],
         }
 
+    def assert_error_log_empty(self, service_name):
+        """
+        Assert that the error log for a service is empty
+        """
+        error_log_path = (
+            pathlib.Path().resolve() / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
+        )
+        if error_log_path.is_file():
+            # if there was an error, print the contents of the error log
+            with open(error_log_path, "r") as error_log_file:
+                error_log_contents = error_log_file.read()
+            self.log_at_error(error_log_contents)
+            raise AssertionError(
+                f"ERROR: {service_name} had an error during installation or execution"
+                "(see above for details)!"
+            )
+
     @unittest.skipIf(platform.system() != "Windows", "test can only be run on Windows")
     def test_windows_services_kafka(self):
         """
@@ -101,11 +118,7 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
                     time.sleep(5)
                     manager.run_manage_command(run_mode, False, False)
                 time.sleep(5)
-                error_log_path = (
-                    pathlib.Path().resolve()
-                    / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
-                )
-                self.assertFalse(error_log_path.is_file())
+                self.assert_error_log_empty(service_name)
             except Exception as exc:
                 raise exc
             finally:
@@ -164,11 +177,7 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
                         SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
                     ).exists()
                 )
-                error_log_path = (
-                    pathlib.Path().resolve()
-                    / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
-                )
-                self.assertFalse(error_log_path.is_file())
+                self.assert_error_log_empty(service_name)
             except Exception as exc:
                 raise exc
             finally:
@@ -228,7 +237,7 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
                 manage_service_main([service_name, run_mode])
                 time.sleep(5 if run_mode in ("start", "reinstall") else 1)
             self.assertTrue(test_file_path.is_file())
-            self.assertFalse(error_log_path.exists())
+            self.assert_error_log_empty(service_name)
             if platform.system() == "Linux":
                 self.assertFalse(service_path.exists())
         except Exception as exc:
@@ -287,7 +296,7 @@ class TestServices(TestWithKafkaTopics, TestWithOpenMSIStreamOutputLocation):
                 manage_service_main([service_name, run_mode])
                 time.sleep(5 if run_mode in ("start", "reinstall") else 1)
             self.assertTrue(test_file_path.is_file())
-            self.assertFalse(error_log_path.exists())
+            self.assert_error_log_empty(service_name)
             if platform.system() == "Linux":
                 self.assertFalse(
                     (
