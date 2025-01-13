@@ -25,13 +25,13 @@ class ControlledMessageProcessor(
 
     CONSUMER_POLL_TIMEOUT = 5.0
 
-    def __init__(self, config_path, topic_name, filepath_regex=None, **kwargs):
+    def __init__(self, config_path, consumer_topic_name, filepath_regex=None, **kwargs):
         """
         Hang onto the number of messages read and processed
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
-        super().__init__(config_path, consumer_topic_name=topic_name, **kwargs)
+        super().__init__(config_path, consumer_topic_name=consumer_topic_name, **kwargs)
         # update heartbeat/log producers
         prod = super().get_new_producer(
             key_serializer_override=StringSerializer(),

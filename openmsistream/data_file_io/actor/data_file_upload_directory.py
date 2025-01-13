@@ -678,7 +678,7 @@ class DataFileUploadDirectory(
                 f"Uploading files in/added to {args.upload_dir}..."
             )
         uploaded_filepaths = upload_file_directory.upload_files_as_added(
-            args.topic_name,
+            args.producer_topic_name,
             n_threads=args.n_threads,
             chunk_size=args.chunk_size,
             max_queue_size=args.queue_max_size,

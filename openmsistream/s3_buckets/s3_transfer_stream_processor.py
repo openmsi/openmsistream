@@ -19,15 +19,15 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
     :param config_path: Path to the config file to use in defining the Broker connection
         and Consumers
     :type config_path: :class:`pathlib.Path`
-    :param topic_name: Name of the topic to which the Consumers should be subscribed
-    :type topic_name: str
+    :param consumer_topic_name: Name of the topic to which the Consumers should be subscribed
+    :type consumer_topic_name: str
     :param filepath_regex: If given, only messages associated with files whose paths match
         this regex will be consumed
     :type filepath_regex: :type filepath_regex: :func:`re.compile` or None, optional
     """
 
-    def __init__(self, bucket_name, config_path, topic_name, **kwargs):
-        super().__init__(config_path, topic_name, **kwargs)
+    def __init__(self, bucket_name, config_path, consumer_topic_name, **kwargs):
+        super().__init__(config_path, consumer_topic_name, **kwargs)
         parser = S3ConfigFileParser(config_path, logger=self.logger)
         self.__s3_config = parser.s3_configs
         self.__s3_config["bucket_name"] = bucket_name
@@ -123,7 +123,7 @@ class S3TransferStreamProcessor(DataFileStreamProcessor):
         init_args, init_kwargs = cls.get_init_args_kwargs(args)
         s3_stream_proc = cls(*init_args, **init_kwargs)
         msg = (
-            f"Listening to the {args.topic_name} topic for files to add to the "
+            f"Listening to the {args.consumer_topic_name} topic for files to add to the "
             f"{args.bucket_name} bucket...."
         )
         s3_stream_proc.logger.info(msg)

@@ -403,3 +403,28 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
             },
         ],
     }
+
+    def parse_args(self, *args, **kwargs):
+        """
+        Overloaded from base class to use topic_name as default for consumer_topic_name /
+        producer_topic_name when the former is specified and the latter is not.
+        """
+        rns = super().parse_args(*args, **kwargs)
+        if (
+            hasattr(rns, "topic_name")
+            and rns.topic_name is not None
+            and rns.topic_name != RUN_CONST.DEFAULT_TOPIC_NAME
+        ):
+            if (
+                not hasattr(rns, "consumer_topic_name")
+                or rns.consumer_topic_name is None
+                or rns.consumer_topic_name == RUN_CONST.DEFAULT_TOPIC_NAME
+            ):
+                setattr(rns, "consumer_topic_name", rns.topic_name)
+            if (
+                not hasattr(rns, "producer_topic_name")
+                or rns.producer_topic_name is None
+                or rns.producer_topic_name == RUN_CONST.DEFAULT_TOPIC_NAME
+            ):
+                setattr(rns, "producer_topic_name", rns.topic_name)
+        return rns

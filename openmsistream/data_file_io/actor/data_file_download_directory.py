@@ -193,6 +193,7 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         args = [
             *superargs,
             "output_dir",
+            "topic_name",
         ]
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return args, kwargs
@@ -203,7 +204,10 @@ class DataFileDownloadDirectory(DataFileDirectory, DataFileChunkProcessor, Runna
         args = [
             parsed_args.output_dir,
             *superargs,
+            parsed_args.consumer_topic_name,
         ]
+        if "consumer_topic_name" in superkwargs:
+            del superkwargs["consumer_topic_name"]
         return args, superkwargs
 
     @classmethod
