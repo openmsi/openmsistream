@@ -20,8 +20,8 @@ class ConsumerGroup(LogOwner):
 
     :param config_path: Path to the config file that should be used to define Consumers in the group
     :type config_path: :class:`pathlib.Path`
-    :param topic_name: The name of the topic to which the Consumers should be subscribed
-    :type topic_name: str
+    :param consumer_topic_name: The name of the topic to which the Consumers should be subscribed
+    :type consumer_topic_name: str
     :param consumer_group_id: The ID string that should be used for each Consumer in the group.
         "create_new" (the default) will create a new UID to use.
     :type consumer_group_id: str, optional
@@ -35,17 +35,23 @@ class ConsumerGroup(LogOwner):
         decryptable, such as when enabling or disabling encryption across a platform,
         or when unencrypted messages are mixed in a topic with encrypted messages.
     :type treat_undecryptable_as_plaintext: boolean, optional
+    :param max_wait_per_decrypt: Number of seconds a KafkaCrypto Deserializer
+        waits before giving up.
+    :type max_wait_per_decrypt: float, optional
+    :param max_initial_wait_per_decrypt: Number of seconds a KafkaCrypto Deserializer
+        waits the first time before giving up.
+    :type max_initial_wait_per_decrypt: float, optional
     :param kwargs: Other keyword arguments will be added to the underlying Consumer's
         configurations, with underscores in their names replaced with dots.
     :type kwargs: dict
     """
 
     @property
-    def topic_name(self):
+    def consumer_topic_name(self):
         """
         Name of the topic to which Consumers are subscribed
         """
-        return self.__topic_name
+        return self.__consumer_topic_name
 
     @property
     def consumer_group_id(self):
@@ -67,11 +73,13 @@ class ConsumerGroup(LogOwner):
     def __init__(
         self,
         config_path,
-        topic_name,
+        consumer_topic_name,
         *,
         consumer_group_id="create_new",
         kafkacrypto=None,
         treat_undecryptable_as_plaintext=False,
+        max_wait_per_decrypt=5.0,
+        max_initial_wait_per_decrypt=60.0,
         **kwargs,
     ):
         """
@@ -79,15 +87,17 @@ class ConsumerGroup(LogOwner):
         """
         super().__init__(**kwargs)
         self.__group_starting_offsets = self.__get_group_starting_offsets(
-            config_path, topic_name, consumer_group_id
+            config_path, consumer_topic_name, consumer_group_id
         )
-        self.__topic_name = topic_name
+        self.__consumer_topic_name = consumer_topic_name
         self.__c_args, self.__c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
             config_path,
             group_id=consumer_group_id,
             logger=self.logger,
             kafkacrypto=kafkacrypto,
             treat_undecryptable_as_plaintext=treat_undecryptable_as_plaintext,
+            max_wait_per_decrypt=max_wait_per_decrypt,
+            max_initial_wait_per_decrypt=max_initial_wait_per_decrypt,
         )
         if len(self.__c_args) > 1 and "group.id" in self.__c_args[1]:
             self.__consumer_group_id = self.__c_args[1]["group.id"]
@@ -122,10 +132,10 @@ class ConsumerGroup(LogOwner):
         )
         if restart_at_beginning:
             consumer.subscribe(
-                [self.__topic_name], on_assign=reset_to_beginning_on_assign
+                [self.__consumer_topic_name], on_assign=reset_to_beginning_on_assign
             )
         else:
-            consumer.subscribe([self.__topic_name])
+            consumer.subscribe([self.__consumer_topic_name])
         return consumer
 
     def close(self):
@@ -138,7 +148,7 @@ class ConsumerGroup(LogOwner):
         self.__c_kwargs["kafkacrypto"] = None
 
     def __get_group_starting_offsets(
-        self, config_path, topic_name, consumer_group_id, n_retries=10
+        self, config_path, consumer_topic_name, consumer_group_id, n_retries=10
     ):
         """
         Return a list of TopicPartitions listing the starting offsets for each partition
@@ -156,12 +166,15 @@ class ConsumerGroup(LogOwner):
             starting_offsets = []
             try:
                 cluster_metadata = AdminClient(cfp.broker_configs).list_topics(
-                    topic=topic_name
+                    topic=consumer_topic_name
                 )
-                n_partitions = len(cluster_metadata.topics[topic_name].partitions)
+                n_partitions = len(
+                    cluster_metadata.topics[consumer_topic_name].partitions
+                )
                 if n_partitions <= 0:
                     raise RuntimeError(
-                        f"ERROR: number of partitions for topic {topic_name} is {n_partitions}"
+                        f"ERROR: number of partitions for topic {consumer_topic_name} is "
+                        f"{n_partitions}"
                     )
                 kac_kwargs = {}
                 for k, v in cfp.broker_configs.items():
@@ -171,7 +184,8 @@ class ConsumerGroup(LogOwner):
                         key = k.replace(".", "_")
                     kac_kwargs[key] = v
                 parts = [
-                    kafka.TopicPartition(topic_name, p_i) for p_i in range(n_partitions)
+                    kafka.TopicPartition(consumer_topic_name, p_i)
+                    for p_i in range(n_partitions)
                 ]
                 tp_offsets = kafka.KafkaAdminClient(
                     **kac_kwargs
@@ -180,7 +194,7 @@ class ConsumerGroup(LogOwner):
                 )
                 if len(tp_offsets) != n_partitions:
                     errmsg = (
-                        f"Found {n_partitions} partitions for topic {topic_name} but got "
+                        f"Found {n_partitions} partitions for topic {consumer_topic_name} but got "
                         f"{len(tp_offsets)} TopicPartitions listing current consumer group offsets"
                     )
                     raise RuntimeError(errmsg)
@@ -194,40 +208,9 @@ class ConsumerGroup(LogOwner):
                 n_retries -= 1
         if caught_exc:
             errmsg = (
-                f'ERROR: encountered an exception when gathering initial "{topic_name}" '
+                f'ERROR: encountered an exception when gathering initial "{consumer_topic_name}" '
                 f'topic offsets for consumer group ID "{consumer_group_id}". '
                 "The error will be logged below and re-raised."
             )
             self.logger.error(errmsg, exc_info=caught_exc, reraise=True)
         return None
-
-    @classmethod
-    def get_command_line_arguments(cls):
-        """
-        Anything extending this class should be able to access the
-        "treat_undecryptable_as_plaintext" flag
-        """
-        superargs, superkwargs = super().get_command_line_arguments()
-        args = [
-            *superargs,
-            "config",
-            "topic_name",
-            "consumer_group_id",
-            "treat_undecryptable_as_plaintext",
-        ]
-        return args, superkwargs
-
-    @classmethod
-    def get_init_args_kwargs(cls, parsed_args):
-        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
-        args = [
-            *superargs,
-            parsed_args.config,
-            parsed_args.topic_name,
-        ]
-        kwargs = {
-            **superkwargs,
-            "consumer_group_id": parsed_args.consumer_group_id,
-            "treat_undecryptable_as_plaintext": parsed_args.treat_undecryptable_as_plaintext,
-        }
-        return args, kwargs

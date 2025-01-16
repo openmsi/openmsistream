@@ -2,8 +2,9 @@
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
 from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamConsumer
-from openmsistream.kafka_wrapper.producer_group import ProducerGroup
-from openmsistream.kafka_wrapper.consumer_group import ConsumerGroup
+from openmsistream.kafka_wrapper.consumer_and_producer_group import (
+    ConsumerAndProducerGroup,
+)
 
 try:
     from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
@@ -79,7 +80,9 @@ class TestCreateOpenMSIStreamKafkaObjects(
         """
         Create a producer group
         """
-        prod_group = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH, logger=self.logger)
+        prod_group = ConsumerAndProducerGroup(
+            TEST_CONST.TEST_CFG_FILE_PATH, logger=self.logger
+        )
         self.assertTrue(prod_group is not None)
         prod_group.close()
 
@@ -87,7 +90,9 @@ class TestCreateOpenMSIStreamKafkaObjects(
         """
         Create an encrypted producer group
         """
-        prod_group = ProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=self.logger)
+        prod_group = ConsumerAndProducerGroup(
+            TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=self.logger
+        )
         self.assertTrue(prod_group is not None)
         prod_group.close()
 
@@ -95,9 +100,9 @@ class TestCreateOpenMSIStreamKafkaObjects(
         """
         Create a consumer group
         """
-        con_group = ConsumerGroup(
+        con_group = ConsumerAndProducerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH,
-            RUN_CONST.DEFAULT_TOPIC_NAME,
+            consumer_topic_name=RUN_CONST.DEFAULT_TOPIC_NAME,
             consumer_group_id=f"test_create_consumer_group_{TEST_CONST.PY_VERSION}",
             logger=self.logger,
         )
@@ -108,9 +113,9 @@ class TestCreateOpenMSIStreamKafkaObjects(
         """
         Create an encrypted consumer group
         """
-        con_group = ConsumerGroup(
+        con_group = ConsumerAndProducerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            RUN_CONST.DEFAULT_TOPIC_NAME,
+            consumer_topic_name=RUN_CONST.DEFAULT_TOPIC_NAME,
             consumer_group_id=f"test_create_consumer_group_encrypted_{TEST_CONST.PY_VERSION}",
             logger=self.logger,
         )

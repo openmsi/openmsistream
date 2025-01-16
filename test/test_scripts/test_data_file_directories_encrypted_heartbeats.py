@@ -38,14 +38,16 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
     """
 
     TOPIC_NAME = "test_oms_encrypted_heartbeats"
-    HEARTBEAT_TOPIC_NAME = "heartbeats"
+    HEARTBEAT_TOPIC_NAME_P = f"{TOPIC_NAME}.heartbeatsp"
+    HEARTBEAT_TOPIC_NAME_C = f"{TOPIC_NAME}.heartbeatsc"
 
     TOPICS = {
         TOPIC_NAME: {},
         f"{TOPIC_NAME}.keys": {"--partitions": 1},
         f"{TOPIC_NAME}.reqs": {"--partitions": 1},
         f"{TOPIC_NAME}.subs": {"--partitions": 1},
-        HEARTBEAT_TOPIC_NAME: {"--partitions": 1},
+        HEARTBEAT_TOPIC_NAME_P: {"--partitions": 1},
+        HEARTBEAT_TOPIC_NAME_C: {"--partitions": 1},
     }
 
     def test_encrypted_upload_and_download_heartbeats_kafka(self):
@@ -57,7 +59,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         # create the upload directory
         self.create_upload_directory(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC,
-            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
+            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME_P,
             heartbeat_program_id=producer_program_id,
             heartbeat_interval_secs=1,
         )
@@ -76,7 +78,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
             topic_name=self.TOPIC_NAME,
             consumer_group_id=f"test_encrypted_data_file_directories_{TEST_CONST.PY_VERSION}",
-            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
+            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME_C,
             heartbeat_program_id=consumer_program_id,
             heartbeat_interval_secs=1,
         )
@@ -89,7 +91,14 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             self.upload_directory.control_command_queue.put("check")
             self.download_directory.control_command_queue.put("check")
             # wait for the timeout for the test file to be completely reconstructed
-            self.wait_for_files_to_reconstruct(test_rel_filepath, timeout_secs=300)
+            # and validate heartbeats before closing thread to alow for key exchange
+            self.wait_for_files_to_reconstruct(
+                test_rel_filepath,
+                timeout_secs=300,
+                before_close_callback=lambda *args: self.validate_heartbeats(
+                    producer_program_id, consumer_program_id, start_time, chunk_size
+                ),
+            )
             # shut down the upload directory
             self.stop_upload_thread()
             # make sure the reconstructed file exists with the same name and content as the original
@@ -117,9 +126,6 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
             )
             addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
             self.assertTrue(test_rel_filepath in addrs_by_fp)
-            self.validate_heartbeats(
-                producer_program_id, consumer_program_id, start_time, chunk_size
-            )
         except Exception as exc:
             raise exc
         self.success = True  # pylint: disable=attribute-defined-outside-init
@@ -132,16 +138,15 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         """
         # validate the producer heartbeats
         producer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            self.HEARTBEAT_TOPIC_NAME,
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC,
+            self.HEARTBEAT_TOPIC_NAME_P,
             producer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(producer_heartbeat_msgs) > 0)
         total_msgs_produced = 0
         total_bytes_produced = 0
         for msg in producer_heartbeat_msgs:
-            msg_dict = json.loads(msg.value())
+            msg_dict = json.loads(msg.value)
             msg_timestamp = datetime.datetime.strptime(
                 msg_dict["timestamp"], self.TIMESTAMP_FMT
             )
@@ -154,10 +159,9 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         self.assertTrue(total_bytes_produced >= test_file_size)
         # validate the consumer heartbeats
         consumer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            self.HEARTBEAT_TOPIC_NAME,
+            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2,
+            self.HEARTBEAT_TOPIC_NAME_C,
             consumer_program_id,
-            wait_secs=5,
         )
         self.assertTrue(len(consumer_heartbeat_msgs) > 0)
         total_msgs_read = 0
@@ -165,7 +169,7 @@ class TestDataFileDirectoriesEncryptedHeartbeats(
         total_bytes_read = 0
         total_bytes_processed = 0
         for msg in consumer_heartbeat_msgs:
-            msg_dict = json.loads(msg.value())
+            msg_dict = json.loads(msg.value)
             msg_timestamp = datetime.datetime.strptime(
                 msg_dict["timestamp"], self.TIMESTAMP_FMT
             )

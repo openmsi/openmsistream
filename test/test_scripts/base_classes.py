@@ -1,12 +1,10 @@
 # imports
-import pathlib, shutil, unittest, os, time, datetime, subprocess, re, uuid
-from confluent_kafka.serialization import StringDeserializer
-from confluent_kafka import DeserializingConsumer
+import pathlib, shutil, unittest, os, time, datetime, subprocess, re
+from kafkacrypto import KafkaCryptoMessage
 from openmsitoolbox.testing import TestWithLogger, TestWithOutputLocation
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsitoolbox.utilities.misc import populated_kwargs
 from openmsistream.utilities.config import RUN_CONST
-from openmsistream.kafka_wrapper.config_file_parser import KafkaConfigFileParser
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
 from openmsistream import (
     DataFileUploadDirectory,
@@ -353,7 +351,9 @@ class TestWithDataFileDownloadDirectory(TestWithOpenMSIStreamOutputLocation):
         )
         self.download_thread.start()
 
-    def wait_for_files_to_reconstruct(self, rel_filepaths, timeout_secs=90):
+    def wait_for_files_to_reconstruct(
+        self, rel_filepaths, timeout_secs=90, before_close_callback=lambda *args: None
+    ):
         """
         Keep running the download thread until one or more files are fully recognized,
         then shut down the download thread
@@ -387,6 +387,8 @@ class TestWithDataFileDownloadDirectory(TestWithOpenMSIStreamOutputLocation):
                 if rel_fp in self.download_directory.recent_processed_filepaths:
                     files_found_by_path[rel_fp] = True
             all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
+        # Do any extra work before killing thread
+        before_close_callback()
         # after timing out, stalling, or completely reconstructing the test file,
         # put the "quit" command into the input queue to stop the function running
         msg = (
@@ -799,47 +801,46 @@ class TestWithHeartbeats(TestWithKafkaTopics, TestWithLogger):
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
     def get_heartbeat_messages(
-        self, config_path, heartbeat_topic_name, program_id, wait_secs=10
+        self,
+        config_path,
+        heartbeat_topic_name,
+        program_id,
+        per_wait_secs=5,
     ):
         """Return a list of all the heartbeat messages sent to a particular topic with
         a particular program ID
         """
-        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
-        heartbeat_consumer_configs = {
-            "key.deserializer": StringDeserializer(),
-            "value.deserializer": StringDeserializer(),
-            "group.id": str(uuid.uuid4()),
-            "auto.offset.reset": "earliest",
-        }
-        if "heartbeat" in cfp.available_group_names:
-            heartbeat_config_dict = cfp.heartbeat_configs
-        else:
-            heartbeat_config_dict = {}
-        heartbeat_producer_configs = {}
-        if "bootstrap.servers" not in heartbeat_config_dict:
-            heartbeat_producer_configs.update(cfp.broker_configs)
-        heartbeat_producer_configs.update(heartbeat_config_dict)
-        for key, value in heartbeat_producer_configs.items():
-            if (
-                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
-                or key.startswith("ssl.")
-                or key.startswith("sasl.")
-            ):
-                heartbeat_consumer_configs[key] = value
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path,
+            logger=self.logger,
+            max_wait_per_decrypt=1,
+        )
         heartbeat_consumer = OpenMSIStreamConsumer(
-            DeserializingConsumer,
-            heartbeat_consumer_configs,
+            *c_args,
+            **c_kwargs,
             message_key_regex=re.compile(f"{program_id}_heartbeat"),
             filter_new_message_keys=True,
         )
         heartbeat_consumer.subscribe([heartbeat_topic_name])
         heartbeat_msgs = []
         start_time = datetime.datetime.now()
-        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+        cutoff_time = (time.time() + per_wait_secs) * 1000  # Kafka timestamps in ms
+        last_msg_time = 0
+        while (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < per_wait_secs and last_msg_time < cutoff_time:
             msg = heartbeat_consumer.get_next_message(1)
             if msg is not None:
-                heartbeat_msgs.append(msg)
-                start_time = datetime.datetime.now()
+                # extract message timestamp
+                try:
+                    _, last_msg_time = msg.timestamp()
+                except TypeError:
+                    _, last_msg_time = msg.timestamp
+                if not isinstance(msg.value, (KafkaCryptoMessage,)):
+                    heartbeat_msgs.append(msg)
+                    start_time = (
+                        datetime.datetime.now()
+                    )  # reset per wait timer on each success
         heartbeat_consumer.close()
         return heartbeat_msgs
 
@@ -851,45 +852,40 @@ class TestWithLogs(TestWithKafkaTopics, TestWithLogger):
 
     TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 
-    def get_log_messages(self, config_path, log_topic_name, program_id, wait_secs=10):
+    def get_log_messages(self, config_path, log_topic_name, program_id, per_wait_secs=30):
         """Return a list of all the log messages sent to a particular topic with
         a particular program ID
         """
-        cfp = KafkaConfigFileParser(config_path, logger=self.logger)
-        log_consumer_configs = {
-            "key.deserializer": StringDeserializer(),
-            "value.deserializer": StringDeserializer(),
-            "group.id": str(uuid.uuid4()),
-            "auto.offset.reset": "earliest",
-        }
-        if "log" in cfp.available_group_names:
-            log_config_dict = cfp.log_configs
-        else:
-            log_config_dict = {}
-        log_producer_configs = {}
-        if "bootstrap.servers" not in log_config_dict:
-            log_producer_configs.update(cfp.broker_configs)
-        log_producer_configs.update(log_config_dict)
-        for key, value in log_producer_configs.items():
-            if (
-                key in ("bootstrap.servers", "client.dns.lookup", "security.protocol")
-                or key.startswith("ssl.")
-                or key.startswith("sasl.")
-            ):
-                log_consumer_configs[key] = value
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path,
+            logger=self.logger,
+            max_wait_per_decrypt=0.1,
+        )
         log_consumer = OpenMSIStreamConsumer(
-            DeserializingConsumer,
-            log_consumer_configs,
+            *c_args,
+            **c_kwargs,
             message_key_regex=re.compile(f"{program_id}_log"),
             filter_new_message_keys=True,
         )
         log_consumer.subscribe([log_topic_name])
         log_msgs = []
         start_time = datetime.datetime.now()
-        while (datetime.datetime.now() - start_time).total_seconds() < wait_secs:
+        cutoff_time = (time.time() + per_wait_secs) * 1000  # Kafka timestamps in ms
+        last_msg_time = 0
+        while (
+            datetime.datetime.now() - start_time
+        ).total_seconds() < per_wait_secs and last_msg_time < cutoff_time:
             msg = log_consumer.get_next_message(1)
             if msg is not None:
-                log_msgs.append(msg)
-                start_time = datetime.datetime.now()
+                # extract message timestamp
+                try:
+                    _, last_msg_time = msg.timestamp()
+                except TypeError:
+                    _, last_msg_time = msg.timestamp
+                if not isinstance(msg.value, (KafkaCryptoMessage,)):
+                    log_msgs.append(msg)
+                    start_time = (
+                        datetime.datetime.now()
+                    )  # reset per wait timer on each success
         log_consumer.close()
         return log_msgs

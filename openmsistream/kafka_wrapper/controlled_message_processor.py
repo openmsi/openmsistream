@@ -1,35 +1,45 @@
 """
-A ConsumerGroup whose receipt of messages is governed using the ControlledProcess infrastructure
+A ConsumerAndProducerGroup whose receipt of messages is governed using the ControlledProcess
+infrastructure
 """
 
 # imports
 from abc import ABC, abstractmethod
+from confluent_kafka.serialization import StringSerializer
 
 from ..utilities.heartbeat_producibles import MessageProcessorHeartbeatProducible
 from ..utilities.messages import get_message_length
 from ..utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
-from .consumer_group import ConsumerGroup
+from .consumer_and_producer_group import ConsumerAndProducerGroup
 
 
 class ControlledMessageProcessor(
-    ControlledProcessMultiThreadedHeartbeatsLogs, ConsumerGroup, ABC
+    ControlledProcessMultiThreadedHeartbeatsLogs, ConsumerAndProducerGroup, ABC
 ):
     """
-    Combine a ControlledProcessMultiThreaded and a ConsumerGroup to create a
-    single interface for reading and processing individual messages
+    Combine a ControlledProcessMultiThreadedHeartbeatsLogs and a ConsumerAndProducerGroup
+    to create a single interface for reading and processing individual messages
     """
 
     CONSUMER_POLL_TIMEOUT = 5.0
 
-    def __init__(self, config_path, topic_name, filepath_regex=None, **kwargs):
+    def __init__(self, config_path, consumer_topic_name, filepath_regex=None, **kwargs):
         """
         Hang onto the number of messages read and processed
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
-        super().__init__(config_path, topic_name, **kwargs)
+        super().__init__(config_path, consumer_topic_name=consumer_topic_name, **kwargs)
+        # update heartbeat/log producers
+        prod = super().get_new_producer(
+            key_serializer_override=StringSerializer(),
+            value_serializer_override=StringSerializer(),
+        )
+        self.__heartbeat_log_producer = prod
+        self.set_heartbeat_producer(prod, close_it=True)
+        self.set_log_producer(prod, close_it=True)
         # set below to true to reset new consumers to their earliest offsets
         self.restart_at_beginning = False
         # set below to some regex to filter messages by their keys
@@ -118,6 +128,7 @@ class ControlledMessageProcessor(
         """
         Helper function to perform actions that happen continuously while the process is alive
         """
+        self.__heartbeat_log_producer.poll(0)
         # consume a message from the topic
         msg = consumer.get_next_message(self.CONSUMER_POLL_TIMEOUT)
         if msg is None:

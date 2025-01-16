@@ -27,8 +27,6 @@ Kafka wrapper
 
    api/openmsistream_producer
    api/openmsistream_consumer
-   api/producer_group
-   api/consumer_group
    api/consumer_and_producer_group
    api/openmsistream_kafka_crypto
    api/producible

@@ -2,7 +2,7 @@
 
 # imports
 import pathlib, os, sys, platform
-from subprocess import check_output, CalledProcessError
+from subprocess import check_output, CalledProcessError, STDOUT
 from .config import SERVICE_CONST
 
 
@@ -36,7 +36,7 @@ def run_cmd_in_subprocess(args, *, logger=None, reraise=False, **other_kwargs):
     if isinstance(args, str):
         args = [args]
     try:
-        result = check_output(args, env=os.environ, **other_kwargs)
+        result = check_output(args, env=os.environ, stderr=STDOUT, **other_kwargs)
         return result
     except CalledProcessError as exc:
         errmsg = "ERROR: failed to run a command! "

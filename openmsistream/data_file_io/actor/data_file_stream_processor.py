@@ -69,14 +69,14 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         """
         # startup message
         msg = (
-            f"Will process files from messages in the {self.topic_name} topic using "
+            f"Will process files from messages in the {self.consumer_topic_name} topic using "
             f'{self.n_threads} thread{"s" if self.n_threads>1 else ""}'
         )
         self.logger.info(msg)
         # set up the stream processor registry
         self.file_registry = StreamProcessorRegistry(
             dirpath=self._logs_subdir,
-            topic_name=self.topic_name,
+            topic_name=self.consumer_topic_name,
             consumer_group_id=self.consumer_group_id,
             logger=self.logger,
         )

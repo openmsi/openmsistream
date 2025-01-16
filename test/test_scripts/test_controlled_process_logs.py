@@ -33,6 +33,7 @@ class ControlledProcessSingleThreadForTesting(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_log_producer("Separate")
         self.counter = 0
         self.checked = False
         self.on_shutdown_called = False
@@ -56,6 +57,7 @@ class ControlledProcessMultiThreadedForTesting(
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
+        self.set_log_producer("Separate")
         self.counter = 0
         self.checked = False
         self.on_shutdown_called = False
@@ -119,7 +121,6 @@ class TestControlledProcessLogs(TestWithLogs):
                 TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
             for msg in log_msgs:
@@ -180,7 +181,6 @@ class TestControlledProcessLogs(TestWithLogs):
                 TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
                 self.TOPIC_NAME,
                 program_id,
-                wait_secs=5,
             )
             self.assertTrue(len(log_msgs) > 0)
             for msg in log_msgs:
