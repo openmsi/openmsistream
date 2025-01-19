@@ -268,7 +268,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
         "max_wait_per_decrypt": [
             "optional",
             {
-                "action": "store_true",
+                "type": positive_float,
                 "help": (
                     "Setting this allows changing the time a KafkaCrypto deserializer "
                     "waits before giving up. Default: 5 sec."
@@ -278,7 +278,7 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
         "max_initial_wait_per_decrypt": [
             "optional",
             {
-                "action": "store_true",
+                "type": positive_float,
                 "help": (
                     "Setting this allows changing the time a KafkaCrypto deserializer "
                     "waits the first time before giving up. Default: 60 sec."
