@@ -37,6 +37,9 @@ class RunConstants:
     DEFAULT_WATCHDOG_LAG_TIME = 3
     # default Girder collection name
     DEFAULT_COLLECTION_NAME = "WholeTale Catalog"
+    # default waits for decryption keys to arrive
+    DEFAULT_MAX_INITIAL_WAIT_PER_DECRYPT = 60.0
+    DEFAULT_MAX_WAIT_PER_DECRYPT = 5.0
 
 
 RUN_CONST = RunConstants()

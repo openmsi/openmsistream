@@ -107,8 +107,8 @@ class KafkaConfigFileParser(ConfigFileParser):
     @staticmethod
     def get_replaced_configs(configs, replacement_type):
         """
-        Returns a configuration dictionary with (de)serialization parameters replaced
-        by instances of corresponding classes
+        Returns a configuration dictionary with (de)serialization parameters
+        replaced by instances of corresponding classes
 
         configs = the configurations dictionary to alter and return
         replacement_type = a string indicating the type of replacement that should be performed
