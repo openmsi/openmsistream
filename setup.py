@@ -1,16 +1,9 @@
 # imports
-import pathlib
 import setuptools
+from setuptools_scm import get_version
 
-# read version tag
-version = None
-version_path = pathlib.Path(__file__).parent/"openmsistream"/"version.py"
-with open(version_path,"r") as version_file:
-    for line in version_file.readlines():
-        if line.startswith("__version__"):
-            version = line.strip().split("=")[-1].strip().strip('"')
-if not version:
-    raise RuntimeError("ERROR: Failed to find version tag!")
+# Automatically get version from Git tags
+version = get_version()
 
 # read a portion of the README to get the description
 long_description = ""
@@ -23,7 +16,7 @@ setupkwargs = dict(
     name="openmsistream",
     packages=setuptools.find_packages(include=["openmsistream*"]),
     include_package_data=True,
-    version=version,
+    version=version,  # Now dynamically fetched
     description=(
         "Python applications for materials data streaming using Apache Kafka. "
         "Developed for Open MSI (NSF DMREF award #1921959)"

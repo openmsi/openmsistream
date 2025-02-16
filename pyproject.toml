@@ -1,3 +1,10 @@
 [tool.black]
 line-length = 90
 target-version = ['py39']
+
+[build-system]
+requires = ["setuptools>=61", "wheel", "setuptools_scm"]
+build-backend = "setuptools.build_meta"
+
+[tool.setuptools_scm]
+write_to = "openmsistream/version.py"
