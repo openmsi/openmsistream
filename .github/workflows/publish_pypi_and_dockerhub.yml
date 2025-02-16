@@ -29,7 +29,7 @@ jobs:
           # PyPI API key registered as an action secret for the repo
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
         run: |
-          python setup.py sdist bdist_wheel
+          python -m build
           twine check dist/*
           twine upload --skip-existing dist/*
       - name: Wait for updates
