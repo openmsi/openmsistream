@@ -20,7 +20,7 @@ jobs:
           pip install --upgrade setuptools wheel twine
       - name: Clean old build artifacts
         run: rm -rf build dist *.egg-info  
-       - name: Check setuptools version
+      - name: Check setuptools version
         run: python -c "import setuptools; print(setuptools.__version__)"
       - name: Build and publish to PyPI
         env:
