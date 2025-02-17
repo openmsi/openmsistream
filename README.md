@@ -17,7 +17,7 @@
 
 [![JOSS DOI](https://joss.theoj.org/papers/10.21105/joss.04896/status.svg)](https://doi.org/10.21105/joss.04896) ![PyPI](https://img.shields.io/pypi/v/openmsistream) ![License](https://img.shields.io/github/license/openmsi/openmsistream) ![PyPI - Python Version](https://img.shields.io/pypi/pyversions/openmsistream) ![CircleCI](https://img.shields.io/circleci/build/github/openmsi/openmsistream/main) [![Documentation Status](https://readthedocs.org/projects/openmsistream/badge/?version=latest)](https://openmsistream.readthedocs.io/en/latest/?badge=latest) [![linting: pylint](https://img.shields.io/badge/linting-pylint-yellowgreen)](https://github.com/PyCQA/pylint)
 
-Applications for laboratory, analysis and computational materials data streaming using [Apache Kafka](https://kafka.apache.org/)
+Applications for laboratory, analysis, and computational materials data streaming using [Apache Kafka](https://kafka.apache.org/)
 
 Available on PyPI at https://pypi.org/project/openmsistream and GitHub at https://github.com/openmsi/openmsistream 
 
