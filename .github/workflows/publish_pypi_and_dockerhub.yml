@@ -17,7 +17,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install --upgrade setuptools setuptoold_scm wheel twine
+          pip install --upgrade setuptools setuptools_scm wheel twine
       - name: Build and publish to PyPI
         env:
           # Username has to be __token__ to use API key
