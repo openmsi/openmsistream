@@ -20,7 +20,7 @@ jobs:
           pip install --upgrade setuptools setuptools_scm wheel twine
       - name: Build and publish to PyPI
         env:
-          # Username has to be __token__ to use API key
+          # Username has to be __token__ to use API key directly
           TWINE_USERNAME: __token__
           # PyPI API key registered as an action secret for the repo
           TWINE_PASSWORD: ${{ secrets.PYPI_TOKEN }}
