@@ -9,7 +9,7 @@ warnings.showwarning = LoggingHandler.showwarning
 logging.getLogger().addHandler(LoggingHandler)
 
 # imports
-# we diable pylint warnings here because we need to have enabled logging
+# we disable pylint warnings here because we need to have enabled logging
 # before any of these imports
 # pylint: disable=C0413
 import os  # pylint: disable=C0411
@@ -21,7 +21,17 @@ from .data_file_io.actor.data_file_stream_reproducer import DataFileStreamReprod
 from .metadata_extraction.metadata_json_reproducer import MetadataJSONReproducer
 from .s3_buckets.s3_transfer_stream_processor import S3TransferStreamProcessor
 from .girder.girder_upload_stream_processor import GirderUploadStreamProcessor
-from .version import __version__
+
+# Dynamically retrieve version instead of relying on version.py
+try:
+    from importlib.metadata import version  # Standard in Python 3.8+
+except ImportError:
+    from importlib_metadata import version  # Backport for Python < 3.8
+
+try:
+    __version__ = version("openmsistream")  # Dynamically retrieve installed version
+except Exception:
+    __version__ = "unknown"
 
 __all__ = [
     "__version__",
