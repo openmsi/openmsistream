@@ -10,7 +10,17 @@ from urllib3.util.retry import Retry
 
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
 from ..utilities.config import RUN_CONST
-from ..version import __version__
+
+# Dynamically retrieve version instead of relying on version.py
+try:
+    from importlib.metadata import version  # Standard in Python 3.8+
+except ImportError:
+    from importlib_metadata import version  # Backport for Python < 3.8
+
+try:
+    openmsistream_version = version("openmsistream")
+except Exception:
+    openmsistream_version = "unknown"
 
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
@@ -77,7 +87,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc, reraise=True)
         # set some minimal amount of metadata fields
         self.minimal_metadata_dict = {
-            "OpenMSIStreamVersion": __version__,
+            "OpenMSIStreamVersion": openmsistream_version,
             "KafkaTopic": topic_name,
         }
         if metadata:
