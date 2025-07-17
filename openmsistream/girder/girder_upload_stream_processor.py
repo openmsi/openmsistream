@@ -1,7 +1,6 @@
 # imports
 import json
 import mimetypes
-from hashlib import sha256
 from io import BytesIO
 
 import girder_client
@@ -173,12 +172,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         else:
             subdir_str_split = []
         # Calculate the checksum of the file
-        checksum_hash = sha256()
-        checksum_hash.update(datafile.bytestring)
+        checksum_hash = datafile.check_file_hash().hex()
         # Check if a file with the same name and checksum already exists in the folder
         for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
-            existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
-            if existing_sha256 == checksum_hash.hexdigest():
+            existing_sha512 = resp.get("meta", {}).get("checksum", {}).get("sha512")
+            if existing_sha512 == checksum_hash:
                 errmsg = (
                     f"WARNING: found an existing Item named {datafile.filename} with the same "
                     f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
@@ -226,7 +224,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             return RuntimeError(errmsg)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
-            "sha256": checksum_hash.hexdigest(),
+            "sha512": checksum_hash,
         }
         try:
             self.__girder_client.addMetadataToItem(item_id, metadata_dict)
