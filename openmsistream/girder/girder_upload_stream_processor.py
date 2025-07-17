@@ -1,7 +1,7 @@
 # imports
+import hashlib
 import json
 import mimetypes
-from hashlib import sha256
 from io import BytesIO
 
 import girder_client
@@ -139,12 +139,27 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
         )
         retry_adapter = HTTPAdapter(max_retries=retry_strategy)
-        with self.__girder_client.session() as session:
-            session.mount("http://", retry_adapter)
-            session.mount("https://", retry_adapter)
-            return self.__process_downloaded_data_file(datafile, lock)
+        with lock:
+            with self.__girder_client.session() as session:
+                session.mount("http://", retry_adapter)
+                session.mount("https://", retry_adapter)
+                return self.__process_downloaded_data_file(datafile)
 
-    def __process_downloaded_data_file(self, datafile, lock):
+    @staticmethod
+    def __get_checksum(datafile, alg="sha256"):
+        checksum = hashlib.new(alg)
+        if datafile.full_filepath and datafile.full_filepath.is_file():
+            with open(datafile.full_filepath, "rb") as f:
+                while True:
+                    data = f.read(8196)
+                    if not data:
+                        break
+                    checksum.update(data)
+        else:
+            checksum.update(datafile.bytestring)
+        return checksum.digest()
+
+    def __process_downloaded_data_file(self, datafile):
         """
         Actual process_downloaded_data_file method used in the wrapper above
         """
@@ -173,12 +188,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         else:
             subdir_str_split = []
         # Calculate the checksum of the file
-        checksum_hash = sha256()
-        checksum_hash.update(datafile.bytestring)
+        checksum_hash = self.__get_checksum(datafile).hex()
         # Check if a file with the same name and checksum already exists in the folder
         for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
             existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
-            if existing_sha256 == checksum_hash.hexdigest():
+            if existing_sha256 == checksum_hash:
                 errmsg = (
                     f"WARNING: found an existing Item named {datafile.filename} with the same "
                     f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
@@ -187,23 +201,23 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 print(f"File {datafile.filename} already exists with the same checksum")
                 return None
 
-        # Upload the file from its bytestring or file on disk
+        # Upload the file from file on disk or its bytestring if in memory
         try:
-            with lock:
-                mimetype, _ = mimetypes.guess_type(datafile.filename)
-                mimetype = mimetype or "application/octet-stream"
-                try:
-                    self.__girder_client.uploadStreamToFolder(
-                        parent_id,
-                        BytesIO(datafile.bytestring),
-                        datafile.filename,
-                        len(datafile.bytestring),
-                        mimeType=mimetype,
-                    )
-                except AttributeError:
-                    self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
-                    )
+            mimetype, _ = mimetypes.guess_type(datafile.filename)
+            mimetype = mimetype or "application/octet-stream"
+            if datafile.full_filepath and datafile.full_filepath.is_file():
+                # If the file exists on disk, upload it directly
+                self.__girder_client.uploadFileToFolder(
+                    parent_id, datafile.full_filepath, mimeType=mimetype
+                )
+            else:
+                self.__girder_client.uploadStreamToFolder(
+                    parent_id,
+                    BytesIO(datafile.bytestring),
+                    datafile.filename,
+                    len(datafile.bytestring),
+                    mimeType=mimetype,
+                )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
             self.logger.error(errmsg, exc_info=exc)
@@ -226,7 +240,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             return RuntimeError(errmsg)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
-            "sha256": checksum_hash.hexdigest(),
+            "sha256": checksum_hash,
         }
         try:
             self.__girder_client.addMetadataToItem(item_id, metadata_dict)
@@ -394,7 +408,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         girder_uploader.logger.info(msg)
         if len(procd_fps) > 0:
             msg = (
-                f"{n_files_procd} file{' was' if n_files_procd==1 else 's were'} "
+                f"{n_files_procd} file{' was' if n_files_procd == 1 else 's were'} "
                 f"successfully uploaded to Girder."
                 f"\nUploaded filepaths (up to {cls.N_RECENT_FILES} most recent):\n\t"
             )

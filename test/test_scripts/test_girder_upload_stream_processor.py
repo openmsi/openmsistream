@@ -31,6 +31,7 @@ def _produce_single_file(
     api_key,
     upload_file_helper,
     stream_processor_helper,
+    mode="memory",
 ):
     """
     Shared helper for all tests.
@@ -49,6 +50,7 @@ def _produce_single_file(
         other_init_kwargs={
             "collection_name": COLLECTION_NAME,
             "metadata": json.dumps({"somekey": "somevalue"}),
+            "mode": mode,
         },
     )
 
@@ -181,7 +183,7 @@ def test_girder_repeated_upload(
     api_url = girder_instance["api_url"]
     api_key = girder_instance["api_key"]
 
-    for _ in range(2):
+    for mode in ["disk", "memory"]:
         _produce_single_file(
             TEST_CONST.TEST_DATA_FILE_2_PATH,
             topic_name=TOPIC_NAME,
@@ -189,6 +191,7 @@ def test_girder_repeated_upload(
             api_key=api_key,
             upload_file_helper=upload_file_helper,
             stream_processor_helper=stream_processor_helper,
+            mode=mode,
         )
 
         rel = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
@@ -200,16 +203,14 @@ def test_girder_repeated_upload(
     girder = girder_client.GirderClient(apiUrl=api_url)
     girder.authenticate(apiKey=api_key)
 
-    gpath = (
-        f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/" f"{TOPIC_NAME}/{rel.name} (1)"
-    )
-
-    item = girder.get(
+    gpath = f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}"
+    folder = girder.get(
         "/resource/lookup",
-        parameters={"path": gpath, "test": True},
+        parameters={"path": gpath},
     )
-
-    assert item is None
+    assert folder
+    items = girder.listItem(folder["_id"])
+    assert len(list(items)) == 1
 
 
 # ------------------------------------------------------------
