@@ -404,6 +404,15 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
+        "delete_on_disk_mode": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "Add this flag to delete files written to disk when mode is set to 'disk' "
+                ),
+            },
+        ],
     }
 
     def parse_args(self, *args, **kwargs):
