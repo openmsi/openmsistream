@@ -203,8 +203,6 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                 to_return = False
             if self.mode == 'disk' and self.delete_on_disk_mode:
                     try:
-                        print("dfc.filepath")
-                        print(dfc.filepath)
                         rel_path = Path(dfc.filepath)
                         abs_path = rel_path.resolve(strict=False)  # Do not raise if path doesn't exist
 
@@ -215,6 +213,7 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                             self.logger.info(f"File does not exist or is not a file: {abs_path}")
                     except Exception as e:
                         self.logger.warning(f"Error deleting file {dfc.relative_filepath}: {e}")
+            del dfc
             return to_return
         # otherwise the file is just in progress
         return True
