@@ -178,7 +178,7 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "mode"]
+        args = [*superargs, "mode", "delete_on_disk_mode"]
         kwargs = {
             **superkwargs,
             "optional_output_dir": cls._get_auto_output_dir(),
