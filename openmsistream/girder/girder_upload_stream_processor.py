@@ -185,22 +185,23 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 print(f"File {datafile.filename} already exists with the same checksum")
                 return None
 
-        # Upload the file from its bytestring or file on disk
+        # Upload the file from file on disk or its bytestring if in memory
         try:
             with lock:
                 mimetype, _ = mimetypes.guess_type(datafile.filename)
                 mimetype = mimetype or "application/octet-stream"
-                try:
+                if datafile.full_filepath and datafile.full_filepath.is_file():
+                    # If the file exists on disk, upload it directly
+                    self.__girder_client.uploadFileToFolder(
+                        parent_id, datafile.full_filepath, mimeType=mimetype
+                    )
+                else:
                     self.__girder_client.uploadStreamToFolder(
                         parent_id,
                         BytesIO(datafile.bytestring),
                         datafile.filename,
                         len(datafile.bytestring),
                         mimeType=mimetype,
-                    )
-                except AttributeError:
-                    self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
                     )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
