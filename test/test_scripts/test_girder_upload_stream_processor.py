@@ -201,15 +201,15 @@ def test_girder_repeated_upload(
     girder.authenticate(apiKey=api_key)
 
     gpath = (
-        f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/" f"{TOPIC_NAME}/{rel.name} (1)"
+        f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}"
     )
-
-    item = girder.get(
+    folder = girder.get(
         "/resource/lookup",
-        parameters={"path": gpath, "test": True},
+        parameters={"path": gpath},
     )
-
-    assert item is None
+    assert folder
+    items = girder.listItem(folder["_id"])
+    assert len(list(items)) == 1
 
 
 # ------------------------------------------------------------
