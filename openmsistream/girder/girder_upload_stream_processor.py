@@ -328,8 +328,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "girder_root_folder_id",
             "collection_name",
             "girder_root_folder_path",
-            "metadata",
+            "metadata"
         ]
+        print('inside girder processor')
+        print("things read")
+        print(args)
+        print(superkwargs)
         return args, superkwargs
 
     @classmethod
@@ -338,7 +342,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         args = [
             parsed_args.girder_api_url,
             parsed_args.girder_api_key,
-            *superargs,
+            parsed_args.config,
+            parsed_args.topic_name
+            # *superargs,
         ]
         kwargs = {
             **superkwargs,
@@ -346,7 +352,15 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name": parsed_args.collection_name,
             "girder_root_folder_path": parsed_args.girder_root_folder_path,
             "metadata": parsed_args.metadata,
+            "delete_on_disk_mode": parsed_args.delete_on_disk_mode
         }
+        print('inside girder processor')
+        print("superargs")
+        print(superargs)
+        print("things passed")
+        del kwargs['consumer_topic_name']
+        print(args)
+        print(kwargs)
         return args, kwargs
 
     @classmethod
