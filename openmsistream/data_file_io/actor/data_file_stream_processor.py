@@ -200,6 +200,8 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                     _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
                     _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = False
+            if self.mode == 'disk' and self.delete_on_disk_mode:
+                print(dfc.relative_filepath)
             return to_return
         # otherwise the file is just in progress
         return True
