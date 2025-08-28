@@ -9,6 +9,7 @@ from .data_file_stream_handler import DataFileStreamHandler
 from .file_registry.stream_handler_registries import StreamProcessorRegistry
 from pathlib import Path
 
+
 class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC):
     """
     Consumes :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
@@ -200,18 +201,24 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                     _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
                     _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = False
-            if self.mode == 'disk' and self.delete_on_disk_mode:
-                    try:
-                        rel_path = Path(dfc.filepath)
-                        abs_path = rel_path.resolve(strict=False)  # Do not raise if path doesn't exist
+            if self.mode == "disk" and self.delete_on_disk_mode:
+                try:
+                    rel_path = Path(dfc.filepath)
+                    abs_path = rel_path.resolve(
+                        strict=False
+                    )  # Do not raise if path doesn't exist
 
-                        if abs_path.exists() and abs_path.is_file():
-                            abs_path.unlink()  # Deletes the file
-                            self.logger.info(f"Deleted file: {abs_path}")
-                        else:
-                            self.logger.info(f"File does not exist or is not a file: {abs_path}")
-                    except Exception as e:
-                        self.logger.warning(f"Error deleting file {dfc.relative_filepath}: {e}")
+                    if abs_path.exists() and abs_path.is_file():
+                        abs_path.unlink()  # Deletes the file
+                        self.logger.info(f"Deleted file: {abs_path}")
+                    else:
+                        self.logger.info(
+                            f"File does not exist or is not a file: {abs_path}"
+                        )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Error deleting file {dfc.relative_filepath}: {e}"
+                    )
             del dfc
             return to_return
         # otherwise the file is just in progress

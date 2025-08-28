@@ -56,7 +56,7 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
         kwargs = populated_kwargs(kwargs, {"logger_file": self._logs_subdir})
         # figure out or check the datafile type from the "mode" argument
         self.mode = mode
-        self.delete_on_disk_mode = kwargs['delete_on_disk_mode']
+        self.delete_on_disk_mode = kwargs["delete_on_disk_mode"]
         if mode == "memory":
             base_datafile_type = DownloadDataFileToMemory
         elif mode == "disk":
