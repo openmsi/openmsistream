@@ -2,12 +2,13 @@
 
 # imports
 from abc import ABC, abstractmethod
+from pathlib import Path
 from ...utilities.config import RUN_CONST
 from ..config import DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
 from .data_file_stream_handler import DataFileStreamHandler
 from .file_registry.stream_handler_registries import StreamProcessorRegistry
-from pathlib import Path
+
 
 
 class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC):
