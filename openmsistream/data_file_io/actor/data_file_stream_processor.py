@@ -50,7 +50,12 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         """
         Constructor method (duplicated here for its function signature in the docs)
         """
-        super().__init__(config_file, topic_name, **kwargs)
+        super().__init__(
+            config_path=config_file,
+            consumer_topic_name=topic_name,   # or topic_name=topic_name if that’s what the direct parent expects
+            **kwargs,
+        )
+        # super().__init__(config_file, topic_name, **kwargs)
 
     def process_files_as_read(self):
         """

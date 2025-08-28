@@ -74,7 +74,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         metadata=None,
         **other_kwargs,
     ):
-        super().__init__(config_file, topic_name, **other_kwargs)
+        super().__init__(
+            config_file=config_file,               # map to base name
+            topic_name=topic_name,        # map to base name
+            **other_kwargs,
+        )
         # connect and authenticate to the Girder instance
         try:
             self.__girder_client = girder_client.GirderClient(apiUrl=girder_api_url)
