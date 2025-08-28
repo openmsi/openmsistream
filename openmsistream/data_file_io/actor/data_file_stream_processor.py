@@ -10,7 +10,6 @@ from .data_file_stream_handler import DataFileStreamHandler
 from .file_registry.stream_handler_registries import StreamProcessorRegistry
 
 
-
 class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC):
     """
     Consumes :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk` messages
