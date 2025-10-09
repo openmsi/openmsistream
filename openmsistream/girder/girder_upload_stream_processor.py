@@ -338,13 +338,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
     @classmethod
     def get_init_args_kwargs(cls, parsed_args):
-        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        _, superkwargs = super().get_init_args_kwargs(parsed_args)
         args = [
             parsed_args.girder_api_url,
             parsed_args.girder_api_key,
             parsed_args.config,
             parsed_args.topic_name,
-            # *superargs,
         ]
         kwargs = {
             **superkwargs,

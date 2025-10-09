@@ -52,7 +52,8 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         """
         super().__init__(
             config_path=config_file,
-            consumer_topic_name=topic_name,  # or topic_name=topic_name if that’s what the direct parent expects
+            # or topic_name=topic_name if that’s what the direct parent expects
+            consumer_topic_name=topic_name,
             **kwargs,
         )
         # super().__init__(config_file, topic_name, **kwargs)
