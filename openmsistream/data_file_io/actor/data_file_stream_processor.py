@@ -52,7 +52,7 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         """
         super().__init__(
             config_path=config_file,
-            consumer_topic_name=topic_name,   # or topic_name=topic_name if that’s what the direct parent expects
+            consumer_topic_name=topic_name,  # or topic_name=topic_name if that’s what the direct parent expects
             **kwargs,
         )
         # super().__init__(config_file, topic_name, **kwargs)
@@ -215,7 +215,7 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
 
                     if abs_path.exists() and abs_path.is_file():
                         abs_path.unlink()  # Deletes the file
-                        self.logger.info(f"Deleted file: {abs_path}")
+                        self.logger.info(f"Deleted file after processing: {abs_path}")
                     else:
                         self.logger.info(
                             f"File does not exist or is not a file: {abs_path}"

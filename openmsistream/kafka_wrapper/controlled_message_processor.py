@@ -31,8 +31,6 @@ class ControlledMessageProcessor(
         """
         self.n_msgs_read = 0
         self.n_msgs_processed = 0
-        print("inside controlled message processor")
-        print(config_path)
         super().__init__(config_path, consumer_topic_name=consumer_topic_name, **kwargs)
         # update heartbeat/log producers
         prod = super().get_new_producer(

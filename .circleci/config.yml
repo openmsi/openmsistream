@@ -70,8 +70,8 @@ jobs:
           command: |
             cd ~/project
             python -m pyflakes .
-            black --config ./pyproject.toml openmsistream --check --diff
-            black --config ./pyproject.toml test --check --diff
+            black openmsistream --check --diff
+            black test --check --diff
             python -m pylint openmsistream
             python -m pylint --recursive=y test
             cd -

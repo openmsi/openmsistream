@@ -1,4 +1,4 @@
-" Global handler of log messages, to allow self-production of own (complete) logs "
+"Global handler of log messages, to allow self-production of own (complete) logs"
 
 # imports
 from logging import Handler

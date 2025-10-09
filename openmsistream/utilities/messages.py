@@ -1,4 +1,4 @@
-" Various message helpers "
+"Various message helpers"
 
 
 def get_message_length(msg):

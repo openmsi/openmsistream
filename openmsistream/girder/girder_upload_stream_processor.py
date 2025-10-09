@@ -75,8 +75,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         **other_kwargs,
     ):
         super().__init__(
-            config_file=config_file,               # map to base name
-            topic_name=topic_name,        # map to base name
+            config_file=config_file,  # map to base name
+            topic_name=topic_name,  # map to base name
             **other_kwargs,
         )
         # connect and authenticate to the Girder instance
@@ -334,10 +334,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "girder_root_folder_path",
             "metadata",
         ]
-        print("inside girder processor")
-        print("things read")
-        print(args)
-        print(superkwargs)
         return args, superkwargs
 
     @classmethod
@@ -358,13 +354,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "metadata": parsed_args.metadata,
             "delete_on_disk_mode": parsed_args.delete_on_disk_mode,
         }
-        print("inside girder processor")
-        print("superargs")
-        print(superargs)
-        print("things passed")
         del kwargs["consumer_topic_name"]
-        print(args)
-        print(kwargs)
         return args, kwargs
 
     @classmethod
