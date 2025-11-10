@@ -1,4 +1,4 @@
-""" A watchdog FileSystemEventHandler for use with a DataFileUploadDirectory """
+"""A watchdog FileSystemEventHandler for use with a DataFileUploadDirectory"""
 
 # imports
 import pathlib, datetime

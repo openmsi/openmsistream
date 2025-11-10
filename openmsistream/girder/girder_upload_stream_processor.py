@@ -74,7 +74,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         metadata=None,
         **other_kwargs,
     ):
-        super().__init__(config_file, topic_name, **other_kwargs)
+        super().__init__(
+            config_file=config_file,  # map to base name
+            topic_name=topic_name,  # map to base name
+            **other_kwargs,
+        )
         # connect and authenticate to the Girder instance
         try:
             self.__girder_client = girder_client.GirderClient(apiUrl=girder_api_url)
@@ -139,10 +143,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
         )
         retry_adapter = HTTPAdapter(max_retries=retry_strategy)
-        with self.__girder_client.session() as session:
-            session.mount("http://", retry_adapter)
-            session.mount("https://", retry_adapter)
-            return self.__process_downloaded_data_file(datafile, lock)
+        with lock:
+            with self.__girder_client.session() as session:
+                session.mount("http://", retry_adapter)
+                session.mount("https://", retry_adapter)
+                return self.__process_downloaded_data_file(datafile, lock)
 
     def __process_downloaded_data_file(self, datafile, lock):
         """
@@ -189,21 +194,20 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
         # Upload the file from its bytestring or file on disk
         try:
-            with lock:
-                mimetype, _ = mimetypes.guess_type(datafile.filename)
-                mimetype = mimetype or "application/octet-stream"
-                try:
-                    self.__girder_client.uploadStreamToFolder(
-                        parent_id,
-                        BytesIO(datafile.bytestring),
-                        datafile.filename,
-                        len(datafile.bytestring),
-                        mimeType=mimetype,
-                    )
-                except AttributeError:
-                    self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
-                    )
+            mimetype, _ = mimetypes.guess_type(datafile.filename)
+            mimetype = mimetype or "application/octet-stream"
+            try:
+                self.__girder_client.uploadStreamToFolder(
+                    parent_id,
+                    BytesIO(datafile.bytestring),
+                    datafile.filename,
+                    len(datafile.bytestring),
+                    mimeType=mimetype,
+                )
+            except AttributeError:
+                self.__girder_client.uploadFileToFolder(
+                    parent_id, datafile.full_filepath, mimeType=mimetype
+                )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
             self.logger.error(errmsg, exc_info=exc)
@@ -334,11 +338,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
     @classmethod
     def get_init_args_kwargs(cls, parsed_args):
-        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        _, superkwargs = super().get_init_args_kwargs(parsed_args)
         args = [
             parsed_args.girder_api_url,
             parsed_args.girder_api_key,
-            *superargs,
+            parsed_args.config,
+            parsed_args.topic_name,
         ]
         kwargs = {
             **superkwargs,
@@ -346,7 +351,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name": parsed_args.collection_name,
             "girder_root_folder_path": parsed_args.girder_root_folder_path,
             "metadata": parsed_args.metadata,
+            "delete_on_disk_mode": parsed_args.delete_on_disk_mode,
         }
+        del kwargs["consumer_topic_name"]
         return args, kwargs
 
     @classmethod

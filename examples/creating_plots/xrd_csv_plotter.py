@@ -96,7 +96,7 @@ class XRDCSVPlotter(DataFileStreamProcessor):
         args = parser.parse_args(args=args)
         # make the plot maker
         init_args, init_kwargs = cls.get_init_args_kwargs(args)
-        plot_maker = cls(*init_args,**init_kwargs)
+        plot_maker = cls(*init_args, **init_kwargs)
         # start the plot maker running
         run_start = datetime.datetime.now()
         plot_maker.logger.info(
@@ -129,11 +129,13 @@ class XRDCSVPlotter(DataFileStreamProcessor):
         msg += "\n\t".join([str(fp) for fp in proc_filepaths])
         plot_maker.logger.info(msg)
 
+
 def main(args=None):
     """
     Calls run from command line
     """
     XRDCSVPlotter.run_from_command_line(args)
+
 
 if __name__ == "__main__":
     main()

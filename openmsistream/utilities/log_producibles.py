@@ -1,4 +1,4 @@
-" Various Producibles for main program/base class log messages "
+"Various Producibles for main program/base class log messages"
 
 # imports
 import json

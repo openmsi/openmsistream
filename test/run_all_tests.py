@@ -365,6 +365,11 @@ def run_script_tests(args):
         if not os.path.isdir("test-results"):
             os.mkdir("test-results")
         runner = xmlrunner.XMLTestRunner(**runner_kwargs)
+        print("Discovered tests:")
+        for suite in suites:
+            for test_group in suite:
+                for test in getattr(test_group, "_tests", []):
+                    print("  ", test.id())
         result = runner.run(suites)
         # exit the "no_kafka" TemporaryEnvironment
         if temp_no_kafka_env:

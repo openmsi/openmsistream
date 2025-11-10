@@ -2,6 +2,7 @@
 
 # imports
 from abc import ABC, abstractmethod
+from pathlib import Path
 from ...utilities.config import RUN_CONST
 from ..config import DATA_FILE_HANDLING_CONST
 from .data_file_chunk_handlers import DataFileChunkProcessor
@@ -49,7 +50,13 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         """
         Constructor method (duplicated here for its function signature in the docs)
         """
-        super().__init__(config_file, topic_name, **kwargs)
+        super().__init__(
+            config_path=config_file,
+            # or topic_name=topic_name if that’s what the direct parent expects
+            consumer_topic_name=topic_name,
+            **kwargs,
+        )
+        # super().__init__(config_file, topic_name, **kwargs)
 
     def process_files_as_read(self):
         """
@@ -200,6 +207,25 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                     _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
                     _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = False
+            if self.mode == "disk" and self.delete_on_disk_mode:
+                try:
+                    rel_path = Path(dfc.filepath)
+                    abs_path = rel_path.resolve(
+                        strict=False
+                    )  # Do not raise if path doesn't exist
+
+                    if abs_path.exists() and abs_path.is_file():
+                        abs_path.unlink()  # Deletes the file
+                        self.logger.info(f"Deleted file after processing: {abs_path}")
+                    else:
+                        self.logger.info(
+                            f"File does not exist or is not a file: {abs_path}"
+                        )
+                except Exception as e:
+                    self.logger.warning(
+                        f"Error deleting file {dfc.relative_filepath}: {e}"
+                    )
+            del dfc
             return to_return
         # otherwise the file is just in progress
         return True
