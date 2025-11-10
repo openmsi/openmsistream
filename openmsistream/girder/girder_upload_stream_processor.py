@@ -143,10 +143,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
         )
         retry_adapter = HTTPAdapter(max_retries=retry_strategy)
-        with self.__girder_client.session() as session:
-            session.mount("http://", retry_adapter)
-            session.mount("https://", retry_adapter)
-            return self.__process_downloaded_data_file(datafile, lock)
+        with lock:
+            with self.__girder_client.session() as session:
+                session.mount("http://", retry_adapter)
+                session.mount("https://", retry_adapter)
+                return self.__process_downloaded_data_file(datafile, lock)
 
     def __process_downloaded_data_file(self, datafile, lock):
         """
@@ -193,21 +194,20 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
         # Upload the file from its bytestring or file on disk
         try:
-            with lock:
-                mimetype, _ = mimetypes.guess_type(datafile.filename)
-                mimetype = mimetype or "application/octet-stream"
-                try:
-                    self.__girder_client.uploadStreamToFolder(
-                        parent_id,
-                        BytesIO(datafile.bytestring),
-                        datafile.filename,
-                        len(datafile.bytestring),
-                        mimeType=mimetype,
-                    )
-                except AttributeError:
-                    self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
-                    )
+            mimetype, _ = mimetypes.guess_type(datafile.filename)
+            mimetype = mimetype or "application/octet-stream"
+            try:
+                self.__girder_client.uploadStreamToFolder(
+                    parent_id,
+                    BytesIO(datafile.bytestring),
+                    datafile.filename,
+                    len(datafile.bytestring),
+                    mimeType=mimetype,
+                )
+            except AttributeError:
+                self.__girder_client.uploadFileToFolder(
+                    parent_id, datafile.full_filepath, mimeType=mimetype
+                )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
             self.logger.error(errmsg, exc_info=exc)
