@@ -1,0 +1,149 @@
+version: 2.1
+
+################# Arguments to the pip install #################
+pip_install_block: &pip_install_block
+  pkg-manager: pip
+  args: .[test]
+
+################# Command to run tests #################
+run_tests_cmd: &run_tests_cmd
+  command: |
+    cd ~/project
+    mkdir -p test-results
+    TEST_FILES=$(circleci tests glob "test/test_scripts/test*.py")
+    echo "$TEST_FILES" | circleci tests run --command="xargs python -m xmlrunner -v -o test-results" --verbose --split-by=timings
+
+################# Kafka broker setup/teardown blocks #################
+
+kafka_setup: &kafka_setup
+  name: set up local Kafka broker
+  command: |
+    cd test
+    bash start_local_broker.sh
+
+kafka_teardown: &kafka_teardown
+  name: shut down local Kafka broker
+  command: |
+    cd test
+    bash stop_local_broker.sh
+
+################# ORB #################
+orbs:
+  # See the orb documentation here: https://circleci.com/developer/orbs/orb/circleci/python
+  python: circleci/python@2.1.1
+
+################# WORKFLOWS #################
+workflows:
+  build_and_test:
+    # For more details on extending your workflow, see the configuration docs: https://circleci.com/docs/2.0/configuration-reference/#workflows 
+    jobs:
+      - build-and-code-check
+      - run-tests-no-kafka:
+          requires:
+            - build-and-code-check
+      - run-tests:
+          matrix:
+            parameters:
+              python-version:
+                - "3.11"  # latest possible
+                - "3.9"   # oldest not EOL
+                - "3.7"   # last version supported by older Windows machines
+          requires:
+            - run-tests-no-kafka
+
+################# JOBS #################
+jobs:
+  # Build the repo and check the code using pyflakes and pylint
+  build-and-code-check:
+    docker:
+      - image: openmsi/openmsistream-ci:1.6
+    steps:
+      - checkout
+      - run:
+          name: Upgrade pip & build tools
+          command: |
+            pip install --upgrade pip setuptools wheel setuptools_scm 
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          name: code check
+          command: |
+            cd ~/project
+            python -m pyflakes .
+            black openmsistream --check --diff
+            black test --check --diff
+            python -m pylint openmsistream
+            python -m pylint --recursive=y test
+            cd -
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  # Run non-Kafka tests in the CI image
+  run-tests-no-kafka:
+    docker:
+      - image: openmsi/openmsistream-ci:1.6
+    steps:
+      - attach_workspace:
+          at: .
+
+      - run:
+          name: Upgrade pip & build tools
+          command:
+            pip install --upgrade pip setuptools wheel setuptools_scm
+
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          name: run "no Kafka" tests
+          command: |
+            cd ~/project
+            mkdir -p test-results
+            python test/run_all_tests.py --no_pyflakes --no_formatting --no_pylint --no_kafka
+      - store_test_results:
+          path: test-results
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .
+  # Run all tests in a Linux VM with a local Kafka broker
+  run-tests:
+    parameters:
+      python-version:
+        type: string
+        default: "3.9"
+    machine:
+      image: ubuntu-2204:current
+    parallelism: 15
+    resource_class: large
+    environment:
+      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
+      LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS: localhost:9092
+      PYTHONUNBUFFERED: 1
+    steps:
+      - attach_workspace:
+          at: .
+      - run:
+          name: set Python version to << parameters.python-version >>
+          command: |
+            pyenv install << parameters.python-version >>
+            pyenv global << parameters.python-version >>
+      - run:
+          name: Upgrade pip & build tools
+          command: |
+            pip install --upgrade pip setuptools wheel setuptools_scm      
+      - python/install-packages:
+          <<: *pip_install_block
+      - run:
+          <<: *kafka_setup
+      - run:
+          name: run tests in Python << parameters.python-version >>
+          <<: *run_tests_cmd
+      - store_test_results:
+          path: test-results
+      - run:
+          <<: *kafka_teardown
+      - run:
+          # Make sure that the repository is clean after all tests have been run
+          name: Check if the repo is clean
+          command: cd ~/project; sh test/test_repo_status.sh

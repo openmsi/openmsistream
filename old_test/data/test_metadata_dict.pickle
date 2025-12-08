@@ -1,0 +1,100 @@
+(dp0
+VSample identification
+p1
+NsVComment
+p2
+NsVAnode material
+p3
+VCu
+p4
+sVK-Alpha1 wavelength
+p5
+V1.5405980
+p6
+sVK-Alpha2 wavelength
+p7
+V1.5444260
+p8
+sVRatio K-Alpha2/K-Alpha1
+p9
+V0.500
+p10
+sVDivergence slit
+p11
+(lp12
+VFixed
+p13
+aV0.05mm
+p14
+asVReceiving slit
+p15
+V0.05
+p16
+sVMonochromator used
+p17
+VYES
+p18
+sVGenerator voltage
+p19
+V 45
+p20
+sVTube current
+p21
+V 40
+p22
+sVFile date and time
+p23
+V02/Sep/2019 15:57
+p24
+sVUnit cell
+p25
+VTiO2[001]
+p26
+sVh k l
+p27
+V 0 0 2
+p28
+sVScan axis
+p29
+V2Theta-Omega
+p30
+sVScan range
+p31
+(lp32
+V0.10500
+p33
+aV9.89500
+p34
+asVScan step size
+p35
+V0.0100000
+p36
+sVOmega offset
+p37
+V0.0000
+p38
+sVNo. of points
+p39
+V 979
+p40
+sVScan type
+p41
+VCONTINUOUS
+p42
+sVPhi
+p43
+V1.81
+p44
+sVPsi
+p45
+V-0.14
+p46
+sVZ
+p47
+V1.721
+p48
+sVTime per step
+p49
+V0.880
+p50
+s.
