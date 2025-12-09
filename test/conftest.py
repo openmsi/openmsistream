@@ -2,11 +2,26 @@
 import shutil
 import pytest
 import logging
-# from pathlib import Path
+import os
 from testcontainers.core.container import DockerContainer
 from testcontainers.kafka import KafkaContainer
+from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 from openmsistream.utilities.config import RUN_CONST
+from test_scripts.config import TEST_CONST
 
+@pytest.fixture
+def logger():
+    """Provide a real OpenMSILogger for tests."""
+    test_logger = OpenMSILogger(
+        logger_name="pytest_test",
+        streamlevel=logging.DEBUG,
+        logger_filepath=None,  # no file logging
+        filelevel=logging.DEBUG,
+        conf_global_logger=False,  # prevents hijacking all logging during tests
+    )
+    return test_logger
+
+    
 @pytest.fixture
 def output_dir(tmp_path):
     """Temporary output directory for test outputs."""
@@ -19,16 +34,18 @@ def pytest_runtest_makereport(item, call):
     rep = outcome.get_result()
     setattr(item, "rep_" + rep.when, rep)
 
-# Kafka fixture: starts a disposable Kafka and returns bootstrap address
-@pytest.fixture(scope="session")
-def kafka_service():
+
+@pytest.fixture(autouse=True)
+def env_vars_setup(monkeypatch):
     """
-    Starts Kafka via testcontainers and yields bootstrap server string.
-    Session-scoped so tests share the container. Use marker to run these tests only when needed.
+    Automatically sets placeholder environment variables required for tests,
+    reproducing the old TestWithEnvVars behavior.
     """
-    # image selection: choose a suitable confluent image
-    with KafkaContainer("confluentinc/cp-kafka:7.3.0") as kafka:
-        # KafkaContainer exposes bootstrap_server via get_bootstrap_server
-        bootstrap = kafka.get_bootstrap_server()
-        yield bootstrap
-    # container stops automatically
+    reset_vars = []
+
+    for env_var in TEST_CONST.ENV_VAR_NAMES:
+        if os.path.expandvars(f"${env_var}") == f"${env_var}":
+            monkeypatch.setenv(env_var, f"PLACEHOLDER_{env_var}")
+            reset_vars.append(env_var)
+
+    # No teardown needed — monkeypatch handles reset automatically
