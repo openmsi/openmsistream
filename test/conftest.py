@@ -3,11 +3,17 @@ import shutil
 import pytest
 import logging
 import os
-from testcontainers.core.container import DockerContainer
 from testcontainers.kafka import KafkaContainer
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
+from confluent_kafka.admin import AdminClient, NewTopic
 from openmsistream.utilities.config import RUN_CONST
 from test_scripts.config import TEST_CONST
+
+@pytest.fixture
+def output_dir(tmp_path):
+    """Temporary output directory for test outputs."""
+    return tmp_path / "output"
+
 
 @pytest.fixture
 def logger():
@@ -21,11 +27,6 @@ def logger():
     )
     return test_logger
 
-    
-@pytest.fixture
-def output_dir(tmp_path):
-    """Temporary output directory for test outputs."""
-    return tmp_path / "output"
 
 # pytest hook to attach reports (needed for rep_call)
 @pytest.hookimpl(hookwrapper=True)
@@ -35,17 +36,45 @@ def pytest_runtest_makereport(item, call):
     setattr(item, "rep_" + rep.when, rep)
 
 
-@pytest.fixture(autouse=True)
-def env_vars_setup(monkeypatch):
-    """
-    Automatically sets placeholder environment variables required for tests,
-    reproducing the old TestWithEnvVars behavior.
-    """
-    reset_vars = []
+@pytest.fixture(scope="session")
+def kafka_container():
+    username = os.getenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
+    password = os.getenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
 
-    for env_var in TEST_CONST.ENV_VAR_NAMES:
-        if os.path.expandvars(f"${env_var}") == f"${env_var}":
-            monkeypatch.setenv(env_var, f"PLACEHOLDER_{env_var}")
-            reset_vars.append(env_var)
+    container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
+    container.start()
 
-    # No teardown needed — monkeypatch handles reset automatically
+    yield container
+
+    container.stop()
+
+
+@pytest.fixture(scope="function", autouse=True)
+def apply_kafka_env(monkeypatch, kafka_container):
+    """
+    Uses the *session* container,
+    but applies env vars *per test*, avoiding ScopeMismatch.
+    """
+    bootstrap = kafka_container.get_bootstrap_server()
+
+    monkeypatch.setenv("KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS", bootstrap)
+    monkeypatch.setenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
+    monkeypatch.setenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
+
+
+@pytest.fixture
+def kafka_topics(kafka_container, request):
+    # Expecting tests to define request.param = TOPICS
+    topics_dict = request.param
+
+    admin = AdminClient({"bootstrap.servers": kafka_container.get_bootstrap_server()})
+
+    topics = [
+        NewTopic(name, num_partitions=1, replication_factor=1)
+        for name in topics_dict.keys()
+    ]
+
+    admin.create_topics(topics)
+    yield list(topics_dict.keys())
+    admin.delete_topics(list(topics_dict.keys()))
+
