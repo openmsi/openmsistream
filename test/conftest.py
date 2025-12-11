@@ -4,12 +4,11 @@ import logging
 import os
 import pathlib
 import datetime
+import time
+import shutil
 from testcontainers.kafka import KafkaContainer
-from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 from confluent_kafka.admin import AdminClient, NewTopic
 from openmsistream.utilities.config import RUN_CONST
-from test_scripts.config import TEST_CONST
-import time
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
@@ -17,7 +16,18 @@ from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
 from test_scripts.test_data_file_stream_processor import DataFileStreamProcessorForTesting
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
+from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
+from test_scripts.config import TEST_CONST
+
+
+# pytest hook to attach reports (needed for rep_call)
+@pytest.hookimpl(hookwrapper=True)
+def pytest_runtest_makereport(item, call):
+    outcome = yield
+    rep = outcome.get_result()
+    setattr(item, "rep_" + rep.when, rep)
 
 
 @pytest.fixture
@@ -38,14 +48,6 @@ def logger():
         conf_global_logger=False,
     )
     return test_logger
-
-
-# pytest hook to attach reports (needed for rep_call)
-@pytest.hookimpl(hookwrapper=True)
-def pytest_runtest_makereport(item, call):
-    outcome = yield
-    rep = outcome.get_result()
-    setattr(item, "rep_" + rep.when, rep)
 
 
 @pytest.fixture(scope="session")
@@ -253,3 +255,50 @@ def upload_file_helper(logger):
         )
 
     return upload_single_file
+
+
+@pytest.fixture
+def get_heartbeat_messages(logger):
+    """
+    Provide a function that retrieves heartbeat messages from Kafka.
+    Replaces TestWithHeartbeats.get_heartbeat_messages.
+    """
+
+    def _getter(config_path, topic_name, program_id, per_wait_secs=5):
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path,
+            logger=logger,
+            max_wait_per_decrypt=1,
+        )
+        consumer = OpenMSIStreamConsumer(
+            *c_args,
+            **c_kwargs,
+            message_key_regex=re.compile(f"{program_id}_heartbeat"),
+            filter_new_message_keys=True,
+        )
+
+        consumer.subscribe([topic_name])
+
+        msgs = []
+        start = datetime.datetime.now()
+        cutoff_ms = (time.time() + per_wait_secs) * 1000
+        last_timestamp = 0
+
+        while (
+            datetime.datetime.now() - start
+        ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
+            msg = consumer.get_next_message(1)
+            if msg:
+                try:
+                    _, last_timestamp = msg.timestamp()
+                except TypeError:
+                    _, last_timestamp = msg.timestamp
+
+                if not isinstance(msg.value, KafkaCryptoMessage):
+                    msgs.append(msg)
+                    start = datetime.datetime.now()
+
+        consumer.close()
+        return msgs
+
+    return _getter

@@ -9,8 +9,6 @@ from openmsistream import DataFileStreamProcessor, UploadDataFile
 from .config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
 
-from threading import Thread as ExceptionTrackingThread
-
 
 class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
     """
