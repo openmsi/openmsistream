@@ -1,5 +1,4 @@
-# conftest.py (preferred - uses testcontainers)
-import shutil
+# conftest.py
 import pytest
 import logging
 import os
@@ -8,11 +7,20 @@ from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 from confluent_kafka.admin import AdminClient, NewTopic
 from openmsistream.utilities.config import RUN_CONST
 from test_scripts.config import TEST_CONST
+import time
+from openmsistream.data_file_io.actor.data_file_upload_directory import (
+    DataFileUploadDirectory,
+)
+from openmsistream.data_file_io.actor.data_file_download_directory import (
+    DataFileDownloadDirectory,
+)
+
 
 @pytest.fixture
 def output_dir(tmp_path):
-    """Temporary output directory for test outputs."""
-    return tmp_path / "output"
+    d = tmp_path / "output"
+    d.mkdir()
+    return d
 
 
 @pytest.fixture
@@ -23,7 +31,7 @@ def logger():
         streamlevel=logging.DEBUG,
         logger_filepath=None,  # no file logging
         filelevel=logging.DEBUG,
-        conf_global_logger=False,  # prevents hijacking all logging during tests
+        conf_global_logger=False,
     )
     return test_logger
 
@@ -49,17 +57,23 @@ def kafka_container():
     container.stop()
 
 
-@pytest.fixture(scope="function", autouse=True)
-def apply_kafka_env(monkeypatch, kafka_container):
+@pytest.fixture(scope="session", autouse=True)
+def apply_kafka_env(kafka_container):
     """
     Uses the *session* container,
     but applies env vars *per test*, avoiding ScopeMismatch.
     """
     bootstrap = kafka_container.get_bootstrap_server()
 
-    monkeypatch.setenv("KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS", bootstrap)
-    monkeypatch.setenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
-    monkeypatch.setenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
+    os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = bootstrap
+    os.environ["KAFKA_TEST_CLUSTER_USERNAME"] = "testuser"
+    os.environ["KAFKA_TEST_CLUSTER_PASSWORD"] = "testpass"
+
+    yield
+
+    # monkeypatch.setenv("KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS", bootstrap)
+    # monkeypatch.setenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
+    # monkeypatch.setenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
 
 
 @pytest.fixture
@@ -77,4 +91,3 @@ def kafka_topics(kafka_container, request):
     admin.create_topics(topics)
     yield list(topics_dict.keys())
     admin.delete_topics(list(topics_dict.keys()))
-
