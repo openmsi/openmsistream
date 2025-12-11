@@ -6,9 +6,11 @@ import pathlib
 import datetime
 import time
 import shutil
+import re
+from kafkacrypto import KafkaCryptoMessage
+
 from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
-from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
@@ -19,7 +21,10 @@ from test_scripts.test_data_file_stream_processor import DataFileStreamProcessor
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
+
+from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
 from test_scripts.config import TEST_CONST
+from openmsistream.utilities.config import RUN_CONST
 
 
 # pytest hook to attach reports (needed for rep_call)
