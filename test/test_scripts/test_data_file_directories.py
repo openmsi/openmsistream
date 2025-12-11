@@ -107,16 +107,62 @@ def start_download_thread(state):
         target=state["download_directory"].reconstruct
     )
     download_thread.start()
+    state["download_thread"] = download_thread
 
 
-def wait_for_files_to_reconstruct(state, rel_paths, timeout_secs=90):
-    reco_dir = state["reco_dir"]
-    deadline = time.time() + timeout_secs
-    while time.time() < deadline:
-        if all((reco_dir / rp).exists() for rp in rel_paths):
-            return
-        time.sleep(0.25)
-    raise TimeoutError("Files not reconstructed in time")
+def wait_for_files_to_reconstruct(
+    state, rel_paths, timeout_secs=90, before_close_callback=lambda: None
+):
+    """
+    Wait for the download thread to process and reconstruct the specified files,
+    then stop the download thread safely.
+
+    Args:
+        state: dict containing 'download_directory' and 'download_thread'.
+        rel_paths: list of relative file paths to wait for.
+        timeout_secs: maximum seconds to wait before raising TimeoutError.
+        before_close_callback: optional callable to run before shutting down the thread.
+    """
+    download_dir = state["download_directory"]
+    download_thread = state["download_thread"]
+
+    if isinstance(rel_paths, str):
+        rel_paths = [rel_paths]
+
+    # Track which files have been reconstructed
+    files_found = {rp: False for rp in rel_paths}
+
+    start_time = time.time()
+    while not all(files_found.values()) and (time.time() - start_time) < timeout_secs:
+        # Check which files have been processed by the download thread
+        for rp in rel_paths:
+            if not files_found[rp] and rp in download_dir.recent_processed_filepaths:
+                files_found[rp] = True
+        time.sleep(0.25)  # short sleep to yield to thread
+
+    if not all(files_found.values()):
+        raise TimeoutError(f"Files not reconstructed in {timeout_secs} seconds")
+
+    # Run any pre-close actions
+    before_close_callback()
+
+    # Signal the download thread to quit
+    download_dir.control_command_queue.put("q")
+
+    # Wait for the thread to finish
+    download_thread.join(timeout=30)
+    if download_thread.is_alive():
+        raise TimeoutError("Download thread timed out after 30 seconds")
+
+
+# def wait_for_files_to_reconstruct(state, rel_paths, timeout_secs=90):
+#     reco_dir = state["reco_dir"]
+#     deadline = time.time() + timeout_secs
+#     while time.time() < deadline:
+#         if all((reco_dir / rp).exists() for rp in rel_paths):
+#             return
+#         time.sleep(0.25)
+#     raise TimeoutError("Files not reconstructed in time")
 
 
 # ------------------------------------------------------------
@@ -137,6 +183,7 @@ def run_upload(state, files_roots, logger, topic, **kwargs):
         shutil.copy(filepath, dest_path)
 
     d = state["upload_directory"]
+    time.sleep(5)
     d.control_command_queue.put("c")
     d.control_command_queue.put("check")
 
@@ -177,6 +224,7 @@ def run_download(state, files_roots, topic, **kwargs):
     start_download_thread(state)
 
     d = state["download_directory"]
+    time.sleep(5)
     d.control_command_queue.put("c")
     d.control_command_queue.put("check")
 
@@ -228,6 +276,7 @@ def test_upload_and_download_directories_kafka(upload_state, logger, apply_kafka
         upload_state, TEST_CONST.TEST_CFG_FILE_PATH, upload_regex=upload_regex
     )
     run_upload(upload_state, files, logger, topic, upload_regex=upload_regex)
+    time.sleep(1)
 
     gid = f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
 
