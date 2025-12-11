@@ -1,18 +1,16 @@
 import pathlib
 import pytest
 from confluent_kafka.error import SerializationError
-from openmsistream.utilities.config import RUN_CONST
 from openmsistream.data_file_io.entity.upload_data_file import UploadDataFile
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer
 
 from .config import TEST_CONST
+from openmsistream.utilities.config import RUN_CONST
 
 
 @pytest.mark.parametrize(
-    "kafka_topics",
-    [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}], 
-    indirect=True
+    "kafka_topics", [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}], indirect=True
 )
 @pytest.mark.usefixtures("logger", "kafka_topics")
 class TestDataFileChunk:
@@ -60,7 +58,9 @@ class TestDataFileChunk:
         producer.flush()
 
     def test_chunk_of_nonexistent_file_kafka(self, logger):
-        nonexistent_file_path = pathlib.Path(__file__).parent / "never_name_a_file_this.txt"
+        nonexistent_file_path = (
+            pathlib.Path(__file__).parent / "never_name_a_file_this.txt"
+        )
         assert not nonexistent_file_path.is_file()
 
         chunk_to_fail = DataFileChunk(

@@ -20,19 +20,10 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
 from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
+from openmsistream import DataFileStreamProcessor, UploadDataFile
+
 from .config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
-
-
-# ------------------------------------------------------------
-# Fixtures
-# ------------------------------------------------------------
-
-
-@pytest.fixture
-def upload_state(tmp_path):
-    """A simple mutable dict holding runtime state per test."""
-    return {}
 
 
 # ------------------------------------------------------------
@@ -155,16 +146,6 @@ def wait_for_files_to_reconstruct(
         raise TimeoutError("Download thread timed out after 30 seconds")
 
 
-# def wait_for_files_to_reconstruct(state, rel_paths, timeout_secs=90):
-#     reco_dir = state["reco_dir"]
-#     deadline = time.time() + timeout_secs
-#     while time.time() < deadline:
-#         if all((reco_dir / rp).exists() for rp in rel_paths):
-#             return
-#         time.sleep(0.25)
-#     raise TimeoutError("Files not reconstructed in time")
-
-
 # ------------------------------------------------------------
 # Core Test Logic
 # ------------------------------------------------------------
@@ -249,7 +230,7 @@ TOPICS = {
 
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
-def test_upload_and_download_directories_kafka(upload_state, logger, apply_kafka_env):
+def test_upload_and_download_directories_kafka(state, logger, apply_kafka_env):
     files = {
         TEST_CONST.TEST_DATA_FILE_PATH: {
             "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
@@ -273,15 +254,15 @@ def test_upload_and_download_directories_kafka(upload_state, logger, apply_kafka
     topic = "test_data_file_directories"
 
     create_upload_directory(
-        upload_state, TEST_CONST.TEST_CFG_FILE_PATH, upload_regex=upload_regex
+        state, TEST_CONST.TEST_CFG_FILE_PATH, upload_regex=upload_regex
     )
-    run_upload(upload_state, files, logger, topic, upload_regex=upload_regex)
+    run_upload(state, files, logger, topic, upload_regex=upload_regex)
     time.sleep(1)
 
     gid = f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
 
     run_download(
-        upload_state,
+        state,
         files,
         topic,
         consumer_group_id=gid,
@@ -289,8 +270,8 @@ def test_upload_and_download_directories_kafka(upload_state, logger, apply_kafka
     )
 
 
-def test_filepath_should_be_uploaded(upload_state):
-    d = create_upload_directory(upload_state, TEST_CONST.TEST_CFG_FILE_PATH)
+def test_filepath_should_be_uploaded(state):
+    d = create_upload_directory(state, TEST_CONST.TEST_CFG_FILE_PATH)
 
     with pytest.raises(TypeError):
         d.filepath_should_be_uploaded(None)
