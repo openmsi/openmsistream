@@ -50,49 +50,97 @@ def logger():
     return test_logger
 
 
+# @pytest.fixture(scope="session")
+# def kafka_container():
+#     username = os.getenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
+#     password = os.getenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
+
+#     container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
+#     container.start()
+
+#     yield container
+
+#     container.stop()
+
+
 @pytest.fixture(scope="session")
-def kafka_container():
-    username = os.getenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
-    password = os.getenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
-
-    container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
-    container.start()
-
-    yield container
-
-    container.stop()
+def kafka_bootstrap():
+    # Just returns the connection string
+    return "localhost:9092"
 
 
 @pytest.fixture(scope="session", autouse=True)
-def apply_kafka_env(kafka_container):
+# def apply_kafka_env(kafka_container):
+def apply_kafka_env(kafka_bootstrap):
     """
     Uses the *session* container,
     but applies env vars *per test*, avoiding ScopeMismatch.
     """
-    bootstrap = kafka_container.get_bootstrap_server()
+    # bootstrap = kafka_container.get_bootstrap_server()
 
-    os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = bootstrap
+    os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
     os.environ["KAFKA_TEST_CLUSTER_USERNAME"] = "testuser"
     os.environ["KAFKA_TEST_CLUSTER_PASSWORD"] = "testpass"
 
     yield
 
 
+# @pytest.fixture
+# # def kafka_topics(kafka_container, request):
+# def kafka_topics(kafka_bootstrap, request):
+#     # Expecting tests to define request.param = TOPICS
+#     topics_dict = request.param
+
+#     admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
+
+#     topics = [
+#         NewTopic(name, num_partitions=1, replication_factor=1)
+#         for name in topics_dict.keys()
+#     ]
+
+
+#     admin.create_topics(topics)
+#     yield list(topics_dict.keys())
+#     admin.delete_topics(list(topics_dict.keys()))
 @pytest.fixture
-def kafka_topics(kafka_container, request):
-    # Expecting tests to define request.param = TOPICS
+def kafka_topics(kafka_bootstrap, request):
     topics_dict = request.param
+    topic_names = list(topics_dict.keys())
 
-    admin = AdminClient({"bootstrap.servers": kafka_container.get_bootstrap_server()})
+    admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
 
-    topics = [
-        NewTopic(name, num_partitions=1, replication_factor=1)
-        for name in topics_dict.keys()
+    # --- CLEANUP BEFORE CREATING ---
+    try:
+        admin.delete_topics(topic_names)
+        # wait a little for deletion to propagate
+        time.sleep(0.5)
+    except Exception:
+        pass
+
+    # --- RECREATE CLEAN TOPICS ---
+    new_topics = [
+        NewTopic(
+            name,
+            num_partitions=1,
+            replication_factor=1,
+            config={"retention.ms": "1"},  # prevent accumulation of old messages
+        )
+        for name in topic_names
     ]
 
-    admin.create_topics(topics)
-    yield list(topics_dict.keys())
-    admin.delete_topics(list(topics_dict.keys()))
+    # create fresh topics
+    admin.create_topics(new_topics)
+
+    # give Kafka a moment to stabilize
+    time.sleep(0.5)
+
+    yield topic_names
+
+    # --- CLEANUP AFTER TEST ---
+    try:
+        admin.delete_topics(topic_names)
+    except Exception:
+        pass
 
 
 @pytest.fixture
