@@ -82,12 +82,15 @@ def serialization_test_data(logger):
 
     return test_chunk_binaries, test_ul, test_dl
 
+
 TOPICS = {
     "test_oms_encrypted": {},
     "test_oms_encrypted.keys": {"--partitions": 1},
     "test_oms_encrypted.reqs": {"--partitions": 1},
     "test_oms_encrypted.subs": {"--partitions": 1},
 }
+
+
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 class TestSerialization:
@@ -132,6 +135,54 @@ class TestSerialization:
             parser2.broker_configs, parser2.kc_config_file_str, logging.WARNING
         )
 
+        # from pathlib import Path
+        # import os
+
+        # print("CWD:", os.getcwd())
+
+        # cfg_dir = Path(parser1.kc_config_file_str).parent
+        # print("CFG DIR:", cfg_dir)
+
+        # print("crypto exists:", (cfg_dir / "testing_node.crypto").exists())
+        # print("seed exists:", (cfg_dir / "testing_node.seed").exists())
+
+        # crypto_path = cfg_dir / "testing_node.crypto"
+
+        # with open(crypto_path, "r") as f:
+        #     for _ in range(5):
+        #         print(f.readline().strip())
+
+        ck = kc1._kc._cryptokey
+        print("1 CryptoKey dict:", ck.__dict__)
+        print("1 esk keys:", ck._CryptoKey__esk.keys())
+        ck = kc2._kc._cryptokey
+        print("2 CryptoKey dict:", ck.__dict__)
+        print("2 esk keys:", ck._CryptoKey__esk.keys())
+
+        # cfg = kc1._kc._cfg
+        # print("node:", cfg.node_id)
+        # print("cryptokey path:", cfg.cryptokey)
+        # print("ratchet path:", cfg.ratchet)
+
+        # print("cwd:", os.getcwd())
+        # print("crypto exists:", pathlib.Path(cfg.cryptokey.split("#")[1]).exists())
+        # print("seed exists:", pathlib.Path(cfg.ratchet.split("#")[1]).exists())
+
+        # kc1._kc.get_root(self.TOPIC_NAME)
+        # ck = kc1._kc._cryptokey
+        # assert hasattr(ck, "_CryptoKey__spk"), ck.__dict__
+        # kc1._kc.get_producer(kc1._kc.get_root(self.TOPIC_NAME))
+
+        # kc2._kc.get_root(self.TOPIC_NAME)
+        # kc2._kc.get_producer(kc2._kc.get_root(self.TOPIC_NAME))
+
+        # print("KC1 config file:", parser1.kc_config_file_str)
+        # print("KC1 exists:", pathlib.Path(parser1.kc_config_file_str).exists())
+        # print("KC1 crypto object:", kc1._kc.__dict__)
+
+        # print("kc1 crypto:", kc1._kc.__dict__)
+        # print("kc2 crypto:", kc2._kc.__dict__)
+
         dfcs = DataFileChunkSerializer()
         dfcds = DataFileChunkDeserializer()
         comp_ser = CompoundSerializer(dfcs, kc1.value_serializer)
@@ -149,9 +200,12 @@ class TestSerialization:
 
         # full round-trip encrypted serdes
         for chunk_i, ul_chunk in test_ul.items():
-            time.sleep(1)   # EXACT SAME BEHAVIOR YOU HAD
+            time.sleep(1)  # EXACT SAME BEHAVIOR YOU HAD
+
             serialized = comp_ser.serialize(self.TOPIC_NAME, ul_chunk)
             deserialized = comp_des.deserialize(self.TOPIC_NAME, serialized)
+            # deserialized = dfcds(deserialized)
+
             assert deserialized == ul_chunk
 
         kc1.close()

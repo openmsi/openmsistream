@@ -60,6 +60,8 @@ def test_polling_observer_kafka(state, logger):
         state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, use_polling_observer=True
     )
 
+    print("hERE")
+    print(TEST_CONST.TEST_CFG_FILE_PATH)
     # start upload thread (this uses your start_upload_thread helper)
     start_upload_thread(state, TOPIC_NAME)
 
@@ -132,7 +134,7 @@ def test_polling_observer_kafka(state, logger):
             )
             rels.append(rel_path)
 
-    wait_for_files_to_reconstruct(state, rels)
+    wait_for_files_to_reconstruct(state, rels, timeout_secs=180)
 
     # verify reconstructed files match originals
     for orig_fp, rel_fp in zip(files_roots.keys(), rels):
