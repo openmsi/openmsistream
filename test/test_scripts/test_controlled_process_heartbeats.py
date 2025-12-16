@@ -10,7 +10,6 @@ from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
 from .config import TEST_CONST
-from openmsistream.kafka_wrapper.openmsistream_consumer import OpenMSIStreamConsumer
 
 TIMEOUT_SECS = 10
 N_THREADS = 3
