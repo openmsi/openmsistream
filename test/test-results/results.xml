@@ -1,8 +1,0 @@
-<?xml version="1.0" encoding="utf-8"?><testsuites name="pytest tests"><testsuite name="pytest" errors="1" failures="0" skipped="0" tests="1" time="0.165" timestamp="2025-12-11T06:38:42.263958+01:00" hostname="Alis-Work-MacBook-Pro.local"><testcase classname="" name="test.test_scripts.test_controlled_process_heartbeats" time="0.000"><error message="collection failure">ImportError while importing test module '/Users/alirachidi/dev/hemi/openmsistream/test/test_scripts/test_controlled_process_heartbeats.py'.
-Hint: make sure your test modules/packages have valid Python names.
-Traceback:
-../../../../miniconda3/lib/python3.9/importlib/__init__.py:127: in import_module
-    return _bootstrap._gcd_import(name[level:], package, level)
-test_scripts/test_controlled_process_heartbeats.py:13: in &lt;module&gt;
-    from openmsistream import OpenMSIStreamConsumer, KafkaCryptoMessage
-E   ImportError: cannot import name 'OpenMSIStreamConsumer' from 'openmsistream' (/Users/alirachidi/dev/hemi/openmsistream/openmsistream/__init__.py)</error></testcase></testsuite></testsuites>

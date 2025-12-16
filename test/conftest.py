@@ -9,6 +9,9 @@ import shutil
 import re
 from kafkacrypto import KafkaCryptoMessage
 
+import re
+from kafkacrypto import KafkaCryptoMessage
+
 from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
@@ -17,14 +20,19 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
 from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
-from test_scripts.test_data_file_stream_processor import DataFileStreamProcessorForTesting
+from .test_scripts.test_data_file_stream_processor import (
+    DataFileStreamProcessorForTesting,
+)
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
-from test_scripts.config import TEST_CONST
+from .test_scripts.config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
+
+
+################## GENERAL PURPOSE FIXTURES ##################
 
 
 # pytest hook to attach reports (needed for rep_call)
@@ -55,58 +63,57 @@ def logger():
     return test_logger
 
 
-# @pytest.fixture(scope="session")
-# def kafka_container():
-#     username = os.getenv("KAFKA_TEST_CLUSTER_USERNAME", "testuser")
-#     password = os.getenv("KAFKA_TEST_CLUSTER_PASSWORD", "testpass")
+@pytest.fixture(scope="session")
+def kafka_container():
 
-#     container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
-#     container.start()
+    container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
+    container.start()
 
-#     yield container
+    yield container
 
-#     container.stop()
+    container.stop()
 
 
 @pytest.fixture(scope="session")
-def kafka_bootstrap():
-    # Just returns the connection string
-    return "localhost:9092"
+def kafka_bootstrap(kafka_container):
+
+    if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
+        address = kafka_container.get_bootstrap_server()
+        print(f"Using PLAINTEXT broker at {address}...")
+        # return "localhost:9092" # For faster testing, feel free to build PLAINTEXT broker via local-kafka-broker-docker-compose.yml
+    else:
+        print(f"Using SASL_SSL broker at {address}...")
+        address = "pkc-p11xm.us-east-1.aws.confluent.cloud:9092"
+    return address
 
 
 @pytest.fixture(scope="session", autouse=True)
-# def apply_kafka_env(kafka_container):
 def apply_kafka_env(kafka_bootstrap):
     """
     Uses the *session* container,
     but applies env vars *per test*, avoiding ScopeMismatch.
-    """
-    # bootstrap = kafka_container.get_bootstrap_server()
 
-    os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
-    os.environ["KAFKA_TEST_CLUSTER_USERNAME"] = "testuser"
-    os.environ["KAFKA_TEST_CLUSTER_PASSWORD"] = "testpass"
+    """
+    if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
+        os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
+    else:
+        os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
+
+        required_vars = [
+            "KAFKA_TEST_CLUSTER_USERNAME",
+            "KAFKA_TEST_CLUSTER_PASSWORD",
+        ]
+        missing = [v for v in required_vars if not os.getenv(v)]
+
+        if missing:
+            pytest.fail(
+                f"Missing required Kafka env vars when using TEST cluster (inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
+                f"{', '.join(missing)}"
+            )
 
     yield
 
 
-# @pytest.fixture
-# # def kafka_topics(kafka_container, request):
-# def kafka_topics(kafka_bootstrap, request):
-#     # Expecting tests to define request.param = TOPICS
-#     topics_dict = request.param
-
-#     admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
-
-#     topics = [
-#         NewTopic(name, num_partitions=1, replication_factor=1)
-#         for name in topics_dict.keys()
-#     ]
-
-
-#     admin.create_topics(topics)
-#     yield list(topics_dict.keys())
-#     admin.delete_topics(list(topics_dict.keys()))
 @pytest.fixture
 def kafka_topics(kafka_bootstrap, request):
     topics_dict = request.param
@@ -119,22 +126,28 @@ def kafka_topics(kafka_bootstrap, request):
         admin.delete_topics(topic_names)
         # wait a little for deletion to propagate
         time.sleep(0.5)
-    except Exception:
-        pass
+
+    except Exception as e:
+        print("error deleting topics: ", e)
+        raise
 
     # --- RECREATE CLEAN TOPICS ---
-    new_topics = [
-        NewTopic(
-            name,
-            num_partitions=1,
-            replication_factor=1,
-            config={"retention.ms": "1"},  # prevent accumulation of old messages
-        )
-        for name in topic_names
-    ]
+    try:
+        new_topics = [
+            NewTopic(
+                name,
+                num_partitions=1,
+                replication_factor=1,
+                config={"retention.ms": "1"},  # prevent accumulation of old messages
+            )
+            for name in topic_names
+        ]
 
-    # create fresh topics
-    admin.create_topics(new_topics)
+        # create fresh topics
+        admin.create_topics(new_topics)
+    except Exception as e:
+        print("error creating topics: ", e)
+        raise
 
     # give Kafka a moment to stabilize
     time.sleep(0.5)
@@ -146,6 +159,9 @@ def kafka_topics(kafka_bootstrap, request):
         admin.delete_topics(topic_names)
     except Exception:
         pass
+
+
+################## TESTING CODE FIXTURES ##################
 
 
 @pytest.fixture
