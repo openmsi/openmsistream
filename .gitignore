@@ -37,7 +37,9 @@
 build/*
 
 # test results for CircleCI
-/test-results/*
+test/test-results/
+test/data/reco/*
+test/data/watched/*
 
 # Common venv dirs
 .venv
