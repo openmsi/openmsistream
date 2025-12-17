@@ -9,7 +9,7 @@ Install dependencies (including test dependencies):
 poetry install --with test
 ```
 
-You must 
+If you would like to use a local Kafka broker (instantiated with the testcontainers package), set the environment variable `USE_LOCAL_KAFKA_BROKER_IN_TESTS` to 'yes'; </br> Otherwise, you must set `KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS`, `KAFKA_TEST_CLUSTER_USERNAME` and `KAFKA_TEST_CLUSTER_PASSWORD`.
 ### Run tests
 
 Run the full test suite:
