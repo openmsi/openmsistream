@@ -9,6 +9,7 @@ Install dependencies (including test dependencies):
 poetry install --with test
 ```
 
+You must 
 ### Run tests
 
 Run the full test suite:

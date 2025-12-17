@@ -66,6 +66,14 @@ def logger():
 @pytest.fixture(scope="session")
 def kafka_container():
 
+    flag = os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+
+    if flag is None:
+        raise pytest.UsageError(
+            "Environment variable USE_LOCAL_KAFKA_BROKER_IN_TESTS is not set. "
+            "Set it to 'yes' or 'no'."
+        )
+
     container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
     container.start()
 
