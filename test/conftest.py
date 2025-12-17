@@ -7,11 +7,11 @@ import datetime
 import time
 import shutil
 import re
-from kafkacrypto import KafkaCryptoMessage
+import docker
+import requests
+import subprocess
 
-import re
 from kafkacrypto import KafkaCryptoMessage
-
 from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
@@ -20,17 +20,16 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
 from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
-from .test_scripts.test_data_file_stream_processor import (
-    DataFileStreamProcessorForTesting,
-)
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
-from .test_scripts.config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
-
+from .test_scripts.config import TEST_CONST
+from .test_scripts.test_data_file_stream_processor import (
+    DataFileStreamProcessorForTesting,
+)
 
 ################## GENERAL PURPOSE FIXTURES ##################
 
@@ -379,3 +378,89 @@ def get_heartbeat_messages(logger):
         return msgs
 
     return _getter
+
+
+################## GIRDER CODE FIXTURES ##################
+
+
+GIRDER_API_URL = "http://localhost:8080/api/v1"
+HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
+GIRDER_TIMEOUT = 10
+
+
+@pytest.fixture(scope="module")
+def girder_instance():
+    try:
+        docker.from_env()
+    except docker.errors.DockerException:
+        pytest.skip("Docker not running")
+
+    compose_file = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
+
+    subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
+
+    # wait for API
+    for _ in range(30):
+        try:
+            r = requests.get(GIRDER_API_URL, timeout=GIRDER_TIMEOUT)
+            if r.status_code == 200:
+                break
+        except requests.exceptions.ConnectionError:
+            pass
+        time.sleep(1)
+    else:
+        raise RuntimeError("Girder never became available")
+
+    # create admin
+    r = requests.post(
+        f"{GIRDER_API_URL}/user",
+        headers=HEADERS,
+        params=dict(
+            login="admin",
+            email="root@dev.null",
+            firstName="John",
+            lastName="Doe",
+            password="arglebargle123",
+            admin=True,
+        ),
+        timeout=GIRDER_TIMEOUT,
+    )
+
+    if r.status_code == 400:
+        raise RuntimeError("Girder DB not clean")
+
+    token = r.json()["authToken"]["token"]
+    HEADERS["Girder-Token"] = token
+
+    # create assetstore
+    r = requests.post(
+        f"{GIRDER_API_URL}/assetstore",
+        headers=HEADERS,
+        params=dict(
+            type=0,
+            name="Base",
+            root="/home/girder/data/base",
+        ),
+        timeout=GIRDER_TIMEOUT,
+    )
+    assetstore_id = r.json()["_id"]
+
+    # create API key
+    r = requests.post(
+        f"{GIRDER_API_URL}/api_key",
+        headers=HEADERS,
+        timeout=GIRDER_TIMEOUT,
+    )
+    api_key = r.json()["key"]
+    api_key_id = r.json()["_id"]
+
+    yield {
+        "api_url": GIRDER_API_URL,
+        "api_key": api_key,
+        "api_key_id": api_key_id,
+        "assetstore_id": assetstore_id,
+    }
+
+    subprocess.check_output(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
+    )
