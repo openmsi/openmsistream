@@ -73,12 +73,14 @@ def kafka_container():
             "Set it to 'yes' or 'no'."
         )
 
-    container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
-    container.start()
+    if flag == "yes":
+        container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
+        container.start()
 
-    yield container
+        yield container
 
-    container.stop()
+        container.stop()
+    yield
 
 
 @pytest.fixture(scope="session")
@@ -86,11 +88,15 @@ def kafka_bootstrap(kafka_container):
 
     if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
         address = kafka_container.get_bootstrap_server()
-        print(f"Using PLAINTEXT broker at {address}...")
-        # return "localhost:9092" # For faster testing, feel free to build PLAINTEXT broker via local-kafka-broker-docker-compose.yml
+        ### For faster/advanced testing, feel free to build PLAINTEXT or SASL broker via docker compose yaml that launches local plain/ssl kafka broker
+        # address = "localhost:9092"
     else:
-        print(f"Using SASL_SSL broker at {address}...")
-        address = "pkc-p11xm.us-east-1.aws.confluent.cloud:9092"
+        address = os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"]
+        if address is None:
+            raise ValueError(
+                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
+            )
+    print(f"Using broker at {address}...")
     return address
 
 
@@ -104,8 +110,6 @@ def apply_kafka_env(kafka_bootstrap):
     if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
         os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
     else:
-        os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
-
         required_vars = [
             "KAFKA_TEST_CLUSTER_USERNAME",
             "KAFKA_TEST_CLUSTER_PASSWORD",
