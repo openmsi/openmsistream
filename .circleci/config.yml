@@ -34,6 +34,7 @@ jobs:
       - run:
           name: Run unit tests (no Kafka)
           command: |
+            pip install .[test]
             pytest -m "not kafka" --junitxml=test-results/results.xml
       - store_test_results:
           path: test-results
@@ -46,6 +47,7 @@ jobs:
       - run:
           name: Run integration tests (with Kafka)
           command: |
+            pip install .[test]
             pytest -m kafka --junitxml=test-results/results.xml
       - store_test_results:
           path: test-results
