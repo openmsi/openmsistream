@@ -37,6 +37,7 @@
 build/*
 
 # test results for CircleCI
+test/test_scripts/test-results/
 test/test-results/
 test/data/reco/*
 test/data/watched/*
