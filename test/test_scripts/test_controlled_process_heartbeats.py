@@ -1,36 +1,26 @@
-""" Tests for the 'ControlledProcess' classes adapted to include producing heartbeat
-messages
-"""
+import time
+import json
+import datetime
+import re
+import pytest
 
-# imports
-import time, json, datetime
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
     ControlledProcessMultiThreadedHeartbeatsLogs,
 )
+from .config import TEST_CONST
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import TestWithHeartbeats
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import TestWithHeartbeats
-
-# some constants
 TIMEOUT_SECS = 10
 N_THREADS = 3
 
 
+# ----------------------------------------------------------------------
+# ControlledProcess test subclasses
+# ----------------------------------------------------------------------
 class ControlledProcessSingleThreadForTesting(
     ControlledProcessSingleThreadHeartbeatsLogs
 ):
-    "Utility class for testing the single-threaded controlled process with heartbeats"
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_heartbeat_producer("Separate")
@@ -53,8 +43,6 @@ class ControlledProcessSingleThreadForTesting(
 class ControlledProcessMultiThreadedForTesting(
     ControlledProcessMultiThreadedHeartbeatsLogs
 ):
-    "Utility class for testing the multi-threaded controlled process with heartbeats"
-
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
         self.set_heartbeat_producer("Separate")
@@ -76,132 +64,144 @@ class ControlledProcessMultiThreadedForTesting(
                     self.counter += 1
 
 
-class TestControlledProcessHeartbeats(TestWithHeartbeats):
-    "Tests for the ControlledProcesses that use heartbeats"
+# ----------------------------------------------------------------------
+# Fixtures replacing TestWithHeartbeats
+# ----------------------------------------------------------------------
 
-    TOPIC_NAME = "heartbeats"
-    TOPICS = {TOPIC_NAME: {"--partitions": 1}}
 
-    def test_controlled_process_single_thread_kafka(self):
-        "Test the single-thread ControlledProcess with heartbeats"
+@pytest.fixture
+def timestamp_fmt():
+    """Timestamp format used by the heartbeat messages."""
+    return "%Y-%m-%d %H:%M:%S.%f"
+
+
+# ----------------------------------------------------------------------
+# Test parameters
+# ----------------------------------------------------------------------
+TOPIC_NAME = "heartbeats"
+TOPICS = {TOPIC_NAME: {"--partitions": 1}}
+
+
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("logger", "kafka_topics")
+class TestControlledProcessHeartbeats:
+    """Pytest version of ControlledProcess heartbeat tests."""
+
+    # ---------------------------------------------------------
+    def test_single_thread_heartbeats(
+        self, logger, get_heartbeat_messages, timestamp_fmt
+    ):
         program_id = "test_controlled_process_single_thread"
-        cpst = ControlledProcessSingleThreadForTesting(
+
+        cp = ControlledProcessSingleThreadForTesting(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            heartbeat_topic_name=self.TOPIC_NAME,
+            heartbeat_topic_name=TOPIC_NAME,
             heartbeat_program_id=program_id,
             heartbeat_interval_secs=1,
-            logger=self.logger,
+            logger=logger,
         )
-        self.assertEqual(cpst.counter, 0)
+
+        assert cp.counter == 0
+
         start_time = datetime.datetime.now()
-        run_thread = ExceptionTrackingThread(target=cpst.run)
+
+        run_thread = ExceptionTrackingThread(target=cp.run)
         run_thread.start()
+
         try:
-            time.sleep(3.0)
-            self.assertFalse(cpst.checked)
-            time.sleep(1.0)
-            cpst.control_command_queue.put("c")
-            cpst.control_command_queue.put("check")
-            time.sleep(1.0)
-            self.assertTrue(cpst.checked)
-            self.assertFalse(cpst.on_shutdown_called)
-            cpst.control_command_queue.put("q")
-            time.sleep(2.0)
-            self.assertTrue(cpst.on_shutdown_called)
+            time.sleep(3)
+            assert not cp.checked
+
+            cp.control_command_queue.put("c")
+            cp.control_command_queue.put("check")
+            time.sleep(1)
+
+            assert cp.checked
+            assert not cp.on_shutdown_called
+
+            cp.control_command_queue.put("q")
+            time.sleep(2)
+
+            assert cp.on_shutdown_called
+
             run_thread.join(timeout=TIMEOUT_SECS)
-            time.sleep(2.0)
-            if run_thread.is_alive():
-                errmsg = (
-                    "ERROR: running thread in test_controlled_process_single_thread "
-                    f"timed out after {TIMEOUT_SECS} seconds!"
-                )
-                raise TimeoutError(errmsg)
-            self.assertEqual(cpst.counter, 5)
-            heartbeat_msgs = self.get_heartbeat_messages(
+            time.sleep(1)
+            assert not run_thread.is_alive()
+
+            assert cp.counter == 5
+
+            msgs = get_heartbeat_messages(
                 TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-                self.TOPIC_NAME,
+                TOPIC_NAME,
                 program_id,
             )
-            self.assertTrue(len(heartbeat_msgs) > 0)
-            for msg in heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
-        except Exception as exc:
-            raise exc
+            assert len(msgs) > 0
+
+            for msg in msgs:
+                payload = json.loads(msg.value())
+                ts = datetime.datetime.strptime(payload["timestamp"], timestamp_fmt)
+                assert ts > start_time
+
         finally:
             if run_thread.is_alive():
-                try:
-                    cpst.shutdown()
-                    run_thread.join(timeout=5)
-                    if run_thread.is_alive():
-                        errmsg = (
-                            "ERROR: running thread in test_controlled_process_single_thread "
-                            "timed out after 5 seconds!"
-                        )
-                        raise TimeoutError(errmsg)
-                except Exception as exc:
-                    raise exc
+                cp.shutdown()
+                run_thread.join(timeout=5)
+                assert not run_thread.is_alive()
 
-    def test_controlled_process_multi_threaded_kafka(self):
-        "Test the multi-threaded ControlledProcess with heartbeats"
+    # ---------------------------------------------------------
+    def test_multi_thread_heartbeats(self, logger, get_heartbeat_messages, timestamp_fmt):
         program_id = "test_controlled_process_multi_threaded"
-        cpmt = ControlledProcessMultiThreadedForTesting(
+
+        cp = ControlledProcessMultiThreadedForTesting(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            heartbeat_topic_name=self.TOPIC_NAME,
+            heartbeat_topic_name=TOPIC_NAME,
             heartbeat_program_id=program_id,
             heartbeat_interval_secs=1,
-            logger=self.logger,
+            logger=logger,
             n_threads=N_THREADS,
         )
-        self.assertEqual(cpmt.counter, 0)
+
+        assert cp.counter == 0
         start_time = datetime.datetime.now()
-        run_thread = ExceptionTrackingThread(target=cpmt.run)
+
+        run_thread = ExceptionTrackingThread(target=cp.run)
         run_thread.start()
+
         try:
-            time.sleep(3.0)
-            self.assertFalse(cpmt.checked)
-            time.sleep(0.5)
-            cpmt.control_command_queue.put("c")
-            cpmt.control_command_queue.put("check")
-            time.sleep(0.5)
-            self.assertTrue(cpmt.checked)
-            self.assertFalse(cpmt.on_shutdown_called)
-            cpmt.control_command_queue.put("q")
-            time.sleep(1.0)
-            self.assertTrue(cpmt.on_shutdown_called)
+            time.sleep(3)
+            assert not cp.checked
+
+            cp.control_command_queue.put("c")
+            cp.control_command_queue.put("check")
+            time.sleep(1)
+
+            assert cp.checked
+            assert not cp.on_shutdown_called
+
+            cp.control_command_queue.put("q")
+            time.sleep(1)
+
+            assert cp.on_shutdown_called
+
             run_thread.join(timeout=TIMEOUT_SECS)
-            if run_thread.is_alive():
-                errmsg = (
-                    "ERROR: running thread in test_controlled_process_multi_threaded "
-                    f"timed out after {TIMEOUT_SECS} seconds!"
-                )
-                raise TimeoutError(errmsg)
-            self.assertEqual(cpmt.counter, 5)
-            heartbeat_msgs = self.get_heartbeat_messages(
+            assert not run_thread.is_alive()
+
+            assert cp.counter == 5
+
+            msgs = get_heartbeat_messages(
                 TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-                self.TOPIC_NAME,
+                TOPIC_NAME,
                 program_id,
             )
-            self.assertTrue(len(heartbeat_msgs) > 0)
-            for msg in heartbeat_msgs:
-                msg_dict = json.loads(msg.value())
-                msg_timestamp = datetime.datetime.strptime(
-                    msg_dict["timestamp"], self.TIMESTAMP_FMT
-                )
-                self.assertTrue(msg_timestamp > start_time)
-        except Exception as exc:
-            raise exc
+            assert len(msgs) > 0
+
+            for msg in msgs:
+                payload = json.loads(msg.value())
+                ts = datetime.datetime.strptime(payload["timestamp"], timestamp_fmt)
+                assert ts > start_time
+
         finally:
             if run_thread.is_alive():
-                try:
-                    cpmt.shutdown()
-                    run_thread.join(timeout=5)
-                    if run_thread.is_alive():
-                        raise TimeoutError(
-                            "ERROR: running thread timed out after 5 seconds!"
-                        )
-                except Exception as exc:
-                    raise exc
+                cp.shutdown()
+                run_thread.join(timeout=5)
+                assert not run_thread.is_alive()

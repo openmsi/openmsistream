@@ -1,142 +1,169 @@
-# imports
 import hashlib
 import pathlib
 import sys
+import pytest
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithStreamProcessor,
-    )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithStreamProcessor,
-    )
+import os
+from .config import TEST_CONST
 
 
-class TestS3TransferStreamProcessor(
-    TestWithKafkaTopics, TestWithDataFileUploadDirectory, TestWithStreamProcessor
+#
+# ==== Helper functions ====
+#
+
+
+@pytest.fixture
+def set_s3_env(monkeypatch):
+    endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
+    if not endpoint_url.startswith("https://"):
+        endpoint_url = "https://" + endpoint_url
+
+    monkeypatch.setenv("ACCESS_KEY_ID", TEST_CONST.TEST_ACCESS_KEY_ID)
+    monkeypatch.setenv("SECRET_KEY_ID", TEST_CONST.TEST_SECRET_KEY_ID)
+    monkeypatch.setenv("ENDPOINT_URL", endpoint_url)
+    monkeypatch.setenv("REGION", TEST_CONST.TEST_REGION)
+
+    yield
+
+
+def md5_file(path):
+    md5 = hashlib.md5()
+    with open(path, "rb") as fp:
+        while True:
+            chunk = fp.read(65536)
+            if not chunk:
+                break
+            md5.update(chunk)
+    return md5.hexdigest()
+
+
+def validate_s3_transfer(watched_dir, topic_name, logger):
+    """
+    Make sure contents on disk match the contents in the bucket
+    """
+    endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
+    if not endpoint_url.startswith("https://"):
+        endpoint_url = "https://" + endpoint_url
+
+    s3_config = {
+        "endpoint_url": endpoint_url,
+        "access_key_id": TEST_CONST.TEST_ACCESS_KEY_ID,
+        "secret_key_id": TEST_CONST.TEST_SECRET_KEY_ID,
+        "region": TEST_CONST.TEST_REGION,
+        "bucket_name": TEST_CONST.TEST_BUCKET_NAME,
+    }
+
+    s3d = S3DataTransfer(s3_config, logger=logger)
+    log_subdir = watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
+
+    for fp in watched_dir.rglob("*"):
+        if fp.is_dir():
+            continue
+
+        # Skip log directory files
+        try:
+            if fp.is_relative_to(log_subdir):
+                continue
+        except AttributeError:  # Py 3.7 fallback
+            if str(fp).startswith(str(log_subdir)):
+                continue
+
+        file_hash = md5_file(fp)
+        object_key = f"{topic_name}/{fp.relative_to(watched_dir)}"
+
+        matched = s3d.compare_producer_datafile_with_s3_object_stream(
+            TEST_CONST.TEST_BUCKET_NAME, object_key, file_hash
+        )
+
+        if not matched:
+            raise AssertionError("ERROR: S3 object does not match original file")
+
+        # Clean up
+        s3d.delete_object_from_bucket(TEST_CONST.TEST_BUCKET_NAME, object_key)
+
+
+#
+# ==== Main Test ====
+#
+
+TOPIC_NAME = "test_s3_transfer_stream_processor"
+
+TOPICS = {TOPIC_NAME: {}}
+
+
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("kafka_topics", "stream_processor_helper", "set_s3_env")
+def test_s3_transfer_stream_processor(
+    state,
+    logger,
+    stream_processor_helper,
+    tmp_path,
 ):
     """
-    Class for testing S3TransferStreamProcessor
+    Pytest replacement for `test_upload_and_transfer_into_s3_bucket_kafka`
     """
 
-    TOPIC_NAME = "test_s3_transfer_stream_processor"
+    topic_name = TOPIC_NAME
+    #
+    # Create upload directory
+    #
+    from .test_data_file_directories import (
+        create_upload_directory,
+        start_upload_thread,
+        stop_upload_thread,
+    )
 
-    TOPICS = {TOPIC_NAME: {}}
+    create_upload_directory(
+        state,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
+    )
 
-    def setUp(self):
-        """
-        Set up the test
-        """
-        super().setUp()
-        prefix = f"py{sys.version_info.major}{sys.version_info.minor}-"
-        fname = prefix + TEST_CONST.TEST_DATA_FILE_NAME
-        self.rel_filepath = pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME) / fname
+    watched_dir = state["watched_dir"]
 
-    def run_data_file_upload_directory(self):
-        """
-        Called by the test method below to upload a test file
-        """
-        # make the directory to watch
-        self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3)
-        # start upload_files_as_added in a separate thread so we can time it out
-        self.start_upload_thread(self.TOPIC_NAME)
-        try:
-            # copy the test file into the watched directory
-            self.copy_file_to_watched_dir(
-                TEST_CONST.TEST_DATA_FILE_PATH, self.rel_filepath
-            )
-            # stop the upload thread
-            self.stop_upload_thread()
-        except Exception as exc:
-            raise exc
+    # Build relative filename exactly like unittest version
+    prefix = f"py{sys.version_info.major}{sys.version_info.minor}-"
+    fname = prefix + TEST_CONST.TEST_DATA_FILE_NAME
+    rel_fp = pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME) / fname
 
-    def run_s3_tranfer_data(self):
-        """
-        Called by the test method below to transfer reconstructed files to the S3 bucket
-        """
-        # create and start up the stream processor
-        self.create_stream_processor(
-            S3TransferStreamProcessor,
-            cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
-            topic_name=self.TOPIC_NAME,
-            consumer_group_id=f"test_s3_transfer_{TEST_CONST.PY_VERSION}",
-            other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
-        )
-        self.start_stream_processor_thread(self.stream_processor.make_stream)
-        try:
-            # wait for the test file to be processed
-            self.wait_for_files_to_be_processed(self.rel_filepath, timeout_secs=300)
-        except Exception as exc:
-            raise exc
+    #
+    # Start upload thread
+    #
+    start_upload_thread(state, topic_name)
 
-    def hash_file(self, my_file):
-        """
-        Return the md5 hash of a given file
-        """
-        md5 = hashlib.md5()
-        with open(my_file, "rb") as fp:
-            while True:
-                data = fp.read(65536)
-                if not data:
-                    break
-                md5.update(data)
-        return format(md5.hexdigest())
+    # Copy test file into watched dir
+    dest = watched_dir / rel_fp
+    dest.parent.mkdir(parents=True, exist_ok=True)
+    dest.write_bytes(pathlib.Path(TEST_CONST.TEST_DATA_FILE_PATH).read_bytes())
 
-    def validate_s3_transfer(self):
-        """
-        Make sure contents on disk match the contents in the bucket
-        """
-        endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
-        if not endpoint_url.startswith("https://"):
-            endpoint_url = "https://" + endpoint_url
-        s3_config = {
-            "endpoint_url": endpoint_url,
-            "access_key_id": TEST_CONST.TEST_ACCESS_KEY_ID,
-            "secret_key_id": TEST_CONST.TEST_SECRET_KEY_ID,
-            "region": TEST_CONST.TEST_REGION,
-            "bucket_name": TEST_CONST.TEST_BUCKET_NAME,
-        }
-        s3d = S3DataTransfer(s3_config, logger=self.logger)
-        log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-        for filepath in self.watched_dir.rglob("*"):
-            if filepath.is_dir():
-                continue
-            try:
-                if filepath.is_relative_to(log_subdir):
-                    continue
-            except AttributeError:  # "is_relative_to" was added after python 3.7
-                if str(filepath).startswith(str(log_subdir)):
-                    continue
-            file_hash = self.hash_file(filepath)
-            object_key = f"{self.TOPIC_NAME}/{filepath.relative_to(self.watched_dir)}"
-            if not (
-                s3d.compare_producer_datafile_with_s3_object_stream(
-                    TEST_CONST.TEST_BUCKET_NAME, object_key, file_hash
-                )
-            ):
-                raise ValueError(
-                    "ERROR: Failed to match s3 object with the original data"
-                )
-            s3d.delete_object_from_bucket(TEST_CONST.TEST_BUCKET_NAME, object_key)
+    #
+    # Stop upload thread (flush + shutdown)
+    #
+    stop_upload_thread(state)
 
-    def test_upload_and_transfer_into_s3_bucket_kafka(self):
-        """
-        Actually run the test
-        """
-        self.run_data_file_upload_directory()
-        self.run_s3_tranfer_data()
-        self.validate_s3_transfer()
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+    #
+    # Run the S3 transfer processor
+    #
+    sp = stream_processor_helper
+    sp["create_stream_processor"](
+        S3TransferStreamProcessor,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
+        topic_name=topic_name,
+        consumer_group_id=f"test_s3_transfer_py{sys.version_info.major}{sys.version_info.minor}",
+        other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
+    )
+
+    sp["start_stream_processor_thread"](func=None)
+
+    # Wait for processing
+    sp["wait_for_files_to_be_processed"](rel_fp, timeout_secs=300)
+
+    #
+    # Validate that S3 matches disk
+    #
+    validate_s3_transfer(watched_dir, topic_name, logger)
+
+    #
+    # Reset stream processor
+    #
+    sp["reset_stream_processor"]()
