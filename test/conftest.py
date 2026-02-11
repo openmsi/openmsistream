@@ -80,7 +80,8 @@ def kafka_container():
         yield container
 
         container.stop()
-    yield
+    else:
+        yield None
 
 
 @pytest.fixture(scope="session")

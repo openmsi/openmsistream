@@ -117,7 +117,7 @@ def wait_for_files_to_reconstruct(
     download_dir = state["download_directory"]
     download_thread = state["download_thread"]
 
-    if isinstance(rel_paths, str):
+    if isinstance(rel_paths, (str, pathlib.PurePath)):
         rel_paths = [rel_paths]
 
     # Track which files have been reconstructed
