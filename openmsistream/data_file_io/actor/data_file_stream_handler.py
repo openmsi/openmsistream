@@ -1,6 +1,6 @@
 """
-    Base class for consuming file chunks into memory and then triggering some action 
-    when whole files are available
+Base class for consuming file chunks into memory and then triggering some action
+when whole files are available
 """
 
 # imports

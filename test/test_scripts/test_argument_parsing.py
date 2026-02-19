@@ -10,8 +10,6 @@ from openmsistream.utilities.argument_parsing import (
 from .config import TEST_CONST
 
 
-
-
 def test_my_argument_parser(output_dir):
     """
     Test OpenMSIStreamArgumentParser by just adding a bunch of arguments.

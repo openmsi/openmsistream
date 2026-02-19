@@ -11,12 +11,10 @@ def get_latest_pypi_version_and_date():
     Helper to fetch latest PyPI version + upload timestamp.
     Returned as a callable for readability.
     """
+
     def _fetch(package_name):
         try:
-            resp = requests.get(
-                f"https://pypi.org/pypi/{package_name}/json",
-                timeout=30
-            )
+            resp = requests.get(f"https://pypi.org/pypi/{package_name}/json", timeout=30)
             resp.raise_for_status()
             data = resp.json()
 
@@ -43,9 +41,7 @@ def test_version_incremented(get_latest_pypi_version_and_date):
     try:
         current_version = parse(openmsistream.__version__)
     except InvalidVersion as exc:
-        raise ValueError(
-            f"Invalid version string: {openmsistream.__version__}"
-        ) from exc
+        raise ValueError(f"Invalid version string: {openmsistream.__version__}") from exc
 
     now = datetime.datetime.now(datetime.timezone.utc)
     twelve_hours = 12 * 60  # minutes

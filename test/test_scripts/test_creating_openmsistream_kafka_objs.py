@@ -10,6 +10,7 @@ from openmsistream.kafka_wrapper.consumer_and_producer_group import (
 
 from .config import TEST_CONST
 
+
 @pytest.mark.parametrize(
     "kafka_topics",
     [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}],  # same pattern as your working test
@@ -51,16 +52,12 @@ class TestCreateOpenMSIStreamKafkaObjects:
         consumer.close()
 
     def test_create_producer_group(self, logger):
-        group = ConsumerAndProducerGroup(
-            TEST_CONST.TEST_CFG_FILE_PATH, logger=logger
-        )
+        group = ConsumerAndProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH, logger=logger)
         assert group is not None
         group.close()
 
     def test_create_producer_group_encrypted(self, logger):
-        group = ConsumerAndProducerGroup(
-            TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=logger
-        )
+        group = ConsumerAndProducerGroup(TEST_CONST.TEST_CFG_FILE_PATH_ENC, logger=logger)
         assert group is not None
         group.close()
 
