@@ -402,6 +402,12 @@ def girder_instance():
 
     compose_file = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
 
+    # Tear down any leftover containers from a previous run to ensure a clean DB
+    subprocess.call(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
 
     # wait for API
