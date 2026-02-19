@@ -99,7 +99,7 @@ def kafka_bootstrap(kafka_container):
     return address
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def apply_kafka_env(kafka_bootstrap):
     """
     Uses the *session* container,
@@ -126,7 +126,7 @@ def apply_kafka_env(kafka_bootstrap):
 
 
 @pytest.fixture
-def kafka_topics(kafka_bootstrap, request):
+def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
     topics_dict = request.param
     topic_names = list(topics_dict.keys())
 
@@ -401,8 +401,6 @@ def get_log_messages(logger):
             logger=logger,
             max_wait_per_decrypt=0.1,
         )
-        from kafkacrypto import KafkaCryptoMessage
-
         consumer = OpenMSIStreamConsumer(
             *c_args,
             **c_kwargs,

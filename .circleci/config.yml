@@ -42,12 +42,15 @@ jobs:
           path: test-results
 
   test-with-kafka:
-    docker:
-      - image: cimg/python:3.11
+    machine:
+      image: ubuntu-2204:current
     environment:
       USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
     steps:
       - checkout
+      - run:
+          name: Set Python 3.11
+          command: pyenv global $(pyenv versions --bare | grep '^3\.11' | sort -V | tail -1)
       - run:
           name: Run integration tests (with Kafka)
           command: |
