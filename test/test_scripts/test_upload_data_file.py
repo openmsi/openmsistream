@@ -16,6 +16,7 @@ def datafile(logger):
     )
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}],

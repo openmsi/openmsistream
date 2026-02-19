@@ -10,6 +10,7 @@ from openmsistream.kafka_wrapper.consumer_and_producer_group import (
 from .config import TEST_CONST
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}],  # same pattern as your working test

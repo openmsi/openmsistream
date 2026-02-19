@@ -28,6 +28,7 @@ TOPIC_NAME = "test_polling_observer"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_polling_observer_kafka(state, logger):

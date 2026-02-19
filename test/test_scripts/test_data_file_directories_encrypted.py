@@ -22,6 +22,7 @@ TOPIC_NAME = "test_oms_encrypted"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 @pytest.mark.integration

@@ -246,6 +246,7 @@ def run_metadata_reproducer_flow(
 # ----------------------------------------------------------------------
 # Tests
 # ----------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [

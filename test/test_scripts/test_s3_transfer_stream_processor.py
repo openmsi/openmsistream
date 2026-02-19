@@ -82,6 +82,7 @@ TOPIC_NAME = "test_s3_transfer_stream_processor"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "stream_processor_helper", "set_s3_env")
 def test_s3_transfer_stream_processor(

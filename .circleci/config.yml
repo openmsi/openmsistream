@@ -29,8 +29,6 @@ jobs:
   test-no-kafka:
     docker:
       - image: cimg/python:3.11
-    environment:
-      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
     steps:
       - checkout
       - run:

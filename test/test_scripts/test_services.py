@@ -76,6 +76,7 @@ def service_args(openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # WINDOWS TEST
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(platform.system() != "Windows", reason="Windows only")
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "apply_kafka_env")
@@ -122,6 +123,7 @@ def test_windows_services_kafka(service_args):
 # ---------------------------------------------------------------------
 # LINUX TEST (systemd)
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(
     platform.system() != "Linux"
     or check_output(["ps", "--no-headers", "-o", "comm", "1"]).decode().strip()
@@ -189,6 +191,7 @@ def test_linux_services_kafka(service_args, openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # CUSTOM RUNNABLE SERVICE
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(
     platform.system() not in ("Windows", "Linux"),
     reason="Windows or Linux only",
@@ -244,6 +247,7 @@ def test_custom_runnable_service(openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # CUSTOM SCRIPT SERVICE
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(
     platform.system() not in ("Windows", "Linux"),
     reason="Windows or Linux only",

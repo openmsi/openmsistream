@@ -60,6 +60,7 @@ def _produce_single_file(
 # ============================================================
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [{TOPIC_NAME: {}}],
@@ -120,6 +121,7 @@ def test_girder_mimetype(
 # ------------------------------------------------------------
 
 
+@pytest.mark.kafka
 @responses.activate
 @pytest.mark.parametrize(
     "kafka_topics",
@@ -162,6 +164,7 @@ def test_girder_handle_timeout(
 # ------------------------------------------------------------
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [{TOPIC_NAME: {}}],
@@ -210,6 +213,7 @@ def test_girder_repeated_upload(
 # ------------------------------------------------------------
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics",
     [{TOPIC_NAME: {}}],

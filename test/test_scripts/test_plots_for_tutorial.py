@@ -48,6 +48,7 @@ TOPIC_NAME = "test_plots_for_tutorial"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "stream_processor_helper")
 def test_plots_for_tutorial_kafka(

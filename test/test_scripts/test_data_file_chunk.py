@@ -9,6 +9,7 @@ from .config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize(
     "kafka_topics", [{RUN_CONST.DEFAULT_TOPIC_NAME: {}}], indirect=True
 )
