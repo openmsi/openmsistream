@@ -93,9 +93,6 @@ def stream_reproducer_factory(tmp_path_factory):
             if self._thread:
                 self._thread.join(timeout=30)
 
-    import logging
-    from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
-
     _logger = OpenMSILogger(
         logger_name="test_metadata_reproducer",
         streamlevel=logging.DEBUG,
