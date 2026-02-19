@@ -46,7 +46,7 @@ watchdog = ">=3.0.0"
 
 # Optional dependencies (referenced in [tool.poetry.extras])
 beautifulsoup4 = {version = "*", optional = true}
-black = {version = "*", optional = true}
+black = {version = "<26", optional = true}
 docker = {version = "*", optional = true}
 gitpython = {version = "*", optional = true}
 lxml = {version = "*", optional = true}
