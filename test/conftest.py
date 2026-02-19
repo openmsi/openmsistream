@@ -314,6 +314,12 @@ def stream_processor_helper(tmp_path, logger):
 # Upload single file fixture
 # -------------------
 @pytest.fixture
+def upload_single_file(upload_file_helper):
+    """Standalone fixture returning the upload-single-file callable."""
+    return upload_file_helper
+
+
+@pytest.fixture
 def upload_file_helper(logger):
     """
     Fixture that replicates TestWithUploadDataFile exactly
@@ -379,6 +385,47 @@ def get_heartbeat_messages(logger):
                     msgs.append(msg)
                     start = datetime.datetime.now()
 
+        consumer.close()
+        return msgs
+
+    return _getter
+
+
+@pytest.fixture
+def get_log_messages(logger):
+    """Provide a callable that retrieves log messages from Kafka."""
+
+    def _getter(config_path, topic_name, program_id, per_wait_secs=30):
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path,
+            logger=logger,
+            max_wait_per_decrypt=0.1,
+        )
+        from kafkacrypto import KafkaCryptoMessage
+
+        consumer = OpenMSIStreamConsumer(
+            *c_args,
+            **c_kwargs,
+            message_key_regex=re.compile(f"{program_id}_log"),
+            filter_new_message_keys=True,
+        )
+        consumer.subscribe([topic_name])
+        msgs = []
+        start = datetime.datetime.now()
+        cutoff_ms = (time.time() + per_wait_secs) * 1000
+        last_timestamp = 0
+        while (
+            datetime.datetime.now() - start
+        ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
+            msg = consumer.get_next_message(1)
+            if msg:
+                try:
+                    _, last_timestamp = msg.timestamp()
+                except TypeError:
+                    _, last_timestamp = msg.timestamp
+                if not isinstance(msg.value, KafkaCryptoMessage):
+                    msgs.append(msg)
+                    start = datetime.datetime.now()
         consumer.close()
         return msgs
 

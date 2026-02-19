@@ -10,6 +10,7 @@ import importlib.machinery
 
 import pytest
 
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.kafka_wrapper import ConsumerAndProducerGroup
 
 try:
@@ -53,6 +54,9 @@ UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "extracting_metadata" / "SC001_XRR.
 
 CONSUMER_GROUP_ID = f"test_metadata_reproducer_{TEST_CONST.PY_VERSION}"
 
+# Timestamp format matching str(datetime.datetime.now())
+TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
+
 SOURCE_TOPIC_NAME = "test_metadata_extractor_source"
 DEST_TOPIC_NAME = "test_metadata_extractor_dest"
 HEARTBEAT_TOPIC_NAME = "heartbeats"
@@ -62,6 +66,94 @@ LOG_TOPIC_NAME = "logs"
 # ----------------------------------------------------------------------
 # Fixtures
 # ----------------------------------------------------------------------
+
+
+@pytest.fixture(scope="module")
+def stream_reproducer_factory(logger, tmp_path_factory):
+    """Factory fixture that creates a DataFileStreamReproducer subclass instance,
+    stores it, and returns a handle with start()/stop() methods."""
+
+    class _Handle:
+        def __init__(self, reproducer):
+            self.reproducer = reproducer
+            self._thread = None
+
+        def start(self):
+            self._thread = ExceptionTrackingThread(
+                target=self.reproducer.produce_processing_results_for_files_as_read
+            )
+            self._thread.start()
+
+        def stop(self):
+            if self.reproducer:
+                self.reproducer.control_command_queue.put("q")
+            if self._thread:
+                self._thread.join(timeout=30)
+
+    class _Factory:
+        def __init__(self):
+            self._handle = None
+
+        def __call__(
+            self,
+            reproducer_type,
+            cfg_file,
+            source_topic_name,
+            dest_topic_name,
+            consumer_group_id="create_new",
+            other_init_kwargs=None,
+        ):
+            if other_init_kwargs is None:
+                other_init_kwargs = {}
+            output_dir = tmp_path_factory.mktemp("reproducer")
+            rep = reproducer_type(
+                cfg_file,
+                source_topic_name,
+                dest_topic_name,
+                output_dir=output_dir,
+                consumer_group_id=consumer_group_id,
+                logger=logger,
+                **other_init_kwargs,
+            )
+            self._handle = _Handle(rep)
+            return self._handle
+
+        @property
+        def reproducer(self):
+            return self._handle.reproducer if self._handle else None
+
+    return _Factory()
+
+
+@pytest.fixture(scope="module")
+def stream_reproducer(start_metadata_reproducer, stream_reproducer_factory):
+    """Returns the actual reproducer instance created by the factory."""
+    return stream_reproducer_factory.reproducer
+
+
+@pytest.fixture(scope="module")
+def wait_for_files_to_be_processed(stream_reproducer_factory):
+    """Returns a callable that blocks until the given file paths appear in
+    recent_processed_filepaths on the running reproducer."""
+
+    def _wait(rel_filepaths, timeout_secs=90):
+        if isinstance(rel_filepaths, pathlib.PurePath):
+            rel_filepaths = [rel_filepaths]
+        found = {p: False for p in rel_filepaths}
+        start = time.time()
+        rep = stream_reproducer_factory.reproducer
+        while not all(found.values()) and (time.time() - start) < timeout_secs:
+            for p in list(found):
+                if not found[p] and p in rep.recent_processed_filepaths:
+                    found[p] = True
+            time.sleep(0.25)
+        if not all(found.values()):
+            raise TimeoutError(
+                f"Files not processed within {timeout_secs} seconds: "
+                + str([p for p, v in found.items() if not v])
+            )
+
+    return _wait
 
 
 @pytest.fixture(scope="module")
@@ -244,7 +336,7 @@ def test_metadata_reproducer_kafka(
         msg_dict = json.loads(msg.value())
         ts = datetime.datetime.strptime(
             msg_dict["timestamp"],
-            stream_reproducer.TIMESTAMP_FMT,
+            TIMESTAMP_FMT,
         )
         assert ts > start_time
 
