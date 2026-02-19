@@ -51,8 +51,8 @@ jobs:
     steps:
       - checkout
       - run:
-          name: Set Python 3.11
-          command: pyenv global $(pyenv versions --bare | grep '^3\.11' | sort -V | tail -1)
+          name: Set Python version
+          command: pyenv global $(pyenv versions --bare | grep -E '^3\.(11|12|13)' | sort -V | tail -1)
       - run:
           name: Run integration tests (with Kafka)
           command: |

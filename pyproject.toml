@@ -31,7 +31,7 @@ S3TransferStreamProcessor = "openmsistream.s3_buckets.s3_transfer_stream_process
 GirderUploadStreamProcessor = "openmsistream.girder.girder_upload_stream_processor:main"
 
 [tool.poetry.dependencies]
-python = ">=3.9,<3.12"
+python = ">=3.9"
 atomicwrites = ">=1.4.1"
 boto3 = ">=1.26.84"
 confluent-kafka = ">=2.0.2"
