@@ -1,13 +1,13 @@
 import subprocess
-import pkg_resources
+from importlib.metadata import entry_points
 import pytest
 
 
 def get_openmsistream_console_scripts():
     return [
         ep
-        for ep in pkg_resources.iter_entry_points("console_scripts")
-        if ep.dist.key == "openmsistream"
+        for ep in entry_points(group="console_scripts")
+        if ep.value.startswith("openmsistream.")
     ]
 
 
