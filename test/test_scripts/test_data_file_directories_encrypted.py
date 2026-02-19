@@ -33,16 +33,15 @@ def test_encrypted_upload_and_download_kafka(state):
         / TEST_CONST.TEST_DATA_FILE_NAME
     )
 
-    # Create upload directory and start upload thread
+    # Create upload directory, copy file first, then start thread so upload_existing=True
+    # finds it via __scrape_dir_for_files() without a race condition
     create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
-    start_upload_thread(state, TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE)
-
-    # Copy the test file into the watched directory
     watched_dir = state["watched_dir"]
-    watched_dir.mkdir(exist_ok=True, parents=True)
     target_fp = watched_dir / test_rel_filepath
     target_fp.parent.mkdir(exist_ok=True, parents=True)
     target_fp.write_bytes(pathlib.Path(TEST_CONST.TEST_DATA_FILE_PATH).read_bytes())
+
+    start_upload_thread(state, TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE)
 
     # Start download directory and thread
     create_download_directory(

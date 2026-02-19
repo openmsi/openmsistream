@@ -115,13 +115,13 @@ def test_s3_transfer_stream_processor(
 
     #
     # Start upload thread
-    #
-    start_upload_thread(state, topic_name)
-
-    # Copy test file into watched dir
+    # Copy test file into watched dir before starting thread so upload_existing=True
+    # finds it via __scrape_dir_for_files() without a race condition
     dest = watched_dir / rel_fp
     dest.parent.mkdir(parents=True, exist_ok=True)
     dest.write_bytes(pathlib.Path(TEST_CONST.TEST_DATA_FILE_PATH).read_bytes())
+
+    start_upload_thread(state, topic_name)
 
     #
     # Stop upload thread (flush + shutdown)

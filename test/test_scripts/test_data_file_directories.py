@@ -152,16 +152,16 @@ def wait_for_files_to_reconstruct(
 
 
 def run_upload(state, files_roots, logger, topic, **kwargs):
-    # create_upload_directory(state, **kwargs)
-    start_upload_thread(state, topic)
-
-    # copy files into watched dir
+    # copy files into watched dir before starting the thread so upload_existing=True
+    # finds them via __scrape_dir_for_files() without a race condition
     for filepath, meta in files_roots.items():
         rootdir = meta.get("rootdir")
         dest = filepath.relative_to(rootdir) if rootdir else filepath.name
         dest_path = state["watched_dir"] / dest
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(filepath, dest_path)
+
+    start_upload_thread(state, topic)
 
     d = state["upload_directory"]
     time.sleep(5)
