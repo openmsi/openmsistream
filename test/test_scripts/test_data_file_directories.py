@@ -32,7 +32,7 @@ from openmsistream.utilities.config import RUN_CONST
 
 
 def create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, **kwargs):
-    watched_dir = pathlib.Path(TEST_CONST.TEST_DATA_DIR_PATH / "watched")
+    watched_dir = state["tmp_path"] / "watched"
     watched_dir.mkdir(exist_ok=True)
     state["watched_dir"] = watched_dir
     state["upload_directory"] = DataFileUploadDirectory(watched_dir, cfg_file, **kwargs)
@@ -41,7 +41,7 @@ def create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, **kwa
 
 def create_download_directory(state, topic_name, **kwargs):
     cfg_file = kwargs.pop("cfg_file", TEST_CONST.TEST_CFG_FILE_PATH)
-    reco_dir = pathlib.Path(TEST_CONST.TEST_DATA_DIR_PATH / "reco")
+    reco_dir = state["tmp_path"] / "reco"
     reco_dir.mkdir(exist_ok=True)
     state["reco_dir"] = reco_dir
     state["download_directory"] = DataFileDownloadDirectory(
@@ -283,8 +283,15 @@ def test_filepath_should_be_uploaded(state):
     assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / ".hidden")
     assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / "abc.log")
 
+    watched_dir = state["watched_dir"]
     for fp in TEST_CONST.TEST_DATA_DIR_PATH.rglob("*"):
-        check = not (fp.is_dir() or fp.name.startswith(".") or fp.name.endswith(".log"))
+        try:
+            in_watched = fp.is_relative_to(watched_dir)
+        except AttributeError:
+            in_watched = str(fp).startswith(str(watched_dir))
+        check = in_watched and not (
+            fp.is_dir() or fp.name.startswith(".") or fp.name.endswith(".log")
+        )
         assert d.filepath_should_be_uploaded(fp.resolve()) == check
 
     subdir = TEST_CONST.TEST_DATA_DIR_PATH / "this_subdirectory_should_not_be_uploaded"

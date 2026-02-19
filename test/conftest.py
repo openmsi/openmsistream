@@ -181,7 +181,7 @@ def kafka_topics(kafka_bootstrap, request):
 @pytest.fixture
 def state(tmp_path):
     """A simple mutable dict holding runtime state per test."""
-    return {}
+    return {"tmp_path": tmp_path}
 
 
 # -------------------
