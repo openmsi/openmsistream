@@ -10,6 +10,8 @@ import re
 import docker
 import requests
 import subprocess
+import boto3
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from kafkacrypto import KafkaCryptoMessage
 from testcontainers.kafka import KafkaContainer
@@ -470,6 +472,71 @@ def girder_instance():
         "api_key": api_key,
         "api_key_id": api_key_id,
         "assetstore_id": assetstore_id,
+    }
+
+    subprocess.check_output(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
+    )
+
+
+################## MINIO (S3) FIXTURES ##################
+
+MINIO_ENDPOINT = "http://localhost:9000"
+MINIO_ACCESS_KEY = "minioadmin"
+MINIO_SECRET_KEY = "minioadmin"
+MINIO_REGION = "us-east-1"
+MINIO_BUCKET = "openmsistream-test"
+
+
+@pytest.fixture(scope="module")
+def minio_instance():
+    try:
+        docker.from_env()
+    except docker.errors.DockerException:
+        pytest.skip("Docker not running")
+
+    compose_file = TEST_CONST.TEST_DIR_PATH / "local-minio-docker-compose.yml"
+
+    # Tear down any leftover containers from a previous run
+    subprocess.call(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
+
+    # Wait for MinIO to be reachable
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=MINIO_ACCESS_KEY,
+        aws_secret_access_key=MINIO_SECRET_KEY,
+        region_name=MINIO_REGION,
+    )
+
+    for _ in range(30):
+        try:
+            s3.list_buckets()
+            break
+        except (EndpointConnectionError, ClientError, Exception):
+            pass
+        time.sleep(1)
+    else:
+        raise RuntimeError("MinIO never became available")
+
+    # Create test bucket (ignore if it already exists)
+    try:
+        s3.create_bucket(Bucket=MINIO_BUCKET)
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "BucketAlreadyOwnedByYou":
+            raise
+
+    yield {
+        "endpoint_url": MINIO_ENDPOINT,
+        "access_key_id": MINIO_ACCESS_KEY,
+        "secret_key_id": MINIO_SECRET_KEY,
+        "region": MINIO_REGION,
+        "bucket_name": MINIO_BUCKET,
     }
 
     subprocess.check_output(

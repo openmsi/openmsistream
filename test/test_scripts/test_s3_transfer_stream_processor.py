@@ -4,7 +4,6 @@ import sys
 import pytest
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
-import os
 from .config import TEST_CONST
 
 
@@ -14,15 +13,12 @@ from .config import TEST_CONST
 
 
 @pytest.fixture
-def set_s3_env(monkeypatch):
-    endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
-    if not endpoint_url.startswith("https://"):
-        endpoint_url = "https://" + endpoint_url
-
-    monkeypatch.setenv("ACCESS_KEY_ID", TEST_CONST.TEST_ACCESS_KEY_ID)
-    monkeypatch.setenv("SECRET_KEY_ID", TEST_CONST.TEST_SECRET_KEY_ID)
-    monkeypatch.setenv("ENDPOINT_URL", endpoint_url)
-    monkeypatch.setenv("REGION", TEST_CONST.TEST_REGION)
+def set_s3_env(monkeypatch, minio_instance):
+    monkeypatch.setenv("ACCESS_KEY_ID", minio_instance["access_key_id"])
+    monkeypatch.setenv("SECRET_KEY_ID", minio_instance["secret_key_id"])
+    monkeypatch.setenv("ENDPOINT_URL", minio_instance["endpoint_url"])
+    monkeypatch.setenv("REGION", minio_instance["region"])
+    monkeypatch.setenv("BUCKET_NAME", minio_instance["bucket_name"])
 
     yield
 
@@ -38,22 +34,11 @@ def md5_file(path):
     return md5.hexdigest()
 
 
-def validate_s3_transfer(watched_dir, topic_name, logger):
+def validate_s3_transfer(watched_dir, topic_name, logger, s3_config):
     """
     Make sure contents on disk match the contents in the bucket
     """
-    endpoint_url = TEST_CONST.TEST_ENDPOINT_URL
-    if not endpoint_url.startswith("https://"):
-        endpoint_url = "https://" + endpoint_url
-
-    s3_config = {
-        "endpoint_url": endpoint_url,
-        "access_key_id": TEST_CONST.TEST_ACCESS_KEY_ID,
-        "secret_key_id": TEST_CONST.TEST_SECRET_KEY_ID,
-        "region": TEST_CONST.TEST_REGION,
-        "bucket_name": TEST_CONST.TEST_BUCKET_NAME,
-    }
-
+    bucket_name = s3_config["bucket_name"]
     s3d = S3DataTransfer(s3_config, logger=logger)
     log_subdir = watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
 
@@ -73,14 +58,14 @@ def validate_s3_transfer(watched_dir, topic_name, logger):
         object_key = f"{topic_name}/{fp.relative_to(watched_dir)}"
 
         matched = s3d.compare_producer_datafile_with_s3_object_stream(
-            TEST_CONST.TEST_BUCKET_NAME, object_key, file_hash
+            bucket_name, object_key, file_hash
         )
 
         if not matched:
             raise AssertionError("ERROR: S3 object does not match original file")
 
         # Clean up
-        s3d.delete_object_from_bucket(TEST_CONST.TEST_BUCKET_NAME, object_key)
+        s3d.delete_object_from_bucket(bucket_name, object_key)
 
 
 #
@@ -98,6 +83,7 @@ def test_s3_transfer_stream_processor(
     state,
     logger,
     stream_processor_helper,
+    minio_instance,
     tmp_path,
 ):
     """
@@ -105,6 +91,7 @@ def test_s3_transfer_stream_processor(
     """
 
     topic_name = TOPIC_NAME
+    bucket_name = minio_instance["bucket_name"]
     #
     # Create upload directory
     #
@@ -150,7 +137,7 @@ def test_s3_transfer_stream_processor(
         cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_S3,
         topic_name=topic_name,
         consumer_group_id=f"test_s3_transfer_py{sys.version_info.major}{sys.version_info.minor}",
-        other_init_args=(TEST_CONST.TEST_BUCKET_NAME,),
+        other_init_args=(bucket_name,),
     )
 
     sp["start_stream_processor_thread"](func=None)
@@ -161,7 +148,7 @@ def test_s3_transfer_stream_processor(
     #
     # Validate that S3 matches disk
     #
-    validate_s3_transfer(watched_dir, topic_name, logger)
+    validate_s3_transfer(watched_dir, topic_name, logger, minio_instance)
 
     #
     # Reset stream processor
