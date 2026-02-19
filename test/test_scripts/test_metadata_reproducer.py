@@ -8,8 +8,11 @@ import os
 import time
 import importlib.machinery
 
+import logging
+
 import pytest
 
+from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.kafka_wrapper import ConsumerAndProducerGroup
 
@@ -69,7 +72,7 @@ LOG_TOPIC_NAME = "logs"
 
 
 @pytest.fixture(scope="module")
-def stream_reproducer_factory(logger, tmp_path_factory):
+def stream_reproducer_factory(tmp_path_factory):
     """Factory fixture that creates a DataFileStreamReproducer subclass instance,
     stores it, and returns a handle with start()/stop() methods."""
 
@@ -89,6 +92,17 @@ def stream_reproducer_factory(logger, tmp_path_factory):
                 self.reproducer.control_command_queue.put("q")
             if self._thread:
                 self._thread.join(timeout=30)
+
+    import logging
+    from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
+
+    _logger = OpenMSILogger(
+        logger_name="test_metadata_reproducer",
+        streamlevel=logging.DEBUG,
+        logger_filepath=None,
+        filelevel=logging.DEBUG,
+        conf_global_logger=False,
+    )
 
     class _Factory:
         def __init__(self):
@@ -112,7 +126,7 @@ def stream_reproducer_factory(logger, tmp_path_factory):
                 dest_topic_name,
                 output_dir=output_dir,
                 consumer_group_id=consumer_group_id,
-                logger=logger,
+                logger=_logger,
                 **other_init_kwargs,
             )
             self._handle = _Handle(rep)
