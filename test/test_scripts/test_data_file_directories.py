@@ -1,12 +1,9 @@
 import pathlib
 import shutil
-import json
-import datetime
 import time
 import re
 import filecmp
 import pytest
-import threading
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
@@ -20,7 +17,6 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
 from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
-from openmsistream import DataFileStreamProcessor, UploadDataFile
 
 from .config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
@@ -180,7 +176,7 @@ def run_upload(state, files_roots, logger, topic, **kwargs):
     in_table = DataclassTableReadOnly(
         RegistryLineInProgress, filepath=inprog, logger=logger
     )
-    assert in_table.obj_addresses_by_key_attr("filename") == {}
+    assert not in_table.obj_addresses_by_key_attr("filename")
 
     assert comp.is_file()
     ctable = DataclassTableReadOnly(RegistryLineCompleted, filepath=comp, logger=logger)

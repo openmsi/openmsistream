@@ -151,8 +151,8 @@ class TestDataFileChunk:
 
         assert self.test_chunk_1 == test_chunk_1_copy
         assert self.test_chunk_2 == test_chunk_2_copy
-        assert not (self.test_chunk_1 == 2)
-        assert not (self.test_chunk_1 == "this is a string, not a DataFileChunk!")
+        assert not self.test_chunk_1 == 2
+        assert not self.test_chunk_1 == "this is a string, not a DataFileChunk!"
 
     def test_props(self):
         assert self.test_chunk_1.subdir_str == TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME

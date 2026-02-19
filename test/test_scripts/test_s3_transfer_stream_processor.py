@@ -5,6 +5,11 @@ import pytest
 from openmsistream import S3TransferStreamProcessor, DataFileUploadDirectory
 from openmsistream.s3_buckets.s3_data_transfer import S3DataTransfer
 from .config import TEST_CONST
+from .test_data_file_directories import (
+    create_upload_directory,
+    start_upload_thread,
+    stop_upload_thread,
+)
 
 
 #
@@ -95,11 +100,6 @@ def test_s3_transfer_stream_processor(
     #
     # Create upload directory
     #
-    from .test_data_file_directories import (
-        create_upload_directory,
-        start_upload_thread,
-        stop_upload_thread,
-    )
 
     create_upload_directory(
         state,

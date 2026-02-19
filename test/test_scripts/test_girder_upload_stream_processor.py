@@ -4,7 +4,6 @@ import tempfile
 from hashlib import sha512
 
 import pytest
-import requests
 import responses
 import girder_client
 

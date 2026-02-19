@@ -16,12 +16,6 @@ from botocore.exceptions import ClientError, EndpointConnectionError
 from kafkacrypto import KafkaCryptoMessage
 from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
-from openmsistream.data_file_io.actor.data_file_upload_directory import (
-    DataFileUploadDirectory,
-)
-from openmsistream.data_file_io.actor.data_file_download_directory import (
-    DataFileDownloadDirectory,
-)
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
@@ -91,13 +85,15 @@ def kafka_bootstrap(kafka_container):
 
     if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
         address = kafka_container.get_bootstrap_server()
-        ### For faster/advanced testing, feel free to build PLAINTEXT or SASL broker via docker compose yaml that launches local plain/ssl kafka broker
+        ### For faster/advanced testing, feel free to build PLAINTEXT or SASL broker
+        ### via docker compose yaml that launches local plain/ssl kafka broker
         # address = "localhost:9092"
     else:
         address = os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"]
         if address is None:
             raise ValueError(
-                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
+                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but "
+                "KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
             )
     print(f"Using broker at {address}...")
     return address
@@ -121,7 +117,8 @@ def apply_kafka_env(kafka_bootstrap):
 
         if missing:
             pytest.fail(
-                f"Missing required Kafka env vars when using TEST cluster (inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
+                "Missing required Kafka env vars when using TEST cluster "
+                "(inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
                 f"{', '.join(missing)}"
             )
 
@@ -274,7 +271,8 @@ def stream_processor_helper(tmp_path, logger):
             all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
 
         msg = (
-            f"Quitting stream processor thread after reading {state['stream_processor'].n_msgs_read} "
+            f"Quitting stream processor thread after reading "
+            f"{state['stream_processor'].n_msgs_read} "
             "messages; will timeout after 30 seconds...."
         )
         state["logger"].info(msg)

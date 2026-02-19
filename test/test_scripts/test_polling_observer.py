@@ -107,7 +107,7 @@ def test_polling_observer_kafka(state, logger):
     # -------------------------
     # run download phase
     # -------------------------
-    consumer_group_id = (
+    _consumer_group_id = (
         f"run_data_file_download_directory_polling_observer_{TEST_CONST.PY_VERSION}"
     )
 

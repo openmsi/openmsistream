@@ -11,7 +11,7 @@ from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
-from openmsistream.services.examples import runnable_example, script_example
+from openmsistream.services.examples import runnable_example
 
 try:
     from .config import TEST_CONST

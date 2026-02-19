@@ -7,7 +7,7 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
     RegistryLineInProgress,
     RegistryLineCompleted,
 )
-from openmsistream import DataFileUploadDirectory, DataFileDownloadDirectory
+from openmsistream import DataFileUploadDirectory
 from .config import TEST_CONST
 from .test_data_file_directories import (  # assuming your helper functions are saved in helpers.py
     create_upload_directory,

@@ -1,5 +1,4 @@
 import pytest
-import pathlib
 
 from openmsistream.utilities.config import RUN_CONST
 from openmsistream.kafka_wrapper.openmsistream_producer import OpenMSIStreamProducer

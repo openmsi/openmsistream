@@ -1,7 +1,6 @@
 import time
 import json
 import datetime
-import re
 import pytest
 
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
