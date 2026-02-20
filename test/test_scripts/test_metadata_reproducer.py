@@ -217,27 +217,24 @@ def run_metadata_reproducer_flow(
     recofp = pathlib.Path(UPLOAD_FILE.name)
     wait_for_files_to_be_processed(recofp)
 
-    stream_reproducer.file_registry.in_progress_table.dump_to_file()
-    stream_reproducer.file_registry.succeeded_table.dump_to_file()
+    in_progress_table = stream_reproducer.file_registry.in_progress_table
+    succeeded_table = stream_reproducer.file_registry.succeeded_table
+
+    in_progress_table.dump_to_file()
+    succeeded_table.dump_to_file()
 
     assert len(stream_reproducer.file_registry.filepaths_to_rerun) == 0
 
     time.sleep(5)
 
-    in_prog_entries = (
-        stream_reproducer.file_registry.in_progress_table.obj_addresses_by_key_attr(
-            "status"
-        )
-    )
-    succeeded_entries = stream_reproducer.file_registry.succeeded_table.obj_addresses
+    in_prog_entries = in_progress_table.obj_addresses_by_key_attr("status")
+    succeeded_entries = succeeded_table.obj_addresses
 
     assert len(succeeded_entries) >= 1
     assert stream_reproducer.file_registry.PRODUCING_MESSAGE_FAILED not in in_prog_entries
     assert stream_reproducer.file_registry.COMPUTING_RESULT_FAILED not in in_prog_entries
 
-    succeeded_attrs = stream_reproducer.file_registry.succeeded_table.get_entry_attrs(
-        succeeded_entries[0]
-    )
+    succeeded_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
     assert succeeded_attrs["filename"] == UPLOAD_FILE.name
 
 
