@@ -48,9 +48,7 @@ REP_CONFIG_PATH = (
     / "test_xrd_csv_metadata_reproducer.config"
 )
 
-if os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS") and os.environ.get(
-    "USE_LOCAL_KAFKA_BROKER_IN_TESTS"
-):
+if os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS"):
     REP_CONFIG_PATH = REP_CONFIG_PATH.with_name(f"local_broker_{REP_CONFIG_PATH.name}")
 
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "extracting_metadata" / "SC001_XRR.csv"
