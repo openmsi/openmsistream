@@ -153,7 +153,7 @@ def wait_for_files_to_be_processed(stream_reproducer_factory):
         rep = stream_reproducer_factory.reproducer
         while not all(found.values()) and (time.time() - start) < timeout_secs:
             for p in list(found):
-                if not found[p] and p in rep.recent_processed_filepaths:
+                if not found[p] and p in rep.recent_results_produced:
                     found[p] = True
             time.sleep(0.25)
         if not all(found.values()):
