@@ -409,7 +409,6 @@ class OpenMSIStreamConsumer(LogOwner):
             return True
         return False
 
-    @methodtools.lru_cache()
     def message_consumed_before(self, msg):
         """
         Returns True if a message has an offset less than the starting offset
@@ -423,6 +422,10 @@ class OpenMSIStreamConsumer(LogOwner):
             msg_topic = msg.topic
             msg_partition = msg.partition
             msg_offset = msg.offset
+        return self._message_consumed_before_by_key(msg_topic, msg_partition, msg_offset)
+
+    @methodtools.lru_cache()
+    def _message_consumed_before_by_key(self, msg_topic, msg_partition, msg_offset):
         if not (
             isinstance(msg_topic, str)
             and isinstance(msg_partition, int)
