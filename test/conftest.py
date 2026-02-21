@@ -154,15 +154,31 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
         )
         for name in topic_names
     ]
-    fs = admin.create_topics(new_topics)
-    for topic, f in fs.items():
-        try:
-            f.result()
-        except Exception as e:
-            raise RuntimeError(f"Failed to create topic {topic}: {e}") from e
+
+    # Retry creation: Kafka marks topics for deletion asynchronously, so even after
+    # the delete future resolves the topic may still be "marked for deletion" briefly.
+    deadline = time.time() + 30
+    while True:
+        fs = admin.create_topics(new_topics)
+        still_deleting = []
+        for topic, f in fs.items():
+            try:
+                f.result()
+            except Exception as e:
+                if "marked for deletion" in str(e):
+                    still_deleting.append(topic)
+                else:
+                    raise RuntimeError(f"Failed to create topic {topic}: {e}") from e
+        if not still_deleting:
+            break
+        if time.time() > deadline:
+            raise RuntimeError(
+                f"Timed out waiting for topics to finish deleting: {still_deleting}"
+            )
+        time.sleep(0.5)
 
     # brief wait for leader election to settle
-    time.sleep(1)
+    time.sleep(0.5)
 
     yield topic_names
 
