@@ -6,7 +6,7 @@ import pytest
 def get_openmsistream_console_scripts():
     return [
         ep
-        for ep in entry_points(group="console_scripts")
+        for ep in entry_points().get("console_scripts", [])
         if ep.value.startswith("openmsistream.")
     ]
 
