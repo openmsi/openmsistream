@@ -156,34 +156,37 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
     ]
 
     # Retry creation: Kafka marks topics for deletion asynchronously, so even after
-    # the delete future resolves the topic may still be "marked for deletion" or
-    # "already exists" briefly. Re-delete and retry until topics are clean.
+    # the delete future resolves a topic may still be "marked for deletion" or
+    # "already exists" briefly. Only retry the specific topics that failed.
+    pending = list(new_topics)
     deadline = time.time() + 30
-    while True:
-        fs = admin.create_topics(new_topics)
-        need_retry = []
-        for topic, f in fs.items():
+    while pending:
+        fs = admin.create_topics(pending)
+        failed = []
+        for topic_name, f in fs.items():
             try:
                 f.result()
             except Exception as e:
                 msg = str(e)
                 if "marked for deletion" in msg or "already exists" in msg:
-                    need_retry.append(topic)
+                    failed.append(topic_name)
                 else:
-                    raise RuntimeError(f"Failed to create topic {topic}: {e}") from e
-        if not need_retry:
+                    raise RuntimeError(
+                        f"Failed to create topic {topic_name}: {e}"
+                    ) from e
+        if not failed:
             break
         if time.time() > deadline:
             raise RuntimeError(
-                f"Timed out waiting for topics to become available: {need_retry}"
+                f"Timed out waiting for topics to become available: {failed}"
             )
-        # Re-delete any topics that still exist before retrying
-        fs = admin.delete_topics(need_retry)
+        fs = admin.delete_topics(failed)
         for _, f in fs.items():
             try:
                 f.result()
             except Exception:
                 pass
+        pending = [t for t in new_topics if t.topic in failed]
         time.sleep(0.5)
 
     # brief wait for leader election to settle
