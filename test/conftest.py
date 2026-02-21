@@ -156,25 +156,34 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
     ]
 
     # Retry creation: Kafka marks topics for deletion asynchronously, so even after
-    # the delete future resolves the topic may still be "marked for deletion" briefly.
+    # the delete future resolves the topic may still be "marked for deletion" or
+    # "already exists" briefly. Re-delete and retry until topics are clean.
     deadline = time.time() + 30
     while True:
         fs = admin.create_topics(new_topics)
-        still_deleting = []
+        need_retry = []
         for topic, f in fs.items():
             try:
                 f.result()
             except Exception as e:
-                if "marked for deletion" in str(e):
-                    still_deleting.append(topic)
+                msg = str(e)
+                if "marked for deletion" in msg or "already exists" in msg:
+                    need_retry.append(topic)
                 else:
                     raise RuntimeError(f"Failed to create topic {topic}: {e}") from e
-        if not still_deleting:
+        if not need_retry:
             break
         if time.time() > deadline:
             raise RuntimeError(
-                f"Timed out waiting for topics to finish deleting: {still_deleting}"
+                f"Timed out waiting for topics to become available: {need_retry}"
             )
+        # Re-delete any topics that still exist before retrying
+        fs = admin.delete_topics(need_retry)
+        for _, f in fs.items():
+            try:
+                f.result()
+            except Exception:
+                pass
         time.sleep(0.5)
 
     # brief wait for leader election to settle
