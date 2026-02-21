@@ -138,7 +138,7 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
 
     # --- CLEANUP BEFORE CREATING ---
     fs = admin.delete_topics(topic_names)
-    for topic, f in fs.items():
+    for _, f in fs.items():
         try:
             f.result()
         except Exception:

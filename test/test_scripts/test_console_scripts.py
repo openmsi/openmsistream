@@ -5,7 +5,9 @@ import pytest
 
 def get_openmsistream_console_scripts():
     try:
-        scripts = entry_points(group="console_scripts")  # Python 3.10+
+        scripts = entry_points(  # pylint: disable=unexpected-keyword-arg
+            group="console_scripts"
+        )  # Python 3.10+
     except TypeError:
         scripts = entry_points().get("console_scripts", [])  # Python <=3.9
     return [ep for ep in scripts if ep.value.startswith("openmsistream.")]

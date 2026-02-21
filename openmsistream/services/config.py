@@ -35,7 +35,9 @@ class ServicesConstants:
         # make the Service dictionaries to use
         self.service_dicts = []
         try:
-            console_scripts = entry_points(group="console_scripts")  # Python 3.10+
+            console_scripts = entry_points(  # pylint: disable=unexpected-keyword-arg
+                group="console_scripts"
+            )  # Python 3.10+
         except TypeError:
             console_scripts = entry_points().get("console_scripts", [])  # Python <=3.9
         for script in console_scripts:
