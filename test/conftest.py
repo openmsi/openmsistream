@@ -171,9 +171,7 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
                 if "marked for deletion" in msg or "already exists" in msg:
                     failed.append(topic_name)
                 else:
-                    raise RuntimeError(
-                        f"Failed to create topic {topic_name}: {e}"
-                    ) from e
+                    raise RuntimeError(f"Failed to create topic {topic_name}: {e}") from e
         if not failed:
             break
         if time.time() > deadline:
