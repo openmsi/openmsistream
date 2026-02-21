@@ -34,7 +34,11 @@ class ServicesConstants:
     def __init__(self):
         # make the Service dictionaries to use
         self.service_dicts = []
-        for script in entry_points().get("console_scripts", []):
+        try:
+            console_scripts = entry_points(group="console_scripts")  # Python 3.10+
+        except TypeError:
+            console_scripts = entry_points().get("console_scripts", [])  # Python <=3.9
+        for script in console_scripts:
             if script.value.startswith("openmsistream."):
                 if script.name in (
                     "InstallService",

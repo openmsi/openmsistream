@@ -36,12 +36,15 @@ def get_latest_pypi_version_and_date():
 def test_version_incremented(get_latest_pypi_version_and_date):
     """Verify the local __version__ is ahead of or equal to the latest PyPI version
     (equal only if PyPI release is <12 hours old)."""
-    pypi_version, release_date = get_latest_pypi_version_and_date("openmsistream")
-
     try:
         current_version = parse(openmsistream.__version__)
     except InvalidVersion as exc:
         raise ValueError(f"Invalid version string: {openmsistream.__version__}") from exc
+
+    if current_version.is_devrelease or str(current_version) == "0.0.0":
+        pytest.skip("dev/placeholder version — skipping release version check")
+
+    pypi_version, release_date = get_latest_pypi_version_and_date("openmsistream")
 
     now = datetime.datetime.now(datetime.timezone.utc)
     twelve_hours = 12 * 60  # minutes
