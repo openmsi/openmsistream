@@ -134,7 +134,7 @@ def stream_reproducer_factory(tmp_path_factory):
     return _Factory()
 
 
-@pytest.fixture(scope="module")
+@pytest.fixture
 def stream_reproducer(start_metadata_reproducer, stream_reproducer_factory):
     """Returns the actual reproducer instance created by the factory."""
     return stream_reproducer_factory.reproducer
@@ -177,9 +177,9 @@ def downloaded_upload_file():
         UPLOAD_FILE.unlink()
 
 
-@pytest.fixture(scope="module")
-def start_metadata_reproducer(stream_reproducer_factory):
-    """Start the metadata reproducer once for this module."""
+@pytest.fixture
+def start_metadata_reproducer(kafka_topics, stream_reproducer_factory):
+    """Start the metadata reproducer after topics are ready."""
     program_id = "reproducer"
 
     reproducer = stream_reproducer_factory(

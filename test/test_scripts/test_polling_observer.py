@@ -33,9 +33,8 @@ TOPICS = {TOPIC_NAME: {}}
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_polling_observer_kafka(state, logger):
     """
-    Pytest conversion of the old TestPollingObserver test.
     Uses the provided `state` fixture and the helper functions from
-    test_data_file_directories.py exactly as you requested.
+    test_data_file_directories.py.
     """
 
     files_roots = {

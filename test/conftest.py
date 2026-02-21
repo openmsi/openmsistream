@@ -75,6 +75,10 @@ def kafka_container():
 
         yield container
 
+        # Brief wait for rdkafka's internal C-level background threads to finish
+        # reconnection retries before the container is stopped, avoiding spurious
+        # "Connection refused" log noise at shutdown.
+        time.sleep(3)
         container.stop()
     else:
         yield None
@@ -133,43 +137,42 @@ def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
     admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
 
     # --- CLEANUP BEFORE CREATING ---
-    try:
-        admin.delete_topics(topic_names)
-        # wait a little for deletion to propagate
-        time.sleep(0.5)
-
-    except Exception as e:
-        print("error deleting topics: ", e)
-        raise
+    fs = admin.delete_topics(topic_names)
+    for topic, f in fs.items():
+        try:
+            f.result()
+        except Exception:
+            pass  # topic may not exist yet, that's fine
 
     # --- RECREATE CLEAN TOPICS ---
-    try:
-        new_topics = [
-            NewTopic(
-                name,
-                num_partitions=1,
-                replication_factor=1,
-                config={"retention.ms": "1"},  # prevent accumulation of old messages
-            )
-            for name in topic_names
-        ]
+    new_topics = [
+        NewTopic(
+            name,
+            num_partitions=1,
+            replication_factor=1,
+            config={"retention.ms": "1"},  # prevent accumulation of old messages
+        )
+        for name in topic_names
+    ]
+    fs = admin.create_topics(new_topics)
+    for topic, f in fs.items():
+        try:
+            f.result()
+        except Exception as e:
+            raise RuntimeError(f"Failed to create topic {topic}: {e}") from e
 
-        # create fresh topics
-        admin.create_topics(new_topics)
-    except Exception as e:
-        print("error creating topics: ", e)
-        raise
-
-    # give Kafka a moment to stabilize
-    time.sleep(0.5)
+    # brief wait for leader election to settle
+    time.sleep(1)
 
     yield topic_names
 
     # --- CLEANUP AFTER TEST ---
-    try:
-        admin.delete_topics(topic_names)
-    except Exception:
-        pass
+    fs = admin.delete_topics(topic_names)
+    for _, f in fs.items():
+        try:
+            f.result()
+        except Exception:
+            pass
 
 
 ################## TESTING CODE FIXTURES ##################
