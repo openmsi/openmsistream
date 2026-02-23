@@ -61,12 +61,10 @@ def processor():
 
     mock_client = MagicMock(spec=girder_client.GirderClient)
     # wire up name-mangled private attributes
-    proc._GirderUploadStreamProcessor__girder_client = (
-        mock_client  # pylint: disable=invalid-name
-    )
-    proc._GirderUploadStreamProcessor__root_folder_id = (
-        "root_folder_id"  # pylint: disable=invalid-name
-    )
+    # pylint: disable=invalid-name
+    proc._GirderUploadStreamProcessor__girder_client = mock_client
+    proc._GirderUploadStreamProcessor__root_folder_id = "root_folder_id"
+    # pylint: enable=invalid-name
     proc.minimal_metadata_dict = {
         "OpenMSIStreamVersion": "test",
         "KafkaTopic": "test_topic",
