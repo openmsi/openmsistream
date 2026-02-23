@@ -207,7 +207,7 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
                     _ = self.files_in_progress_by_path.pop(dfc.relative_filepath)
                     _ = self.locks_by_fp.pop(dfc.relative_filepath)
                 to_return = False
-            if self.mode == "disk" and self.delete_on_disk_mode:
+            if self.mode in ("disk", "both") and self.delete_files:
                 try:
                     rel_path = Path(dfc.filepath)
                     abs_path = rel_path.resolve(

@@ -24,14 +24,17 @@ class MockDataFile:
     """Lightweight stand-in for DownloadDataFile with only the attributes
     that __process_downloaded_data_file inspects."""
 
-    def __init__(self, filename="test.dat", content=b"hello world",
-                 subdir_str="", full_filepath=None):
+    def __init__(
+        self,
+        filename="test.dat",
+        content=b"hello world",
+        subdir_str="",
+        full_filepath=None,
+    ):
         self.filename = filename
         self.bytestring = content
         self.subdir_str = subdir_str
-        self.relative_filepath = (
-            f"{subdir_str}/{filename}" if subdir_str else filename
-        )
+        self.relative_filepath = f"{subdir_str}/{filename}" if subdir_str else filename
         if full_filepath is not None:
             self.full_filepath = full_filepath
         # intentionally omit full_filepath when not provided so
@@ -105,9 +108,7 @@ class TestDuplicateDetection:
         content = b"updated content"
         df = MockDataFile(content=content)
 
-        client.listItem.return_value = [
-            {"meta": {"checksum": {"sha256": "00" * 32}}}
-        ]
+        client.listItem.return_value = [{"meta": {"checksum": {"sha256": "00" * 32}}}]
         client.uploadStreamToFolder.return_value = {"itemId": "item_123"}
 
         result = proc._process_downloaded_data_file(df, lock)
@@ -186,11 +187,13 @@ class TestUploadSuccess:
         assert client.createFolder.call_count == 2
         # first folder under root
         assert client.createFolder.call_args_list[0][0] == (
-            "root_folder_id", "sub1",
+            "root_folder_id",
+            "sub1",
         )
         # second folder under first
         assert client.createFolder.call_args_list[1][0] == (
-            "folder_sub1", "sub2",
+            "folder_sub1",
+            "sub2",
         )
         # upload into the deepest folder
         assert client.uploadStreamToFolder.call_args[0][0] == "folder_sub2"

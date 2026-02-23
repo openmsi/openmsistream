@@ -30,7 +30,13 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     LOG_SUBDIR_NAME = "LOGS"  # name of the directory that holds the logs
 
     def __init__(
-        self, *args, output_dir=None, mode="memory", datafile_type=None, **kwargs
+        self,
+        *args,
+        output_dir=None,
+        mode="memory",
+        datafile_type=None,
+        delete_files=False,
+        **kwargs,
     ):
         """
         Constructor method
@@ -56,7 +62,7 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
         kwargs = populated_kwargs(kwargs, {"logger_file": self._logs_subdir})
         # figure out or check the datafile type from the "mode" argument
         self.mode = mode
-        self.delete_on_disk_mode = kwargs["delete_on_disk_mode"]
+        self.delete_files = delete_files
         if mode == "memory":
             base_datafile_type = DownloadDataFileToMemory
         elif mode == "disk":
@@ -180,7 +186,7 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
     @classmethod
     def get_command_line_arguments(cls):
         superargs, superkwargs = super().get_command_line_arguments()
-        args = [*superargs, "mode", "delete_on_disk_mode"]
+        args = [*superargs, "mode", "delete_files"]
         kwargs = {
             **superkwargs,
             "optional_output_dir": cls._get_auto_output_dir(),
@@ -197,5 +203,6 @@ class DataFileStreamHandler(DataFileChunkHandler, Runnable, ABC):
             **superkwargs,
             "mode": parsed_args.mode,
             "output_dir": parsed_args.output_dir,
+            "delete_files": parsed_args.delete_files,
         }
         return superargs, kwargs

@@ -356,7 +356,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name": parsed_args.collection_name,
             "girder_root_folder_path": parsed_args.girder_root_folder_path,
             "metadata": parsed_args.metadata,
-            "delete_on_disk_mode": parsed_args.delete_on_disk_mode,
+            "delete_files": parsed_args.delete_files,
         }
         del kwargs["consumer_topic_name"]
         return args, kwargs

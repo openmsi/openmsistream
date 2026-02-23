@@ -404,12 +404,13 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
-        "delete_on_disk_mode": [
+        "delete_files": [
             "optional",
             {
                 "action": "store_true",
                 "help": (
-                    "Add this flag to delete files written to disk when mode is set to 'disk' "
+                    "Add this flag to delete files written to disk after processing "
+                    "when mode is set to 'disk' or 'both'"
                 ),
             },
         ],
