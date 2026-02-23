@@ -61,8 +61,8 @@ def processor():
 
     mock_client = MagicMock(spec=girder_client.GirderClient)
     # wire up name-mangled private attributes
-    proc._GirderUploadStreamProcessor__girder_client = mock_client
-    proc._GirderUploadStreamProcessor__root_folder_id = "root_folder_id"
+    proc._GirderUploadStreamProcessor__girder_client = mock_client  # pylint: disable=invalid-name
+    proc._GirderUploadStreamProcessor__root_folder_id = "root_folder_id"  # pylint: disable=invalid-name
     proc.minimal_metadata_dict = {
         "OpenMSIStreamVersion": "test",
         "KafkaTopic": "test_topic",
@@ -246,7 +246,7 @@ class TestUploadFailures:
 
     def test_missing_item_id_returns_runtime_error(self, processor, lock):
         """Upload response without itemId -> RuntimeError returned."""
-        proc, client, logger = processor
+        proc, client, _ = processor
         df = MockDataFile(content=b"data")
 
         client.listItem.return_value = []
