@@ -18,7 +18,6 @@ from openmsistream.kafka_wrapper.openmsistream_kafka_crypto import (
 from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 
 from .config import TEST_CONST
-from openmsistream.utilities.config import RUN_CONST
 
 
 # ---------------------------------------------------------------------
@@ -91,6 +90,7 @@ TOPICS = {
 }
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 class TestSerialization:
@@ -199,7 +199,7 @@ class TestSerialization:
             comp_des.deserialize(self.TOPIC_NAME, "not bytes")
 
         # full round-trip encrypted serdes
-        for chunk_i, ul_chunk in test_ul.items():
+        for _chunk_i, ul_chunk in test_ul.items():
             time.sleep(1)  # EXACT SAME BEHAVIOR YOU HAD
 
             serialized = comp_ser.serialize(self.TOPIC_NAME, ul_chunk)

@@ -1,6 +1,5 @@
 import pathlib
 import importlib
-import pytest
 
 from openmsistream.services.config import SERVICE_CONST
 from openmsistream.services.linux_service_manager import LinuxServiceManager

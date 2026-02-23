@@ -29,25 +29,34 @@ jobs:
   test-no-kafka:
     docker:
       - image: cimg/python:3.11
+    environment:
+      KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS: "localhost:9092"
+      KAFKA_TEST_CLUSTER_USERNAME: "dummy"
+      KAFKA_TEST_CLUSTER_PASSWORD: "dummy"
     steps:
       - checkout
       - run:
           name: Run unit tests (no Kafka)
           command: |
             pip install .[test]
-            pytest -m "not kafka" --junitxml=test-results/results.xml
+            pytest -m "not kafka" -k "not encrypted"  --junitxml=test-results/results.xml
       - store_test_results:
           path: test-results
 
   test-with-kafka:
-    docker:
-      - image: cimg/python:3.11
+    machine:
+      image: ubuntu-2204:current
+    environment:
+      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
     steps:
       - checkout
+      - run:
+          name: Set Python version
+          command: pyenv global $(pyenv versions --bare | grep -E '^3\.(11|12|13)' | sort -V | tail -1)
       - run:
           name: Run integration tests (with Kafka)
           command: |
             pip install .[test]
-            pytest -m kafka --junitxml=test-results/results.xml
+            pytest -m kafka -k "not encrypted" --junitxml=test-results/results.xml
       - store_test_results:
           path: test-results

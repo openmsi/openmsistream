@@ -10,16 +10,12 @@ import re
 import docker
 import requests
 import subprocess
+import boto3
+from botocore.exceptions import ClientError, EndpointConnectionError
 
 from kafkacrypto import KafkaCryptoMessage
 from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
-from openmsistream.data_file_io.actor.data_file_upload_directory import (
-    DataFileUploadDirectory,
-)
-from openmsistream.data_file_io.actor.data_file_download_directory import (
-    DataFileDownloadDirectory,
-)
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream import UploadDataFile
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
@@ -79,6 +75,10 @@ def kafka_container():
 
         yield container
 
+        # Brief wait for rdkafka's internal C-level background threads to finish
+        # reconnection retries before the container is stopped, avoiding spurious
+        # "Connection refused" log noise at shutdown.
+        time.sleep(3)
         container.stop()
     else:
         yield None
@@ -89,19 +89,21 @@ def kafka_bootstrap(kafka_container):
 
     if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
         address = kafka_container.get_bootstrap_server()
-        ### For faster/advanced testing, feel free to build PLAINTEXT or SASL broker via docker compose yaml that launches local plain/ssl kafka broker
+        ### For faster/advanced testing, feel free to build PLAINTEXT or SASL broker
+        ### via docker compose yaml that launches local plain/ssl kafka broker
         # address = "localhost:9092"
     else:
         address = os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"]
         if address is None:
             raise ValueError(
-                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
+                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but "
+                "KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
             )
     print(f"Using broker at {address}...")
     return address
 
 
-@pytest.fixture(scope="session", autouse=True)
+@pytest.fixture(scope="session")
 def apply_kafka_env(kafka_bootstrap):
     """
     Uses the *session* container,
@@ -119,7 +121,8 @@ def apply_kafka_env(kafka_bootstrap):
 
         if missing:
             pytest.fail(
-                f"Missing required Kafka env vars when using TEST cluster (inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
+                "Missing required Kafka env vars when using TEST cluster "
+                "(inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
                 f"{', '.join(missing)}"
             )
 
@@ -127,50 +130,75 @@ def apply_kafka_env(kafka_bootstrap):
 
 
 @pytest.fixture
-def kafka_topics(kafka_bootstrap, request):
+def kafka_topics(kafka_bootstrap, apply_kafka_env, request):
     topics_dict = request.param
     topic_names = list(topics_dict.keys())
 
     admin = AdminClient({"bootstrap.servers": kafka_bootstrap})
 
     # --- CLEANUP BEFORE CREATING ---
-    try:
-        admin.delete_topics(topic_names)
-        # wait a little for deletion to propagate
-        time.sleep(0.5)
-
-    except Exception as e:
-        print("error deleting topics: ", e)
-        raise
+    fs = admin.delete_topics(topic_names)
+    for _, f in fs.items():
+        try:
+            f.result()
+        except Exception:
+            pass  # topic may not exist yet, that's fine
 
     # --- RECREATE CLEAN TOPICS ---
-    try:
-        new_topics = [
-            NewTopic(
-                name,
-                num_partitions=1,
-                replication_factor=1,
-                config={"retention.ms": "1"},  # prevent accumulation of old messages
+    new_topics = [
+        NewTopic(
+            name,
+            num_partitions=1,
+            replication_factor=1,
+            config={"retention.ms": "1"},  # prevent accumulation of old messages
+        )
+        for name in topic_names
+    ]
+
+    # Retry creation: Kafka marks topics for deletion asynchronously, so even after
+    # the delete future resolves a topic may still be "marked for deletion" or
+    # "already exists" briefly. Only retry the specific topics that failed.
+    pending = list(new_topics)
+    deadline = time.time() + 30
+    while pending:
+        fs = admin.create_topics(pending)
+        failed = []
+        for topic_name, f in fs.items():
+            try:
+                f.result()
+            except Exception as e:
+                msg = str(e)
+                if "marked for deletion" in msg or "already exists" in msg:
+                    failed.append(topic_name)
+                else:
+                    raise RuntimeError(f"Failed to create topic {topic_name}: {e}") from e
+        if not failed:
+            break
+        if time.time() > deadline:
+            raise RuntimeError(
+                f"Timed out waiting for topics to become available: {failed}"
             )
-            for name in topic_names
-        ]
+        fs = admin.delete_topics(failed)
+        for _, f in fs.items():
+            try:
+                f.result()
+            except Exception:
+                pass
+        pending = [t for t in new_topics if t.topic in failed]
+        time.sleep(0.5)
 
-        # create fresh topics
-        admin.create_topics(new_topics)
-    except Exception as e:
-        print("error creating topics: ", e)
-        raise
-
-    # give Kafka a moment to stabilize
+    # brief wait for leader election to settle
     time.sleep(0.5)
 
     yield topic_names
 
     # --- CLEANUP AFTER TEST ---
-    try:
-        admin.delete_topics(topic_names)
-    except Exception:
-        pass
+    fs = admin.delete_topics(topic_names)
+    for _, f in fs.items():
+        try:
+            f.result()
+        except Exception:
+            pass
 
 
 ################## TESTING CODE FIXTURES ##################
@@ -179,7 +207,7 @@ def kafka_topics(kafka_bootstrap, request):
 @pytest.fixture
 def state(tmp_path):
     """A simple mutable dict holding runtime state per test."""
-    return {}
+    return {"tmp_path": tmp_path}
 
 
 # -------------------
@@ -272,7 +300,8 @@ def stream_processor_helper(tmp_path, logger):
             all_files_found = sum(files_found_by_path.values()) == len(rel_filepaths)
 
         msg = (
-            f"Quitting stream processor thread after reading {state['stream_processor'].n_msgs_read} "
+            f"Quitting stream processor thread after reading "
+            f"{state['stream_processor'].n_msgs_read} "
             "messages; will timeout after 30 seconds...."
         )
         state["logger"].info(msg)
@@ -313,6 +342,12 @@ def stream_processor_helper(tmp_path, logger):
 # -------------------
 # Upload single file fixture
 # -------------------
+@pytest.fixture
+def upload_single_file(upload_file_helper):
+    """Standalone fixture returning the upload-single-file callable."""
+    return upload_file_helper
+
+
 @pytest.fixture
 def upload_file_helper(logger):
     """
@@ -385,6 +420,45 @@ def get_heartbeat_messages(logger):
     return _getter
 
 
+@pytest.fixture
+def get_log_messages(logger):
+    """Provide a callable that retrieves log messages from Kafka."""
+
+    def _getter(config_path, topic_name, program_id, per_wait_secs=30):
+        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+            config_path,
+            logger=logger,
+            max_wait_per_decrypt=0.1,
+        )
+        consumer = OpenMSIStreamConsumer(
+            *c_args,
+            **c_kwargs,
+            message_key_regex=re.compile(f"{program_id}_log"),
+            filter_new_message_keys=True,
+        )
+        consumer.subscribe([topic_name])
+        msgs = []
+        start = datetime.datetime.now()
+        cutoff_ms = (time.time() + per_wait_secs) * 1000
+        last_timestamp = 0
+        while (
+            datetime.datetime.now() - start
+        ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
+            msg = consumer.get_next_message(1)
+            if msg:
+                try:
+                    _, last_timestamp = msg.timestamp()
+                except TypeError:
+                    _, last_timestamp = msg.timestamp
+                if not isinstance(msg.value, KafkaCryptoMessage):
+                    msgs.append(msg)
+                    start = datetime.datetime.now()
+        consumer.close()
+        return msgs
+
+    return _getter
+
+
 ################## GIRDER CODE FIXTURES ##################
 
 
@@ -402,6 +476,12 @@ def girder_instance():
 
     compose_file = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
 
+    # Tear down any leftover containers from a previous run to ensure a clean DB
+    subprocess.call(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
     subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
 
     # wait for API
@@ -464,6 +544,71 @@ def girder_instance():
         "api_key": api_key,
         "api_key_id": api_key_id,
         "assetstore_id": assetstore_id,
+    }
+
+    subprocess.check_output(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
+    )
+
+
+################## MINIO (S3) FIXTURES ##################
+
+MINIO_ENDPOINT = "http://localhost:9000"
+MINIO_ACCESS_KEY = "minioadmin"
+MINIO_SECRET_KEY = "minioadmin"
+MINIO_REGION = "us-east-1"
+MINIO_BUCKET = "openmsistream-test"
+
+
+@pytest.fixture(scope="module")
+def minio_instance():
+    try:
+        docker.from_env()
+    except docker.errors.DockerException:
+        pytest.skip("Docker not running")
+
+    compose_file = TEST_CONST.TEST_DIR_PATH / "local-minio-docker-compose.yml"
+
+    # Tear down any leftover containers from a previous run
+    subprocess.call(
+        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL,
+    )
+    subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
+
+    # Wait for MinIO to be reachable
+    s3 = boto3.client(
+        "s3",
+        endpoint_url=MINIO_ENDPOINT,
+        aws_access_key_id=MINIO_ACCESS_KEY,
+        aws_secret_access_key=MINIO_SECRET_KEY,
+        region_name=MINIO_REGION,
+    )
+
+    for _ in range(30):
+        try:
+            s3.list_buckets()
+            break
+        except (EndpointConnectionError, ClientError, Exception):
+            pass
+        time.sleep(1)
+    else:
+        raise RuntimeError("MinIO never became available")
+
+    # Create test bucket (ignore if it already exists)
+    try:
+        s3.create_bucket(Bucket=MINIO_BUCKET)
+    except ClientError as e:
+        if e.response["Error"]["Code"] != "BucketAlreadyOwnedByYou":
+            raise
+
+    yield {
+        "endpoint_url": MINIO_ENDPOINT,
+        "access_key_id": MINIO_ACCESS_KEY,
+        "secret_key_id": MINIO_SECRET_KEY,
+        "region": MINIO_REGION,
+        "bucket_name": MINIO_BUCKET,
     }
 
     subprocess.check_output(

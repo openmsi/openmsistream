@@ -11,7 +11,7 @@ from openmsistream.services.windows_service_manager import WindowsServiceManager
 from openmsistream.services.linux_service_manager import LinuxServiceManager
 from openmsistream.services.install_service import main as install_service_main
 from openmsistream.services.manage_service import main as manage_service_main
-from openmsistream.services.examples import runnable_example, script_example
+from openmsistream.services.examples import runnable_example
 
 try:
     from .config import TEST_CONST
@@ -43,26 +43,26 @@ def assert_error_log_empty(service_name):
 # Shared args setup
 # ---------------------------------------------------------------------
 @pytest.fixture
-def service_args(openmsistream_output_dir):
+def service_args(output_dir):
     """
     Returns the argslists_by_class_name used by all service tests.
     """
 
     return {
         "DataFileUploadDirectory": [
-            openmsistream_output_dir,
+            output_dir,
             "--config",
             TEST_CONST.TEST_CFG_FILE_PATH,
         ],
         "DataFileDownloadDirectory": [
-            openmsistream_output_dir,
+            output_dir,
             "--config",
             TEST_CONST.TEST_CFG_FILE_PATH,
         ],
         "S3TransferStreamProcessor": [
             TEST_CONST.TEST_BUCKET_NAME,
             "--output_dir",
-            openmsistream_output_dir,
+            output_dir,
             "--config",
             TEST_CONST.TEST_CFG_FILE_PATH_S3,
             "--topic_name",
@@ -76,6 +76,7 @@ def service_args(openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # WINDOWS TEST
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(platform.system() != "Windows", reason="Windows only")
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "apply_kafka_env")
@@ -122,15 +123,17 @@ def test_windows_services_kafka(service_args):
 # ---------------------------------------------------------------------
 # LINUX TEST (systemd)
 # ---------------------------------------------------------------------
-@pytest.mark.skipif(
-    platform.system() != "Linux"
-    or check_output(["ps", "--no-headers", "-o", "comm", "1"]).decode().strip()
-    != "systemd",
-    reason="Linux+systemd only",
-)
+@pytest.mark.kafka
+@pytest.mark.skipif(platform.system() != "Linux", reason="Linux only")
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "apply_kafka_env")
-def test_linux_services_kafka(service_args, openmsistream_output_dir):
+def test_linux_services_kafka(service_args, output_dir):
+    if (
+        check_output(["ps", "--no-headers", "-o", "comm", "1"]).decode().strip()
+        != "systemd"
+    ):
+        pytest.skip("systemd not available")
+
     assert len(SERVICE_CONST.available_services) > 0
 
     for service_dict in SERVICE_CONST.available_services:
@@ -155,7 +158,7 @@ def test_linux_services_kafka(service_args, openmsistream_output_dir):
         service_file = SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
 
         try:
-            openmsistream_output_dir.mkdir(exist_ok=True)
+            output_dir.mkdir(exist_ok=True)
 
             manager.install_service()
 
@@ -172,10 +175,8 @@ def test_linux_services_kafka(service_args, openmsistream_output_dir):
 
         finally:
             # cleanup
-            if openmsistream_output_dir.exists():
-                run_cmd_in_subprocess(
-                    ["sudo", "rm", "-rf", str(openmsistream_output_dir)]
-                )
+            if output_dir.exists():
+                run_cmd_in_subprocess(["sudo", "rm", "-rf", str(output_dir)])
             if service_file.exists():
                 run_cmd_in_subprocess(["sudo", "rm", str(service_file)])
 
@@ -189,15 +190,16 @@ def test_linux_services_kafka(service_args, openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # CUSTOM RUNNABLE SERVICE
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(
     platform.system() not in ("Windows", "Linux"),
     reason="Windows or Linux only",
 )
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "apply_kafka_env")
-def test_custom_runnable_service(openmsistream_output_dir):
+def test_custom_runnable_service(output_dir):
     service_name = "RunnableExampleServiceTest"
-    test_file = openmsistream_output_dir / "runnable_example_service_test.txt"
+    test_file = output_dir / "runnable_example_service_test.txt"
     error_log = pathlib.Path().resolve() / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
     service_file = SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
 
@@ -208,7 +210,7 @@ def test_custom_runnable_service(openmsistream_output_dir):
         install_service_main(
             [
                 f"RunnableExample={runnable_example.__name__}",
-                str(openmsistream_output_dir),
+                str(output_dir),
                 "--service_name",
                 service_name,
             ]
@@ -244,15 +246,16 @@ def test_custom_runnable_service(openmsistream_output_dir):
 # ---------------------------------------------------------------------
 # CUSTOM SCRIPT SERVICE
 # ---------------------------------------------------------------------
+@pytest.mark.kafka
 @pytest.mark.skipif(
     platform.system() not in ("Windows", "Linux"),
     reason="Windows or Linux only",
 )
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "apply_kafka_env")
-def test_custom_script_service(openmsistream_output_dir):
+def test_custom_script_service(output_dir):
     service_name = "ScriptExampleServiceTest"
-    test_file = openmsistream_output_dir / "script_example_service_test.txt"
+    test_file = output_dir / "script_example_service_test.txt"
     error_log = pathlib.Path().resolve() / f"{service_name}{SERVICE_CONST.ERROR_LOG_STEM}"
     service_file = SERVICE_CONST.DAEMON_SERVICE_DIR / f"{service_name}.service"
 
@@ -263,7 +266,7 @@ def test_custom_script_service(openmsistream_output_dir):
         install_service_main(
             [
                 "openmsistream.services.examples.script_example:main",
-                str(openmsistream_output_dir),
+                str(output_dir),
                 "--service_name",
                 service_name,
             ]

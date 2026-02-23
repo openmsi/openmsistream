@@ -1,13 +1,9 @@
 # test_scripts/test_data_file_stream_processor.py
-import pathlib
-import time
-import shutil
 import pytest
-import datetime
-from openmsistream import DataFileStreamProcessor, UploadDataFile
+
+from openmsistream import DataFileStreamProcessor
 
 from .config import TEST_CONST
-from openmsistream.utilities.config import RUN_CONST
 
 
 class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
@@ -66,14 +62,13 @@ TOPICS = {
 }
 
 
+@pytest.mark.kafka
 @pytest.mark.integration
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics")
 def test_data_file_stream_processor_modes_kafka(
     stream_processor_helper, upload_file_helper
 ):
-    TOPIC_NAME = "test_data_file_stream_processor"
-
     # upload the test file
     upload_file_helper(
         TEST_CONST.TEST_DATA_FILE_2_PATH,
@@ -112,11 +107,11 @@ def test_data_file_stream_processor_modes_kafka(
     sp["reset_stream_processor"](remove_output=True)
 
 
+@pytest.mark.kafka
 @pytest.mark.integration
 def test_data_file_stream_processor_restart_kafka(
     stream_processor_helper, upload_file_helper
 ):
-    TOPIC_2_NAME = "test_data_file_stream_processor_2"
     sp = stream_processor_helper
 
     # Upload initial files

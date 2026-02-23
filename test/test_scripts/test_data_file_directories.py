@@ -1,12 +1,9 @@
 import pathlib
 import shutil
-import json
-import datetime
 import time
 import re
 import filecmp
 import pytest
-import threading
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
@@ -20,7 +17,6 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
 from openmsistream.data_file_io.actor.data_file_download_directory import (
     DataFileDownloadDirectory,
 )
-from openmsistream import DataFileStreamProcessor, UploadDataFile
 
 from .config import TEST_CONST
 from openmsistream.utilities.config import RUN_CONST
@@ -32,7 +28,7 @@ from openmsistream.utilities.config import RUN_CONST
 
 
 def create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, **kwargs):
-    watched_dir = pathlib.Path(TEST_CONST.TEST_DATA_DIR_PATH / "watched")
+    watched_dir = state["tmp_path"] / "watched"
     watched_dir.mkdir(exist_ok=True)
     state["watched_dir"] = watched_dir
     state["upload_directory"] = DataFileUploadDirectory(watched_dir, cfg_file, **kwargs)
@@ -41,7 +37,7 @@ def create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, **kwa
 
 def create_download_directory(state, topic_name, **kwargs):
     cfg_file = kwargs.pop("cfg_file", TEST_CONST.TEST_CFG_FILE_PATH)
-    reco_dir = pathlib.Path(TEST_CONST.TEST_DATA_DIR_PATH / "reco")
+    reco_dir = state["tmp_path"] / "reco"
     reco_dir.mkdir(exist_ok=True)
     state["reco_dir"] = reco_dir
     state["download_directory"] = DataFileDownloadDirectory(
@@ -152,16 +148,16 @@ def wait_for_files_to_reconstruct(
 
 
 def run_upload(state, files_roots, logger, topic, **kwargs):
-    # create_upload_directory(state, **kwargs)
-    start_upload_thread(state, topic)
-
-    # copy files into watched dir
+    # copy files into watched dir before starting the thread so upload_existing=True
+    # finds them via __scrape_dir_for_files() without a race condition
     for filepath, meta in files_roots.items():
         rootdir = meta.get("rootdir")
         dest = filepath.relative_to(rootdir) if rootdir else filepath.name
         dest_path = state["watched_dir"] / dest
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(filepath, dest_path)
+
+    start_upload_thread(state, topic)
 
     d = state["upload_directory"]
     time.sleep(5)
@@ -180,7 +176,7 @@ def run_upload(state, files_roots, logger, topic, **kwargs):
     in_table = DataclassTableReadOnly(
         RegistryLineInProgress, filepath=inprog, logger=logger
     )
-    assert in_table.obj_addresses_by_key_attr("filename") == {}
+    assert not in_table.obj_addresses_by_key_attr("filename")
 
     assert comp.is_file()
     ctable = DataclassTableReadOnly(RegistryLineCompleted, filepath=comp, logger=logger)
@@ -228,6 +224,7 @@ TOPICS = {
 }
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_upload_and_download_directories_kafka(state, logger, apply_kafka_env):
@@ -283,8 +280,15 @@ def test_filepath_should_be_uploaded(state):
     assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / ".hidden")
     assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / "abc.log")
 
+    watched_dir = state["watched_dir"]
     for fp in TEST_CONST.TEST_DATA_DIR_PATH.rglob("*"):
-        check = not (fp.is_dir() or fp.name.startswith(".") or fp.name.endswith(".log"))
+        try:
+            in_watched = fp.is_relative_to(watched_dir)
+        except AttributeError:
+            in_watched = str(fp).startswith(str(watched_dir))
+        check = in_watched and not (
+            fp.is_dir() or fp.name.startswith(".") or fp.name.endswith(".log")
+        )
         assert d.filepath_should_be_uploaded(fp.resolve()) == check
 
     subdir = TEST_CONST.TEST_DATA_DIR_PATH / "this_subdirectory_should_not_be_uploaded"

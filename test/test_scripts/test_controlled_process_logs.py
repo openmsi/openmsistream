@@ -123,6 +123,7 @@ class ControlledProcessMultiThreadedForTesting(
 # -------------------------------------------------------------------
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [{"logs": {}}], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_controlled_process_single_thread_kafka(logger, get_log_messages):
@@ -195,6 +196,7 @@ def test_controlled_process_single_thread_kafka(logger, get_log_messages):
                 )
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [{"logs": {}}], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_controlled_process_multi_threaded_kafka(logger, get_log_messages):

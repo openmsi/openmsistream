@@ -1,7 +1,6 @@
 import time
 import json
 import datetime
-import re
 import pytest
 
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
@@ -82,6 +81,7 @@ TOPIC_NAME = "heartbeats"
 TOPICS = {TOPIC_NAME: {"--partitions": 1}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics")
 class TestControlledProcessHeartbeats:

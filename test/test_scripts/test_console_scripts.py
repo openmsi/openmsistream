@@ -1,13 +1,16 @@
 import subprocess
-import pkg_resources
+from importlib.metadata import entry_points
 import pytest
 
 
 def get_openmsistream_console_scripts():
-    return [
-        ep for ep in pkg_resources.iter_entry_points("console_scripts")
-        if ep.dist.key == "openmsistream"
-    ]
+    try:
+        scripts = entry_points(  # pylint: disable=unexpected-keyword-arg
+            group="console_scripts"
+        )  # Python 3.10+
+    except TypeError:
+        scripts = entry_points().get("console_scripts", [])  # Python <=3.9
+    return [ep for ep in scripts if ep.value.startswith("openmsistream.")]
 
 
 @pytest.mark.parametrize(

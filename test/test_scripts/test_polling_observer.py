@@ -28,13 +28,13 @@ TOPIC_NAME = "test_polling_observer"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
 def test_polling_observer_kafka(state, logger):
     """
-    Pytest conversion of the old TestPollingObserver test.
     Uses the provided `state` fixture and the helper functions from
-    test_data_file_directories.py exactly as you requested.
+    test_data_file_directories.py.
     """
 
     files_roots = {
@@ -55,23 +55,20 @@ def test_polling_observer_kafka(state, logger):
         },
     }
 
-    # create upload directory (pass through any kwargs the unittest used, e.g. use_polling_observer)
     create_upload_directory(
         state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, use_polling_observer=True
     )
 
-    print("hERE")
-    print(TEST_CONST.TEST_CFG_FILE_PATH)
-    # start upload thread (this uses your start_upload_thread helper)
-    start_upload_thread(state, TOPIC_NAME)
-
-    # copy files into watched dir (same logic as original)
+    # copy files into watched dir before starting the thread so upload_existing=True
+    # finds them via __scrape_dir_for_files() without a race condition
     for filepath, meta in files_roots.items():
         rootdir = meta.get("rootdir")
         dest = filepath.relative_to(rootdir) if rootdir else pathlib.Path(filepath.name)
         dest_path = state["watched_dir"] / dest
         dest_path.parent.mkdir(parents=True, exist_ok=True)
         shutil.copy(filepath, dest_path)
+
+    start_upload_thread(state, TOPIC_NAME)
 
     # exercise the "check" commands like the original test did
     state["upload_directory"].control_command_queue.put("c")
@@ -110,7 +107,7 @@ def test_polling_observer_kafka(state, logger):
     # -------------------------
     # run download phase
     # -------------------------
-    consumer_group_id = (
+    _consumer_group_id = (
         f"run_data_file_download_directory_polling_observer_{TEST_CONST.PY_VERSION}"
     )
 

@@ -13,8 +13,9 @@ from .config import TEST_CONST
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"
 module_name = class_path.name[:-3]  # strip ".py"
 
-loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-module = loader.load_module()  # noqa: W1510  (deprecated-method, ignore)
+spec = importlib.util.spec_from_file_location(module_name, str(class_path))
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
 
 # constants
 TIMEOUT_SECS = 90
@@ -47,6 +48,7 @@ TOPIC_NAME = "test_plots_for_tutorial"
 TOPICS = {TOPIC_NAME: {}}
 
 
+@pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("kafka_topics", "stream_processor_helper")
 def test_plots_for_tutorial_kafka(

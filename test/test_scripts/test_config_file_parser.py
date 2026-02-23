@@ -62,7 +62,10 @@ def test_get_config_dict_for_groups(config_objects, monkeypatch, logger):
 
     # ------ Production config handling ----------
     # If env vars are NOT set, fall back to fake config path
-    if os.path.expandvars("$KAFKA_PROD_CLUSTER_USERNAME") == "$KAFKA_PROD_CLUSTER_USERNAME":
+    if (
+        os.path.expandvars("$KAFKA_PROD_CLUSTER_USERNAME")
+        == "$KAFKA_PROD_CLUSTER_USERNAME"
+    ):
         chosen_path = TEST_CONST.PROD_CONFIG_FILE_PATH
     else:
         chosen_path = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
