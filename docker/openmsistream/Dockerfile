@@ -31,12 +31,9 @@ RUN sudo apt-get update && \
     sudo apt-get autoremove -y
 
 # Install OpenMSIStream
+ARG VERSION
 RUN pip install --upgrade pip && \
-    pip install openmsistream && \
-    pip cache purge
-
-# Upgrade to latest version
-RUN pip install --upgrade openmsistream && \
+    pip install openmsistream==${VERSION} && \
     pip cache purge
 
 # Set the timezone

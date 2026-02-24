@@ -17,7 +17,7 @@ class S3Service(LogOwner):
         self.bucket_name = s3_config["bucket_name"]
         endpoint_url = str(s3_config["endpoint_url"])
 
-        if not endpoint_url.startswith("https://"):
+        if not endpoint_url.startswith(("http://", "https://")):
             endpoint_url = "https://" + endpoint_url
         self.s3_client = self.session.client(
             service_name="s3",

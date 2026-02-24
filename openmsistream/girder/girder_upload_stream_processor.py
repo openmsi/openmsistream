@@ -74,7 +74,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         metadata=None,
         **other_kwargs,
     ):
-        super().__init__(config_file, topic_name, **other_kwargs)
+        super().__init__(
+            config_file=config_file,  # map to base name
+            topic_name=topic_name,  # map to base name
+            **other_kwargs,
+        )
         # connect and authenticate to the Girder instance
         try:
             self.__girder_client = girder_client.GirderClient(apiUrl=girder_api_url)
@@ -139,10 +143,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
         )
         retry_adapter = HTTPAdapter(max_retries=retry_strategy)
-        with self.__girder_client.session() as session:
-            session.mount("http://", retry_adapter)
-            session.mount("https://", retry_adapter)
-            return self.__process_downloaded_data_file(datafile, lock)
+        with lock:
+            with self.__girder_client.session() as session:
+                session.mount("http://", retry_adapter)
+                session.mount("https://", retry_adapter)
+                return self.__process_downloaded_data_file(datafile, lock)
 
     def __process_downloaded_data_file(self, datafile, lock):
         """
@@ -179,50 +184,54 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
             existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
             if existing_sha256 == checksum_hash.hexdigest():
-                errmsg = (
-                    f"WARNING: found an existing Item named {datafile.filename} with the same "
-                    f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
+                self.logger.warning(
+                    f"found an existing Item named {datafile.filename} with the same "
+                    f"checksum in the folder at {datafile.relative_filepath}. "
+                    "Skipping upload."
                 )
-                self.logger.warning(errmsg)
-                print(f"File {datafile.filename} already exists with the same checksum")
                 return None
+            self.logger.warning(
+                f"found an existing Item named {datafile.filename} with a different "
+                f"checksum in the folder at {datafile.relative_filepath}. "
+                "Uploading anyway (Girder may rename the file)."
+            )
 
         # Upload the file from its bytestring or file on disk
+        upload_response = None
         try:
-            with lock:
-                mimetype, _ = mimetypes.guess_type(datafile.filename)
-                mimetype = mimetype or "application/octet-stream"
-                try:
-                    self.__girder_client.uploadStreamToFolder(
-                        parent_id,
-                        BytesIO(datafile.bytestring),
-                        datafile.filename,
-                        len(datafile.bytestring),
-                        mimeType=mimetype,
-                    )
-                except AttributeError:
-                    self.__girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
-                    )
+            mimetype, _ = mimetypes.guess_type(datafile.filename)
+            mimetype = mimetype or "application/octet-stream"
+            try:
+                upload_response = self.__girder_client.uploadStreamToFolder(
+                    parent_id,
+                    BytesIO(datafile.bytestring),
+                    datafile.filename,
+                    len(datafile.bytestring),
+                    mimeType=mimetype,
+                )
+            except AttributeError as exc:
+                if not hasattr(datafile, "full_filepath") or not datafile.full_filepath:
+                    raise ValueError(
+                        f"Stream upload unavailable and no file path for "
+                        f"{datafile.relative_filepath}"
+                    ) from exc
+                upload_response = self.__girder_client.uploadFileToFolder(
+                    parent_id, datafile.full_filepath, mimeType=mimetype
+                )
         except Exception as exc:
             errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
             self.logger.error(errmsg, exc_info=exc)
             return exc
-        # Add metadata to the item that was created for the file
+        # Get the item ID from the upload response
         item_id = None
-        for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
-            if item_id:
-                errmsg = (
-                    f"ERROR: found more than one Item named {datafile.filename} "
-                    f"after uploading the file at {datafile.relative_filepath}"
-                )
-                return RuntimeError(errmsg)
-            item_id = resp["_id"]
+        if upload_response and "itemId" in upload_response:
+            item_id = upload_response["itemId"]
         if not item_id:
             errmsg = (
-                "ERROR: could not find a corresponding Item after uploading the file "
+                "ERROR: could not determine the Item ID after uploading the file "
                 f"at {datafile.relative_filepath}"
             )
+            self.logger.error(errmsg)
             return RuntimeError(errmsg)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
@@ -334,11 +343,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
     @classmethod
     def get_init_args_kwargs(cls, parsed_args):
-        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        _, superkwargs = super().get_init_args_kwargs(parsed_args)
         args = [
             parsed_args.girder_api_url,
             parsed_args.girder_api_key,
-            *superargs,
+            parsed_args.config,
+            parsed_args.topic_name,
         ]
         kwargs = {
             **superkwargs,
@@ -346,7 +356,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name": parsed_args.collection_name,
             "girder_root_folder_path": parsed_args.girder_root_folder_path,
             "metadata": parsed_args.metadata,
+            "delete_files": parsed_args.delete_files,
         }
+        del kwargs["consumer_topic_name"]
         return args, kwargs
 
     @classmethod

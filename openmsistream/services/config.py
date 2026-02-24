@@ -3,7 +3,7 @@
 # imports
 import os, pathlib, importlib
 from inspect import isclass
-import pkg_resources
+from importlib.metadata import entry_points
 from openmsitoolbox.logging import OpenMSILogger
 
 
@@ -34,8 +34,14 @@ class ServicesConstants:
     def __init__(self):
         # make the Service dictionaries to use
         self.service_dicts = []
-        for script in pkg_resources.iter_entry_points("console_scripts"):
-            if script.dist.key == "openmsistream":
+        try:
+            console_scripts = entry_points(  # pylint: disable=unexpected-keyword-arg
+                group="console_scripts"
+            )  # Python 3.10+
+        except TypeError:
+            console_scripts = entry_points().get("console_scripts", [])  # Python <=3.9
+        for script in console_scripts:
+            if script.value.startswith("openmsistream."):
                 if script.name in (
                     "InstallService",
                     "ManageService",
@@ -44,10 +50,8 @@ class ServicesConstants:
                     "UploadDataFile",
                 ):
                     continue
-                scriptstr = str(script)
-                cmd = (scriptstr.split())[0]
-                path = ((scriptstr.split())[2].split(":"))[0]
-                funcname = (((scriptstr.split())[2]).split(":"))[1]
+                cmd = script.name
+                path, funcname = script.value.split(":")
                 module = importlib.import_module(path)
                 run_classes = [
                     getattr(module, x)

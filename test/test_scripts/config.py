@@ -76,9 +76,7 @@ class TestRoutineConstants:
 
     # If an environment variable indicates that a local broker is being used,
     # prepend "local_broker_" to the names of the above config files used in tests
-    if os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS") and os.environ.get(
-        "USE_LOCAL_KAFKA_BROKER_IN_TESTS"
-    ):
+    if os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS"):
         TEST_CFG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
             f"local_broker_{TEST_CFG_FILE_PATH.name}"
         )
