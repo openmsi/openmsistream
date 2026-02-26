@@ -66,14 +66,8 @@ class OpenMSIStreamKafkaCrypto:
         )
         with change_dir(pathlib.Path(config_file).parent):
             # start up the producer and consumer
-            print("configs")
-            print(kcp_cfgs)
-            print(kcc_cfgs)
             self._kcp = KafkaProducer(**kcp_cfgs)
             self._kcc = KafkaConsumer(**kcc_cfgs)
-            print("objects")
-            print(self._kcc)
-            print(self._kcp)
             # initialize the KafkaCrypto object
             self._kc = KafkaCrypto(None, self._kcp, self._kcc, config_file)
         self.__config_file = config_file
