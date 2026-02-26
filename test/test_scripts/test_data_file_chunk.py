@@ -22,7 +22,6 @@ class TestDataFileChunk:
     @pytest.fixture(autouse=True)
     def setup_chunks(self, logger):
         """
-        Replacement for unittest setUp().
         Creates chunk_1 and chunk_2 for every test.
         """
         udf = UploadDataFile(
