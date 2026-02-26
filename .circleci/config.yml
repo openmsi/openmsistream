@@ -39,9 +39,16 @@ jobs:
           name: Run unit tests (no Kafka)
           command: |
             pip install .[test]
-            pytest -m "not kafka" -k "not encrypted"  --junitxml=test-results/results.xml
+            pytest -m "not kafka" -k "not encrypted" \
+              --junitxml=test-results/results.xml \
+              --cov=openmsistream \
+              --cov-report=html:test-results/htmlcov \
+              --cov-report=xml:test-results/coverage.xml
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: test-results/htmlcov
+          destination: coverage-report
 
   test-with-kafka:
     machine:
@@ -57,6 +64,14 @@ jobs:
           name: Run integration tests (with Kafka)
           command: |
             pip install .[test]
-            pytest -m kafka -k "not encrypted" --junitxml=test-results/results.xml
+            pytest -m kafka -k "not encrypted" \
+              --junitxml=test-results/results.xml \
+              --cov=openmsistream \
+              --cov-append \
+              --cov-report=html:test-results/htmlcov \
+              --cov-report=xml:test-results/coverage.xml
       - store_test_results:
           path: test-results
+      - store_artifacts:
+          path: test-results/htmlcov
+          destination: coverage-report
