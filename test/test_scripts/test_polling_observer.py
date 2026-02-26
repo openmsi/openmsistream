@@ -107,13 +107,16 @@ def test_polling_observer_kafka(state, logger):
     # -------------------------
     # run download phase
     # -------------------------
-    _consumer_group_id = (
+    consumer_group_id = (
         f"run_data_file_download_directory_polling_observer_{TEST_CONST.PY_VERSION}"
     )
 
     # create download directory and start it
     create_download_directory(
-        state, topic_name=TOPIC_NAME, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH
+        state,
+        topic_name=TOPIC_NAME,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        consumer_group_id=consumer_group_id,
     )
     start_download_thread(state)
 
