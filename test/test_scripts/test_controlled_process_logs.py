@@ -5,65 +5,15 @@ import json
 import pytest
 
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.utilities.controlled_processes_heartbeats_logs import (
-    ControlledProcessSingleThreadHeartbeatsLogs,
-    ControlledProcessMultiThreadedHeartbeatsLogs,
-)
 
 from .config import TEST_CONST
+from .controlled_process_helpers import (
+    ControlledProcessSingleThreadLogsForTesting,
+    ControlledProcessMultiThreadedLogsForTesting,
+)
 
 TIMEOUT_SECS = 10
 N_THREADS = 3
-
-
-class ControlledProcessSingleThreadForTesting(
-    ControlledProcessSingleThreadHeartbeatsLogs
-):
-    """Single-thread CP with instrumentation for tests."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_log_producer("Separate")
-        self.counter = 0
-        self.checked = False
-        self.on_shutdown_called = False
-
-    def _on_check(self):
-        self.checked = True
-
-    def _on_shutdown(self):
-        super()._on_shutdown()
-        self.on_shutdown_called = True
-
-    def _run_iteration(self):
-        if self.counter < 5:
-            self.counter += 1
-
-
-class ControlledProcessMultiThreadedForTesting(
-    ControlledProcessMultiThreadedHeartbeatsLogs
-):
-    """Multi-thread CP with instrumentation for tests."""
-
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_log_producer("Separate")
-        self.counter = 0
-        self.checked = False
-        self.on_shutdown_called = False
-
-    def _on_check(self):
-        self.checked = True
-
-    def _on_shutdown(self):
-        super()._on_shutdown()
-        self.on_shutdown_called = True
-
-    def _run_worker(self):
-        while self.alive:
-            if self.counter < 5:
-                with self.lock:
-                    self.counter += 1
 
 
 # -------------------------------------------------------------------
@@ -78,7 +28,7 @@ def test_controlled_process_single_thread_kafka(logger, get_log_messages):
 
     program_id = "test_controlled_process_single_thread"
 
-    cp = ControlledProcessSingleThreadForTesting(
+    cp = ControlledProcessSingleThreadLogsForTesting(
         TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
         log_topic_name="logs",
         log_program_id=program_id,
@@ -150,7 +100,7 @@ def test_controlled_process_single_thread_kafka(logger, get_log_messages):
 def test_controlled_process_multi_threaded_kafka(logger, get_log_messages):
     program_id = "test_controlled_process_multi_threaded"
 
-    cp = ControlledProcessMultiThreadedForTesting(
+    cp = ControlledProcessMultiThreadedLogsForTesting(
         TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
         log_topic_name="logs",
         log_program_id=program_id,

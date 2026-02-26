@@ -4,63 +4,14 @@ import datetime
 import pytest
 
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream.utilities.controlled_processes_heartbeats_logs import (
-    ControlledProcessSingleThreadHeartbeatsLogs,
-    ControlledProcessMultiThreadedHeartbeatsLogs,
-)
 from .config import TEST_CONST
+from .controlled_process_helpers import (
+    ControlledProcessSingleThreadHeartbeatsForTesting,
+    ControlledProcessMultiThreadedHeartbeatsForTesting,
+)
 
 TIMEOUT_SECS = 10
 N_THREADS = 3
-
-
-# ----------------------------------------------------------------------
-# ControlledProcess test subclasses
-# ----------------------------------------------------------------------
-class ControlledProcessSingleThreadForTesting(
-    ControlledProcessSingleThreadHeartbeatsLogs
-):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_heartbeat_producer("Separate")
-        self.counter = 0
-        self.checked = False
-        self.on_shutdown_called = False
-
-    def _on_check(self):
-        self.checked = True
-
-    def _on_shutdown(self):
-        super()._on_shutdown()
-        self.on_shutdown_called = True
-
-    def _run_iteration(self):
-        if self.counter < 5:
-            self.counter += 1
-
-
-class ControlledProcessMultiThreadedForTesting(
-    ControlledProcessMultiThreadedHeartbeatsLogs
-):
-    def __init__(self, *args, **kwargs):
-        super().__init__(*args, **kwargs)
-        self.set_heartbeat_producer("Separate")
-        self.counter = 0
-        self.checked = False
-        self.on_shutdown_called = False
-
-    def _on_check(self):
-        self.checked = True
-
-    def _on_shutdown(self):
-        super()._on_shutdown()
-        self.on_shutdown_called = True
-
-    def _run_worker(self):
-        while self.alive:
-            if self.counter < 5:
-                with self.lock:
-                    self.counter += 1
 
 
 # ----------------------------------------------------------------------
