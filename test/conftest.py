@@ -614,3 +614,16 @@ def minio_instance():
     subprocess.check_output(
         ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
     )
+
+
+# mock openmsitoolbox/controlled_process/controlled_process:add_user_input to avoid hanging on user input in tests
+@pytest.fixture(autouse=True)
+def mock_add_user_input(monkeypatch):
+    def _mock_add_user_input(self, *args, **kwargs):
+        while True:
+            time.sleep(0.1)
+
+    monkeypatch.setattr(
+        "openmsitoolbox.controlled_process.controlled_process.add_user_input",
+        _mock_add_user_input,
+    )
