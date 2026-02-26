@@ -3,11 +3,6 @@
 import time
 import json
 import pytest
-import re
-import datetime
-from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
-
-from kafkacrypto import KafkaCryptoMessage
 
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 from openmsistream.utilities.controlled_processes_heartbeats_logs import (
@@ -19,53 +14,6 @@ from .config import TEST_CONST
 
 TIMEOUT_SECS = 10
 N_THREADS = 3
-
-
-@pytest.fixture
-def get_log_messages(logger):
-    """Provide a callable that retrieves all log messages for a program."""
-
-    def _get(config_path, log_topic_name, program_id, per_wait_secs=30):
-
-        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
-            config_path,
-            logger=logger,
-            max_wait_per_decrypt=0.1,
-        )
-        log_consumer = OpenMSIStreamConsumer(
-            *c_args,
-            **c_kwargs,
-            message_key_regex=re.compile(f"{program_id}_log"),
-            filter_new_message_keys=True,
-        )
-        log_consumer.subscribe([log_topic_name])
-
-        log_msgs = []
-        start_time = datetime.datetime.now()
-        cutoff_time = (time.time() + per_wait_secs) * 1000
-
-        last_msg_time = 0
-
-        while (
-            datetime.datetime.now() - start_time
-        ).total_seconds() < per_wait_secs and last_msg_time < cutoff_time:
-
-            msg = log_consumer.get_next_message(1)
-
-            if msg is not None:
-                try:
-                    _, last_msg_time = msg.timestamp()
-                except TypeError:
-                    _, last_msg_time = msg.timestamp
-
-                if not isinstance(msg.value, KafkaCryptoMessage):
-                    log_msgs.append(msg)
-                    start_time = datetime.datetime.now()
-
-        log_consumer.close()
-        return log_msgs
-
-    return _get
 
 
 class ControlledProcessSingleThreadForTesting(

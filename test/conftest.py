@@ -404,7 +404,7 @@ def get_heartbeat_messages(logger):
             datetime.datetime.now() - start
         ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
             msg = consumer.get_next_message(1)
-            if msg:
+            if msg is not None:
                 try:
                     _, last_timestamp = msg.timestamp()
                 except TypeError:
@@ -445,7 +445,7 @@ def get_log_messages(logger):
             datetime.datetime.now() - start
         ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
             msg = consumer.get_next_message(1)
-            if msg:
+            if msg is not None:
                 try:
                     _, last_timestamp = msg.timestamp()
                 except TypeError:
