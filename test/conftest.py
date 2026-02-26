@@ -58,6 +58,20 @@ def logger():
     return test_logger
 
 
+# mock openmsitoolbox/controlled_process/controlled_process:add_user_input
+# to avoid hanging on user input in tests
+@pytest.fixture(autouse=True)
+def mock_add_user_input(monkeypatch):
+    def _mock_add_user_input(self, *args, **kwargs):
+        while True:
+            time.sleep(0.1)
+
+    monkeypatch.setattr(
+        "openmsitoolbox.controlled_process.controlled_process.add_user_input",
+        _mock_add_user_input,
+    )
+
+
 @pytest.fixture(scope="session")
 def kafka_container():
 
@@ -93,7 +107,7 @@ def kafka_bootstrap(kafka_container):
         ### via docker compose yaml that launches local plain/ssl kafka broker
         # address = "localhost:9092"
     else:
-        address = os.environ["KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS"]
+        address = os.environ.get("KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS")
         if address is None:
             raise ValueError(
                 "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but "
@@ -364,49 +378,50 @@ def upload_file_helper(logger):
     return upload_single_file
 
 
+def _get_keyed_messages(
+    logger, config_path, topic_name, program_id, key_suffix, max_wait_per_decrypt, per_wait_secs
+):
+    """Shared helper: consume messages whose key matches ``{program_id}_{key_suffix}``."""
+    c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
+        config_path,
+        logger=logger,
+        max_wait_per_decrypt=max_wait_per_decrypt,
+    )
+    consumer = OpenMSIStreamConsumer(
+        *c_args,
+        **c_kwargs,
+        message_key_regex=re.compile(f"{program_id}_{key_suffix}"),
+        filter_new_message_keys=True,
+    )
+    consumer.subscribe([topic_name])
+    msgs = []
+    start = datetime.datetime.now()
+    cutoff_ms = (time.time() + per_wait_secs) * 1000
+    last_timestamp = 0
+    while (
+        datetime.datetime.now() - start
+    ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
+        msg = consumer.get_next_message(1)
+        if msg is not None:
+            try:
+                _, last_timestamp = msg.timestamp()
+            except TypeError:
+                _, last_timestamp = msg.timestamp
+            if not isinstance(msg.value, KafkaCryptoMessage):
+                msgs.append(msg)
+                start = datetime.datetime.now()
+    consumer.close()
+    return msgs
+
+
 @pytest.fixture
 def get_heartbeat_messages(logger):
-    """
-    Provide a function that retrieves heartbeat messages from Kafka.
-    Replaces TestWithHeartbeats.get_heartbeat_messages.
-    """
+    """Provide a callable that retrieves heartbeat messages from Kafka."""
 
     def _getter(config_path, topic_name, program_id, per_wait_secs=5):
-        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
-            config_path,
-            logger=logger,
-            max_wait_per_decrypt=1,
+        return _get_keyed_messages(
+            logger, config_path, topic_name, program_id, "heartbeat", 1, per_wait_secs
         )
-        consumer = OpenMSIStreamConsumer(
-            *c_args,
-            **c_kwargs,
-            message_key_regex=re.compile(f"{program_id}_heartbeat"),
-            filter_new_message_keys=True,
-        )
-
-        consumer.subscribe([topic_name])
-
-        msgs = []
-        start = datetime.datetime.now()
-        cutoff_ms = (time.time() + per_wait_secs) * 1000
-        last_timestamp = 0
-
-        while (
-            datetime.datetime.now() - start
-        ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
-            msg = consumer.get_next_message(1)
-            if msg is not None:
-                try:
-                    _, last_timestamp = msg.timestamp()
-                except TypeError:
-                    _, last_timestamp = msg.timestamp
-
-                if not isinstance(msg.value, KafkaCryptoMessage):
-                    msgs.append(msg)
-                    start = datetime.datetime.now()
-
-        consumer.close()
-        return msgs
 
     return _getter
 
@@ -416,36 +431,9 @@ def get_log_messages(logger):
     """Provide a callable that retrieves log messages from Kafka."""
 
     def _getter(config_path, topic_name, program_id, per_wait_secs=30):
-        c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
-            config_path,
-            logger=logger,
-            max_wait_per_decrypt=0.1,
+        return _get_keyed_messages(
+            logger, config_path, topic_name, program_id, "log", 0.1, per_wait_secs
         )
-        consumer = OpenMSIStreamConsumer(
-            *c_args,
-            **c_kwargs,
-            message_key_regex=re.compile(f"{program_id}_log"),
-            filter_new_message_keys=True,
-        )
-        consumer.subscribe([topic_name])
-        msgs = []
-        start = datetime.datetime.now()
-        cutoff_ms = (time.time() + per_wait_secs) * 1000
-        last_timestamp = 0
-        while (
-            datetime.datetime.now() - start
-        ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
-            msg = consumer.get_next_message(1)
-            if msg is not None:
-                try:
-                    _, last_timestamp = msg.timestamp()
-                except TypeError:
-                    _, last_timestamp = msg.timestamp
-                if not isinstance(msg.value, KafkaCryptoMessage):
-                    msgs.append(msg)
-                    start = datetime.datetime.now()
-        consumer.close()
-        return msgs
 
     return _getter
 
@@ -604,18 +592,4 @@ def minio_instance():
 
     subprocess.check_output(
         ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
-    )
-
-
-# mock openmsitoolbox/controlled_process/controlled_process:add_user_input
-# to avoid hanging on user input in tests
-@pytest.fixture(autouse=True)
-def mock_add_user_input(monkeypatch):
-    def _mock_add_user_input(self, *args, **kwargs):
-        while True:
-            time.sleep(0.1)
-
-    monkeypatch.setattr(
-        "openmsitoolbox.controlled_process.controlled_process.add_user_input",
-        _mock_add_user_input,
     )
