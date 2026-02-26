@@ -339,15 +339,6 @@ def stream_processor_helper(tmp_path, logger):
     }
 
 
-# -------------------
-# Upload single file fixture
-# -------------------
-@pytest.fixture
-def upload_single_file(upload_file_helper):
-    """Standalone fixture returning the upload-single-file callable."""
-    return upload_file_helper
-
-
 @pytest.fixture
 def upload_file_helper(logger):
     """

@@ -207,12 +207,12 @@ def start_metadata_reproducer(kafka_topics, stream_reproducer_factory):
 # Helper functions
 # ----------------------------------------------------------------------
 def run_metadata_reproducer_flow(
-    upload_single_file,
+    upload_file_helper,
     wait_for_files_to_be_processed,
     stream_reproducer,
 ):
     """Shared logic to upload file and wait for processing."""
-    upload_single_file(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
+    upload_file_helper(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
 
     recofp = pathlib.Path(UPLOAD_FILE.name)
     wait_for_files_to_be_processed(recofp)
@@ -258,7 +258,7 @@ def test_metadata_reproducer_kafka(
     kafka_topics,
     downloaded_upload_file,
     start_metadata_reproducer,
-    upload_single_file,
+    upload_file_helper,
     wait_for_files_to_be_processed,
     stream_reproducer,
     get_heartbeat_messages,
@@ -270,7 +270,7 @@ def test_metadata_reproducer_kafka(
     start_time_uts = time.time()
 
     run_metadata_reproducer_flow(
-        upload_single_file,
+        upload_file_helper,
         wait_for_files_to_be_processed,
         stream_reproducer,
     )
