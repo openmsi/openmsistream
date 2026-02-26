@@ -341,8 +341,11 @@ def stream_processor_helper(tmp_path, logger):
         state["stream_processor"] = None
         state["stream_processor_thread"] = None
         if remove_output:
-            shutil.rmtree(state["output_dir"])
-            state["output_dir"].mkdir(parents=True)
+            for item in state["output_dir"].iterdir():
+                if item.is_dir():
+                    shutil.rmtree(item)
+                else:
+                    item.unlink()
 
     return {
         "create_stream_processor": create_stream_processor,
