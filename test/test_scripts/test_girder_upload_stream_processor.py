@@ -139,12 +139,14 @@ def test_girder_handle_timeout(
 
     responses.add_passthru(api_url)
 
+    # First call to /file should return 502 though
     responses.add(
         responses.POST,
         f"{api_url}/file",
         status=502,
     )
 
+    # but work after retry
     responses.add(responses.PassthroughResponse(responses.POST, f"{api_url}/file"))
 
     _produce_single_file(
