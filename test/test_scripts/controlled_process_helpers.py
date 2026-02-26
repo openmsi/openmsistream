@@ -1,4 +1,5 @@
 """Shared test subclasses for ControlledProcess tests."""
+
 from openmsistream.utilities.controlled_processes_heartbeats_logs import (
     ControlledProcessSingleThreadHeartbeatsLogs,
     ControlledProcessMultiThreadedHeartbeatsLogs,

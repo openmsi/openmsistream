@@ -382,7 +382,13 @@ def upload_file_helper(logger):
 
 
 def _get_keyed_messages(
-    logger, config_path, topic_name, program_id, key_suffix, max_wait_per_decrypt, per_wait_secs
+    logger,
+    config_path,
+    topic_name,
+    program_id,
+    key_suffix,
+    max_wait_per_decrypt,
+    per_wait_secs,
 ):
     """Shared helper: consume messages whose key matches ``{program_id}_{key_suffix}``."""
     c_args, c_kwargs = OpenMSIStreamConsumer.get_consumer_args_kwargs(
@@ -497,12 +503,12 @@ def girder_instance():
         raise RuntimeError("Girder DB not clean")
 
     token = r.json()["authToken"]["token"]
-    HEADERS["Girder-Token"] = token
+    headers = {**HEADERS, "Girder-Token": token}
 
     # create assetstore
     r = requests.post(
         f"{GIRDER_API_URL}/assetstore",
-        headers=HEADERS,
+        headers=headers,
         params=dict(
             type=0,
             name="Base",
@@ -515,7 +521,7 @@ def girder_instance():
     # create API key
     r = requests.post(
         f"{GIRDER_API_URL}/api_key",
-        headers=HEADERS,
+        headers=headers,
         timeout=GIRDER_TIMEOUT,
     )
     api_key = r.json()["key"]

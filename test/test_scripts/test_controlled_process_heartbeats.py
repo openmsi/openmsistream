@@ -44,7 +44,7 @@ class TestControlledProcessHeartbeats:
     ):
         program_id = "test_controlled_process_single_thread"
 
-        cp = ControlledProcessSingleThreadForTesting(
+        cp = ControlledProcessSingleThreadHeartbeatsForTesting(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
             heartbeat_topic_name=TOPIC_NAME,
             heartbeat_program_id=program_id,
@@ -103,7 +103,7 @@ class TestControlledProcessHeartbeats:
     def test_multi_thread_heartbeats(self, logger, get_heartbeat_messages, timestamp_fmt):
         program_id = "test_controlled_process_multi_threaded"
 
-        cp = ControlledProcessMultiThreadedForTesting(
+        cp = ControlledProcessMultiThreadedHeartbeatsForTesting(
             TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
             heartbeat_topic_name=TOPIC_NAME,
             heartbeat_program_id=program_id,
