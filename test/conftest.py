@@ -616,7 +616,8 @@ def minio_instance():
     )
 
 
-# mock openmsitoolbox/controlled_process/controlled_process:add_user_input to avoid hanging on user input in tests
+# mock openmsitoolbox/controlled_process/controlled_process:add_user_input
+# to avoid hanging on user input in tests
 @pytest.fixture(autouse=True)
 def mock_add_user_input(monkeypatch):
     def _mock_add_user_input(self, *args, **kwargs):
