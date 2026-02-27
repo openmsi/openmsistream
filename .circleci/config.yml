@@ -10,6 +10,9 @@ workflows:
       - test-no-kafka:
           requires: [build-and-code-check]
       - test-with-kafka:
+          matrix:
+            parameters:
+              python-version: ["3.11", "3.9"]
           requires: [test-no-kafka]
 
 jobs:
@@ -54,6 +57,10 @@ jobs:
           destination: coverage.xml
 
   test-with-kafka:
+    parameters:
+      python-version:
+        type: string
+        default: "3.9"
     machine:
       image: ubuntu-2204:current
     environment:
@@ -62,7 +69,9 @@ jobs:
       - checkout
       - run:
           name: Set Python version
-          command: pyenv global $(pyenv versions --bare | grep -E '^3\.(11|12|13)' | sort -V | tail -1)
+          command: |
+            pyenv install -s << parameters.python-version >>
+            pyenv global << parameters.python-version >>
       - run:
           name: Run integration tests (with Kafka)
           command: |
