@@ -1,15 +1,11 @@
 # test_scripts/test_controlled_process_logs.py
 
-import time
-import json
 import pytest
-
-from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
 
 from .config import TEST_CONST
 from .controlled_process_helpers import (
-    ControlledProcessSingleThreadLogsForTesting,
     ControlledProcessMultiThreadedLogsForTesting,
+    ControlledProcessSingleThreadLogsForTesting,
 )
 
 TIMEOUT_SECS = 10
@@ -24,7 +20,9 @@ N_THREADS = 3
 @pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [{"logs": {}}], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
-def test_controlled_process_single_thread_kafka(logger, get_log_messages):
+def test_controlled_process_single_thread_kafka(
+    logger, get_log_messages, run_controlled_process_test
+):
 
     program_id = "test_controlled_process_single_thread"
 
@@ -35,69 +33,17 @@ def test_controlled_process_single_thread_kafka(logger, get_log_messages):
         log_interval_secs=1,
         logger=logger,
     )
-
-    assert cp.counter == 0
-    start_time = time.time()
-
-    run_thread = ExceptionTrackingThread(target=cp.run)
-    run_thread.start()
-
-    try:
-        # let it run and increment its counter a few times
-        time.sleep(3.0)
-        assert cp.checked is False
-
-        # send check
-        time.sleep(1.0)
-        cp.control_command_queue.put("c")
-        cp.control_command_queue.put("check")
-        time.sleep(1.0)
-        assert cp.checked is True
-
-        assert cp.on_shutdown_called is False
-
-        # shutdown
-        cp.control_command_queue.put("q")
-        time.sleep(2.0)
-        assert cp.on_shutdown_called is True
-
-        run_thread.join(timeout=TIMEOUT_SECS)
-        time.sleep(1.0)  # same delay your unittest had
-
-        if run_thread.is_alive():
-            raise TimeoutError(
-                f"ERROR: running thread timed out after {TIMEOUT_SECS} seconds!"
-            )
-
-        assert cp.counter == 5
-
-        # ---- Retrieve logs ----
-        log_msgs = get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
-            "logs",
-            program_id,
-        )
-
-        assert len(log_msgs) > 0
-
-        for msg in log_msgs:
-            payload = json.loads(msg.value())
-            assert float(payload["timestamp"]) >= start_time
-
-    finally:
-        if run_thread.is_alive():
-            cp.shutdown()
-            run_thread.join(timeout=5)
-            if run_thread.is_alive():
-                raise TimeoutError(
-                    "ERROR: running thread timed out after forced shutdown!"
-                )
+    run_controlled_process_test(
+        cp, get_log_messages, program_id, TEST_CONST.TEST_CFG_FILE_PATH_LOGS, "logs"
+    )
 
 
 @pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [{"logs": {}}], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
-def test_controlled_process_multi_threaded_kafka(logger, get_log_messages):
+def test_controlled_process_multi_threaded_kafka(
+    logger, get_log_messages, run_controlled_process_test
+):
     program_id = "test_controlled_process_multi_threaded"
 
     cp = ControlledProcessMultiThreadedLogsForTesting(
@@ -108,54 +54,6 @@ def test_controlled_process_multi_threaded_kafka(logger, get_log_messages):
         logger=logger,
         n_threads=N_THREADS,
     )
-
-    assert cp.counter == 0
-    start_time = time.time()
-
-    run_thread = ExceptionTrackingThread(target=cp.run)
-    run_thread.start()
-
-    try:
-        time.sleep(3.0)
-        assert cp.checked is False
-
-        cp.control_command_queue.put("c")
-        cp.control_command_queue.put("check")
-        time.sleep(0.5)
-        assert cp.checked is True
-        assert cp.on_shutdown_called is False
-
-        cp.control_command_queue.put("q")
-        time.sleep(1.0)
-        assert cp.on_shutdown_called is True
-
-        run_thread.join(timeout=TIMEOUT_SECS)
-
-        if run_thread.is_alive():
-            raise TimeoutError(
-                f"ERROR: running thread timed out after {TIMEOUT_SECS} seconds!"
-            )
-
-        assert cp.counter == 5
-
-        # ---- Retrieve logs ----
-        log_msgs = get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
-            "logs",
-            program_id,
-        )
-
-        assert len(log_msgs) > 0
-
-        for msg in log_msgs:
-            payload = json.loads(msg.value())
-            assert float(payload["timestamp"]) >= start_time
-
-    finally:
-        if run_thread.is_alive():
-            cp.shutdown()
-            run_thread.join(timeout=5)
-            if run_thread.is_alive():
-                raise TimeoutError(
-                    "ERROR: running thread timed out after forced shutdown!"
-                )
+    run_controlled_process_test(
+        cp, get_log_messages, program_id, TEST_CONST.TEST_CFG_FILE_PATH_LOGS, "logs"
+    )

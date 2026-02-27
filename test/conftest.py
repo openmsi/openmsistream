@@ -1,27 +1,30 @@
 # conftest.py
-import pytest
+import datetime
+import json
 import logging
 import os
 import pathlib
-import datetime
-import time
-import shutil
 import re
-import docker
-import requests
+import shutil
 import subprocess
+import time
+
 import boto3
+import dateutil.parser
+import pytest
+import requests
 from botocore.exceptions import ClientError, EndpointConnectionError
-
-from kafkacrypto import KafkaCryptoMessage
-from testcontainers.kafka import KafkaContainer
 from confluent_kafka.admin import AdminClient, NewTopic
-from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
-from openmsistream import UploadDataFile
+from kafkacrypto import KafkaCryptoMessage
 from openmsitoolbox.logging.openmsi_logger import OpenMSILogger
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+from testcontainers.kafka import KafkaContainer
 
+import docker
+from openmsistream import UploadDataFile
 from openmsistream.kafka_wrapper import OpenMSIStreamConsumer
 from openmsistream.utilities.config import RUN_CONST
+
 from .test_scripts.config import TEST_CONST
 from .test_scripts.test_data_file_stream_processor import (
     DataFileStreamProcessorForTesting,
@@ -445,6 +448,80 @@ def get_log_messages(logger):
         )
 
     return _getter
+
+
+@pytest.fixture
+def run_controlled_process_test():
+    def _run_controlled_process_test(cp, getter, program_id, config, topic_name):
+        assert cp.counter == 0
+        start_time = datetime.datetime.now()
+
+        run_thread = ExceptionTrackingThread(target=cp.run)
+        run_thread.start()
+
+        try:
+            # let it run and increment its counter a few times
+            counter = 0
+            while cp.counter < 5 and counter < 10:
+                time.sleep(0.1)
+                counter += 1
+            assert not cp.checked
+
+            # send check
+            cp.control_command_queue.put("c")
+            cp.control_command_queue.put("check")
+            counter = 0
+            while not cp.checked and counter < 10:
+                time.sleep(0.1)
+                counter += 1
+
+            assert cp.checked
+            assert not cp.on_shutdown_called
+
+            # shutdown
+            cp.control_command_queue.put("q")
+            counter = 0
+            while not cp.on_shutdown_called and counter < 20:
+                time.sleep(0.1)
+                counter += 1
+            assert cp.on_shutdown_called
+
+            run_thread.join(timeout=5)
+
+            if run_thread.is_alive():
+                raise TimeoutError("ERROR: running thread timed out after 5 seconds!")
+
+            assert cp.counter == 5
+
+            # ---- Retrieve logs ----
+            log_msgs = getter(
+                config,
+                topic_name,
+                program_id,
+                per_wait_secs=4,
+            )
+
+            assert len(log_msgs) > 0
+
+            for msg in log_msgs:
+                payload = json.loads(msg.value())
+                try:
+                    ts = float(payload["timestamp"])
+                    assert ts > start_time.timestamp()
+                except ValueError:
+                    ts = dateutil.parser.parse(payload["timestamp"])
+                    assert ts > start_time
+
+        finally:
+            if run_thread.is_alive():
+                cp.shutdown()
+                run_thread.join(timeout=5)
+                if run_thread.is_alive():
+                    raise TimeoutError(
+                        "ERROR: running thread timed out after forced shutdown!"
+                    )
+
+    return _run_controlled_process_test
 
 
 ################## GIRDER CODE FIXTURES ##################
