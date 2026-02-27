@@ -326,6 +326,7 @@ def test_metadata_reproducer_kafka(
         TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
         HEARTBEAT_TOPIC_NAME,
         program_id,
+        per_wait_secs=5,
     )
 
     assert len(heartbeat_msgs) > 0
@@ -372,6 +373,7 @@ def test_metadata_reproducer_kafka(
         TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
         LOG_TOPIC_NAME,
         program_id,
+        per_wait_secs=5,
     )
 
     assert len(log_msgs) > 0

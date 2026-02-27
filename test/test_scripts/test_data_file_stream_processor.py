@@ -96,7 +96,10 @@ def test_data_file_stream_processor_modes_kafka(
         assert not sp["state"]["stream_processor"].checked
         sp["state"]["stream_processor"].control_command_queue.put("c")
         sp["state"]["stream_processor"].control_command_queue.put("check")
-        time.sleep(1)
+        counter = 0
+        while not sp["state"]["stream_processor"].checked and counter < 10:
+            time.sleep(0.1)
+            counter += 1
         assert sp["state"]["stream_processor"].checked
 
         sp["wait_for_files_to_be_processed"](rel_filepath, timeout_secs=180)
