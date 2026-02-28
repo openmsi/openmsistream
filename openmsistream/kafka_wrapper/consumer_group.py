@@ -178,11 +178,19 @@ class ConsumerGroup(LogOwner):
                     )
                 kac_kwargs = {}
                 for k, v in cfp.broker_configs.items():
-                    if k in ("sasl.username", "sasl.password"):
+                    # Translate SSL parameter names from confluent-kafka to kafka-python
+                    if k == "ssl.ca.location":
+                        kac_kwargs["ssl_cafile"] = v
+                    elif k == "ssl.endpoint.identification.algorithm":
+                        # kafka-python uses ssl_check_hostname (True/False)
+                        # "none" in confluent-kafka means disable hostname checking
+                        kac_kwargs["ssl_check_hostname"] = False if v == "none" else True
+                    elif k in ("sasl.username", "sasl.password"):
                         key = k.replace(".", "_plain_")
+                        kac_kwargs[key] = v
                     else:
                         key = k.replace(".", "_")
-                    kac_kwargs[key] = v
+                        kac_kwargs[key] = v
                 parts = [
                     kafka.TopicPartition(consumer_topic_name, p_i)
                     for p_i in range(n_partitions)
