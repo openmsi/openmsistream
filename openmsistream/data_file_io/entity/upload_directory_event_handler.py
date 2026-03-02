@@ -1,4 +1,4 @@
-""" A watchdog FileSystemEventHandler for use with a DataFileUploadDirectory """
+"""A watchdog FileSystemEventHandler for use with a DataFileUploadDirectory"""
 
 # imports
 import pathlib, datetime
@@ -160,16 +160,16 @@ class UploadDirectoryEventHandler(LogOwner, FileSystemEventHandler):
     def __add_active_file(self, filepath_or_handler_file):
         if isinstance(filepath_or_handler_file, pathlib.PurePath):
             with self.__lock:
-                self.__active_files_by_path[
-                    filepath_or_handler_file
-                ] = EventHandlerActiveFile(
-                    filepath_or_handler_file, datetime.datetime.now()
+                self.__active_files_by_path[filepath_or_handler_file] = (
+                    EventHandlerActiveFile(
+                        filepath_or_handler_file, datetime.datetime.now()
+                    )
                 )
         elif isinstance(filepath_or_handler_file, EventHandlerActiveFile):
             with self.__lock:
-                self.__active_files_by_path[
-                    filepath_or_handler_file.filepath
-                ] = filepath_or_handler_file
+                self.__active_files_by_path[filepath_or_handler_file.filepath] = (
+                    filepath_or_handler_file
+                )
         else:
             self.logger.error(
                 f"ERROR: unrecognized type {type(filepath_or_handler_file)}",

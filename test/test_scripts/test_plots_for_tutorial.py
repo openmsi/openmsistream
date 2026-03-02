@@ -1,104 +1,116 @@
-# imports
-import pathlib, urllib.request
-import importlib.machinery, importlib.util
+# test_plots_for_tutorial.py
+import pathlib
+import urllib.request
+import importlib.machinery
+import importlib.util
+import pytest
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error
+from .config import TEST_CONST
 
-    # pylint: disable=import-error
-    from .base_classes import (
-        TestWithKafkaTopics,
-        TestWithUploadDataFile,
-        TestWithStreamProcessor,
-    )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error
-
-    # pylint: disable=import-error
-    from base_classes import (
-        TestWithKafkaTopics,
-        TestWithUploadDataFile,
-        TestWithStreamProcessor,
-    )
-
-
-# import the XRDCSVPlotter from the examples directory
+# ---------------------------------------------------------------------
+# Load the XRDCSVPlotter dynamically from examples directory
+# ---------------------------------------------------------------------
 class_path = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "xrd_csv_plotter.py"
-module_name = class_path.name[: -len(".py")]
-loader = importlib.machinery.SourceFileLoader(module_name, str(class_path))
-module = loader.load_module()  # pylint: disable=deprecated-method,no-value-for-parameter
+module_name = class_path.name[:-3]  # strip ".py"
+
+spec = importlib.util.spec_from_file_location(module_name, str(class_path))
+module = importlib.util.module_from_spec(spec)
+spec.loader.exec_module(module)
 
 # constants
 TIMEOUT_SECS = 90
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "creating_plots" / "SC001_XRR.csv"
 CONSUMER_GROUP_ID = f"test_plots_for_tutorial_{TEST_CONST.PY_VERSION}"
 
+TOPIC_NAME = "test_plots_for_tutorial"
+TOPICS = {TOPIC_NAME: {}}
 
-class TestPlotsForTutorial(
-    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+# ---------------------------------------------------------------------
+# FIXTURES
+# ---------------------------------------------------------------------
+
+
+@pytest.fixture
+def downloaded_file():
+    """Downloads the CSV test file before test and deletes it afterward."""
+    urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL, UPLOAD_FILE)
+    yield UPLOAD_FILE
+    if UPLOAD_FILE.exists():
+        UPLOAD_FILE.unlink()
+
+
+# ---------------------------------------------------------------------
+# TEST
+# ---------------------------------------------------------------------
+
+TOPIC_NAME = "test_plots_for_tutorial"
+
+TOPICS = {TOPIC_NAME: {}}
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("kafka_topics", "stream_processor_helper")
+def test_plots_for_tutorial_kafka(
+    upload_file_helper,
+    stream_processor_helper,
+    downloaded_file,
 ):
     """
-    Class for testing that an uploaded file can be read back from the topic and have its metadata
-    successfully extracted and produced to another topic as a string of JSON
+    Pytest version of: Test that uploading a file → Kafka → stream processor → plot.
     """
 
-    TOPIC_NAME = "test_plots_for_tutorial"
+    # ------------------------------------------------------------
+    # Start the stream processor using pytest helper
+    # ------------------------------------------------------------
+    stream_processor_helper["create_stream_processor"](
+        module.XRDCSVPlotter,
+        topic_name=TOPIC_NAME,
+        consumer_group_id=CONSUMER_GROUP_ID,
+    )
 
-    TOPICS = {TOPIC_NAME: {}}
+    stream_processor_helper["start_stream_processor_thread"]()
 
-    def setUp(self):  # pylint: disable=invalid-name
-        """
-        Download the test data file from its URL on the PARADIM website
-        """
-        urllib.request.urlretrieve(TEST_CONST.TUTORIAL_TEST_FILE_URL, UPLOAD_FILE)
-        super().setUp()
+    # ------------------------------------------------------------
+    # Upload file to Kafka using pytest helper
+    # ------------------------------------------------------------
+    upload_file_helper(downloaded_file, topic_name=TOPIC_NAME)
 
-    def tearDown(self):  # pylint: disable=invalid-name
-        """
-        Remove the test data file that was downloaded
-        """
-        super().tearDown()
-        if UPLOAD_FILE.is_file():
-            UPLOAD_FILE.unlink()
+    # Kafka reconstructs file under the processor
+    rel_path = pathlib.Path(downloaded_file.name)
+    stream_processor_helper["wait_for_files_to_be_processed"](
+        rel_path, timeout_secs=TIMEOUT_SECS
+    )
 
-    def test_plots_for_tutorial_kafka(self):
-        """
-        Test processing a file from a topic and creating plots from it
-        """
-        # start up the plot maker
-        self.create_stream_processor(
-            module.XRDCSVPlotter,
-            topic_name=self.TOPIC_NAME,
-            consumer_group_id=CONSUMER_GROUP_ID,
-        )
-        self.start_stream_processor_thread()
-        try:
-            # upload the test data file
-            self.upload_single_file(UPLOAD_FILE, topic_name=self.TOPIC_NAME)
-            recofp = pathlib.Path(UPLOAD_FILE.name)
-            # wait for the file to be processed
-            self.wait_for_files_to_be_processed(recofp)
-            # make sure the file is listed in the 'results_produced' file
-            self.stream_processor.file_registry.in_progress_table.dump_to_file()
-            self.stream_processor.file_registry.succeeded_table.dump_to_file()
-            self.assertEqual(
-                len(self.stream_processor.file_registry.filepaths_to_rerun), 0
-            )
-            in_prog_table = self.stream_processor.file_registry.in_progress_table
-            in_prog_entries = in_prog_table.obj_addresses_by_key_attr("status")
-            succeeded_table = self.stream_processor.file_registry.succeeded_table
-            succeeded_entries = succeeded_table.obj_addresses
-            self.assertTrue(len(succeeded_entries) >= 1)
-            self.assertTrue(
-                self.stream_processor.file_registry.FAILED not in in_prog_entries.keys()
-            )
-            # get the attributes of the succeeded file to make sure its the one that was produced
-            succeeded_entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
-            self.assertTrue(succeeded_entry_attrs["filename"] == UPLOAD_FILE.name)
-            # make sure the plot file exists
-            self.assertTrue(
-                (self.output_dir / (UPLOAD_FILE.stem + "_xrd_plot.png")).is_file()
-            )
-        except Exception as exc:
-            raise exc
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+    # ------------------------------------------------------------
+    # Assert on registry tables
+    # ------------------------------------------------------------
+    sp = stream_processor_helper["state"]["stream_processor"]
+
+    sp.file_registry.in_progress_table.dump_to_file()
+    sp.file_registry.succeeded_table.dump_to_file()
+
+    # nothing should be pending re-run
+    assert len(sp.file_registry.filepaths_to_rerun) == 0
+
+    in_prog_table = sp.file_registry.in_progress_table
+    succeeded_table = sp.file_registry.succeeded_table
+
+    succeeded_entries = succeeded_table.obj_addresses
+    assert len(succeeded_entries) >= 1, "Expected at least one succeeded entry"
+
+    # Ensure we have no failures in in-progress table
+    in_prog_by_status = in_prog_table.obj_addresses_by_key_attr("status")
+    assert sp.file_registry.FAILED not in in_prog_by_status
+
+    # Verify succeeded entry matches uploaded file
+    entry_attrs = succeeded_table.get_entry_attrs(succeeded_entries[0])
+    assert entry_attrs["filename"] == downloaded_file.name
+
+    # ------------------------------------------------------------
+    # Check that the plot file exists
+    # ------------------------------------------------------------
+    out_plot = stream_processor_helper["state"]["output_dir"] / (
+        downloaded_file.stem + "_xrd_plot.png"
+    )
+    assert out_plot.is_file(), f"Missing output plot: {out_plot}"

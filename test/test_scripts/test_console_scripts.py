@@ -1,26 +1,36 @@
-# imports
-import pkg_resources, subprocess, unittest  # pylint: disable=wrong-import-order
+import subprocess
+from importlib.metadata import entry_points
+import pytest
 
 
-class TestConsoleScripts(unittest.TestCase):
+def get_openmsistream_console_scripts():
+    try:
+        scripts = entry_points(  # pylint: disable=unexpected-keyword-arg
+            group="console_scripts"
+        )  # Python 3.10+
+    except TypeError:
+        scripts = entry_points().get(  # pylint: disable=no-member
+            "console_scripts", []
+        )  # Python <=3.9
+    return [ep for ep in scripts if ep.value.startswith("openmsistream.")]
+
+
+@pytest.mark.parametrize(
+    "script",
+    get_openmsistream_console_scripts(),
+    ids=lambda s: s.name,
+)
+def test_console_scripts_exist(script):
     """
-    Make sure console scripts are defined and can be imported
+    Ensure each console script for openmsistream exists and responds to --help.
     """
+    name = script.name
 
-    def test_console_scripts_exist(self):
-        """
-        Make sure console scripts defined in setup.py exist and that their imports work
-        """
-        for script in pkg_resources.iter_entry_points("console_scripts"):
-            if script.dist.key == "openmsistream":
-                with self.subTest(script=script.name):
-                    try:
-                        subprocess.check_output(
-                            [script.name, "--help"], stderr=subprocess.STDOUT
-                        )
-                    except subprocess.CalledProcessError as error:
-                        errmsg = (
-                            f'ERROR: test for console script "{script.name}" '
-                            f"failed with output:\n{error.output.decode()}"
-                        )
-                        raise RuntimeError(errmsg)
+    try:
+        subprocess.check_output([name, "--help"], stderr=subprocess.STDOUT)
+    except subprocess.CalledProcessError as error:
+        errmsg = (
+            f'ERROR: test for console script "{name}" failed with output:\n'
+            f"{error.output.decode()}"
+        )
+        raise RuntimeError(errmsg)

@@ -1,109 +1,255 @@
-# imports
-import pathlib, time, filecmp
-from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
-from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
-    RegistryLineInProgress,
-    RegistryLineCompleted,
+import filecmp
+import logging
+import pathlib
+import sys
+import time
+
+import pytest
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+
+from openmsistream.data_file_io.actor.data_file_download_directory import (
+    DataFileDownloadDirectory,
 )
-from openmsistream import DataFileUploadDirectory
+from openmsistream.data_file_io.actor.data_file_upload_directory import (
+    DataFileUploadDirectory,
+)
+from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
+    RegistryLineCompleted,
+    RegistryLineInProgress,
+)
+from openmsistream.utilities.config import RUN_CONST
+from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
+from .config import TEST_CONST
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+# logging.basicConfig(level=logging.WARNING)
+logging.getLogger("kafkacrypto").setLevel(
+    level=logging.DEBUG
+)  # set to logging.DEBUG for more verbosity
 
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
+
+TOPIC_NAME = "test_oms_encrypted"
+TOPICS = {
+    TOPIC_NAME: {},
+    f"{TOPIC_NAME}.keys": {"--partitions": 1},
+    f"{TOPIC_NAME}.reqs": {"--partitions": 1},
+    f"{TOPIC_NAME}.subs": {"--partitions": 1},
+}
+
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
+
+
+def create_upload_directory(state, cfg_file=None, **kwargs):
+    watched_dir = state["tmp_path"] / "watched"
+    watched_dir.mkdir(exist_ok=True)
+    state["watched_dir"] = watched_dir
+    state["upload_directory"] = DataFileUploadDirectory(watched_dir, cfg_file, **kwargs)
+    return state["upload_directory"]
+
+
+def create_download_directory(state, topic_name, **kwargs):
+    cfg_file = kwargs.pop("cfg_file")
+    reco_dir = state["tmp_path"] / "reco"
+    reco_dir.mkdir(exist_ok=True)
+    state["reco_dir"] = reco_dir
+    state["download_directory"] = DataFileDownloadDirectory(
+        reco_dir,
+        cfg_file,
+        topic_name,
+        **kwargs,
     )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
-    )
+    return state["download_directory"]
 
 
-class TestDataFileDirectoriesEncrypted(
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
+def start_upload_thread(
+    state,
+    topic_name,
+    n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
+    chunk_size=16384,
+    max_queue_size=RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+    upload_existing=True,
 ):
     """
-    Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
+    Start the upload directory running in a new thread with Exceptions tracked
     """
+    upload_thread = ExceptionTrackingThread(
+        target=state["upload_directory"].upload_files_as_added,
+        args=(topic_name,),
+        kwargs={
+            "n_threads": n_threads,
+            "chunk_size": chunk_size,
+            "max_queue_size": max_queue_size,
+            "upload_existing": upload_existing,
+        },
+    )
+    upload_thread.start()
+    state["upload_thread"] = upload_thread
 
-    TOPIC_NAME = "test_oms_encrypted"
 
-    TOPICS = {
-        TOPIC_NAME: {},
-        f"{TOPIC_NAME}.keys": {"--partitions": 1},
-        f"{TOPIC_NAME}.reqs": {"--partitions": 1},
-        f"{TOPIC_NAME}.subs": {"--partitions": 1},
-    }
+def stop_upload_thread(state, timeout_secs=90):
+    # state["upload_directory"].shutdown()
+    state["upload_directory"].control_command_queue.put("q")
+    # wait for the uploading thread to complete
+    upload_thread = state["upload_thread"]
+    upload_thread.join(timeout=timeout_secs)
+    if upload_thread.is_alive():
+        raise TimeoutError(
+            f"ERROR: upload thread timed out after {timeout_secs} seconds!"
+        )
 
-    def test_encrypted_upload_and_download_kafka(self):
-        """
-        Test sending and receiving encrypted messages
-        """
-        # create the upload directory
-        self.create_upload_directory(cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC)
-        # start the upload thread
-        self.start_upload_thread(
-            self.TOPIC_NAME, chunk_size=16 * TEST_CONST.TEST_CHUNK_SIZE
-        )
-        # copy the test file into the watched directory
-        test_rel_filepath = (
-            pathlib.Path(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME)
-            / TEST_CONST.TEST_DATA_FILE_NAME
-        )
-        self.copy_file_to_watched_dir(TEST_CONST.TEST_DATA_FILE_PATH, test_rel_filepath)
-        # start up the DataFileDownloadDirectory
-        self.create_download_directory(
-            cfg_file=TEST_CONST.TEST_CFG_FILE_PATH_ENC_2,
-            topic_name=self.TOPIC_NAME,
-            consumer_group_id=f"test_encrypted_data_file_directories_{TEST_CONST.PY_VERSION}",
-        )
-        self.start_download_thread()
-        time.sleep(10)
-        try:
-            # put the "check" command into the input queues a couple times to test them
-            self.upload_directory.control_command_queue.put("c")
-            self.download_directory.control_command_queue.put("c")
-            self.upload_directory.control_command_queue.put("check")
-            self.download_directory.control_command_queue.put("check")
-            # wait for the timeout for the test file to be completely reconstructed
-            self.wait_for_files_to_reconstruct(test_rel_filepath, timeout_secs=300)
-            # shut down the upload directory
-            self.stop_upload_thread()
-            # make sure the reconstructed file exists with the same name and content as the original
-            reco_fp = self.reco_dir / test_rel_filepath
-            self.assertTrue(reco_fp.is_file())
-            if not filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False):
-                errmsg = (
-                    "ERROR: files are not the same after reconstruction! "
-                    "(This may also be due to the timeout being too short)"
-                )
-                raise RuntimeError(errmsg)
-            # make sure that the ProducerFileRegistry files were created
-            # and they list the file as completely uploaded
-            log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f"upload_to_{self.TOPIC_NAME}_in_progress.csv"
-            completed_filepath = log_subdir / f"uploaded_to_{self.TOPIC_NAME}.csv"
-            self.assertTrue(in_prog_filepath.is_file())
-            in_prog_table = DataclassTableReadOnly(
-                RegistryLineInProgress, filepath=in_prog_filepath, logger=self.logger
-            )
-            self.assertFalse(in_prog_table.obj_addresses_by_key_attr("filename"))
-            self.assertTrue(completed_filepath.is_file())
-            completed_table = DataclassTableReadOnly(
-                RegistryLineCompleted, filepath=completed_filepath, logger=self.logger
-            )
-            addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            self.assertTrue(test_rel_filepath in addrs_by_fp)
-        except Exception as exc:
-            raise exc
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+
+def start_download_thread(state):
+    """
+    Start running the "reconstruct" function in a new thread
+    """
+    download_thread = ExceptionTrackingThread(
+        target=state["download_directory"].reconstruct
+    )
+    download_thread.start()
+    state["download_thread"] = download_thread
+
+
+def wait_for_files_to_reconstruct(
+    state, rel_paths, timeout_secs=90, before_close_callback=lambda: None
+):
+    """
+    Wait for the download thread to process and reconstruct the specified files,
+    then stop the download thread safely.
+
+    Args:
+        state: dict containing 'download_directory' and 'download_thread'.
+        rel_paths: list of relative file paths to wait for.
+        timeout_secs: maximum seconds to wait before raising TimeoutError.
+        before_close_callback: optional callable to run before shutting down the thread.
+    """
+    download_dir = state["download_directory"]
+    download_thread = state["download_thread"]
+
+    if isinstance(rel_paths, (str, pathlib.PurePath)):
+        rel_paths = [rel_paths]
+
+    # Track which files have been reconstructed
+    files_found = {rp: False for rp in rel_paths}
+
+    start_time = time.time()
+    while not all(files_found.values()) and (time.time() - start_time) < timeout_secs:
+        # Check which files have been processed by the download thread
+        for rp in rel_paths:
+            if not files_found[rp] and rp in download_dir.recent_processed_filepaths:
+                files_found[rp] = True
+        time.sleep(0.25)  # short sleep to yield to thread
+
+    if not all(files_found.values()):
+        raise TimeoutError(f"Files not reconstructed in {timeout_secs} seconds")
+
+    # Run any pre-close actions
+    before_close_callback()
+
+    # Signal the download thread to quit
+    download_dir.control_command_queue.put("q")
+
+    # Wait for the thread to finish
+    download_thread.join(timeout=30)
+    if download_thread.is_alive():
+        raise TimeoutError("Download thread timed out after 30 seconds")
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("logger", "kafka_topics")
+@pytest.mark.integration
+def test_encrypted_upload_and_download_kafka(
+    state, kafka_config_file, encrypted_kafka_node_config
+):
+    """Test sending and receiving encrypted messages."""
+
+    test_rel_filepath = (
+        pathlib.Path("test_file_sub_dir") / "1a0ceb89-b5f0-45dc-9c12-63d3020e2217.dat"
+    )
+
+    rot_password = "arglebargle123"
+    password = "123456"
+
+    consumer_config_path = kafka_config_file(node_id="testing_node_2")
+    encrypted_kafka_node_config(
+        consumer_config_path,
+        "testing_node_2",
+        TOPIC_NAME,
+        rot_password,
+        password,
+        1,
+        "consumer",
+    )
+    producer_config_path = kafka_config_file(node_id="testing_node")
+    encrypted_kafka_node_config(
+        producer_config_path,
+        "testing_node",
+        TOPIC_NAME,
+        rot_password,
+        password,
+        1,
+        "producer",
+    )
+
+    # Create upload directory, copy file first, then start thread so upload_existing=True
+    # finds it via __scrape_dir_for_files() without a race condition
+    create_upload_directory(state, cfg_file=producer_config_path)
+    watched_dir = state["watched_dir"]
+    target_fp = watched_dir / test_rel_filepath
+    target_fp.parent.mkdir(exist_ok=True, parents=True)
+    target_fp.write_bytes(pathlib.Path(TEST_CONST.TEST_DATA_FILE_PATH).read_bytes())
+
+    start_upload_thread(state, TOPIC_NAME, chunk_size=16 * 16384)
+
+    # Start download directory and thread
+    py_version = f"python_{sys.version.split()[0].replace('.', '_')}"
+    create_download_directory(
+        state,
+        topic_name=TOPIC_NAME,
+        cfg_file=consumer_config_path,
+        consumer_group_id=f"test_encrypted_data_file_directories_{py_version}",
+    )
+    start_download_thread(state)
+
+    time.sleep(5)  # allow initial processing
+
+    # Trigger 'check' commands
+    # state["upload_directory"].control_command_queue.put("c")
+    # state["download_directory"].control_command_queue.put("c")
+    # state["upload_directory"].control_command_queue.put("check")
+    # state["download_directory"].control_command_queue.put("check")
+
+    # Wait for the file reconstruction
+    wait_for_files_to_reconstruct(state, test_rel_filepath, timeout_secs=30)
+
+    # Stop the upload thread
+    stop_upload_thread(state)
+
+    # Assert reconstructed file exists and matches original
+    reco_fp = state["reco_dir"] / test_rel_filepath
+    assert reco_fp.is_file(), f"Reconstructed file {reco_fp} not found"
+    assert filecmp.cmp(TEST_CONST.TEST_DATA_FILE_PATH, reco_fp, shallow=False), (
+        "Files are not identical after reconstruction. "
+        "Check timeout or upload/download process."
+    )
+
+    # Assert ProducerFileRegistry files
+    log_subdir = state["watched_dir"] / DataFileUploadDirectory.LOG_SUBDIR_NAME
+    in_prog_filepath = log_subdir / f"upload_to_{TOPIC_NAME}_in_progress.csv"
+    completed_filepath = log_subdir / f"uploaded_to_{TOPIC_NAME}.csv"
+
+    assert in_prog_filepath.is_file(), "In-progress registry file missing"
+    in_prog_table = DataclassTableReadOnly(
+        RegistryLineInProgress, filepath=in_prog_filepath, logger=None
+    )
+    assert not in_prog_table.obj_addresses_by_key_attr(
+        "filename"
+    ), "In-progress table not empty"
+
+    assert completed_filepath.is_file(), "Completed registry file missing"
+    completed_table = DataclassTableReadOnly(
+        RegistryLineCompleted, filepath=completed_filepath, logger=None
+    )
+    addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
+    assert test_rel_filepath in addrs_by_fp, "Test file not listed in completed table"

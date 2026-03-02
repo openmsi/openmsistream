@@ -1,5 +1,9 @@
-# imports
-import pathlib, filecmp
+# test_scripts/test_polling_observer.py
+import pathlib
+import filecmp
+import shutil
+import pytest
+import time
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -9,155 +13,137 @@ from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+from .config import TEST_CONST
+from .test_data_file_directories import (
+    create_upload_directory,
+    create_download_directory,
+    start_upload_thread,
+    stop_upload_thread,
+    start_download_thread,
+    wait_for_files_to_reconstruct,
+)
 
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
-        TestWithEnvVars,
-    )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import (
-        TestWithKafkaTopics,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
-        TestWithEnvVars,
-    )
+# topic(s) for pytest param fixture
+TOPIC_NAME = "test_polling_observer"
+TOPICS = {TOPIC_NAME: {}}
 
 
-class TestPollingObserver(
-    TestWithKafkaTopics,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
-    TestWithEnvVars,
-):
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
+def test_polling_observer_kafka(state, logger):
     """
-    Class for testing DataFileUploadDirectory with a PollingObserver instead of the
-    default Observer
+    Uses the provided `state` fixture and the helper functions from
+    test_data_file_directories.py.
     """
 
-    TOPIC_NAME = "test_polling_observer"
+    files_roots = {
+        TEST_CONST.TEST_DATA_FILE_PATH: {
+            "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+            "upload_expected": True,
+            "download_expected": True,
+        },
+        TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH: {
+            "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+            "upload_expected": True,
+            "download_expected": True,
+        },
+        TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE: {
+            "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+            "upload_expected": True,
+            "download_expected": True,
+        },
+    }
 
-    TOPICS = {TOPIC_NAME: {}}
+    create_upload_directory(
+        state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, use_polling_observer=True
+    )
 
-    def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
-        """
-        Called by the test method below to run an upload directory from start to finish
-        """
-        # create the upload directory with the default config file
-        self.create_upload_directory(**create_kwargs)
-        # start it running in a new thread
-        self.start_upload_thread(topic_name=self.TOPIC_NAME)
-        try:
-            # put the test file(s) in the watched directory
-            for filepath, filedict in upload_file_dict.items():
-                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                self.copy_file_to_watched_dir(filepath, filepath.relative_to(rootdir))
-            # put the "check" command into the input queue a couple times to test it
-            self.upload_directory.control_command_queue.put("c")
-            self.upload_directory.control_command_queue.put("check")
-            # shut down the upload thread
-            self.stop_upload_thread()
-            # make sure that the ProducerFileRegistry files were created
-            # and they list the file(s) as completely uploaded
-            log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f"upload_to_{self.TOPIC_NAME}_in_progress.csv"
-            completed_filepath = log_subdir / f"uploaded_to_{self.TOPIC_NAME}.csv"
-            self.assertTrue(in_prog_filepath.is_file())
-            in_prog_table = DataclassTableReadOnly(
-                RegistryLineInProgress,
-                filepath=in_prog_filepath,
-                logger=self.logger,
+    # copy files into watched dir before starting the thread so upload_existing=True
+    # finds them via __scrape_dir_for_files() without a race condition
+    for filepath, meta in files_roots.items():
+        rootdir = meta.get("rootdir")
+        dest = filepath.relative_to(rootdir) if rootdir else pathlib.Path(filepath.name)
+        dest_path = state["watched_dir"] / dest
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(filepath, dest_path)
+
+    start_upload_thread(state, TOPIC_NAME)
+
+    # exercise the "check" commands like the original test did
+    state["upload_directory"].control_command_queue.put("c")
+    state["upload_directory"].control_command_queue.put("check")
+
+    time.sleep(5)
+
+    # stop and validate upload (this uses your stop_upload_thread)
+    stop_upload_thread(state)
+
+    # validate registry tables exactly as in the unittest
+    log_subdir = state["watched_dir"] / DataFileUploadDirectory.LOG_SUBDIR_NAME
+    in_prog_filepath = log_subdir / f"upload_to_{TOPIC_NAME}_in_progress.csv"
+    completed_filepath = log_subdir / f"uploaded_to_{TOPIC_NAME}.csv"
+
+    assert in_prog_filepath.is_file()
+    in_prog_table = DataclassTableReadOnly(
+        RegistryLineInProgress, filepath=in_prog_filepath, logger=logger
+    )
+    assert in_prog_table.obj_addresses_by_key_attr("filename") == {}
+
+    assert completed_filepath.is_file()
+    completed_table = DataclassTableReadOnly(
+        RegistryLineCompleted, filepath=completed_filepath, logger=logger
+    )
+    addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
+
+    for filepath, filedict in files_roots.items():
+        if filedict["upload_expected"]:
+            rootdir = filedict.get("rootdir")
+            rel_path = (
+                filepath.relative_to(rootdir) if rootdir else pathlib.Path(filepath.name)
             )
-            self.assertEqual(in_prog_table.obj_addresses_by_key_attr("filename"), {})
-            self.assertTrue(completed_filepath.is_file())
-            completed_table = DataclassTableReadOnly(
-                RegistryLineCompleted,
-                filepath=completed_filepath,
-                logger=self.logger,
+            assert rel_path in addrs_by_fp
+
+    # -------------------------
+    # run download phase
+    # -------------------------
+    consumer_group_id = (
+        f"run_data_file_download_directory_polling_observer_{TEST_CONST.PY_VERSION}"
+    )
+
+    # create download directory and start it
+    create_download_directory(
+        state,
+        topic_name=TOPIC_NAME,
+        cfg_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        consumer_group_id=consumer_group_id,
+    )
+    start_download_thread(state)
+
+    # exercise the "check" commands like original
+    state["download_directory"].control_command_queue.put("c")
+    state["download_directory"].control_command_queue.put("check")
+
+    # wait for reconstruction of the files we expect
+    rels = []
+    for filepath, filedict in files_roots.items():
+        if filedict["download_expected"]:
+            rootdir = filedict.get("rootdir")
+            rel_path = (
+                filepath.relative_to(rootdir) if rootdir else pathlib.Path(filepath.name)
             )
-            addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            for filepath, filedict in upload_file_dict.items():
-                if filedict["upload_expected"]:
-                    rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                    if rootdir:
-                        rel_path = filepath.relative_to(rootdir)
-                    else:
-                        rel_path = pathlib.Path(filepath.name)
-                    self.assertTrue(rel_path in addrs_by_fp)
-        except Exception as exc:
-            raise exc
+            rels.append(rel_path)
 
-    def run_data_file_download_directory(self, download_file_dict, **other_create_kwargs):
-        """
-        Called by the test method below to run a download directory from start to finish
-        """
-        # make a list of relative filepaths we'll be waiting for
-        relevant_files = {}
-        for filepath, filedict in download_file_dict.items():
-            if filedict["download_expected"]:
-                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                if rootdir:
-                    rel_path = filepath.relative_to(rootdir)
-                else:
-                    rel_path = pathlib.Path(filepath.name)
-                relevant_files[filepath] = rel_path
-        # create the download directory
-        self.create_download_directory(topic_name=self.TOPIC_NAME, **other_create_kwargs)
-        # start reconstruct in a separate thread so we can time it out
-        self.start_download_thread()
-        try:
-            # put the "check" command into the input queue a couple times
-            self.download_directory.control_command_queue.put("c")
-            self.download_directory.control_command_queue.put("check")
-            # wait for the timeout for the test file(s) to be completely reconstructed
-            self.wait_for_files_to_reconstruct(relevant_files.values())
-            # make sure the reconstructed file(s) exists with the same content as the original
-            for orig_fp, rel_fp in relevant_files.items():
-                reco_fp = self.reco_dir / rel_fp
-                self.assertTrue(reco_fp.is_file())
-                if not filecmp.cmp(orig_fp, reco_fp, shallow=False):
-                    errmsg = (
-                        "ERROR: files are not the same after reconstruction! "
-                        "(This may also be due to the timeout being too short)"
-                    )
-                    raise RuntimeError(errmsg)
-        except Exception as exc:
-            raise exc
+    wait_for_files_to_reconstruct(state, rels, timeout_secs=180)
 
-    def test_polling_observer_kafka(self):
-        """
-        Test the upload and download directories while applying regular expressions
-        """
-        files_roots = {
-            TEST_CONST.TEST_DATA_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-            TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-            TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE: {
-                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-        }
-        self.run_data_file_upload_directory(files_roots, use_polling_observer=True)
-        consumer_group_id = (
-            f"run_data_file_download_directory_polling_observer_{TEST_CONST.PY_VERSION}"
-        )
-        self.run_data_file_download_directory(
-            files_roots,
-            consumer_group_id=consumer_group_id,
-        )
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+    # verify reconstructed files match originals
+    for orig_fp, rel_fp in zip(files_roots.keys(), rels):
+        reco_fp = state["reco_dir"] / rel_fp
+        assert reco_fp.is_file()
+        assert filecmp.cmp(orig_fp, reco_fp, shallow=False)
+
+    # stop download thread cleanly
+    # (we signalled quit in wait_for_files_to_reconstruct; join is done there,
+    # but keep defensive cleanup if necessary)
+    if state.get("download_thread") is not None:
+        state["download_thread"].join(timeout=1)

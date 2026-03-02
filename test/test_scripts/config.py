@@ -76,42 +76,39 @@ class TestRoutineConstants:
 
     # If an environment variable indicates that a local broker is being used,
     # prepend "local_broker_" to the names of the above config files used in tests
-    if os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS") and os.environ.get(
-        "USE_LOCAL_KAFKA_BROKER_IN_TESTS"
-    ):
-        TEST_CFG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH.name}"
-        )
-        TEST_CFG_FILE_PATH_ENC = TEST_CFG_FILE_PATH_ENC.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_ENC.name}"
-        )
-        TEST_CFG_FILE_PATH_ENC_2 = TEST_CFG_FILE_PATH_ENC_2.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_ENC_2.name}"
-        )
-        TEST_CFG_FILE_PATH_S3 = TEST_CFG_FILE_PATH_S3.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_S3.name}"
-        )
-        TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH_MDC.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_MDC.name}"
-        )
-        TEST_CFG_FILE_PATH_HEARTBEATS = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS.name}"
-        )
-        TEST_CFG_FILE_PATH_HEARTBEATS_ENC = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS_ENC.name}"
-        )
-        TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2 = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2.name}"
-        )
-        TEST_CFG_FILE_PATH_LOGS = TEST_CFG_FILE_PATH_LOGS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_LOGS.name}"
-        )
-        TEST_CFG_FILE_PATH_LOGS_ENC = TEST_CFG_FILE_PATH_LOGS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_LOGS_ENC.name}"
-        )
-        TEST_CFG_FILE_PATH_LOGS_ENC_2 = TEST_CFG_FILE_PATH_LOGS.with_name(
-            f"local_broker_{TEST_CFG_FILE_PATH_LOGS_ENC_2.name}"
-        )
+    TEST_CFG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH.name}"
+    )
+    TEST_CFG_FILE_PATH_ENC = TEST_CFG_FILE_PATH_ENC.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_ENC.name}"
+    )
+    TEST_CFG_FILE_PATH_ENC_2 = TEST_CFG_FILE_PATH_ENC_2.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_ENC_2.name}"
+    )
+    TEST_CFG_FILE_PATH_S3 = TEST_CFG_FILE_PATH_S3.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_S3.name}"
+    )
+    TEST_CFG_FILE_PATH_MDC = TEST_CFG_FILE_PATH_MDC.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_MDC.name}"
+    )
+    TEST_CFG_FILE_PATH_HEARTBEATS = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS.name}"
+    )
+    TEST_CFG_FILE_PATH_HEARTBEATS_ENC = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS_ENC.name}"
+    )
+    TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2 = TEST_CFG_FILE_PATH_HEARTBEATS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_HEARTBEATS_ENC_2.name}"
+    )
+    TEST_CFG_FILE_PATH_LOGS = TEST_CFG_FILE_PATH_LOGS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_LOGS.name}"
+    )
+    TEST_CFG_FILE_PATH_LOGS_ENC = TEST_CFG_FILE_PATH_LOGS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_LOGS_ENC.name}"
+    )
+    TEST_CFG_FILE_PATH_LOGS_ENC_2 = TEST_CFG_FILE_PATH_LOGS.with_name(
+        f"local_broker_{TEST_CFG_FILE_PATH_LOGS_ENC_2.name}"
+    )
     # The path to the "prod" Kafka config file to use
     PROD_CONFIG_FILE_PATH = TEST_CFG_FILE_PATH.with_name(
         f"prod{TEST_CFG_FILE_PATH.suffix}"

@@ -1,207 +1,233 @@
-# imports
+# test_scripts/test_data_file_stream_processor.py
 import time
+import pytest
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error
+from openmsistream import DataFileStreamProcessor
 
-    # pylint: disable=import-error
-    from .base_classes import (
-        TestWithKafkaTopics,
-        TestWithUploadDataFile,
-        TestWithStreamProcessor,
-    )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error
-
-    # pylint: disable=import-error
-    from base_classes import (
-        TestWithKafkaTopics,
-        TestWithUploadDataFile,
-        TestWithStreamProcessor,
-    )
+from .config import TEST_CONST
 
 
-class TestDataFileStreamProcessor(
-    TestWithKafkaTopics, TestWithUploadDataFile, TestWithStreamProcessor
+class DataFileStreamProcessorForTesting(DataFileStreamProcessor):
+    """
+    Class to use for testing DataFileStreamProcessor functions since it's an abstract base class
+    """
+
+    def __init__(self, *args, **kwargs):
+        self.checked = False
+        self.completed_filenames_bytestrings = []
+        self.filenames_to_fail = []
+        super().__init__(*args, **kwargs)
+
+    def _process_downloaded_data_file(self, datafile, lock):
+        # fail any files that have been set to fail
+        if datafile.filename in self.filenames_to_fail:
+            with lock:
+                self.completed_filenames_bytestrings.append((datafile.filename, None))
+            return ValueError(
+                f"ERROR: testing processing for {datafile.filename} is set to fail!"
+            )
+        # add the filename and bytestring to the list
+        with lock:
+            self.completed_filenames_bytestrings.append(
+                (datafile.filename, datafile.bytestring)
+            )
+        return None
+
+    def _failed_processing_callback(self, datafile, lock):
+        if datafile.filename not in self.filenames_to_fail:
+            raise RuntimeError("ERROR: _failed_processing_callback invoked in test!")
+
+    def _mismatched_hash_callback(self, datafile, lock):
+        raise RuntimeError("ERROR: _mismatched_hash_callback invoked in test!")
+
+    def _on_check(self):
+        self.checked = True
+        super()._on_check()
+
+    @classmethod
+    def run_from_command_line(cls, args=None):
+        pass
+
+
+# -------------------
+# Tests
+# -------------------
+
+TOPIC_NAME = "test_data_file_stream_processor"
+TOPIC_2_NAME = "test_data_file_stream_processor_2"
+
+TOPICS = {
+    TOPIC_NAME: {},
+    TOPIC_2_NAME: {},
+}
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("logger", "kafka_topics")
+def test_data_file_stream_processor_modes_kafka(
+    stream_processor_helper, upload_file_helper
 ):
-    """
-    Class for testing behavior of a DataFileStreamProcessor
-    """
+    upload_file_helper(
+        TEST_CONST.TEST_DATA_FILE_2_PATH,
+        topic_name=TOPIC_NAME,
+        rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+    )
 
-    TOPIC_NAME = "test_data_file_stream_processor"
-    TOPIC_2_NAME = "test_data_file_stream_processor_2"
+    sp = stream_processor_helper
+    rel_filepath = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
+        TEST_CONST.TEST_DATA_DIR_PATH
+    )
 
-    TOPICS = {
-        TOPIC_NAME: {},
-        TOPIC_2_NAME: {},
-    }
+    with open(TEST_CONST.TEST_DATA_FILE_2_PATH, "rb") as fp:
+        ref_bytestring = fp.read()
 
-    def run_stream_processor_test(self, topic_name, mode):
-        """
-        Run the stream processor
-        """
-        self.create_stream_processor(
-            topic_name=topic_name,
-            consumer_group_id=f"test_data_file_stream_processor_{mode}_{TEST_CONST.PY_VERSION}",
+    for mode in ("memory", "disk", "both"):
+        sp["create_stream_processor"](
+            topic_name=TOPIC_NAME,
+            consumer_group_id=(
+                f"test_data_file_stream_processor_{mode}_{TEST_CONST.PY_VERSION}"
+            ),
             other_init_kwargs={"mode": mode},
         )
-        self.start_stream_processor_thread()
-        try:
-            # make sure the stream processor can be checked
-            self.assertFalse(self.stream_processor.checked)
-            self.stream_processor.control_command_queue.put("c")
-            self.stream_processor.control_command_queue.put("check")
-            time.sleep(1)
-            self.assertTrue(self.stream_processor.checked)
-            # wait until the file has been processed
-            rel_filepath = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
-                TEST_CONST.TEST_DATA_DIR_PATH
-            )
-            self.wait_for_files_to_be_processed(rel_filepath, timeout_secs=180)
-            # make sure the contents of the file are the same as the original
-            ref_bytestring = None
-            with open(TEST_CONST.TEST_DATA_FILE_2_PATH, "rb") as fp:
-                ref_bytestring = fp.read()
-            self.assertTrue(
-                (TEST_CONST.TEST_DATA_FILE_2_NAME, ref_bytestring)
-                in self.stream_processor.completed_filenames_bytestrings
-            )
-        except Exception as exc:
-            raise exc
+        sp["start_stream_processor_thread"]()
 
-    def test_data_file_stream_processor_modes_kafka(self):
-        """
-        Upload a data file and then use a DataFileStreamProcessor to read its data back
-        in all three modes
-        """
-        # upload the test file
-        self.upload_single_file(
-            TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=self.TOPIC_NAME,
-            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-        )
-        # start up a stream processor to read its data back into memory
-        self.run_stream_processor_test(self.TOPIC_NAME, "memory")
-        # start up a stream processor to read its data back to disk
-        self.reset_stream_processor(remove_output=True)
-        self.run_stream_processor_test(self.TOPIC_NAME, "disk")
-        # start up a stream processor to read its data back to memory and disk
-        self.reset_stream_processor(remove_output=True)
-        self.run_stream_processor_test(self.TOPIC_NAME, "both")
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+        # verify _on_check is triggered by the "check" control command
+        assert not sp["state"]["stream_processor"].checked
+        sp["state"]["stream_processor"].control_command_queue.put("c")
+        sp["state"]["stream_processor"].control_command_queue.put("check")
+        counter = 0
+        while not sp["state"]["stream_processor"].checked and counter < 10:
+            time.sleep(0.1)
+            counter += 1
+        assert sp["state"]["stream_processor"].checked
 
-    def test_data_file_stream_processor_restart_kafka(self):
-        """
-        Test restarting a DataFileStreamProcessor from the beginning of the topic
-        after failing to process a file
-        """
-        consumer_group_id = (
-            f"test_data_file_stream_processor_restart_{TEST_CONST.PY_VERSION}"
-        )
-        # upload the data files
-        self.upload_single_file(
-            TEST_CONST.TEST_DATA_FILE_PATH,
-            topic_name=self.TOPIC_2_NAME,
-            rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
-        )
-        self.upload_single_file(
-            TEST_CONST.TEST_DATA_FILE_2_PATH,
-            topic_name=self.TOPIC_2_NAME,
-            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-        )
-        rel_filepath_1 = TEST_CONST.TEST_DATA_FILE_PATH.relative_to(
-            TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH
-        )
-        rel_filepath_2 = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
-            TEST_CONST.TEST_DATA_DIR_PATH
-        )
-        # use a stream processor to read their data back into memory one time,
-        # deliberately failing the first file
-        self.create_stream_processor(
-            topic_name=self.TOPIC_2_NAME, consumer_group_id=consumer_group_id
-        )
-        self.stream_processor.filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
-        self.start_stream_processor_thread()
-        try:
-            self.wait_for_files_to_be_processed(rel_filepath_2)
-            # make sure the content of the failed file has been added as "None"
-            self.assertTrue(
-                (TEST_CONST.TEST_DATA_FILE_NAME, None)
-                in self.stream_processor.completed_filenames_bytestrings
-            )
-            # make sure the contents of the successful file in memory match the original
-            ref_bytestring = None
-            with open(TEST_CONST.TEST_DATA_FILE_2_PATH, "rb") as fp:
-                ref_bytestring = fp.read()
-            self.assertTrue(
-                (TEST_CONST.TEST_DATA_FILE_2_NAME, ref_bytestring)
-                in self.stream_processor.completed_filenames_bytestrings
-            )
-            # read the .csv table to make sure it registers one succeeded and one failed
-            time.sleep(1.0)
-            self.stream_processor.file_registry.in_progress_table.dump_to_file()
-            self.stream_processor.file_registry.succeeded_table.dump_to_file()
-            self.assertEqual(
-                len(self.stream_processor.file_registry.filepaths_to_rerun), 1
-            )
-            in_prog_table = self.stream_processor.file_registry.in_progress_table
-            in_prog_entries = in_prog_table.obj_addresses_by_key_attr("status")
-            succeeded_table = self.stream_processor.file_registry.succeeded_table
-            succeeded_entries = succeeded_table.obj_addresses
-            self.assertEqual(len(succeeded_entries), 1)
-            self.assertEqual(
-                len(in_prog_entries[self.stream_processor.file_registry.FAILED]), 1
-            )
-        except Exception as exc:
-            raise exc
-        # upload a third file (fake config file)
-        third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
-        self.upload_single_file(
-            third_filepath,
-            topic_name=self.TOPIC_2_NAME,
-            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
-        )
-        rel_filepath_3 = third_filepath.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
-        # recreate and re-run the stream processor, allowing it to process all files
-        self.reset_stream_processor()
-        self.create_stream_processor(
-            topic_name=self.TOPIC_2_NAME, consumer_group_id=consumer_group_id
-        )
-        self.start_stream_processor_thread()
-        try:
-            # wait for the new file and the previously-failed file to be processed
-            self.wait_for_files_to_be_processed([rel_filepath_1, rel_filepath_3])
-            # make sure the content of the previously failed file is now correct
-            ref_bytestring = None
-            with open(TEST_CONST.TEST_DATA_FILE_PATH, "rb") as fp:
-                ref_bytestring = fp.read()
-            self.assertTrue(
-                (TEST_CONST.TEST_DATA_FILE_NAME, ref_bytestring)
-                in self.stream_processor.completed_filenames_bytestrings
-            )
-            # make sure the previously-successful file wasn't read again
-            self.assertFalse(
-                TEST_CONST.TEST_DATA_FILE_2_NAME
-                in [t[0] for t in self.stream_processor.completed_filenames_bytestrings]
-            )
-            # make sure the contents of the third file are also accurate
-            ref_bytestring = None
-            with open(third_filepath, "rb") as fp:
-                ref_bytestring = fp.read()
-            self.assertTrue(
-                (third_filepath.name, ref_bytestring)
-                in self.stream_processor.completed_filenames_bytestrings
-            )
-            time.sleep(1.0)
-            # read the .csv table to make sure it registers three successful files
-            self.stream_processor.file_registry.in_progress_table.dump_to_file()
-            self.stream_processor.file_registry.succeeded_table.dump_to_file()
-            succeeded_table = self.stream_processor.file_registry.succeeded_table
-            succeeded_entries = succeeded_table.obj_addresses
-            # >3 if the topic has files from previous runs in it
-            self.assertTrue(len(succeeded_entries) >= 3)
-            succeeded_entries = succeeded_table.obj_addresses_by_key_attr("filename")
-            self.assertTrue(len(succeeded_entries[TEST_CONST.TEST_DATA_FILE_2_NAME]) >= 1)
-        except Exception as exc:
-            raise exc
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+        sp["wait_for_files_to_be_processed"](rel_filepath, timeout_secs=180)
+
+        # verify file contents match the original
+        assert (
+            TEST_CONST.TEST_DATA_FILE_2_NAME,
+            ref_bytestring,
+        ) in sp[
+            "state"
+        ]["stream_processor"].completed_filenames_bytestrings
+
+        sp["reset_stream_processor"](remove_output=True)
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [{TOPIC_2_NAME: {}}], indirect=True)
+@pytest.mark.usefixtures("kafka_topics")
+def test_data_file_stream_processor_restart_kafka(
+    stream_processor_helper, upload_file_helper
+):
+    sp = stream_processor_helper
+    consumer_group_id = f"test_data_file_stream_processor_restart_{TEST_CONST.PY_VERSION}"
+
+    rel_filepath_1 = TEST_CONST.TEST_DATA_FILE_PATH.relative_to(
+        TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH
+    )
+    rel_filepath_2 = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(
+        TEST_CONST.TEST_DATA_DIR_PATH
+    )
+
+    # upload files 1 and 2
+    upload_file_helper(
+        TEST_CONST.TEST_DATA_FILE_PATH,
+        topic_name=TOPIC_2_NAME,
+        rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+    )
+    upload_file_helper(
+        TEST_CONST.TEST_DATA_FILE_2_PATH,
+        topic_name=TOPIC_2_NAME,
+        rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+    )
+
+    # first run: deliberately fail file 1
+    sp["create_stream_processor"](
+        topic_name=TOPIC_2_NAME, consumer_group_id=consumer_group_id
+    )
+    sp["state"]["stream_processor"].filenames_to_fail = [TEST_CONST.TEST_DATA_FILE_NAME]
+    sp["start_stream_processor_thread"]()
+    sp["wait_for_files_to_be_processed"](rel_filepath_2)
+
+    # verify file 1 recorded as failed, file 2 recorded with correct contents
+    assert (
+        TEST_CONST.TEST_DATA_FILE_NAME,
+        None,
+    ) in sp[
+        "state"
+    ]["stream_processor"].completed_filenames_bytestrings
+    with open(TEST_CONST.TEST_DATA_FILE_2_PATH, "rb") as fp:
+        ref_bytestring_2 = fp.read()
+    assert (
+        TEST_CONST.TEST_DATA_FILE_2_NAME,
+        ref_bytestring_2,
+    ) in sp[
+        "state"
+    ]["stream_processor"].completed_filenames_bytestrings
+
+    # verify registry: 1 succeeded, 1 failed, 1 queued for rerun
+    time.sleep(1.0)
+    sp["state"]["stream_processor"].file_registry.in_progress_table.dump_to_file()
+    sp["state"]["stream_processor"].file_registry.succeeded_table.dump_to_file()
+    assert len(sp["state"]["stream_processor"].file_registry.filepaths_to_rerun) == 1
+    in_progress_table = sp["state"]["stream_processor"].file_registry.in_progress_table
+    in_prog_entries = in_progress_table.obj_addresses_by_key_attr("status")
+    succeeded_table = sp["state"]["stream_processor"].file_registry.succeeded_table
+    assert len(succeeded_table.obj_addresses) == 1
+    assert len(in_prog_entries[sp["state"]["stream_processor"].file_registry.FAILED]) == 1
+
+    # upload a third file before resetting so it lands in the topic
+    third_filepath = TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH
+    upload_file_helper(
+        third_filepath,
+        topic_name=TOPIC_2_NAME,
+        rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+    )
+    rel_filepath_3 = third_filepath.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
+
+    sp["reset_stream_processor"]()
+
+    # second run: same consumer group — should re-process file 1 and pick up file 3
+    sp["create_stream_processor"](
+        topic_name=TOPIC_2_NAME, consumer_group_id=consumer_group_id
+    )
+    sp["start_stream_processor_thread"]()
+    sp["wait_for_files_to_be_processed"]([rel_filepath_1, rel_filepath_3])
+
+    # verify file 1 now processed correctly
+    with open(TEST_CONST.TEST_DATA_FILE_PATH, "rb") as fp:
+        ref_bytestring_1 = fp.read()
+    assert (
+        TEST_CONST.TEST_DATA_FILE_NAME,
+        ref_bytestring_1,
+    ) in sp[
+        "state"
+    ]["stream_processor"].completed_filenames_bytestrings
+
+    # verify file 2 was NOT re-processed by the second run
+    assert TEST_CONST.TEST_DATA_FILE_2_NAME not in [
+        t[0] for t in sp["state"]["stream_processor"].completed_filenames_bytestrings
+    ]
+
+    # verify file 3 processed correctly
+    with open(third_filepath, "rb") as fp:
+        ref_bytestring_3 = fp.read()
+    assert (
+        third_filepath.name,
+        ref_bytestring_3,
+    ) in sp[
+        "state"
+    ]["stream_processor"].completed_filenames_bytestrings
+
+    # verify registry: >= 3 succeeded total, file 2 appears at least once
+    time.sleep(1.0)
+    sp["state"]["stream_processor"].file_registry.in_progress_table.dump_to_file()
+    sp["state"]["stream_processor"].file_registry.succeeded_table.dump_to_file()
+    succeeded_table = sp["state"]["stream_processor"].file_registry.succeeded_table
+    assert len(succeeded_table.obj_addresses) >= 3
+    succeeded_by_filename = succeeded_table.obj_addresses_by_key_attr("filename")
+    assert len(succeeded_by_filename[TEST_CONST.TEST_DATA_FILE_2_NAME]) >= 1
+
+    sp["reset_stream_processor"](remove_output=True)

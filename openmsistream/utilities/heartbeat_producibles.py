@@ -1,4 +1,4 @@
-" Various Producibles for main program/base class heartbeat messages "
+"Various Producibles for main program/base class heartbeat messages"
 
 # imports
 import datetime, json

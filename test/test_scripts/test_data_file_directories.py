@@ -1,5 +1,11 @@
-# imports
-import pathlib, shutil, filecmp, re, json, datetime, time
+import pathlib
+import shutil
+import time
+import re
+import filecmp
+import pytest
+from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+
 from openmsistream.utilities.dataclass_table import DataclassTableReadOnly
 from openmsistream.data_file_io.actor.file_registry.producer_file_registry import (
     RegistryLineInProgress,
@@ -8,346 +14,286 @@ from openmsistream.data_file_io.actor.file_registry.producer_file_registry impor
 from openmsistream.data_file_io.actor.data_file_upload_directory import (
     DataFileUploadDirectory,
 )
+from openmsistream.data_file_io.actor.data_file_download_directory import (
+    DataFileDownloadDirectory,
+)
 
-try:
-    from .config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
+from .config import TEST_CONST
+from openmsistream.utilities.config import RUN_CONST
 
-    # pylint: disable=import-error,wrong-import-order
-    from .base_classes import (
-        TestWithHeartbeats,
-        TestWithLogs,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
-        TestWithEnvVars,
+
+# ------------------------------------------------------------
+# Helpers
+# ------------------------------------------------------------
+
+
+def create_upload_directory(state, cfg_file=TEST_CONST.TEST_CFG_FILE_PATH, **kwargs):
+    watched_dir = state["tmp_path"] / "watched"
+    watched_dir.mkdir(exist_ok=True)
+    state["watched_dir"] = watched_dir
+    state["upload_directory"] = DataFileUploadDirectory(watched_dir, cfg_file, **kwargs)
+    return state["upload_directory"]
+
+
+def create_download_directory(state, topic_name, **kwargs):
+    cfg_file = kwargs.pop("cfg_file", TEST_CONST.TEST_CFG_FILE_PATH)
+    reco_dir = state["tmp_path"] / "reco"
+    reco_dir.mkdir(exist_ok=True)
+    state["reco_dir"] = reco_dir
+    state["download_directory"] = DataFileDownloadDirectory(
+        reco_dir,
+        cfg_file,
+        topic_name,
+        **kwargs,
     )
-except ImportError:
-    from config import TEST_CONST  # pylint: disable=import-error,wrong-import-order
-
-    # pylint: disable=import-error,wrong-import-order
-    from base_classes import (
-        TestWithHeartbeats,
-        TestWithLogs,
-        TestWithDataFileUploadDirectory,
-        TestWithDataFileDownloadDirectory,
-        TestWithEnvVars,
-    )
+    return state["download_directory"]
 
 
-class TestDataFileDirectories(
-    TestWithHeartbeats,
-    TestWithLogs,
-    TestWithDataFileUploadDirectory,
-    TestWithDataFileDownloadDirectory,
-    TestWithEnvVars,
+def start_upload_thread(
+    state,
+    topic_name,
+    n_threads=RUN_CONST.N_DEFAULT_UPLOAD_THREADS,
+    chunk_size=TEST_CONST.TEST_CHUNK_SIZE,
+    max_queue_size=RUN_CONST.DEFAULT_MAX_UPLOAD_QUEUE_MEGABYTES,
+    upload_existing=True,
 ):
     """
-    Class for testing DataFileUploadDirectory and DataFileDownloadDirectory functions
+    Start the upload directory running in a new thread with Exceptions tracked
     """
+    upload_thread = ExceptionTrackingThread(
+        target=state["upload_directory"].upload_files_as_added,
+        args=(topic_name,),
+        kwargs={
+            "n_threads": n_threads,
+            "chunk_size": chunk_size,
+            "max_queue_size": max_queue_size,
+            "upload_existing": upload_existing,
+        },
+    )
+    upload_thread.start()
+    state["upload_thread"] = upload_thread
 
-    TOPIC_NAME = "test_data_file_directories"
-    HEARTBEAT_TOPIC_NAME = "heartbeats"
-    LOG_TOPIC_NAME = "logs"
 
-    TOPICS = {
-        TOPIC_NAME: {},
-        HEARTBEAT_TOPIC_NAME: {"--partitions": 1},
-        LOG_TOPIC_NAME: {"--partitions": 1},
+def stop_upload_thread(state, timeout_secs=90):
+    # state["upload_directory"].shutdown()
+    state["upload_directory"].control_command_queue.put("q")
+    # wait for the uploading thread to complete
+    upload_thread = state["upload_thread"]
+    upload_thread.join(timeout=timeout_secs)
+    if upload_thread.is_alive():
+        raise TimeoutError(
+            f"ERROR: upload thread timed out after {timeout_secs} seconds!"
+        )
+
+
+def start_download_thread(state):
+    """
+    Start running the "reconstruct" function in a new thread
+    """
+    download_thread = ExceptionTrackingThread(
+        target=state["download_directory"].reconstruct
+    )
+    download_thread.start()
+    state["download_thread"] = download_thread
+
+
+def wait_for_files_to_reconstruct(
+    state, rel_paths, timeout_secs=90, before_close_callback=lambda: None
+):
+    """
+    Wait for the download thread to process and reconstruct the specified files,
+    then stop the download thread safely.
+
+    Args:
+        state: dict containing 'download_directory' and 'download_thread'.
+        rel_paths: list of relative file paths to wait for.
+        timeout_secs: maximum seconds to wait before raising TimeoutError.
+        before_close_callback: optional callable to run before shutting down the thread.
+    """
+    download_dir = state["download_directory"]
+    download_thread = state["download_thread"]
+
+    if isinstance(rel_paths, (str, pathlib.PurePath)):
+        rel_paths = [rel_paths]
+
+    # Track which files have been reconstructed
+    files_found = {rp: False for rp in rel_paths}
+
+    start_time = time.time()
+    while not all(files_found.values()) and (time.time() - start_time) < timeout_secs:
+        # Check which files have been processed by the download thread
+        for rp in rel_paths:
+            if not files_found[rp] and rp in download_dir.recent_processed_filepaths:
+                files_found[rp] = True
+        time.sleep(0.25)  # short sleep to yield to thread
+
+    if not all(files_found.values()):
+        raise TimeoutError(f"Files not reconstructed in {timeout_secs} seconds")
+
+    # Run any pre-close actions
+    before_close_callback()
+
+    # Signal the download thread to quit
+    download_dir.control_command_queue.put("q")
+
+    # Wait for the thread to finish
+    download_thread.join(timeout=30)
+    if download_thread.is_alive():
+        raise TimeoutError("Download thread timed out after 30 seconds")
+
+
+# ------------------------------------------------------------
+# Core Test Logic
+# ------------------------------------------------------------
+
+
+def run_upload(state, files_roots, logger, topic, **kwargs):
+    # copy files into watched dir before starting the thread so upload_existing=True
+    # finds them via __scrape_dir_for_files() without a race condition
+    for filepath, meta in files_roots.items():
+        rootdir = meta.get("rootdir")
+        dest = filepath.relative_to(rootdir) if rootdir else filepath.name
+        dest_path = state["watched_dir"] / dest
+        dest_path.parent.mkdir(parents=True, exist_ok=True)
+        shutil.copy(filepath, dest_path)
+
+    start_upload_thread(state, topic)
+
+    d = state["upload_directory"]
+    time.sleep(5)
+    d.control_command_queue.put("c")
+    d.control_command_queue.put("check")
+
+    stop_upload_thread(state)
+
+    # validate registry tables
+    log_subdir = state["watched_dir"] / DataFileUploadDirectory.LOG_SUBDIR_NAME
+
+    inprog = log_subdir / f"upload_to_{topic}_in_progress.csv"
+    comp = log_subdir / f"uploaded_to_{topic}.csv"
+
+    assert inprog.is_file()
+    in_table = DataclassTableReadOnly(
+        RegistryLineInProgress, filepath=inprog, logger=logger
+    )
+    assert not in_table.obj_addresses_by_key_attr("filename")
+
+    assert comp.is_file()
+    ctable = DataclassTableReadOnly(RegistryLineCompleted, filepath=comp, logger=logger)
+    addrs = ctable.obj_addresses_by_key_attr("rel_filepath")
+
+    for fp, meta in files_roots.items():
+        if meta["upload_expected"]:
+            rootdir = meta.get("rootdir")
+            rel = fp.relative_to(rootdir) if rootdir else pathlib.Path(fp.name)
+            assert rel in addrs
+
+
+def run_download(state, files_roots, topic, **kwargs):
+    relevant = {}
+    for fp, meta in files_roots.items():
+        if meta["download_expected"]:
+            rootdir = meta.get("rootdir")
+            rel = fp.relative_to(rootdir) if rootdir else pathlib.Path(fp.name)
+            relevant[fp] = rel
+
+    create_download_directory(state, topic_name=topic, **kwargs)
+    start_download_thread(state)
+
+    d = state["download_directory"]
+    time.sleep(5)
+    d.control_command_queue.put("c")
+    d.control_command_queue.put("check")
+
+    wait_for_files_to_reconstruct(state, relevant.values())
+
+    for orig, rel in relevant.items():
+        reco = state["reco_dir"] / rel
+        assert reco.is_file()
+        assert filecmp.cmp(orig, reco, shallow=False)
+
+
+# ------------------------------------------------------------
+# Pytest Tests
+# ------------------------------------------------------------
+
+TOPICS = {
+    "test_data_file_directories": {},
+    "heartbeats": {"--partitions": 1},
+    "logs": {"--partitions": 1},
+}
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
+@pytest.mark.usefixtures("logger", "kafka_topics", "apply_kafka_env")
+def test_upload_and_download_directories_kafka(state, logger, apply_kafka_env):
+    files = {
+        TEST_CONST.TEST_DATA_FILE_PATH: {
+            "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+            "upload_expected": True,
+            "download_expected": True,
+        },
+        TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH: {
+            "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+            "upload_expected": True,
+            "download_expected": False,
+        },
+        TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE: {
+            "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
+            "upload_expected": False,
+            "download_expected": False,
+        },
     }
 
-    def run_data_file_upload_directory(self, upload_file_dict, **create_kwargs):
-        """
-        Called by the test method below to run an upload directory from start to finish
-        """
-        # create the upload directory with the default config file
-        self.create_upload_directory(**create_kwargs)
-        # start it running in a new thread
-        self.start_upload_thread(topic_name=self.TOPIC_NAME)
+    upload_regex = re.compile(r"^.*\.(dat|config)$")
+    download_regex = re.compile(r"^.*\.dat$")
+    topic = "test_data_file_directories"
+
+    create_upload_directory(
+        state, TEST_CONST.TEST_CFG_FILE_PATH, upload_regex=upload_regex
+    )
+    run_upload(state, files, logger, topic, upload_regex=upload_regex)
+    time.sleep(1)
+
+    gid = f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
+
+    run_download(
+        state,
+        files,
+        topic,
+        consumer_group_id=gid,
+        filepath_regex=download_regex,
+    )
+
+
+def test_filepath_should_be_uploaded(state, mock_env_vars):
+    d = create_upload_directory(state, TEST_CONST.TEST_CFG_FILE_PATH)
+
+    with pytest.raises(TypeError):
+        d.filepath_should_be_uploaded(None)
+    with pytest.raises(TypeError):
+        d.filepath_should_be_uploaded(5)
+    with pytest.raises(TypeError):
+        d.filepath_should_be_uploaded("not a path")
+
+    assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / ".hidden")
+    assert not d.filepath_should_be_uploaded(TEST_CONST.TEST_DATA_DIR_PATH / "abc.log")
+
+    watched_dir = state["watched_dir"]
+    for fp in TEST_CONST.TEST_DATA_DIR_PATH.rglob("*"):
         try:
-            # put the test file(s) in the watched directory
-            for filepath, filedict in upload_file_dict.items():
-                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                self.copy_file_to_watched_dir(filepath, filepath.relative_to(rootdir))
-            # put the "check" command into the input queue a couple times to test it
-            self.upload_directory.control_command_queue.put("c")
-            self.upload_directory.control_command_queue.put("check")
-            # shut down the upload thread
-            self.stop_upload_thread()
-            # make sure that the ProducerFileRegistry files were created
-            # and they list the file(s) as completely uploaded
-            log_subdir = self.watched_dir / DataFileUploadDirectory.LOG_SUBDIR_NAME
-            in_prog_filepath = log_subdir / f"upload_to_{self.TOPIC_NAME}_in_progress.csv"
-            completed_filepath = log_subdir / f"uploaded_to_{self.TOPIC_NAME}.csv"
-            self.assertTrue(in_prog_filepath.is_file())
-            in_prog_table = DataclassTableReadOnly(
-                RegistryLineInProgress,
-                filepath=in_prog_filepath,
-                logger=self.logger,
-            )
-            self.assertEqual(in_prog_table.obj_addresses_by_key_attr("filename"), {})
-            self.assertTrue(completed_filepath.is_file())
-            completed_table = DataclassTableReadOnly(
-                RegistryLineCompleted,
-                filepath=completed_filepath,
-                logger=self.logger,
-            )
-            addrs_by_fp = completed_table.obj_addresses_by_key_attr("rel_filepath")
-            for filepath, filedict in upload_file_dict.items():
-                if filedict["upload_expected"]:
-                    rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                    if rootdir:
-                        rel_path = filepath.relative_to(rootdir)
-                    else:
-                        rel_path = pathlib.Path(filepath.name)
-                    self.assertTrue(rel_path in addrs_by_fp)
-        except Exception as exc:
-            raise exc
+            in_watched = fp.is_relative_to(watched_dir)
+        except AttributeError:
+            in_watched = str(fp).startswith(str(watched_dir))
+        check = in_watched and not (
+            fp.is_dir() or fp.name.startswith(".") or fp.name.endswith(".log")
+        )
+        assert d.filepath_should_be_uploaded(fp.resolve()) == check
 
-    def run_data_file_download_directory(self, download_file_dict, **other_create_kwargs):
-        """
-        Called by the test method below to run a download directory from start to finish
-        """
-        # make a list of relative filepaths we'll be waiting for
-        relevant_files = {}
-        for filepath, filedict in download_file_dict.items():
-            if filedict["download_expected"]:
-                rootdir = filedict["rootdir"] if "rootdir" in filedict else None
-                if rootdir:
-                    rel_path = filepath.relative_to(rootdir)
-                else:
-                    rel_path = pathlib.Path(filepath.name)
-                relevant_files[filepath] = rel_path
-        # create the download directory
-        self.create_download_directory(topic_name=self.TOPIC_NAME, **other_create_kwargs)
-        # start reconstruct in a separate thread so we can time it out
-        self.start_download_thread()
-        try:
-            # put the "check" command into the input queue a couple times
-            self.download_directory.control_command_queue.put("c")
-            self.download_directory.control_command_queue.put("check")
-            # wait for the timeout for the test file(s) to be completely reconstructed
-            self.wait_for_files_to_reconstruct(relevant_files.values())
-            # make sure the reconstructed file(s) exists with the same content as the original
-            for orig_fp, rel_fp in relevant_files.items():
-                reco_fp = self.reco_dir / rel_fp
-                self.assertTrue(reco_fp.is_file())
-                if not filecmp.cmp(orig_fp, reco_fp, shallow=False):
-                    errmsg = (
-                        "ERROR: files are not the same after reconstruction! "
-                        "(This may also be due to the timeout being too short)"
-                    )
-                    raise RuntimeError(errmsg)
-        except Exception as exc:
-            raise exc
-
-    def test_upload_and_download_directories_kafka(self):
-        """
-        Test the upload and download directories while applying regular expressions
-        """
-        files_roots = {
-            TEST_CONST.TEST_DATA_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-            TEST_CONST.FAKE_PROD_CONFIG_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": False,
-            },
-            TEST_CONST.TEST_METADATA_DICT_PICKLE_FILE: {
-                "rootdir": TEST_CONST.TEST_DATA_DIR_PATH,
-                "upload_expected": False,
-                "download_expected": False,
-            },
-        }
-        upload_regex = re.compile(r"^.*\.(dat|config)$")
-        download_regex = re.compile(r"^.*\.dat$")
-        self.run_data_file_upload_directory(files_roots, upload_regex=upload_regex)
-        consumer_group_id = (
-            f"run_data_file_download_directory_with_regexes_{TEST_CONST.PY_VERSION}"
-        )
-        self.run_data_file_download_directory(
-            files_roots,
-            consumer_group_id=consumer_group_id,
-            filepath_regex=download_regex,
-        )
-        self.success = True  # pylint: disable=attribute-defined-outside-init
-
-    def test_upload_and_download_directories_heartbeats_kafka(self):
-        """
-        Test the upload and download directories while sending heartbeats
-        """
-        files_roots = {
-            TEST_CONST.TEST_DATA_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-        }
-        producer_program_id = "upload"
-        consumer_program_id = "download"
-        start_time = datetime.datetime.now()
-        self.run_data_file_upload_directory(
-            files_roots,
-            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
-            heartbeat_program_id=producer_program_id,
-            heartbeat_interval_secs=1,
-        )
-        consumer_group_id = (
-            f"run_data_file_download_directory_with_heartbeats_{TEST_CONST.PY_VERSION}"
-        )
-        self.run_data_file_download_directory(
-            files_roots,
-            consumer_group_id=consumer_group_id,
-            heartbeat_topic_name=self.HEARTBEAT_TOPIC_NAME,
-            heartbeat_program_id=consumer_program_id,
-            heartbeat_interval_secs=1,
-        )
-        # validate the producer heartbeats
-        producer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            self.HEARTBEAT_TOPIC_NAME,
-            producer_program_id,
-        )
-        self.assertTrue(len(producer_heartbeat_msgs) > 0)
-        total_msgs_produced = 0
-        total_bytes_produced = 0
-        for msg in producer_heartbeat_msgs:
-            msg_dict = json.loads(msg.value())
-            msg_timestamp = datetime.datetime.strptime(
-                msg_dict["timestamp"], self.TIMESTAMP_FMT
-            )
-            self.assertTrue(msg_timestamp > start_time)
-            total_msgs_produced += msg_dict["n_messages_produced"]
-            total_bytes_produced += msg_dict["n_bytes_produced"]
-        test_file_size = TEST_CONST.TEST_DATA_FILE_PATH.stat().st_size
-        test_file_n_chunks = int(test_file_size / TEST_CONST.TEST_CHUNK_SIZE)
-        self.assertTrue(total_msgs_produced >= test_file_n_chunks)
-        self.assertTrue(total_bytes_produced >= test_file_size)
-        # validate the consumer heartbeats
-        consumer_heartbeat_msgs = self.get_heartbeat_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_HEARTBEATS,
-            self.HEARTBEAT_TOPIC_NAME,
-            consumer_program_id,
-        )
-        self.assertTrue(len(consumer_heartbeat_msgs) > 0)
-        total_msgs_read = 0
-        total_msgs_processed = 0
-        total_bytes_read = 0
-        total_bytes_processed = 0
-        for msg in consumer_heartbeat_msgs:
-            msg_dict = json.loads(msg.value())
-            msg_timestamp = datetime.datetime.strptime(
-                msg_dict["timestamp"], self.TIMESTAMP_FMT
-            )
-            self.assertTrue(msg_timestamp > start_time)
-            total_msgs_read += msg_dict["n_messages_read"]
-            total_msgs_processed += msg_dict["n_messages_processed"]
-            total_bytes_read += msg_dict["n_bytes_read"]
-            total_bytes_processed += msg_dict["n_bytes_processed"]
-        self.assertTrue(total_msgs_read >= test_file_n_chunks)
-        self.assertTrue(total_msgs_processed >= test_file_n_chunks)
-        self.assertTrue(total_bytes_read >= test_file_size)
-        self.assertTrue(total_bytes_processed >= test_file_size)
-        self.success = True  # pylint: disable=attribute-defined-outside-init
-
-    def test_upload_and_download_directories_logs_kafka(self):
-        """
-        Test the upload and download directories while sending logs
-        """
-        files_roots = {
-            TEST_CONST.TEST_DATA_FILE_PATH: {
-                "rootdir": TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
-                "upload_expected": True,
-                "download_expected": True,
-            },
-        }
-        producer_program_id = "upload"
-        consumer_program_id = "download"
-        start_time = time.time()
-        self.run_data_file_upload_directory(
-            files_roots,
-            log_topic_name=self.LOG_TOPIC_NAME,
-            log_program_id=producer_program_id,
-            log_interval_secs=1,
-        )
-        consumer_group_id = (
-            f"run_data_file_download_directory_with_logs_{TEST_CONST.PY_VERSION}"
-        )
-        self.run_data_file_download_directory(
-            files_roots,
-            consumer_group_id=consumer_group_id,
-            log_topic_name=self.LOG_TOPIC_NAME,
-            log_program_id=consumer_program_id,
-            log_interval_secs=1,
-        )
-        # validate the producer logs
-        producer_log_msgs = self.get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
-            self.LOG_TOPIC_NAME,
-            producer_program_id,
-        )
-        self.assertTrue(len(producer_log_msgs) > 0)
-        for msg in producer_log_msgs:
-            msg_dict = json.loads(msg.value())
-            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
-        # validate the consumer logs
-        consumer_log_msgs = self.get_log_messages(
-            TEST_CONST.TEST_CFG_FILE_PATH_LOGS,
-            self.LOG_TOPIC_NAME,
-            consumer_program_id,
-        )
-        self.assertTrue(len(consumer_log_msgs) > 0)
-        for msg in consumer_log_msgs:
-            msg_dict = json.loads(msg.value())
-            self.assertTrue(float(msg_dict["timestamp"]) >= start_time)
-        self.success = True  # pylint: disable=attribute-defined-outside-init
-
-    def test_filepath_should_be_uploaded(self):
-        """
-        Test the function that says whether or not a file should be uploaded
-        """
-        # create an upload directory
-        self.create_upload_directory(TEST_CONST.TEST_DATA_DIR_PATH)
-        # test the "filepath_should_be_uploaded" function
-        self.log_at_info("\nExpecting three errors below:")
-        with self.assertRaises(TypeError):
-            self.upload_directory.filepath_should_be_uploaded(None)
-        with self.assertRaises(TypeError):
-            self.upload_directory.filepath_should_be_uploaded(5)
-        with self.assertRaises(TypeError):
-            self.upload_directory.filepath_should_be_uploaded(
-                "this is a string not a path!"
-            )
-        self.assertFalse(
-            self.upload_directory.filepath_should_be_uploaded(
-                TEST_CONST.TEST_DATA_DIR_PATH / ".this_file_is_hidden"
-            )
-        )
-        self.assertFalse(
-            self.upload_directory.filepath_should_be_uploaded(
-                TEST_CONST.TEST_DATA_DIR_PATH / "this_file_is_a_log_file.log"
-            )
-        )
-        for fp in TEST_CONST.TEST_DATA_DIR_PATH.rglob("*"):
-            check = True
-            if fp.is_dir():
-                check = False
-            elif fp.name.startswith(".") or fp.name.endswith(".log"):
-                check = False
-            self.assertEqual(
-                self.upload_directory.filepath_should_be_uploaded(fp.resolve()), check
-            )
-        subdir_path = (
-            TEST_CONST.TEST_DATA_DIR_PATH / "this_subdirectory_should_not_be_uploaded"
-        )
-        subdir_path.mkdir()
-        try:
-            self.assertFalse(
-                self.upload_directory.filepath_should_be_uploaded(subdir_path)
-            )
-        except Exception as exc:
-            raise exc
-        finally:
-            shutil.rmtree(subdir_path)
-        self.success = True  # pylint: disable=attribute-defined-outside-init
+    subdir = TEST_CONST.TEST_DATA_DIR_PATH / "this_subdirectory_should_not_be_uploaded"
+    subdir.mkdir()
+    try:
+        assert not d.filepath_should_be_uploaded(subdir)
+    finally:
+        shutil.rmtree(subdir)

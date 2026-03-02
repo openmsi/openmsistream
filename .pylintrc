@@ -161,7 +161,19 @@ disable=raw-checker-failed,
         multiple-imports, # Makes for cleaner-looking (and definitely more concise and clear) code
         duplicate-code, # This checker is unfortunately just too enthusiastic
         consider-using-with, # Multiple instances where this is unnecessary
-        missing-module-docstring # Fell out of style
+        missing-module-docstring, # Fell out of style
+        missing-function-docstring, # Not required in test code
+        missing-class-docstring, # Not required in test code
+        redefined-outer-name, # Standard pytest fixture pattern
+        protected-access, # Tests legitimately access internals
+        possibly-used-before-assignment, # False positives in try/except patterns
+        consider-using-min-builtin, # Stylistic choice
+        use-dict-literal, # Stylistic choice
+        wrong-import-order, # False positives due to local docker/ directory
+        ungrouped-imports, # Related to above
+        unused-argument, # Pytest fixtures are invoked by name, not value
+        attribute-defined-outside-init, # Common pytest fixture pattern
+        import-outside-toplevel # Used for conditional/deferred imports in tests
 
 # Enable the message, report, category or checker with the given id(s). You can
 # either give multiple identifier separated by comma (,) or put this option
@@ -461,10 +473,13 @@ max-bool-expr=10 #5
 max-branches=15
 
 # Maximum number of locals for function / method body.
-max-locals=20
+max-locals=30
 
 # Maximum number of parents for a class (see R0901).
 max-parents=15
+
+# Maximum number of positional arguments for function / method.
+max-positional-arguments=13
 
 # Maximum number of public methods for a class (see R0904).
 max-public-methods=20

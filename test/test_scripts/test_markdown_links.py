@@ -1,8 +1,14 @@
 # pylint: skip-file
-import bs4, functools, git, itertools, marko.ext.toc, pathlib, re, slugify, unittest
+try:
+    unicode
+except NameError:
+    unicode = str
+
+import bs4, functools, git, itertools, marko.ext.toc, pathlib, re, slugify
 
 
 class GithubTocRendererMixin(marko.ext.toc.TocRendererMixin):
+
     def render_heading(self, element):
         children = self.render_children(element)
         slug = re.sub(r"<.+?>", "", children)
@@ -21,6 +27,9 @@ class GithubTocRendererMixin(marko.ext.toc.TocRendererMixin):
 
 
 class GithubToc:
+    parser_mixins = []
+    elements = []
+
     def __init__(self):
         self.renderer_mixins = [GithubTocRendererMixin]
 
@@ -46,8 +55,8 @@ def linksandanchors(filename):
             [],
         )
         return links, anchors
-    except Exception:
-        raise LinkError(f"Error when reading {filename}")
+    except Exception as e:
+        raise LinkError(f"Error when reading {filename}: {e}") from e
 
 
 @functools.lru_cache()
@@ -112,144 +121,137 @@ def lastmodified(filename, linenumbers):
     return commits
 
 
-class TestMarkdownLinks(unittest.TestCase):
-    def testmarkdownlinks(self):
-        github_regex = (
-            r"https://(?:www\.)?github\.com/openmsi/openmsistream?/(?:blob|tree)"
-        )
-        for markdownfile in mainfolder.rglob("*.md"):
-            markdownfolder = markdownfile.parent
-            with self.subTest(markdownfile):
-                errors = []
-                links, _ = linksandanchors(markdownfile)
-                for link in links:
+def test_markdown_links():
+    github_regex = r"https://(?:www\.)?github\.com/openmsi/openmsistream?/(?:blob|tree)"
+
+    markdown_files = list(mainfolder.rglob("*.md"))
+
+    for markdownfile in markdown_files:
+        errors = []
+        links, _ = linksandanchors(markdownfile)
+        markdownfolder = markdownfile.parent
+
+        for link in links:
+            try:
+                dest = link.get("href")
+
+                # absolute GitHub link
+                if dest.startswith("https://"):
+                    if re.match(github_regex, dest.lower()):
+                        raise LinkError(f"Link to {dest}, use a relative link instead")
+                    continue
+
+                destpath, anchor = re.match("([^#]*)(?:#(.*))?", dest).groups()
+
+                if not destpath:
+                    destpath = fulldestpath = markdownfile
+                else:
+                    destpath = pathlib.Path(destpath)
+                    if destpath.is_absolute():
+                        raise LinkError(f"link to absolute path: {destpath}")
+
+                    fulldestpath = (markdownfolder / destpath).resolve()
                     try:
-                        dest = link.get("href")
-                        if dest.startswith("https://"):
-                            if re.match(github_regex, dest.lower()):
-                                raise LinkError(
-                                    f"Link to {dest}, use a relative link instead"
-                                )
-                            continue
-                        destpath, anchor = re.match("([^#]*)(?:#(.*))?", dest).groups()
-                        if not destpath:
-                            destpath = fulldestpath = markdownfile
-                        else:
-                            destpath = pathlib.Path(destpath)
-                            if destpath.is_absolute():
-                                raise LinkError(f"link to absolute path: {destpath}")
-                            fulldestpath = (markdownfolder / destpath).resolve()
-                            try:
-                                fulldestpath.relative_to(mainfolder)
-                            except ValueError:
-                                errmsg = (
-                                    f"link to path outside the repo: {dest} "
-                                    f"(resolves to {fulldestpath})"
-                                )
-                                raise LinkError(errmsg)
+                        fulldestpath.relative_to(mainfolder)
+                    except ValueError:
+                        raise LinkError(
+                            f"link to path outside the repo: {dest} "
+                            f"(resolves to {fulldestpath})"
+                        )
+
+                if not fulldestpath.exists():
+                    raise LinkError(
+                        f"link to nonexistent path: {dest} (resolves to {fulldestpath})"
+                    )
+
+                # handle anchors
+                if anchor is not None:
+                    if fulldestpath.is_dir():
+                        fulldestpath = fulldestpath / "README.md"
                         if not fulldestpath.exists():
                             raise LinkError(
-                                f"link to nonexistent path: {dest} (resolves to {fulldestpath})"
+                                "link to directory and anchor, but no README.md "
+                                f"in the directory: {dest} "
+                                f"(resolves to {fulldestpath})"
                             )
-                        if anchor is not None:
-                            if fulldestpath.is_dir():
-                                fulldestpath = fulldestpath / "README.md"
-                                if not fulldestpath.exists():
-                                    errmsg = (
-                                        "link to directory and anchor, but no README.md "
-                                        f"in the directory: {dest} "
-                                        f"(resolves to {fulldestpath})"
-                                    )
-                                    raise LinkError(errmsg)
-                            if fulldestpath.suffix == ".md":
-                                try:
-                                    _, anchors = linksandanchors(fulldestpath)
-                                except LinkError:
-                                    raise LinkError(
-                                        f"link to {dest}, but couldn't parse {fulldestpath}"
-                                    )
-                                if not any(a.get("id") == anchor for a in anchors):
-                                    errmsg = (
-                                        f"link to nonexistent anchor: {dest} "
-                                        f"(resolves to {fulldestpath}, couldn't find {anchor})"
-                                    )
-                                    raise LinkError(errmsg)
 
-                            elif fulldestpath.suffix in (".py", ".au3"):
-                                match = re.match("L([0-9]+)(?:-L([0-9]+))?$", anchor)
-                                if not match:
-                                    errmsg = (
-                                        f"link to code file {destpath} with anchor {anchor}, "
-                                        "expected the anchor to be a github line link "
-                                        "e.g. L3 or L5-L7"
+                    # Markdown anchors
+                    if fulldestpath.suffix == ".md":
+                        try:
+                            _, anchors = linksandanchors(fulldestpath)
+                        except LinkError:
+                            raise LinkError(
+                                f"link to {dest}, but couldn't parse {fulldestpath}"
+                            )
+                        if not any(a.get("id") == anchor for a in anchors):
+                            raise LinkError(
+                                f"link to nonexistent anchor: {dest} "
+                                f"(resolves to {fulldestpath}, couldn't find {anchor})"
+                            )
+
+                    # Code anchors (L3 or L5-L7)
+                    elif fulldestpath.suffix in (".py", ".au3"):
+                        match = re.match(r"L([0-9]+)(?:-L([0-9]+))?$", anchor)
+                        if not match:
+                            raise LinkError(
+                                f"link to code file {destpath} with anchor {anchor}, "
+                                "expected a github-style line link (L3 or L5-L7)"
+                            )
+
+                        firstline = int(match.group(1))
+                        lastline = int(match.group(2) or firstline)
+
+                        with open(fulldestpath) as f:
+                            nlines = sum(1 for _ in f)
+
+                        if lastline > nlines:
+                            raise LinkError(
+                                f"link to code file {destpath} with anchor {anchor}, "
+                                f"but that file only has {nlines} lines"
+                            )
+
+                        # check if lines changed since commit
+                        for commit in lastmodified(
+                            markdownfile.relative_to(mainfolder),
+                            linklinenumbers(markdownfile, dest),
+                        ):
+                            if commit is None:
+                                continue
+                            for diff in commit.diff(None):
+                                if mainfolder / diff.a_path == fulldestpath:
+                                    a_blob = diff.a_blob.data_stream.read().decode(
+                                        "utf-8"
                                     )
-                                    raise LinkError(errmsg)
-                                firstline = int(match.group(1))
-                                if match.group(2) is not None:
-                                    lastline = int(match.group(2))
-                                else:
-                                    lastline = firstline
-                                with open(fulldestpath) as f:
-                                    nlines = 0
-                                    for nlines, line in enumerate(f, start=1):
-                                        pass
-                                if lastline > nlines:
-                                    errmsg = (
-                                        f"link to code file {destpath} with anchor {anchor}, "
-                                        f"but that file only has {nlines} lines"
+                                    b_blob = (
+                                        diff.b_blob.data_stream.read().decode("utf-8")
+                                        if diff.b_blob
+                                        else (mainfolder / diff.b_path).read_text()
                                     )
-                                    raise LinkError(errmsg)
-                                for commit in lastmodified(
-                                    markdownfile.relative_to(mainfolder),
-                                    linklinenumbers(markdownfile, dest),
-                                ):
-                                    if commit is None:
-                                        continue
-                                    for diff in commit.diff(None):
-                                        if mainfolder / diff.a_path == fulldestpath:
-                                            assert (
-                                                mainfolder / diff.b_path == fulldestpath
+
+                                    for i, (line_a, line_b) in enumerate(
+                                        itertools.zip_longest(
+                                            a_blob.split("\n"), b_blob.split("\n")
+                                        )
+                                    ):
+                                        if (
+                                            firstline <= i <= lastline
+                                            and line_a != line_b
+                                        ):
+                                            raise LinkError(
+                                                f"link to code file {destpath} with anchor "
+                                                f"{anchor} modified in commit {commit}, "
+                                                "but those lines have changed since then."
                                             )
-                                            a_blob = (
-                                                diff.a_blob.data_stream.read().decode(
-                                                    "utf-8"
-                                                )
-                                            )
-                                            if diff.b_blob is None:
-                                                with open(mainfolder / diff.b_path) as f:
-                                                    b_blob = f.read()
-                                            else:
-                                                b_blob = (
-                                                    diff.b_blob.data_stream.read().decode(
-                                                        "utf-8"
-                                                    )
-                                                )
-                                            for i, (line_a, line_b) in enumerate(
-                                                itertools.zip_longest(
-                                                    a_blob.split("\n"), b_blob.split("\n")
-                                                )
-                                            ):
-                                                if (
-                                                    firstline <= i <= lastline
-                                                    and line_a != line_b
-                                                ):
-                                                    errmsg = (
-                                                        f"link to code file {destpath} with anchor "
-                                                        f"{anchor} modified in commit {commit}, "
-                                                        "but those lines have changed since then - "
-                                                        "please check and, if it's still ok, "
-                                                        "modify that line in markdown by adding "
-                                                        "whitespace or a comment"
-                                                    )
-                                                    raise LinkError(errmsg)
-                            else:
-                                errmsg = (
-                                    f"link to {dest} with an anchor, don't know how to check if "
-                                    "an anchor is valid for that file type."
-                                )
-                                raise LinkError(errmsg)
-                    except LinkError as e:
-                        errors.append(e)
-                self.assertEqual(
-                    len(errors), 0, msg="\n\n" + "\n".join(str(_) for _ in errors)
-                )
+
+                    # Unknown anchor type
+                    else:
+                        raise LinkError(
+                            f"link to {dest} with an anchor — unsupported file type."
+                        )
+
+            except LinkError as e:
+                errors.append(e)
+
+        if errors:
+            msg = "\n\n" + "\n".join(str(e) for e in errors)
+            pytest.fail(msg)

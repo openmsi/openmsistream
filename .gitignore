@@ -30,6 +30,11 @@
 !/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.seed
 !/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.crypto
 
+CLAUDE.md
+
+# Poetry build output
+dist/
+
 # Sphinx documentation build directory
 /docs/build/*
 
@@ -37,7 +42,11 @@
 build/*
 
 # test results for CircleCI
-/test-results/*
+test/test_scripts/test-results/
+test/test-results/
+test-results/
+test/data/reco/*
+test/data/watched/*
 
 # Common venv dirs
 .venv
