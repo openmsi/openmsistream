@@ -2,6 +2,7 @@ version: 2.1
 
 orbs:
   python: circleci/python@2.1.1
+  codecov: codecov/codecov@5
 
 workflows:
   build_and_test:
@@ -14,6 +15,9 @@ workflows:
             parameters:
               python-version: ["3.11", "3.9"]
           requires: [test-no-kafka]
+      - combine-and-report:
+          requires:
+            - test-with-kafka
 
 jobs:
   build-and-code-check:
@@ -38,19 +42,13 @@ jobs:
           name: Run unit tests (no Kafka)
           command: |
             pip install .[test]
+            export COVERAGE_FILE=.coverage.no-kafka
             pytest -m "not kafka" -k "not encrypted" \
-              --junitxml=test-results/results.xml \
-              --cov=openmsistream \
-              --cov-report=html:test-results/htmlcov \
-              --cov-report=xml:coverage.xml
-      - store_test_results:
-          path: test-results
-      - store_artifacts:
-          path: test-results/htmlcov
-          destination: coverage-report
-      - store_artifacts:
-          path: coverage.xml
-          destination: coverage.xml
+              --cov=openmsistream
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .coverage.no-kafka
 
   test-with-kafka:
     parameters:
@@ -70,17 +68,29 @@ jobs:
           name: Run integration tests (with Kafka)
           command: |
             pip install .[test]
-            pytest -m kafka \
-              --junitxml=test-results/results.xml \
-              --cov=openmsistream \
-              --cov-append \
-              --cov-report=html:test-results/htmlcov \
-              --cov-report=xml:coverage.xml
-      - store_test_results:
-          path: test-results
+            export COVERAGE_FILE=.coverage.kafka-<< parameters.python-version >>
+            pytest -m kafka --cov=openmsistream
+      - persist_to_workspace:
+          root: .
+          paths:
+            - .coverage.kafka-*
+
+  combine-and-report:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - attach_workspace:
+          at: .
+      - run:
+          name: Combine Coverage
+          command: |
+            pip install coverage
+            # This looks for all files starting with .coverage.
+            coverage combine
+            coverage xml -o final-coverage.xml
+            coverage report
+      - codecov/upload:
+          files: final-coverage.xml
       - store_artifacts:
-          path: test-results/htmlcov
-          destination: coverage-report
-      - store_artifacts:
-          path: coverage.xml
-          destination: coverage.xml
+          path: final-coverage.xml
