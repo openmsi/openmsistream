@@ -76,7 +76,7 @@ jobs:
           name: Run integration tests (with Kafka)
           command: |
             pip install .[test]
-            pytest -m kafka -k "not encrypted" \
+            pytest -m kafka \
               --junitxml=test-results/results.xml \
               --cov=openmsistream \
               --cov-append \

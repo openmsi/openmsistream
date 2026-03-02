@@ -9,7 +9,9 @@ def get_openmsistream_console_scripts():
             group="console_scripts"
         )  # Python 3.10+
     except TypeError:
-        scripts = entry_points().get("console_scripts", [])  # Python <=3.9
+        scripts = entry_points().get(  # pylint: disable=no-member
+            "console_scripts", []
+        )  # Python <=3.9
     return [ep for ep in scripts if ep.value.startswith("openmsistream.")]
 
 
