@@ -184,7 +184,7 @@ class ConsumerGroup(LogOwner):
                     elif k == "ssl.endpoint.identification.algorithm":
                         # kafka-python uses ssl_check_hostname (True/False)
                         # "none" in confluent-kafka means disable hostname checking
-                        kac_kwargs["ssl_check_hostname"] = False if v == "none" else True
+                        kac_kwargs["ssl_check_hostname"] = not v == "none"
                     elif k in ("sasl.username", "sasl.password"):
                         key = k.replace(".", "_plain_")
                         kac_kwargs[key] = v

@@ -57,7 +57,8 @@ def secure_kafka_container(tmp_path_factory):
 
     # 1. Create JAAS Config
     # Added 'user_admin' to ensure the 'admin' principal exists in the PLAIN mechanism
-    jaas_file.write_text(f"""
+    jaas_file.write_text(
+        f"""
     KafkaServer {{
         org.apache.kafka.common.security.plain.PlainLoginModule required
         username="admin"
@@ -65,7 +66,8 @@ def secure_kafka_container(tmp_path_factory):
         user_admin="{password}"
         user_alice="alice-password";
     }};
-    """)
+    """
+    )
 
     # 2. Generate SSL Assets
     # Generate Keystore
@@ -174,9 +176,7 @@ def secure_kafka_container(tmp_path_factory):
         .with_env("KAFKA_SASL_ENABLED_MECHANISMS", "PLAIN")
         .with_env("KAFKA_SASL_MECHANISM_INTER_BROKER_PROTOCOL", "PLAIN")
         # SSL Config - Explicit Locations
-        .with_env(
-            "KAFKA_SSL_KEYSTORE_LOCATION", "/etc/kafka/secrets/server.keystore.jks"
-        )
+        .with_env("KAFKA_SSL_KEYSTORE_LOCATION", "/etc/kafka/secrets/server.keystore.jks")
         .with_env(
             "KAFKA_SSL_TRUSTSTORE_LOCATION", "/etc/kafka/secrets/server.truststore.jks"
         )
@@ -330,7 +330,9 @@ def kafka_config_file(tmp_path, kafka_conf):
                 "sasl.password": kafka_conf["sasl.password"],
                 # confluent-kafka naming (for Producer/Consumer/KafkaCrypto)
                 "ssl.ca.location": kafka_conf["ssl.ca.location"],
-                "ssl.endpoint.identification.algorithm": kafka_conf["ssl.endpoint.identification.algorithm"],
+                "ssl.endpoint.identification.algorithm": kafka_conf[
+                    "ssl.endpoint.identification.algorithm"
+                ],
             },
             "producer": {
                 "batch.size": "200000",
@@ -425,9 +427,7 @@ def encrypted_kafka_node_config():
             "consumer": msgpack.packb(
                 [_signedprov[_keys["consumer"]]], use_bin_type=True
             ),
-            "prodcon": msgpack.packb(
-                [_signedprov[_keys["prodcon"]]], use_bin_type=True
-            ),
+            "prodcon": msgpack.packb([_signedprov[_keys["prodcon"]]], use_bin_type=True),
             "prodcon-limited": msgpack.packb(
                 [_signedprov[_keys["prodcon-limited"]]], use_bin_type=True
             ),
@@ -554,9 +554,7 @@ def encrypted_kafka_node_config():
             kcs.store_value("temporary", None, section="allowlist")
         # If controller, list of provisioners
         if choice == 1 and _msgchainrot != _msgrot and _msgchainrot != _msgchkrot:
-            kcs.store_value(
-                "provisioners" + str(idx), _msgchainrot, section="allowlist"
-            )
+            kcs.store_value("provisioners" + str(idx), _msgchainrot, section="allowlist")
         if kcs.load_value("cryptokey") is None:
             kcs.store_value("cryptokey", "file#" + nodeID + ".crypto")
         if kcs.load_value("ratchet") is None:
@@ -566,7 +564,9 @@ def encrypted_kafka_node_config():
                 kcs.store_value("mgmt_long_keyindex", False)
             else:
                 kcs.store_value("mgmt_long_keyindex", True)
-        kcs.store_value("crypto_sub_interval", 5)   # Decrease crypto sub interval for testing
+        kcs.store_value(
+            "crypto_sub_interval", 5
+        )  # Decrease crypto sub interval for testing
         print("Congratulations! Provisioning is complete.")
 
     return _encrypted_kafka_node_config

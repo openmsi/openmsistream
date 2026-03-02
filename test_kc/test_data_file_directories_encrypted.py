@@ -1,7 +1,6 @@
 import filecmp
 import logging
 import pathlib
-import shutil
 import sys
 import time
 
@@ -155,77 +154,6 @@ def wait_for_files_to_reconstruct(
         raise TimeoutError("Download thread timed out after 30 seconds")
 
 
-# ------------------------------------------------------------
-# Core Test Logic
-# ------------------------------------------------------------
-
-
-def run_upload(state, files_roots, logger, topic, **kwargs):
-    # copy files into watched dir before starting the thread so upload_existing=True
-    # finds them via __scrape_dir_for_files() without a race condition
-    for filepath, meta in files_roots.items():
-        rootdir = meta.get("rootdir")
-        dest = filepath.relative_to(rootdir) if rootdir else filepath.name
-        dest_path = state["watched_dir"] / dest
-        dest_path.parent.mkdir(parents=True, exist_ok=True)
-        shutil.copy(filepath, dest_path)
-
-    start_upload_thread(state, topic)
-
-    d = state["upload_directory"]
-    time.sleep(5)
-    d.control_command_queue.put("c")
-    d.control_command_queue.put("check")
-
-    stop_upload_thread(state)
-
-    # validate registry tables
-    log_subdir = state["watched_dir"] / DataFileUploadDirectory.LOG_SUBDIR_NAME
-
-    inprog = log_subdir / f"upload_to_{topic}_in_progress.csv"
-    comp = log_subdir / f"uploaded_to_{topic}.csv"
-
-    assert inprog.is_file()
-    in_table = DataclassTableReadOnly(
-        RegistryLineInProgress, filepath=inprog, logger=logger
-    )
-    assert not in_table.obj_addresses_by_key_attr("filename")
-
-    assert comp.is_file()
-    ctable = DataclassTableReadOnly(RegistryLineCompleted, filepath=comp, logger=logger)
-    addrs = ctable.obj_addresses_by_key_attr("rel_filepath")
-
-    for fp, meta in files_roots.items():
-        if meta["upload_expected"]:
-            rootdir = meta.get("rootdir")
-            rel = fp.relative_to(rootdir) if rootdir else pathlib.Path(fp.name)
-            assert rel in addrs
-
-
-def run_download(state, files_roots, topic, **kwargs):
-    relevant = {}
-    for fp, meta in files_roots.items():
-        if meta["download_expected"]:
-            rootdir = meta.get("rootdir")
-            rel = fp.relative_to(rootdir) if rootdir else pathlib.Path(fp.name)
-            relevant[fp] = rel
-
-    create_download_directory(state, topic_name=topic, **kwargs)
-    start_download_thread(state)
-
-    d = state["download_directory"]
-    time.sleep(5)
-    d.control_command_queue.put("c")
-    d.control_command_queue.put("check")
-
-    wait_for_files_to_reconstruct(state, relevant.values())
-
-    for orig, rel in relevant.items():
-        reco = state["reco_dir"] / rel
-        assert reco.is_file()
-        assert filecmp.cmp(orig, reco, shallow=False)
-
-
 @pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics")
@@ -322,9 +250,9 @@ def test_encrypted_upload_and_download_kafka(
     in_prog_table = DataclassTableReadOnly(
         RegistryLineInProgress, filepath=in_prog_filepath, logger=None
     )
-    assert not in_prog_table.obj_addresses_by_key_attr("filename"), (
-        "In-progress table not empty"
-    )
+    assert not in_prog_table.obj_addresses_by_key_attr(
+        "filename"
+    ), "In-progress table not empty"
 
     assert completed_filepath.is_file(), "Completed registry file missing"
     completed_table = DataclassTableReadOnly(
