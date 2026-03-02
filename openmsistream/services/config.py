@@ -39,7 +39,9 @@ class ServicesConstants:
                 group="console_scripts"
             )  # Python 3.10+
         except TypeError:
-            console_scripts = entry_points().get("console_scripts", [])  # Python <=3.9
+            console_scripts = entry_points().get(  # pylint: disable=no-member
+                "console_scripts", []
+            )  # Python <3.10
         for script in console_scripts:
             if script.value.startswith("openmsistream."):
                 if script.name in (
