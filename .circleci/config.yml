@@ -32,10 +32,6 @@ jobs:
   test-no-kafka:
     docker:
       - image: cimg/python:3.11
-    environment:
-      KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS: "localhost:9092"
-      KAFKA_TEST_CLUSTER_USERNAME: "dummy"
-      KAFKA_TEST_CLUSTER_PASSWORD: "dummy"
     steps:
       - checkout
       - run:
@@ -63,8 +59,6 @@ jobs:
         default: "3.9"
     machine:
       image: ubuntu-2204:current
-    environment:
-      USE_LOCAL_KAFKA_BROKER_IN_TESTS: "yes"
     steps:
       - checkout
       - run:

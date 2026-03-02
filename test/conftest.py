@@ -47,6 +47,17 @@ HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 GIRDER_TIMEOUT = 10
 
 
+@pytest.fixture
+def mock_env_vars():
+    _old_var = os.environ.get("LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS")
+    os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = "localhost:9092"
+    yield
+    if _old_var is not None:
+        os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = _old_var
+    else:
+        del os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"]
+
+
 # pytest hook to attach reports (needed for rep_call)
 @pytest.hookimpl(hookwrapper=True)
 def pytest_runtest_makereport(item, call):
@@ -91,42 +102,21 @@ def mock_add_user_input(monkeypatch):
 
 @pytest.fixture(scope="session")
 def kafka_container():
+    container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
+    container.start()
 
-    flag = os.environ.get("USE_LOCAL_KAFKA_BROKER_IN_TESTS")
+    yield container
 
-    if flag is None:
-        raise pytest.UsageError(
-            "Environment variable USE_LOCAL_KAFKA_BROKER_IN_TESTS is not set. "
-            "Set it to 'yes' or 'no'."
-        )
-
-    if flag == "yes":
-        container = KafkaContainer("confluentinc/cp-kafka:7.6.0")
-        container.start()
-
-        yield container
-
-        # Brief wait for rdkafka's internal C-level background threads to finish
-        # reconnection retries before the container is stopped, avoiding spurious
-        # "Connection refused" log noise at shutdown.
-        time.sleep(3)
-        container.stop()
-    else:
-        yield None
+    # Brief wait for rdkafka's internal C-level background threads to finish
+    # reconnection retries before the container is stopped, avoiding spurious
+    # "Connection refused" log noise at shutdown.
+    time.sleep(3)
+    container.stop()
 
 
 @pytest.fixture(scope="session")
 def kafka_bootstrap(kafka_container):
-
-    if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
-        address = kafka_container.get_bootstrap_server()
-    else:
-        address = os.environ.get("KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS")
-        if address is None:
-            raise ValueError(
-                "USE_LOCAL_KAFKA_BROKER_IN_TESTS == no, but "
-                "KAFKA_TEST_CLUSTER_BOOTSTRAP_SERVERS has not set."
-            )
+    address = kafka_container.get_bootstrap_server()
     print(f"Using broker at {address}...")
     return address
 
@@ -138,22 +128,7 @@ def apply_kafka_env(kafka_bootstrap):
     but applies env vars *per test*, avoiding ScopeMismatch.
 
     """
-    if os.environ["USE_LOCAL_KAFKA_BROKER_IN_TESTS"] == "yes":
-        os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
-    else:
-        required_vars = [
-            "KAFKA_TEST_CLUSTER_USERNAME",
-            "KAFKA_TEST_CLUSTER_PASSWORD",
-        ]
-        missing = [v for v in required_vars if not os.getenv(v)]
-
-        if missing:
-            pytest.fail(
-                "Missing required Kafka env vars when using TEST cluster "
-                "(inferred from USE_LOCAL_KAFKA_BROKER_IN_TESTS != 'yes'): "
-                f"{', '.join(missing)}"
-            )
-
+    os.environ["LOCAL_KAFKA_BROKER_BOOTSTRAP_SERVERS"] = kafka_bootstrap
     yield
 
 

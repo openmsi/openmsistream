@@ -267,7 +267,7 @@ def test_upload_and_download_directories_kafka(state, logger, apply_kafka_env):
     )
 
 
-def test_filepath_should_be_uploaded(state):
+def test_filepath_should_be_uploaded(state, mock_env_vars):
     d = create_upload_directory(state, TEST_CONST.TEST_CFG_FILE_PATH)
 
     with pytest.raises(TypeError):

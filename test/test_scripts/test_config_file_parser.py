@@ -21,7 +21,7 @@ def test_available_group_names(config_objects):
     assert cfp.available_group_names == parser.sections()
 
 
-def test_get_config_dict_for_groups(config_objects, monkeypatch, logger):
+def test_get_config_dict_for_groups(config_objects, monkeypatch, logger, mock_env_vars):
     cfp, parser = config_objects
 
     # ------ validate minimum sections ----------
