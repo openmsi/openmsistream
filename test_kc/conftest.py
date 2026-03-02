@@ -566,6 +566,7 @@ def encrypted_kafka_node_config():
                 kcs.store_value("mgmt_long_keyindex", False)
             else:
                 kcs.store_value("mgmt_long_keyindex", True)
+        kcs.store_value("crypto_sub_interval", 5)   # Decrease crypto sub interval for testing
         print("Congratulations! Provisioning is complete.")
 
     return _encrypted_kafka_node_config
