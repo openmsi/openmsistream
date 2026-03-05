@@ -172,18 +172,20 @@ class ProducerFileRegistry(LogOwner):
         Returns True if all chunks for the file have been produced
         """
         # acquire the lock so no other threads can change the in progress file
-        self.__in_prog.lock.acquire()
-        # get a dictionary of the existing object addresses keyed by their filepaths
-        existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr("rel_filepath")
-        # if the file is already recognized as in progress
-        if rel_filepath in existing_obj_addresses:
-            return self.__register_chunk_of_existing_file(
+        with self.__in_prog.lock:
+            # get a dictionary of the existing object addresses keyed by their filepaths
+            existing_obj_addresses = self.__in_prog.obj_addresses_by_key_attr(
+                "rel_filepath"
+            )
+            # if the file is already recognized as in progress
+            if rel_filepath in existing_obj_addresses:
+                return self.__register_chunk_of_existing_file(
+                    filename, rel_filepath, n_total_chunks, chunk_i, prodid
+                )
+            # otherwise it's a new file to list somewhere
+            return self.__register_chunk_for_new_file(
                 filename, rel_filepath, n_total_chunks, chunk_i, prodid
             )
-        # otherwise it's a new file to list somewhere
-        return self.__register_chunk_for_new_file(
-            filename, rel_filepath, n_total_chunks, chunk_i, prodid
-        )
 
     def __register_chunk_of_existing_file(
         self, filename, rel_filepath, n_total_chunks, chunk_i, prodid
@@ -200,7 +202,6 @@ class ProducerFileRegistry(LogOwner):
                 f"ERROR: found {len(existing_obj_addresses[rel_filepath])} files in the "
                 f"producer registry for filepath {rel_filepath}"
             )
-            self.__in_prog.lock.release()
             self.logger.error(errmsg, exc_type=RuntimeError)
         existing_addr = existing_obj_addresses[rel_filepath][0]
         # make sure the total numbers of chunks match
@@ -211,7 +212,6 @@ class ProducerFileRegistry(LogOwner):
                 f"{existing_n_chunks} total chunks, but the producer callback for this "
                 f"file lists {n_total_chunks} chunks! Did the chunk size change?"
             )
-            self.__in_prog.lock.release()
             self.logger.error(errmsg, exc_type=RuntimeError)
         # get its current state
         attrs = self.__in_prog.get_entry_attrs(
@@ -219,7 +219,6 @@ class ProducerFileRegistry(LogOwner):
         )
         # if the chunk is already registered, just return
         if chunk_i in attrs["chunks_delivered"]:
-            self.__in_prog.lock.release()
             return False
         # otherwise add/remove it from the sets
         attrs["chunks_delivered"].add(chunk_i)
@@ -249,9 +248,7 @@ class ProducerFileRegistry(LogOwner):
             self.__add_completed_entry(completed_entry, prodid)
             self.__in_prog.remove_entries(existing_addr)
             self.__in_prog.dump_to_file()
-            self.__in_prog.lock.release()
             return True
-        self.__in_prog.lock.release()
         return False
 
     def __register_chunk_for_new_file(
@@ -279,10 +276,8 @@ class ProducerFileRegistry(LogOwner):
             )
             self.__in_prog.add_entries(in_prog_entry)
             self.__in_prog.dump_to_file()
-            self.__in_prog.lock.release()
             return False
         # otherwise register it as a completed file
-        self.__in_prog.lock.release()
         completed_entry = RegistryLineCompleted(
             filename,
             rel_filepath,
