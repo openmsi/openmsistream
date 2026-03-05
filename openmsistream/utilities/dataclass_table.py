@@ -204,10 +204,10 @@ class DataclassTableBase(LogOwner, ABC):
         :param retries: how many times to retry writing out the file
         :type retries: int, optional
         """
-        lines_to_write = [self.csv_header_line]
-        if len(self._entry_lines) > 0:
-            lines_to_write += list(self._entry_lines.values())
         with self.lock:
+            lines_to_write = [self.csv_header_line]
+            if len(self._entry_lines) > 0:
+                lines_to_write += list(self._entry_lines.values())
             self.__write_lines(lines_to_write, reraise_exc=reraise_exc, retries=retries)
 
     #################### PROPERTIES ####################
@@ -461,10 +461,10 @@ class DataclassTableAppendOnly(DataclassTableBase):
                 self._entry_objs[entry_addr] = entry
                 self._entry_lines[entry_addr] = self._line_from_obj(entry)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (
-            datetime.datetime.now() - self._file_last_updated
-        ).total_seconds() > self.UPDATE_FILE_EVERY:
-            self.dump_to_file()
+            if (
+                datetime.datetime.now() - self._file_last_updated
+            ).total_seconds() > self.UPDATE_FILE_EVERY:
+                self.dump_to_file()
 
     def as_read_only(self):
         """
@@ -523,10 +523,10 @@ class DataclassTable(DataclassTableAppendOnly):
                 self._entry_objs.pop(entry_addr)
                 self._entry_lines.pop(entry_addr)
                 self.obj_addresses_by_key_attr.cache_clear()
-        if (
-            datetime.datetime.now() - self._file_last_updated
-        ).total_seconds() > self.UPDATE_FILE_EVERY:
-            self.dump_to_file()
+            if (
+                datetime.datetime.now() - self._file_last_updated
+            ).total_seconds() > self.UPDATE_FILE_EVERY:
+                self.dump_to_file()
 
     def set_entry_attrs(self, entry_obj_address, **kwargs):
         """
@@ -551,7 +551,7 @@ class DataclassTable(DataclassTableAppendOnly):
                 setattr(obj, fname, fval)
             self._entry_lines[entry_obj_address] = self._line_from_obj(obj)
             self.obj_addresses_by_key_attr.cache_clear()
-        if (
-            datetime.datetime.now() - self._file_last_updated
-        ).total_seconds() > self.UPDATE_FILE_EVERY:
-            self.dump_to_file()
+            if (
+                datetime.datetime.now() - self._file_last_updated
+            ).total_seconds() > self.UPDATE_FILE_EVERY:
+                self.dump_to_file()
