@@ -5,10 +5,17 @@ dataclass objects serialized to/deseralized from a corresponding CSV file in an 
 """
 
 # imports
-import pathlib, functools, datetime, typing, copy, os, time
+import copy
+import datetime
+import functools
+import os
+import pathlib
+import time
+import typing
 from abc import ABC
-from threading import Lock
 from dataclasses import fields, is_dataclass
+from threading import RLock
+
 import methodtools
 from atomicwrites import atomic_write
 from openmsitoolbox import LogOwner
@@ -66,7 +73,7 @@ class DataclassTableBase(LogOwner, ABC):
         # init the LogOwner
         super().__init__(**kwargs)
         # create the thread lock for the table
-        self.lock = Lock()
+        self.lock = RLock()
         # figure out what type of objects the table/file will be describing
         self.__dataclass_type = dataclass_type
         if not is_dataclass(self.__dataclass_type):
@@ -177,17 +184,12 @@ class DataclassTableBase(LogOwner, ABC):
             )
             self.logger.error(errmsg, exc_type=ValueError)
         to_return = {}
-        locked_internally = False
-        if not self.lock.locked():
-            self.lock.acquire()
-            locked_internally = True
-        for addr, obj in self._entry_objs.items():
-            rkey = getattr(obj, key_attr_name)
-            if rkey not in to_return:
-                to_return[rkey] = []
-            to_return[rkey].append(addr)
-        if locked_internally:
-            self.lock.release()
+        with self.lock:
+            for addr, obj in self._entry_objs.items():
+                rkey = getattr(obj, key_attr_name)
+                if rkey not in to_return:
+                    to_return[rkey] = []
+                to_return[rkey].append(addr)
         return to_return
 
     def dump_to_file(self, reraise_exc=True, retries=2):
@@ -205,13 +207,8 @@ class DataclassTableBase(LogOwner, ABC):
         lines_to_write = [self.csv_header_line]
         if len(self._entry_lines) > 0:
             lines_to_write += list(self._entry_lines.values())
-        locked_internally = False
-        if not self.lock.locked():
-            locked_internally = True
-            self.lock.acquire()
-        self.__write_lines(lines_to_write, reraise_exc=reraise_exc, retries=retries)
-        if locked_internally:
-            self.lock.release()
+        with self.lock:
+            self.__write_lines(lines_to_write, reraise_exc=reraise_exc, retries=retries)
 
     #################### PROPERTIES ####################
 
@@ -318,13 +315,13 @@ class DataclassTableBase(LogOwner, ABC):
                 if reraise_exc:
                     errmsg = (
                         f"ERROR: failed to write to {self.__class__.__name__} csv file at "
-                        f"{self.__filepath} after {retries-n_retries_left+1} attempts! "
+                        f"{self.__filepath} after {retries - n_retries_left + 1} attempts! "
                         "Will reraise exception."
                     )
                     self.logger.error(errmsg, exc_info=caught_exc, reraise=True)
                 else:
                     msg = (
-                        f"WARNING: failed in {retries-n_retries_left+1} attempts to write "
+                        f"WARNING: failed in {retries - n_retries_left + 1} attempts to write "
                         f"to {self.__class__.__name__} csv file at {self.__filepath}! "
                         "Exception info below"
                     )
@@ -455,22 +452,15 @@ class DataclassTableAppendOnly(DataclassTableBase):
         """
         if is_dataclass(new_entries):
             new_entries = [new_entries]
-        for entry in new_entries:
-            entry_addr = hex(id(entry))
-            if entry_addr in self._entry_objs or entry_addr in self._entry_lines:
-                errmsg = (
-                    "ERROR: address of object sent to add_entries is already registered!"
-                )
-                self.logger.error(errmsg, exc_type=ValueError)
-            locked_internally = False
-            if not self.lock.locked():
-                locked_internally = True
-                self.lock.acquire()
-            self._entry_objs[entry_addr] = entry
-            self._entry_lines[entry_addr] = self._line_from_obj(entry)
-            self.obj_addresses_by_key_attr.cache_clear()
-            if locked_internally:
-                self.lock.release()
+        with self.lock:
+            for entry in new_entries:
+                entry_addr = hex(id(entry))
+                if entry_addr in self._entry_objs or entry_addr in self._entry_lines:
+                    errmsg = "ERROR: address of object sent to add_entries is already registered!"
+                    self.logger.error(errmsg, exc_type=ValueError)
+                self._entry_objs[entry_addr] = entry
+                self._entry_lines[entry_addr] = self._line_from_obj(entry)
+                self.obj_addresses_by_key_attr.cache_clear()
         if (
             datetime.datetime.now() - self._file_last_updated
         ).total_seconds() > self.UPDATE_FILE_EVERY:
@@ -520,21 +510,19 @@ class DataclassTable(DataclassTableAppendOnly):
         """
         if isinstance(entry_obj_addresses, str):
             entry_obj_addresses = [entry_obj_addresses]
-        for entry_addr in entry_obj_addresses:
-            if (entry_addr not in self._entry_objs) or (
-                entry_addr not in self._entry_lines
-            ):
-                errmsg = f"ERROR: address {entry_addr} sent to remove_entries is not registered!"
-                self.logger.error(errmsg, exc_type=ValueError)
-            locked_internally = False
-            if not self.lock.locked():
-                locked_internally = True
-                self.lock.acquire()
-            self._entry_objs.pop(entry_addr)
-            self._entry_lines.pop(entry_addr)
-            self.obj_addresses_by_key_attr.cache_clear()
-            if locked_internally:
-                self.lock.release()
+        with self.lock:
+            for entry_addr in entry_obj_addresses:
+                if (entry_addr not in self._entry_objs) or (
+                    entry_addr not in self._entry_lines
+                ):
+                    errmsg = (
+                        f"ERROR: address {entry_addr} sent "
+                        "to remove_entries is not registered!"
+                    )
+                    self.logger.error(errmsg, exc_type=ValueError)
+                self._entry_objs.pop(entry_addr)
+                self._entry_lines.pop(entry_addr)
+                self.obj_addresses_by_key_attr.cache_clear()
         if (
             datetime.datetime.now() - self._file_last_updated
         ).total_seconds() > self.UPDATE_FILE_EVERY:
@@ -557,17 +545,12 @@ class DataclassTable(DataclassTableAppendOnly):
                 f"ERROR: address {entry_obj_address} is not registered!",
                 exc_type=ValueError,
             )
-        locked_internally = False
-        if not self.lock.locked():
-            locked_internally = True
-            self.lock.acquire()
-        obj = self._entry_objs[entry_obj_address]
-        for fname, fval in kwargs.items():
-            setattr(obj, fname, fval)
-        self._entry_lines[entry_obj_address] = self._line_from_obj(obj)
-        self.obj_addresses_by_key_attr.cache_clear()
-        if locked_internally:
-            self.lock.release()
+        with self.lock:
+            obj = self._entry_objs[entry_obj_address]
+            for fname, fval in kwargs.items():
+                setattr(obj, fname, fval)
+            self._entry_lines[entry_obj_address] = self._line_from_obj(obj)
+            self.obj_addresses_by_key_attr.cache_clear()
         if (
             datetime.datetime.now() - self._file_last_updated
         ).total_seconds() > self.UPDATE_FILE_EVERY:
