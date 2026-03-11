@@ -142,16 +142,21 @@ def test_metadata_reproducer_kafka(
     get_heartbeat_messages,
     get_log_messages,
 ):
+    start_time = datetime.datetime.now()
+    start_time_uts = time.time()
     try:
         # --- Upload the test file and wait for it to be processed ---
         upload_file_helper(UPLOAD_FILE, topic_name=SOURCE_TOPIC_NAME)
-        time.sleep(2)
+        time.sleep(0.5)
 
         create_reproducer(state, logger)
         start_reproducer_thread(state)
-        start_time = datetime.datetime.now()
-        start_time_uts = time.time()
         wait_for_reproducer_results(state, pathlib.Path(UPLOAD_FILE.name))
+
+        # Wait additional time for producer to flush and callbacks to complete
+        # The producer callback updates recent_results_produced, but the message
+        # might still be buffered and not yet visible to consumers
+        time.sleep(0.5)
 
         # --- Validate file registry ---
         registry = state["reproducer"].file_registry
@@ -160,7 +165,6 @@ def test_metadata_reproducer_kafka(
         in_progress_table.dump_to_file()
         succeeded_table.dump_to_file()
         assert len(registry.filepaths_to_rerun) == 0
-        time.sleep(5)
         in_prog_entries = in_progress_table.obj_addresses_by_key_attr("status")
         succeeded_entries = succeeded_table.obj_addresses
         assert len(succeeded_entries) >= 1
@@ -175,9 +179,12 @@ def test_metadata_reproducer_kafka(
         consumer_group = ConsumerAndProducerGroup(
             TEST_CONST.TEST_CFG_FILE_PATH_MDC,
             consumer_topic_name=DEST_TOPIC_NAME,
-            consumer_group_id=CONSUMER_GROUP_ID,
+            consumer_group_id=CONSUMER_GROUP_ID + "_validator",
         )
-        consumer = consumer_group.get_new_subscribed_consumer()
+        validator_consumer = consumer_group.get_new_subscribed_consumer(
+            restart_at_beginning=True
+        )
+
         try:
             success = False
             msg = None
@@ -187,7 +194,7 @@ def test_metadata_reproducer_kafka(
                 and (datetime.datetime.now() - consume_start).total_seconds()
                 < TIMEOUT_SECS
             ):
-                msg = consumer.get_next_message(1)  # 1-second poll timeout
+                msg = validator_consumer.get_next_message(1)  # 1-second poll timeout
                 if msg is None:
                     continue
                 msg_dict = json.loads(msg.value())
@@ -206,7 +213,7 @@ def test_metadata_reproducer_kafka(
             )
             assert success, "Consumed metadata does not match reference"
         finally:
-            consumer.close()
+            validator_consumer.close()
 
         # --- Validate heartbeats ---
         heartbeat_msgs = get_heartbeat_messages(
