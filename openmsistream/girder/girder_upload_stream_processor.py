@@ -251,6 +251,14 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             )
             self.logger.error(errmsg, exc_info=exc)
             return exc
+        try:
+            datafile.full_filepath.unlink(missing_ok=True)
+        except Exception as exc:
+            errmsg = (
+                f"ERROR: failed to delete the file at {datafile.full_filepath} after "
+                "uploading it to Girder. Exception will be logged but not re-raised."
+            )
+            self.logger.error(errmsg, exc_info=exc)
         return None
 
     def __init_collection(self, collection_name):
