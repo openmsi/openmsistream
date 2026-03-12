@@ -23,6 +23,44 @@ except Exception:
     openmsistream_version = "unknown"
 
 
+class GirderClientWithSession(girder_client.GirderClient):
+    def __init__(
+        self,
+        host=None,
+        port=None,
+        apiRoot=None,
+        scheme=None,
+        apiUrl=None,
+        apiKey=None,
+        token=None,
+        retries=None,
+        cacheSettings=None,
+        progressReporterCls=None,
+    ):
+        super().__init__(
+            host=host,
+            port=port,
+            apiRoot=apiRoot,
+            scheme=scheme,
+            apiUrl=apiUrl,
+            cacheSettings=cacheSettings,
+            progressReporterCls=progressReporterCls,
+        )
+
+        self.retries = retries
+        if token:
+            self.setToken(token)
+
+        if apiKey:
+            self.authenticate(apiKey=apiKey)
+
+    def sendRestRequest(self, *args, **kwargs):
+        with self.session() as session:
+            if self.retries:
+                session.mount(self.urlBase, HTTPAdapter(max_retries=self.retries))
+            return super().sendRestRequest(*args, **kwargs)
+
+
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
     """
     A stream processor to reconstruct data files read as messages from a topic, hold them
@@ -76,9 +114,16 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
     ):
         super().__init__(config_file, topic_name, **other_kwargs)
         # connect and authenticate to the Girder instance
+        retry_strategy = Retry(
+            total=5,
+            backoff_factor=0.1,
+            status_forcelist=[403, 429, 500, 502, 503, 504],
+            allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
+        )
         try:
-            self.__girder_client = girder_client.GirderClient(apiUrl=girder_api_url)
-            self.__girder_client.authenticate(apiKey=girder_api_key)
+            self.__girder_client = GirderClientWithSession(
+                apiUrl=girder_api_url, apiKey=girder_api_key, retries=retry_strategy
+            )
         except Exception as exc:
             errmsg = (
                 f"ERROR: failed to authenticate to the Girder instance at {girder_api_url}. "
@@ -132,18 +177,8 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
         :return: None if upload was successful, a caught Exception otherwise
         """
-        retry_strategy = Retry(
-            total=5,
-            backoff_factor=0.1,
-            status_forcelist=[403, 429, 500, 502, 503, 504],
-            allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
-        )
-        retry_adapter = HTTPAdapter(max_retries=retry_strategy)
         with lock:
-            with self.__girder_client.session() as session:
-                session.mount("http://", retry_adapter)
-                session.mount("https://", retry_adapter)
-                return self.__process_downloaded_data_file(datafile)
+            return self.__process_downloaded_data_file(datafile, metadata=None)
 
     @staticmethod
     def __get_checksum(datafile, alg="sha256"):
@@ -159,11 +194,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             checksum.update(datafile.bytestring)
         return checksum.digest()
 
-    def __process_downloaded_data_file(self, datafile):
+    def __process_downloaded_data_file(self, datafile, metadata=None):
         """
         Actual process_downloaded_data_file method used in the wrapper above
         """
         # Create the nested subdirectories that should hold this file
+        metadata = metadata or {}
         parent_id = self.__root_folder_id
         if datafile.subdir_str != "":
             subdir_str_split = datafile.subdir_str.split("/")
@@ -227,6 +263,14 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         metadata_dict["checksum"] = {
             "sha256": checksum_hash,
         }
+        try:
+            metadata_dict.update(metadata)
+        except Exception as exc:
+            errmsg = (
+                "ERROR: failed to update the metadata dictionary with the given metadata: "
+                f"{metadata} will be skipped. Exception will be logged but not re-raised."
+            )
+            self.logger.error(errmsg, exc_info=exc)
         try:
             self.__girder_client.addMetadataToItem(upload_obj["itemId"], metadata_dict)
         except Exception as exc:
