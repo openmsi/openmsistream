@@ -194,8 +194,13 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
 
         :return: None if upload was successful, a caught Exception otherwise
         """
-        with lock:
-            return self.__process_downloaded_data_file(datafile, metadata=None)
+        # NOTE: we are not using lock since GirderClientWithSession should be thread-safe,
+        # but we are keeping it as an argument in case we want to add any non-thread-safe
+        # code in the future
+        # Currently, concurrency is handled by Girder server side. If too many requests are
+        # sent at once, the retry strategy defined in the session will handle retrying them
+        # with backoff.
+        return self.__process_downloaded_data_file(datafile, metadata=None)
 
     @staticmethod
     def __get_checksum(datafile, alg="sha256"):
