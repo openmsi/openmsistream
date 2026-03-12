@@ -207,11 +207,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             mimetype = mimetype or "application/octet-stream"
             if datafile.full_filepath and datafile.full_filepath.is_file():
                 # If the file exists on disk, upload it directly
-                self.__girder_client.uploadFileToFolder(
+                upload_obj = self.__girder_client.uploadFileToFolder(
                     parent_id, datafile.full_filepath, mimeType=mimetype
                 )
             else:
-                self.__girder_client.uploadStreamToFolder(
+                upload_obj = self.__girder_client.uploadStreamToFolder(
                     parent_id,
                     BytesIO(datafile.bytestring),
                     datafile.filename,
@@ -223,27 +223,12 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.logger.error(errmsg, exc_info=exc)
             return exc
         # Add metadata to the item that was created for the file
-        item_id = None
-        for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
-            if item_id:
-                errmsg = (
-                    f"ERROR: found more than one Item named {datafile.filename} "
-                    f"after uploading the file at {datafile.relative_filepath}"
-                )
-                return RuntimeError(errmsg)
-            item_id = resp["_id"]
-        if not item_id:
-            errmsg = (
-                "ERROR: could not find a corresponding Item after uploading the file "
-                f"at {datafile.relative_filepath}"
-            )
-            return RuntimeError(errmsg)
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
             "sha256": checksum_hash,
         }
         try:
-            self.__girder_client.addMetadataToItem(item_id, metadata_dict)
+            self.__girder_client.addMetadataToItem(upload_obj["itemId"], metadata_dict)
         except Exception as exc:
             errmsg = (
                 "ERROR: failed to set metadata for the Item corresponding to the file "
