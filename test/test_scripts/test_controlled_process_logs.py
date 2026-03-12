@@ -23,7 +23,6 @@ N_THREADS = 3
 def test_controlled_process_single_thread_kafka(
     logger, get_log_messages, run_controlled_process_test
 ):
-
     program_id = "test_controlled_process_single_thread"
 
     cp = ControlledProcessSingleThreadLogsForTesting(

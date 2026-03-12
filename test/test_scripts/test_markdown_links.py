@@ -8,7 +8,6 @@ import bs4, functools, git, itertools, marko.ext.toc, pathlib, re, slugify
 
 
 class GithubTocRendererMixin(marko.ext.toc.TocRendererMixin):
-
     def render_heading(self, element):
         children = self.render_children(element)
         slug = re.sub(r"<.+?>", "", children)

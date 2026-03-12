@@ -2,16 +2,36 @@
 name: local-girder
 services:
   mongodb:
-    image: mongo:3.6
-    container_name: mongo
-    command: bash -c "mkdir /dev/shm/mongo && mongod --storageEngine ephemeralForTest --nojournal --dbpath=/dev/shm/mongo --noauth --bind_ip_all"
+    image: mongo:4.4
+
+  redis:
+    image: redis:latest
 
   girder:
-    image: wholetale/girder:latest
-    container_name: girder
+    image: girder/girder:v5.0.0a14-py3
     ports:
       - 8080:8080
     depends_on:
       - mongodb
-    volumes:
-      - ./girder.local.cfg:/girder/girder/conf/girder.local.cfg
+      - redis
+    environment:
+      - GIRDER_MONGO_URI=mongodb://mongodb:27017/girder
+      - GIRDER_HOST=0.0.0.0
+      - GIRDER_WORKER_BROKER=redis://redis/
+      - GIRDER_WORKER_BACKEND=redis://redis/
+      - GIRDER_NOTIFICATION_REDIS_URL=redis://redis:6379
+    command: ["-H", "0.0.0.0"]
+
+  localworker:
+    image: girder/girder:v5.0.0a14-py3
+    depends_on:
+      - mongodb
+      - redis
+    entrypoint: celery -A girder_worker.app worker -Q local
+    working_dir: /girder
+    environment:
+      - GIRDER_MONGO_URI=mongodb://mongodb:27017/girder
+      - GIRDER_WORKER_BROKER=redis://redis/
+      - GIRDER_WORKER_BACKEND=redis://redis/
+      - GIRDER_NOTIFICATION_REDIS_URL=redis://redis:6379
+      - C_FORCE_ROOT=1
