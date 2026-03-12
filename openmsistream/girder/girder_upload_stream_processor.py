@@ -2,9 +2,11 @@
 import hashlib
 import json
 import mimetypes
+import threading
 from io import BytesIO
 
 import girder_client
+import requests
 from requests.adapters import HTTPAdapter
 from urllib3.util.retry import Retry
 
@@ -33,7 +35,7 @@ class GirderClientWithSession(girder_client.GirderClient):
         apiUrl=None,
         apiKey=None,
         token=None,
-        retries=None,
+        session=None,
         cacheSettings=None,
         progressReporterCls=None,
     ):
@@ -47,18 +49,13 @@ class GirderClientWithSession(girder_client.GirderClient):
             progressReporterCls=progressReporterCls,
         )
 
-        self.retries = retries
         if token:
             self.setToken(token)
 
         if apiKey:
             self.authenticate(apiKey=apiKey)
 
-    def sendRestRequest(self, *args, **kwargs):
-        with self.session() as session:
-            if self.retries:
-                session.mount(self.urlBase, HTTPAdapter(max_retries=self.retries))
-            return super().sendRestRequest(*args, **kwargs)
+        self._session = session
 
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
@@ -113,23 +110,16 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         **other_kwargs,
     ):
         super().__init__(config_file, topic_name, **other_kwargs)
-        # connect and authenticate to the Girder instance
-        retry_strategy = Retry(
+        self._thread_local = threading.local()
+        self.retry_strategy = Retry(
             total=5,
             backoff_factor=0.1,
             status_forcelist=[403, 429, 500, 502, 503, 504],
             allowed_methods=["HEAD", "GET", "OPTIONS", "POST", "PUT", "DELETE"],
         )
-        try:
-            self.__girder_client = GirderClientWithSession(
-                apiUrl=girder_api_url, apiKey=girder_api_key, retries=retry_strategy
-            )
-        except Exception as exc:
-            errmsg = (
-                f"ERROR: failed to authenticate to the Girder instance at {girder_api_url}. "
-                "Exception will be re-raised."
-            )
-            self.logger.error(errmsg, exc_info=exc, reraise=True)
+        self.http_adapter = HTTPAdapter(max_retries=self.retry_strategy)
+        self.girder_api_url = girder_api_url
+        self.girder_api_key = girder_api_key
         # set some minimal amount of metadata fields
         self.minimal_metadata_dict = {
             "OpenMSIStreamVersion": openmsistream_version,
@@ -160,6 +150,32 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             self.__root_folder_id = self.__init_root_folder(
                 root_folder_path, collection_id, collection_name
             )
+
+    @property
+    def session(self):
+        if not hasattr(self._thread_local, "session"):
+            session = requests.Session()
+            session.mount("http://", self.http_adapter)
+            session.mount("https://", self.http_adapter)
+            self._thread_local.session = session
+        return self._thread_local.session
+
+    @property
+    def girder_client(self):
+        if not hasattr(self._thread_local, "girder_client"):
+            try:
+                self._thread_local.girder_client = GirderClientWithSession(
+                    apiUrl=self.girder_api_url,
+                    apiKey=self.girder_api_key,
+                    session=self.session,
+                )
+            except Exception as exc:
+                errmsg = (
+                    "ERROR: failed to authenticate to the Girder instance at "
+                    f" {self.girder_api_url}. Exception will be re-raised."
+                )
+                self.logger.error(errmsg, exc_info=exc, reraise=True)
+        return self._thread_local.girder_client
 
     def _process_downloaded_data_file(self, datafile, lock):
         """
@@ -212,7 +228,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                         parentType="folder",
                         reuseExisting=True,
                     )
-                    self.__girder_client.addMetadataToFolder(
+                    self.girder_client.addMetadataToFolder(
                         new_folder_id,
                         metadata_dict,
                     )
@@ -226,7 +242,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         # Calculate the checksum of the file
         checksum_hash = self.__get_checksum(datafile).hex()
         # Check if a file with the same name and checksum already exists in the folder
-        for resp in self.__girder_client.listItem(parent_id, name=datafile.filename):
+        for resp in self.girder_client.listItem(parent_id, name=datafile.filename):
             existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
             if existing_sha256 == checksum_hash:
                 errmsg = (
@@ -243,11 +259,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             mimetype = mimetype or "application/octet-stream"
             if datafile.full_filepath and datafile.full_filepath.is_file():
                 # If the file exists on disk, upload it directly
-                upload_obj = self.__girder_client.uploadFileToFolder(
+                upload_obj = self.girder_client.uploadFileToFolder(
                     parent_id, datafile.full_filepath, mimeType=mimetype
                 )
             else:
-                upload_obj = self.__girder_client.uploadStreamToFolder(
+                upload_obj = self.girder_client.uploadStreamToFolder(
                     parent_id,
                     BytesIO(datafile.bytestring),
                     datafile.filename,
@@ -272,7 +288,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             )
             self.logger.error(errmsg, exc_info=exc)
         try:
-            self.__girder_client.addMetadataToItem(upload_obj["itemId"], metadata_dict)
+            self.girder_client.addMetadataToItem(upload_obj["itemId"], metadata_dict)
         except Exception as exc:
             errmsg = (
                 "ERROR: failed to set metadata for the Item corresponding to the file "
@@ -300,11 +316,11 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         """
         collection_id = None
         try:
-            for resp in self.__girder_client.listCollection():
+            for resp in self.girder_client.listCollection():
                 if resp["_modelType"] == "collection" and resp["name"] == collection_name:
                     collection_id = resp["_id"]
             if not collection_id:
-                new_collection = self.__girder_client.createCollection(
+                new_collection = self.girder_client.createCollection(
                     collection_name, public=True
                 )
                 collection_id = new_collection["_id"]
@@ -352,7 +368,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         """
         new_folder_id = None
         try:
-            new_folder = self.__girder_client.createFolder(
+            new_folder = self.girder_client.createFolder(
                 parent_id,
                 name,
                 **kwargs,
