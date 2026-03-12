@@ -134,6 +134,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                     "Exception will be re-raised."
                 )
                 self.logger.error(errmsg, exc_info=exc, reraise=True)
+                raise ValueError(errmsg) from exc
         # if a root folder ID was given, just use that
         if girder_root_folder_id:
             self.__root_folder_id = girder_root_folder_id
@@ -202,7 +203,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         if datafile.full_filepath and datafile.full_filepath.is_file():
             with open(datafile.full_filepath, "rb") as f:
                 while True:
-                    data = f.read(8196)
+                    data = f.read(8192)
                     if not data:
                         break
                     checksum.update(data)
@@ -237,8 +238,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                     self.logger.error(errmsg, exc_info=exc)
                     return exc
                 parent_id = new_folder_id
-        else:
-            subdir_str_split = []
         # Calculate the checksum of the file
         checksum_hash = self.__get_checksum(datafile).hex()
         # Check if a file with the same name and checksum already exists in the folder
