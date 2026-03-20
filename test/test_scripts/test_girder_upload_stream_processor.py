@@ -582,6 +582,86 @@ def test_girder_with_custom_folder_path(
     [{TOPIC_NAME: {}}],
     indirect=True,
 )
+def test_girder_replace_existing(
+    kafka_topics,
+    girder_instance,
+    stream_processor_helper,
+    upload_file_helper,
+    tmp_path,
+):
+    """Upload a file twice with different content; verify replace_existing=True replaces
+    the Girder item in place rather than creating a duplicate."""
+    api_url = girder_instance["api_url"]
+    api_key = girder_instance["api_key"]
+
+    csv_file = tmp_path / "log.csv"
+
+    # --- v1: one row ---
+    csv_file.write_text("shot,value\n1,100\n")
+    upload_file_helper(csv_file, topic_name=TOPIC_NAME, rootdir=tmp_path)
+    stream_processor_helper["create_stream_processor"](
+        stream_processor_type=GirderUploadStreamProcessor,
+        topic_name=TOPIC_NAME,
+        consumer_group_id=f"pytest_{TOPIC_NAME}_replace",
+        other_init_args=(api_url, api_key),
+        other_init_kwargs={
+            "collection_name": COLLECTION_NAME,
+            "replace_existing": True,
+            "mode": "memory",
+        },
+    )
+    stream_processor_helper["start_stream_processor_thread"]()
+    stream_processor_helper["wait_for_files_to_be_processed"](
+        csv_file.relative_to(tmp_path), timeout_secs=180
+    )
+    stream_processor_helper["reset_stream_processor"]()
+
+    # --- v2: two rows ---
+    csv_file.write_text("shot,value\n1,100\n2,200\n")
+    upload_file_helper(csv_file, topic_name=TOPIC_NAME, rootdir=tmp_path)
+    stream_processor_helper["create_stream_processor"](
+        stream_processor_type=GirderUploadStreamProcessor,
+        topic_name=TOPIC_NAME,
+        consumer_group_id=f"pytest_{TOPIC_NAME}_replace",
+        other_init_args=(api_url, api_key),
+        other_init_kwargs={
+            "collection_name": COLLECTION_NAME,
+            "replace_existing": True,
+            "mode": "memory",
+        },
+    )
+    stream_processor_helper["start_stream_processor_thread"]()
+    stream_processor_helper["wait_for_files_to_be_processed"](
+        csv_file.relative_to(tmp_path), timeout_secs=180
+    )
+
+    girder = girder_client.GirderClient(apiUrl=api_url)
+    girder.authenticate(apiKey=api_key)
+
+    gpath = f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}"
+    folder = girder.get("/resource/lookup", parameters={"path": gpath})
+    items = list(girder.listItem(folder["_id"], name=csv_file.name))
+
+    # exactly one item — no duplicate created
+    assert len(items) == 1
+
+    # content matches v2
+    file_obj = next(girder.listFile(items[0]["_id"]))
+    content = b"".join(girder.downloadFileAsIterator(file_obj["_id"]))
+    assert content == b"shot,value\n1,100\n2,200\n"
+
+    girder.delete(f"/item/{items[0]['_id']}")
+
+
+# ------------------------------------------------------------
+
+
+@pytest.mark.kafka
+@pytest.mark.parametrize(
+    "kafka_topics",
+    [{TOPIC_NAME: {}}],
+    indirect=True,
+)
 def test_girder_disk_mode(
     kafka_topics,
     girder_instance,
