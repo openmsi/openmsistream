@@ -289,6 +289,13 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 )
                 self.logger.error(errmsg, exc_info=exc)
                 return exc
+        elif existing_item:
+            self.logger.warning(
+                f"WARNING: found an existing Item named {datafile.filename} with a different "
+                f"checksum in the folder at {datafile.relative_filepath}. Skipping upload "
+                f"(use --replace_existing to overwrite)."
+            )
+            return None
         else:
             # Upload as a new item
             try:
