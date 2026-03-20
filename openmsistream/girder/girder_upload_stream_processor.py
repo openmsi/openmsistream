@@ -107,6 +107,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         collection_name=None,
         girder_root_folder_path=None,
         metadata=None,
+        replace_existing=False,
         **other_kwargs,
     ):
         super().__init__(config_file, topic_name, **other_kwargs)
@@ -135,6 +136,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 )
                 self.logger.error(errmsg, exc_info=exc, reraise=True)
                 raise ValueError(errmsg) from exc
+        self.replace_existing = replace_existing
         # if a root folder ID was given, just use that
         if girder_root_folder_id:
             self.__root_folder_id = girder_root_folder_id
@@ -245,39 +247,69 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 parent_id = new_folder_id
         # Calculate the checksum of the file
         checksum_hash = self.__get_checksum(datafile).hex()
-        # Check if a file with the same name and checksum already exists in the folder
+        # Check if an item with the same name already exists in the folder
+        existing_item = None
         for resp in self.girder_client.listItem(parent_id, name=datafile.filename):
             existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
             if existing_sha256 == checksum_hash:
-                errmsg = (
+                self.logger.warning(
                     f"WARNING: found an existing Item named {datafile.filename} with the same "
                     f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
                 )
-                self.logger.warning(errmsg)
-                print(f"File {datafile.filename} already exists with the same checksum")
                 return None
+            existing_item = resp
+            break
 
-        # Upload the file from file on disk or its bytestring if in memory
-        try:
-            mimetype, _ = mimetypes.guess_type(datafile.filename)
-            mimetype = mimetype or "application/octet-stream"
-            if datafile.full_filepath and datafile.full_filepath.is_file():
-                # If the file exists on disk, upload it directly
-                upload_obj = self.girder_client.uploadFileToFolder(
-                    parent_id, datafile.full_filepath, mimeType=mimetype
+        mimetype, _ = mimetypes.guess_type(datafile.filename)
+        mimetype = mimetype or "application/octet-stream"
+
+        # Replace contents of the existing item if --replace_existing is set
+        if existing_item and self.replace_existing:
+            try:
+                file_obj = next(self.girder_client.listFile(existing_item["_id"]), None)
+                if file_obj is None:
+                    raise Exception(
+                        f"No file found under existing item {existing_item['_id']}"
+                    )
+                if datafile.full_filepath and datafile.full_filepath.is_file():
+                    size = datafile.full_filepath.stat().st_size
+                    with open(datafile.full_filepath, "rb") as stream:
+                        self.girder_client.uploadFileContents(
+                            file_obj["_id"], stream, size
+                        )
+                else:
+                    data = datafile.bytestring
+                    self.girder_client.uploadFileContents(
+                        file_obj["_id"], BytesIO(data), len(data)
+                    )
+                upload_obj = {"itemId": existing_item["_id"]}
+            except Exception as exc:
+                errmsg = (
+                    f"ERROR: failed to replace the file at {datafile.relative_filepath}"
                 )
-            else:
-                upload_obj = self.girder_client.uploadStreamToFolder(
-                    parent_id,
-                    BytesIO(datafile.bytestring),
-                    datafile.filename,
-                    len(datafile.bytestring),
-                    mimeType=mimetype,
+                self.logger.error(errmsg, exc_info=exc)
+                return exc
+        else:
+            # Upload as a new item
+            try:
+                if datafile.full_filepath and datafile.full_filepath.is_file():
+                    upload_obj = self.girder_client.uploadFileToFolder(
+                        parent_id, datafile.full_filepath, mimeType=mimetype
+                    )
+                else:
+                    upload_obj = self.girder_client.uploadStreamToFolder(
+                        parent_id,
+                        BytesIO(datafile.bytestring),
+                        datafile.filename,
+                        len(datafile.bytestring),
+                        mimeType=mimetype,
+                    )
+            except Exception as exc:
+                errmsg = (
+                    f"ERROR: failed to upload the file at {datafile.relative_filepath}"
                 )
-        except Exception as exc:
-            errmsg = f"ERROR: failed to upload the file at {datafile.relative_filepath}"
-            self.logger.error(errmsg, exc_info=exc)
-            return exc
+                self.logger.error(errmsg, exc_info=exc)
+                return exc
         # Add metadata to the item that was created for the file
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
@@ -400,6 +432,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name",
             "girder_root_folder_path",
             "metadata",
+            "replace_existing",
         ]
         return args, superkwargs
 
@@ -417,6 +450,7 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             "collection_name": parsed_args.collection_name,
             "girder_root_folder_path": parsed_args.girder_root_folder_path,
             "metadata": parsed_args.metadata,
+            "replace_existing": parsed_args.replace_existing,
         }
         return args, kwargs
 
