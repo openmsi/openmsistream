@@ -8,6 +8,7 @@ from io import BytesIO
 import girder_client
 import requests
 from requests.adapters import HTTPAdapter
+from requests.exceptions import HTTPError
 from urllib3.util.retry import Retry
 
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
@@ -56,6 +57,47 @@ class GirderClientWithSession(girder_client.GirderClient):
             self.authenticate(apiKey=apiKey)
 
         self._session = session
+
+    def existing_resource(self, datafile, folder_id):
+        try:
+            hashsum = datafile.check_file_hash
+            resp = self.get(f"hashsum/sha512/{hashsum}")
+            resp.raise_for_status()  # if hashsum_download is not installed it will throw 404
+            for fobj in resp:
+                item = self.get(f"item/{fobj['itemId']}")
+                if not item["folderId"] == folder_id:
+                    continue
+                return fobj, item
+        except HTTPError:
+            # fallback to checking for existing file by name
+            for item in self.listItem(folder_id, name=datafile.filename):
+                return next(self.listFile(item["_id"]), None), item
+        return None, None
+
+    def replace_existing_file(self, datafile, file_obj, mimetype=None):
+        if datafile.full_filepath and datafile.full_filepath.is_file():
+            size = datafile.full_filepath.stat().st_size
+            with open(datafile.full_filepath, "rb") as stream:
+                self.uploadFileContents(file_obj["_id"], stream, size)
+        else:
+            data = datafile.bytestring
+            self.uploadFileContents(file_obj["_id"], BytesIO(data), len(data))
+        return {"itemId": file_obj["itemId"]}
+
+    def upload_new_file(self, parent_id, datafile, mimetype=None):
+        if datafile.full_filepath and datafile.full_filepath.is_file():
+            return self.uploadFileToFolder(
+                parent_id, datafile.full_filepath, mimeType=mimetype
+            )
+        # in memory handling
+        data = datafile.bytestring
+        return self.uploadStreamToFolder(
+            parent_id,
+            BytesIO(data),
+            datafile.filename,
+            len(data),
+            mimeType=mimetype,
+        )
 
 
 class GirderUploadStreamProcessor(DataFileStreamProcessor):
@@ -245,78 +287,54 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                     self.logger.error(errmsg, exc_info=exc)
                     return exc
                 parent_id = new_folder_id
-        # Calculate the checksum of the file
-        checksum_hash = self.__get_checksum(datafile).hex()
-        # Check if an item with the same name already exists in the folder
-        existing_item = None
-        for resp in self.girder_client.listItem(parent_id, name=datafile.filename):
-            existing_sha256 = resp.get("meta", {}).get("checksum", {}).get("sha256")
-            if existing_sha256 == checksum_hash:
-                self.logger.warning(
-                    f"WARNING: found an existing Item named {datafile.filename} with the same "
-                    f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
-                )
-                return None
-            existing_item = resp
-            break
 
+        # Calculate sh256 checksum of the file for backward compatiblity
+        checksum_hash = self.__get_checksum(datafile).hex()
         mimetype, _ = mimetypes.guess_type(datafile.filename)
         mimetype = mimetype or "application/octet-stream"
 
-        # Replace contents of the existing item if --replace_existing is set
-        if existing_item and self.replace_existing:
+        # Check if an item with the same name already exists in the folder
+        existing_file, existing_item = self.girder_client.existing_resource(
+            datafile, parent_id
+        )
+        if existing_item and existing_file:
+            same_file = (existing_file.get("sha512") == datafile.check_file_hash) or (
+                existing_item.get("meta", {}).get("checksum", {}).get("sha256")
+                == checksum_hash
+            )
+            if not (same_file or self.replace_existing):
+                msg = (
+                    f"Found an existing Item named {datafile.filename} in the folder at "
+                    f"{datafile.relative_filepath}, but it has a different checksum than "
+                    "the file being uploaded. "
+                    "(Use --replace_existing to overwrite.)"
+                )
+                self.logger.info(msg)
+                return None
+
             try:
-                file_obj = next(self.girder_client.listFile(existing_item["_id"]), None)
-                if file_obj is None:
-                    raise Exception(
-                        f"No file found under existing item {existing_item['_id']}"
-                    )
-                if datafile.full_filepath and datafile.full_filepath.is_file():
-                    size = datafile.full_filepath.stat().st_size
-                    with open(datafile.full_filepath, "rb") as stream:
-                        self.girder_client.uploadFileContents(
-                            file_obj["_id"], stream, size
-                        )
-                else:
-                    data = datafile.bytestring
-                    self.girder_client.uploadFileContents(
-                        file_obj["_id"], BytesIO(data), len(data)
-                    )
-                upload_obj = {"itemId": existing_item["_id"]}
+                upload_obj = self.girder_client.replace_existing_file(
+                    datafile, existing_file, mimetype=mimetype
+                )
             except Exception as exc:
                 errmsg = (
                     f"ERROR: failed to replace the file at {datafile.relative_filepath}"
                 )
                 self.logger.error(errmsg, exc_info=exc)
                 return exc
-        elif existing_item:
-            self.logger.warning(
-                f"WARNING: found an existing Item named {datafile.filename} with a different "
-                f"checksum in the folder at {datafile.relative_filepath}. Skipping upload "
-                f"(use --replace_existing to overwrite)."
-            )
-            return None
         else:
             # Upload as a new item
             try:
-                if datafile.full_filepath and datafile.full_filepath.is_file():
-                    upload_obj = self.girder_client.uploadFileToFolder(
-                        parent_id, datafile.full_filepath, mimeType=mimetype
-                    )
-                else:
-                    upload_obj = self.girder_client.uploadStreamToFolder(
-                        parent_id,
-                        BytesIO(datafile.bytestring),
-                        datafile.filename,
-                        len(datafile.bytestring),
-                        mimeType=mimetype,
-                    )
+                upload_obj = self.girder_client.upload_new_file(
+                    parent_id, datafile, mimetype=mimetype
+                )
             except Exception as exc:
                 errmsg = (
                     f"ERROR: failed to upload the file at {datafile.relative_filepath}"
                 )
                 self.logger.error(errmsg, exc_info=exc)
                 return exc
+
         # Add metadata to the item that was created for the file
         metadata_dict = self.minimal_metadata_dict.copy()
         metadata_dict["checksum"] = {
