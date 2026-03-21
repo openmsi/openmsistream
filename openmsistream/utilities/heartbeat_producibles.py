@@ -1,7 +1,8 @@
 "Various Producibles for main program/base class heartbeat messages"
 
 # imports
-import datetime, json
+import datetime
+import json
 from ..kafka_wrapper import Producible
 
 
@@ -19,7 +20,9 @@ class HeartbeatProducible(Producible):
 
     @property
     def msg_value(self):
-        value_dict = {"timestamp": str(datetime.datetime.now())}
+        value_dict = {
+            "timestamp": datetime.datetime.now(datetime.timezone.utc).isoformat()
+        }
         return json.dumps(value_dict)
 
 

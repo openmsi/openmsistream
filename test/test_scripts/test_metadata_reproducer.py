@@ -6,12 +6,13 @@ import pickle
 import time
 import urllib.request
 
+import dateutil.parser
 import pytest
 from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTrackingThread
+
 from openmsistream.kafka_wrapper import ConsumerAndProducerGroup
 
 from .config import TEST_CONST
-
 
 # ----------------------------------------------------------------------
 # Dynamically load XRDCSVMetadataReproducer
@@ -39,7 +40,6 @@ REP_CONFIG_PATH = (
 )
 UPLOAD_FILE = TEST_CONST.EXAMPLES_DIR_PATH / "extracting_metadata" / "SC001_XRR.csv"
 CONSUMER_GROUP_ID = f"test_metadata_reproducer_{TEST_CONST.PY_VERSION}"
-TIMESTAMP_FMT = "%Y-%m-%d %H:%M:%S.%f"
 SOURCE_TOPIC_NAME = "test_metadata_extractor_source"
 DEST_TOPIC_NAME = "test_metadata_extractor_dest"
 HEARTBEAT_TOPIC_NAME = "heartbeats"
@@ -142,6 +142,7 @@ def test_metadata_reproducer_kafka(
     get_heartbeat_messages,
     get_log_messages,
 ):
+    start_time_utc = datetime.datetime.now(datetime.timezone.utc)
     start_time = datetime.datetime.now()
     start_time_uts = time.time()
     try:
@@ -237,9 +238,8 @@ def test_metadata_reproducer_kafka(
         for msg in heartbeat_msgs:
             msg_dict = json.loads(msg.value())
             assert (
-                datetime.datetime.strptime(msg_dict["timestamp"], TIMESTAMP_FMT)
-                > start_time
-            )
+                dateutil.parser.parse(msg_dict["timestamp"]) - start_time_utc
+            ).total_seconds() >= 0
             totals["read_msgs"] += msg_dict["n_messages_read"]
             totals["read_bytes"] += msg_dict["n_bytes_read"]
             totals["proc_msgs"] += msg_dict["n_messages_processed"]
