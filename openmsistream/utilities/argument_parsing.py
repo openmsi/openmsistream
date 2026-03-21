@@ -340,6 +340,17 @@ class OpenMSIStreamArgumentParser(OpenMSIArgumentParser):
                 ),
             },
         ],
+        "replace_existing": [
+            "optional",
+            {
+                "action": "store_true",
+                "help": (
+                    "If given, files that already exist in Girder with the same name but a "
+                    "different checksum will have their contents replaced in place rather than "
+                    "being skipped. Useful for continuously-updated files such as log CSVs."
+                ),
+            },
+        ],
         "heartbeat_topic_name": [
             "optional",
             {
