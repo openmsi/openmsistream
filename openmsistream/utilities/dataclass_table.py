@@ -6,6 +6,7 @@ dataclass objects serialized to/deseralized from a corresponding CSV file in an 
 
 # imports
 import copy
+import csv
 import datetime
 import functools
 import os
@@ -14,6 +15,7 @@ import time
 import typing
 from abc import ABC
 from dataclasses import fields, is_dataclass
+from io import StringIO
 from threading import RLock
 
 import methodtools
@@ -336,21 +338,25 @@ class DataclassTableBase(LogOwner, ABC):
                 f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',
                 exc_type=TypeError,
             )
-        return self.DELIMETER.join(
+        line = StringIO()
+        writer = csv.writer(line, delimiter=self.DELIMETER, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(
             [
                 self.__get_str_from_attribute(getattr(obj, fname), ftype)
                 for fname, ftype in zip(self.__field_names, self.__field_types)
             ]
         )
+        return line.getvalue().strip()
 
     def __obj_from_line(self, line):
         """
         Return the dataclass instance for a given csv file line string
         """
         args = []
-        for attrtype, attrstr in zip(
-            self.__field_types, (line.strip().split(self.DELIMETER))
-        ):
+        line_args = next(
+            csv.reader(StringIO(line.strip()), delimiter=self.DELIMETER), None
+        )
+        for attrtype, attrstr in zip(self.__field_types, line_args):
             args.append(self.__get_attribute_from_str(attrstr, attrtype))
         return self.__dataclass_type(*args)
 

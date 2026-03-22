@@ -20,6 +20,7 @@ class TableLineForTesting:
     tuple_floats_field: Tuple[float]
     path_field: pathlib.Path
     timestamp_field: datetime.datetime
+    weird_field: str
 
 
 def test_dataclass_table_functions(output_dir, logger):
@@ -35,6 +36,7 @@ def test_dataclass_table_functions(output_dir, logger):
         (6.7, 8.9),
         pathlib.Path(__file__),
         datetime.datetime.now(),
+        "asdf;foo",
     )
     entry_2 = TableLineForTesting(
         "test",
@@ -47,6 +49,7 @@ def test_dataclass_table_functions(output_dir, logger):
         (20.21, 22.23),
         pathlib.Path(__file__).parent,
         datetime.datetime.now(),
+        "\tC:\\Path\\With\\Tab\\and,commas.txt",
     )
     entry_3 = TableLineForTesting(
         "test",
@@ -59,6 +62,7 @@ def test_dataclass_table_functions(output_dir, logger):
         (72.0, 84.6),
         pathlib.Path(__file__).parent.parent,
         datetime.datetime.now(),
+        r"C:\Users\Name\Documents\Report.pdf",
     )
 
     entry_1_addr = hex(id(entry_1))
@@ -118,6 +122,9 @@ def test_dataclass_table_functions(output_dir, logger):
     assert len(test_table.obj_addresses_by_key_attr("str_field")["test"]) == 3
 
     assert len(test_table.obj_addresses_by_key_attr("int_field")) == 3
+    assert list(test_table.obj_addresses_by_key_attr("weird_field").keys()) == [
+        _.weird_field for _ in [entry_1, entry_2, entry_3]
+    ]
 
     # ---- modify entry_2 ----
     test_table.set_entry_attrs(entry_2_addr, str_field="testing")
