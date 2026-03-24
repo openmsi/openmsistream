@@ -58,7 +58,7 @@ class DataclassTableBase(LogOwner, ABC):
 
     #################### CONSTANTS ####################
 
-    DELIMETER = ";"  # can't use a comma or containers would display incorrectly
+    DELIMITER = ";"  # can't use a comma or containers would display incorrectly
     DATETIME_FORMAT = "%a %b %d, %Y at %H:%M:%S"
     # only update the .csv file automatically every 5 seconds to make updates less expensive
     UPDATE_FILE_EVERY = 5
@@ -223,9 +223,9 @@ class DataclassTableBase(LogOwner, ABC):
         header_line = ""
         # add an extra line when running on Windows to seamlessly open the file in Excel
         if os.name == "nt":
-            header_line += f"sep={self.DELIMETER}\n"
+            header_line += f"sep={self.DELIMITER}\n"
         for fieldname in self.__field_names:
-            header_line += f"{fieldname}{self.DELIMETER}"
+            header_line += f"{fieldname}{self.DELIMITER}"
         return header_line[:-1]
 
     @property
@@ -339,7 +339,7 @@ class DataclassTableBase(LogOwner, ABC):
                 exc_type=TypeError,
             )
         line = StringIO()
-        writer = csv.writer(line, delimiter=self.DELIMETER, quoting=csv.QUOTE_MINIMAL)
+        writer = csv.writer(line, delimiter=self.DELIMITER, quoting=csv.QUOTE_MINIMAL)
         writer.writerow(
             [
                 self.__get_str_from_attribute(getattr(obj, fname), ftype)
@@ -354,7 +354,7 @@ class DataclassTableBase(LogOwner, ABC):
         """
         args = []
         line_args = next(
-            csv.reader(StringIO(line.strip()), delimiter=self.DELIMETER), None
+            csv.reader(StringIO(line.strip()), delimiter=self.DELIMITER), None
         )
         for attrtype, attrstr in zip(self.__field_types, line_args):
             args.append(self.__get_attribute_from_str(attrstr, attrtype))
