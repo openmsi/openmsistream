@@ -353,9 +353,11 @@ class DataclassTableBase(LogOwner, ABC):
         Return the dataclass instance for a given csv file line string
         """
         args = []
-        line_args = next(
-            csv.reader(StringIO(line.strip()), delimiter=self.DELIMITER), None
-        )
+        try:
+            line_args = next(csv.reader(StringIO(line.strip()), delimiter=self.DELIMITER))
+        except StopIteration:
+            errmsg = f"ERROR: failed to parse line from csv file: '{line}'!"
+            self.logger.error(errmsg, exc_type=RuntimeError)
         for attrtype, attrstr in zip(self.__field_types, line_args):
             args.append(self.__get_attribute_from_str(attrstr, attrtype))
         return self.__dataclass_type(*args)
@@ -383,7 +385,7 @@ class DataclassTableBase(LogOwner, ABC):
         if attrtype == pathlib.Path:
             return pathlib.Path(attrstr[1:-1])
         # strings have extra quotes on either end
-        if attrtype == str:
+        if attrtype is str:
             return attrtype(attrstr[1:-1])
         # int, float, complex, and bool can all be directly re-casted
         if attrtype in (int, float, complex, bool):

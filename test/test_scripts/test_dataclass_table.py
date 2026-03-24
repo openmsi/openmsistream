@@ -139,3 +139,16 @@ def test_dataclass_table_functions(output_dir, logger):
     assert entry_2_addr in by_str_field["testing"]
 
     test_table.dump_to_file()
+
+    # append empty line to the end of the file
+    with open(table_path, "a") as f:
+        f.write("\n\t\n")
+
+    # ---- reload & verify it fails ----
+    with pytest.raises(RuntimeError) as exc_info:
+        test_table = DataclassTable(
+            dataclass_type=TableLineForTesting,
+            filepath=table_path,
+            logger=logger,
+        )
+        assert "failed to parse line from csv file" in str(exc_info.value)
