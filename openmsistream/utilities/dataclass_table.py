@@ -6,6 +6,7 @@ dataclass objects serialized to/deseralized from a corresponding CSV file in an 
 
 # imports
 import copy
+import csv
 import datetime
 import functools
 import os
@@ -14,6 +15,7 @@ import time
 import typing
 from abc import ABC
 from dataclasses import fields, is_dataclass
+from io import StringIO
 from threading import RLock
 
 import methodtools
@@ -56,7 +58,7 @@ class DataclassTableBase(LogOwner, ABC):
 
     #################### CONSTANTS ####################
 
-    DELIMETER = ";"  # can't use a comma or containers would display incorrectly
+    DELIMITER = ";"  # can't use a comma or containers would display incorrectly
     DATETIME_FORMAT = "%a %b %d, %Y at %H:%M:%S"
     # only update the .csv file automatically every 5 seconds to make updates less expensive
     UPDATE_FILE_EVERY = 5
@@ -221,9 +223,9 @@ class DataclassTableBase(LogOwner, ABC):
         header_line = ""
         # add an extra line when running on Windows to seamlessly open the file in Excel
         if os.name == "nt":
-            header_line += f"sep={self.DELIMETER}\n"
+            header_line += f"sep={self.DELIMITER}\n"
         for fieldname in self.__field_names:
-            header_line += f"{fieldname}{self.DELIMETER}"
+            header_line += f"{fieldname}{self.DELIMITER}"
         return header_line[:-1]
 
     @property
@@ -336,21 +338,27 @@ class DataclassTableBase(LogOwner, ABC):
                 f'ERROR: "{obj}" is mismatched to type {self.__dataclass_type}!',
                 exc_type=TypeError,
             )
-        return self.DELIMETER.join(
+        line = StringIO()
+        writer = csv.writer(line, delimiter=self.DELIMITER, quoting=csv.QUOTE_MINIMAL)
+        writer.writerow(
             [
                 self.__get_str_from_attribute(getattr(obj, fname), ftype)
                 for fname, ftype in zip(self.__field_names, self.__field_types)
             ]
         )
+        return line.getvalue().strip()
 
     def __obj_from_line(self, line):
         """
         Return the dataclass instance for a given csv file line string
         """
         args = []
-        for attrtype, attrstr in zip(
-            self.__field_types, (line.strip().split(self.DELIMETER))
-        ):
+        try:
+            line_args = next(csv.reader(StringIO(line.strip()), delimiter=self.DELIMITER))
+        except StopIteration:
+            errmsg = f"ERROR: failed to parse line from csv file: '{line}'!"
+            self.logger.error(errmsg, exc_type=RuntimeError)
+        for attrtype, attrstr in zip(self.__field_types, line_args):
             args.append(self.__get_attribute_from_str(attrstr, attrtype))
         return self.__dataclass_type(*args)
 
@@ -377,7 +385,7 @@ class DataclassTableBase(LogOwner, ABC):
         if attrtype == pathlib.Path:
             return pathlib.Path(attrstr[1:-1])
         # strings have extra quotes on either end
-        if attrtype == str:
+        if attrtype is str:
             return attrtype(attrstr[1:-1])
         # int, float, complex, and bool can all be directly re-casted
         if attrtype in (int, float, complex, bool):
