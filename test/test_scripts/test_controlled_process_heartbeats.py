@@ -9,18 +9,6 @@ from .controlled_process_helpers import (
 TIMEOUT_SECS = 10
 N_THREADS = 3
 
-
-# ----------------------------------------------------------------------
-# Fixtures replacing TestWithHeartbeats
-# ----------------------------------------------------------------------
-
-
-@pytest.fixture
-def timestamp_fmt():
-    """Timestamp format used by the heartbeat messages."""
-    return "%Y-%m-%d %H:%M:%S.%f"
-
-
 # ----------------------------------------------------------------------
 # Test parameters
 # ----------------------------------------------------------------------
@@ -36,7 +24,7 @@ class TestControlledProcessHeartbeats:
 
     # ---------------------------------------------------------
     def test_single_thread_heartbeats(
-        self, logger, get_heartbeat_messages, timestamp_fmt, run_controlled_process_test
+        self, logger, get_heartbeat_messages, run_controlled_process_test
     ):
         program_id = "test_controlled_process_single_thread"
 
@@ -57,7 +45,7 @@ class TestControlledProcessHeartbeats:
 
     # ---------------------------------------------------------
     def test_multi_thread_heartbeats(
-        self, logger, get_heartbeat_messages, timestamp_fmt, run_controlled_process_test
+        self, logger, get_heartbeat_messages, run_controlled_process_test
     ):
         program_id = "test_controlled_process_multi_threaded"
 

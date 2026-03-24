@@ -9,6 +9,7 @@ import re
 import shutil
 import subprocess
 import time
+from datetime import timezone as dtz
 
 import boto3
 import dateutil.parser
@@ -276,13 +277,14 @@ def stream_processor_helper(tmp_path, logger):
             f"Waiting to process files; will timeout after {timeout_secs} seconds..."
         )
         all_files_found = False
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now(dtz.utc)
         while (
             not all_files_found
-            and (datetime.datetime.now() - start_time).total_seconds() < timeout_secs
+            and (datetime.datetime.now(dtz.utc) - start_time).total_seconds()
+            < timeout_secs
         ):
             current_messages_read = state["stream_processor"].n_msgs_read
-            time_waited = (datetime.datetime.now() - start_time).total_seconds()
+            time_waited = (datetime.datetime.now(dtz.utc) - start_time).total_seconds()
             state["logger"].info(
                 f"\t{current_messages_read} messages read after {time_waited:.2f} seconds...."
             )
@@ -385,11 +387,11 @@ def _get_keyed_messages(
     )
     consumer.subscribe([topic_name])
     msgs = []
-    start = datetime.datetime.now()
+    start = datetime.datetime.now(dtz.utc)
     cutoff_ms = (time.time() + per_wait_secs) * 1000
     last_timestamp = 0
     while (
-        datetime.datetime.now() - start
+        datetime.datetime.now(dtz.utc) - start
     ).total_seconds() < per_wait_secs and last_timestamp < cutoff_ms:
         msg = consumer.get_next_message(1)
         if msg is not None:
@@ -399,7 +401,7 @@ def _get_keyed_messages(
                 _, last_timestamp = msg.timestamp
             if not isinstance(msg.value, KafkaCryptoMessage):
                 msgs.append(msg)
-                start = datetime.datetime.now()
+                start = datetime.datetime.now(dtz.utc)
     consumer.close()
     return msgs
 
@@ -432,7 +434,7 @@ def get_log_messages(logger):
 def run_controlled_process_test():
     def _run_controlled_process_test(cp, getter, program_id, config, topic_name):
         assert cp.counter == 0
-        start_time = datetime.datetime.now()
+        start_time = datetime.datetime.now(dtz.utc)
 
         run_thread = ExceptionTrackingThread(target=cp.run)
         run_thread.start()
