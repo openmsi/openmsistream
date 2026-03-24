@@ -202,6 +202,17 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             session = requests.Session()
             session.mount("http://", self.http_adapter)
             session.mount("https://", self.http_adapter)
+            session.headers.update(
+                {
+                    "User-Agent": (
+                        f"OpenMSIStream/{openmsistream_version} "
+                        f"({self.__class__.__name__}; "
+                        f"{self.minimal_metadata_dict['KafkaTopic']}) "
+                        f"girder-client/{girder_client.__version__} "
+                        f"python-requests/{requests.__version__}"
+                    ),
+                }
+            )
             self._thread_local.session = session
         return self._thread_local.session
 
