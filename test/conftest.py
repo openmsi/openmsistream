@@ -43,7 +43,8 @@ from .test_scripts.test_data_file_stream_processor import (
 )
 
 ################## GENERAL PURPOSE FIXTURES ##################
-GIRDER_API_URL = "http://localhost:8080/api/v1"
+_GIRDER_IMAGE = "girder/girder:v5.0.0a14-py3"
+_GIRDER_INTERNAL_PORT = 8080
 HEADERS = {"Content-Type": "application/json", "Accept": "application/json"}
 GIRDER_TIMEOUT = 10
 
@@ -505,87 +506,125 @@ def run_controlled_process_test():
 
 
 @pytest.fixture(scope="module")
-def girder_instance():
+def girder_instance(request):
+    """
+    Spin up a Girder stack (MongoDB + Redis + Girder) using testcontainers.
+
+    Pass a list of extra pip packages to install into the Girder image before
+    it starts by parametrizing indirectly::
+
+        @pytest.mark.parametrize("girder_instance", [["my_plugin"]], indirect=True)
+        def test_with_plugin(girder_instance): ...
+    """
+    extra_plugins = list(getattr(request, "param", None) or [])
+
     try:
         docker.from_env()
     except docker.errors.DockerException:
         pytest.skip("Docker not running")
 
-    compose_file = TEST_CONST.TEST_DIR_PATH / "local-girder-docker-compose.yml"
+    network = Network()
 
-    # Tear down any leftover containers from a previous run to ensure a clean DB
-    subprocess.call(
-        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL,
+    mongo = (
+        DockerContainer("mongo:4.4").with_network(network).with_network_aliases("mongodb")
     )
-    subprocess.check_output(["docker", "compose", "-f", str(compose_file), "up", "-d"])
-
-    # wait for API
-    for _ in range(30):
-        try:
-            r = requests.get(GIRDER_API_URL, timeout=GIRDER_TIMEOUT)
-            if r.status_code == 200:
-                break
-        except requests.exceptions.ConnectionError:
-            pass
-        time.sleep(1)
+    redis_ct = (
+        DockerContainer("redis:latest")
+        .with_network(network)
+        .with_network_aliases("redis")
+    )
+    girder_ct = (
+        DockerContainer(_GIRDER_IMAGE)
+        .with_network(network)
+        .with_network_aliases("girder")
+        .with_exposed_ports(_GIRDER_INTERNAL_PORT)
+        .with_env("GIRDER_MONGO_URI", "mongodb://mongodb:27017/girder")
+        .with_env("GIRDER_HOST", "0.0.0.0")
+        .with_env("GIRDER_WORKER_BROKER", "redis://redis/")
+        .with_env("GIRDER_WORKER_BACKEND", "redis://redis/")
+        .with_env("GIRDER_NOTIFICATION_REDIS_URL", "redis://redis:6379")
+    )
+    if extra_plugins:
+        plugins_str = " ".join(extra_plugins)
+        girder_ct = girder_ct.with_kwargs(entrypoint="bash").with_command(
+            ["-c", f"pip install {plugins_str} && girder serve -H 0.0.0.0"]
+        )
     else:
-        raise RuntimeError("Girder never became available")
+        girder_ct = girder_ct.with_command(["-H", "0.0.0.0"])
 
-    # create admin
-    r = requests.post(
-        f"{GIRDER_API_URL}/user",
-        headers=HEADERS,
-        params=dict(
-            login="admin",
-            email="root@dev.null",
-            firstName="John",
-            lastName="Doe",
-            password="arglebargle123",
-            admin=True,
-        ),
-        timeout=GIRDER_TIMEOUT,
-    )
+    with network:
+        mongo.start()
+        redis_ct.start()
+        girder_ct.start()
 
-    if r.status_code == 400:
-        raise RuntimeError("Girder DB not clean")
+        try:
+            host_port = girder_ct.get_exposed_port(_GIRDER_INTERNAL_PORT)
+            api_url = f"http://localhost:{host_port}/api/v1"
 
-    token = r.json()["authToken"]["token"]
-    headers = {**HEADERS, "Girder-Token": token}
+            # Wait for the API to become available
+            for _ in range(60):
+                try:
+                    r = requests.get(api_url, timeout=GIRDER_TIMEOUT)
+                    if r.status_code == 200:
+                        break
+                except requests.exceptions.ConnectionError:
+                    pass
+                time.sleep(1)
+            else:
+                raise RuntimeError("Girder never became available")
 
-    # create assetstore
-    r = requests.post(
-        f"{GIRDER_API_URL}/assetstore",
-        headers=headers,
-        params=dict(
-            type=0,
-            name="Base",
-            root="/home/girder/data/base",
-        ),
-        timeout=GIRDER_TIMEOUT,
-    )
-    assetstore_id = r.json()["_id"]
+            # Create admin user
+            r = requests.post(
+                f"{api_url}/user",
+                headers=HEADERS,
+                params=dict(
+                    login="admin",
+                    email="root@dev.null",
+                    firstName="John",
+                    lastName="Doe",
+                    password="arglebargle123",
+                    admin=True,
+                ),
+                timeout=GIRDER_TIMEOUT,
+            )
+            if r.status_code == 400:
+                raise RuntimeError("Girder DB not clean")
 
-    # create API key
-    r = requests.post(
-        f"{GIRDER_API_URL}/api_key",
-        headers=headers,
-        timeout=GIRDER_TIMEOUT,
-    )
-    api_key = r.json()["key"]
-    api_key_id = r.json()["_id"]
+            token = r.json()["authToken"]["token"]
+            headers = {**HEADERS, "Girder-Token": token}
 
-    yield {
-        "api_url": GIRDER_API_URL,
-        "api_key": api_key,
-        "api_key_id": api_key_id,
-        "assetstore_id": assetstore_id,
-    }
+            # Create assetstore
+            r = requests.post(
+                f"{api_url}/assetstore",
+                headers=headers,
+                params=dict(
+                    type=0,
+                    name="Base",
+                    root="/home/girder/data/base",
+                ),
+                timeout=GIRDER_TIMEOUT,
+            )
+            assetstore_id = r.json()["_id"]
 
-    subprocess.check_output(
-        ["docker", "compose", "-f", str(compose_file), "down", "-t", "0"]
-    )
+            # Create API key
+            r = requests.post(
+                f"{api_url}/api_key",
+                headers=headers,
+                timeout=GIRDER_TIMEOUT,
+            )
+            api_key = r.json()["key"]
+            api_key_id = r.json()["_id"]
+
+            yield {
+                "api_url": api_url,
+                "api_key": api_key,
+                "api_key_id": api_key_id,
+                "assetstore_id": assetstore_id,
+            }
+        finally:
+            girder_ct.stop()
+            redis_ct.stop()
+            mongo.stop()
 
 
 ################## MINIO (S3) FIXTURES ##################

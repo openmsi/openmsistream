@@ -8,7 +8,6 @@ from io import BytesIO
 import girder_client
 import requests
 from requests.adapters import HTTPAdapter
-from requests.exceptions import HTTPError
 from urllib3.util.retry import Retry
 
 from ..data_file_io.actor.data_file_stream_processor import DataFileStreamProcessor
@@ -59,19 +58,8 @@ class GirderClientWithSession(girder_client.GirderClient):
         self._session = session
 
     def existing_resource(self, datafile, folder_id):
-        try:
-            hashsum = datafile.check_file_hash
-            resp = self.get(f"hashsum/sha512/{hashsum}")
-            resp.raise_for_status()  # if hashsum_download is not installed it will throw 404
-            for fobj in resp:
-                item = self.get(f"item/{fobj['itemId']}")
-                if not item["folderId"] == folder_id:
-                    continue
-                return fobj, item
-        except HTTPError:
-            # fallback to checking for existing file by name
-            for item in self.listItem(folder_id, name=datafile.filename):
-                return next(self.listFile(item["_id"]), None), item
+        for item in self.listItem(folder_id, name=datafile.filename):
+            return next(self.listFile(item["_id"]), None), item
         return None, None
 
     def replace_existing_file(self, datafile, file_obj, mimetype=None):
@@ -309,7 +297,9 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             datafile, parent_id
         )
         if existing_item and existing_file:
-            same_file = (existing_file.get("sha512") == datafile.check_file_hash) or (
+            same_file = (
+                existing_file.get("sha512") == datafile.check_file_hash.hex()
+            ) or (
                 existing_item.get("meta", {}).get("checksum", {}).get("sha256")
                 == checksum_hash
             )
