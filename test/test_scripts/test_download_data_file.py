@@ -185,8 +185,6 @@ def test_download_chunks_to_memory(ul_datafile, dl_datafile_holder, output_dir, 
 
 def _make_test_chunks(data, filename, subdir, chunk_size, file_hash):
     """Helper to create DataFileChunk objects from raw data."""
-    from hashlib import sha512
-
     chunks = []
     offset = 0
     chunk_i = 1
@@ -219,8 +217,6 @@ def test_generation_reset_to_memory(output_dir, logger):
     Verify that DownloadDataFileToMemory resets when a newer (larger)
     generation arrives, and reconstructs the newer version correctly.
     """
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "growing_file.dat"
     subdir = pathlib.PurePosixPath("test_subdir")
@@ -270,8 +266,6 @@ def test_interleaved_generations_to_memory(output_dir, logger):
     Verify that interleaved chunks from two generations are handled correctly:
     newer generation wins, older generation chunks are skipped.
     """
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "interleaved.dat"
     subdir = pathlib.PurePosixPath("test_subdir")
@@ -329,8 +323,6 @@ def test_equal_chunk_count_no_thrashing(output_dir, logger):
     hashes do NOT cause thrashing. The first generation committed to wins;
     chunks from the other generation are skipped.
     """
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "same_size.dat"
     subdir = pathlib.PurePosixPath("test_subdir")
@@ -380,8 +372,6 @@ def test_stale_chunks_skipped_after_reset_to_disk(output_dir, logger):
     Verify that DownloadDataFileToDisk skips stale (older generation) chunks
     after resetting to a newer generation, and reconstructs correctly.
     """
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "growing_on_disk.dat"
     subdir = pathlib.PurePosixPath("test_subdir")
