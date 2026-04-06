@@ -35,8 +35,14 @@ def make_chunks(data, filename, subdir, chunk_size):
         chunks.append(
             DataFileChunk(
                 pathlib.PurePosixPath(subdir) / filename,
-                filename, file_hash, chunk_hash,
-                None, offset, len(chunk_data), chunk_i, n_total,
+                filename,
+                file_hash,
+                chunk_hash,
+                None,
+                offset,
+                len(chunk_data),
+                chunk_i,
+                n_total,
                 data=chunk_data,
             )
         )
@@ -50,14 +56,18 @@ def main():
 
     gen1_data = b"A" * (CHUNK_SIZE + 100)
     gen1_chunks = make_chunks(
-        gen1_data, "Test1.NMD",
-        "FS_500um/FS_500um_20260319_1", CHUNK_SIZE,
+        gen1_data,
+        "Test1.NMD",
+        "FS_500um/FS_500um_20260319_1",
+        CHUNK_SIZE,
     )
 
     gen2_data = gen1_data + b"B" * CHUNK_SIZE
     gen2_chunks = make_chunks(
-        gen2_data, "Test1.NMD",
-        "FS_500um/FS_500um_20260319_1", CHUNK_SIZE,
+        gen2_data,
+        "Test1.NMD",
+        "FS_500um/FS_500um_20260319_1",
+        CHUNK_SIZE,
     )
 
     print(f"Gen1: {len(gen1_data)} bytes, {len(gen1_chunks)} chunks")
