@@ -13,7 +13,6 @@ from openmsistream.data_file_io.entity.download_data_file import (
 
 from .config import TEST_CONST
 
-
 # -------------------------------------------------
 # FIXTURES
 # -------------------------------------------------
@@ -122,6 +121,8 @@ def run_download_chunks(
     # ---------------------------------------
     # pylint: disable=protected-access
     dl._chunk_offsets_downloaded = []
+    dl.n_total_chunks = None
+    dl._expected_file_hash = None
 
     hash_missing = sha512()
     for i_chunk, dfc in enumerate(ul_datafile.chunks_to_upload):
@@ -145,9 +146,8 @@ def run_download_chunks(
         )
         dfc_as_dl.rootdir = output_dir
 
-        # Only change the hash of the last chunk
-        if i_chunk == len(ul_datafile.chunks_to_upload) - 1:
-            dfc_as_dl.file_hash = hash_missing
+        # Set wrong hash on every chunk so generation resilience doesn't trigger
+        dfc_as_dl.file_hash = hash_missing
 
         check = dl.add_chunk(dfc_as_dl)
 
@@ -412,3 +412,54 @@ def test_stale_chunks_skipped_after_reset_to_disk(output_dir, logger):
 
     # Verify reconstructed file matches Gen2
     assert dl.bytestring == gen2_data
+
+
+def test_generation_change_with_hash_mismatch(output_dir, logger):
+    """
+    Verify that a generation reset followed by hash corruption is caught:
+    gen1 partially downloads, gen2 arrives with more chunks but a wrong
+    file_hash on every chunk. The generation reset fires first, then
+    hash verification catches the corruption on the final chunk.
+    """
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "gen_hash_mismatch.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    # Gen1: a single-chunk file
+    gen1_data = b"G" * (chunk_size // 2)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+    assert len(gen1_chunks) == 1  # single chunk
+
+    # Gen2: a larger file (3 chunks)
+    gen2_data = b"H" * int(chunk_size * 2.5)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+    assert len(gen2_chunks) > len(gen1_chunks)
+
+    # Corrupt the file_hash on every gen2 chunk
+    bad_hash = sha512(b"deliberate corruption").digest()
+    for c in gen2_chunks:
+        c.file_hash = bad_hash
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    # Feed gen1's only chunk — establishes gen1 baseline
+    r = dl.add_chunk(gen1_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    # Feed first gen2 chunk — different hash, more chunks → GENERATION_RESET
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+
+    # Feed all gen2 chunks (including first again after reset)
+    for i, chunk in enumerate(gen2_chunks):
+        r = dl.add_chunk(chunk)
+        if i < len(gen2_chunks) - 1:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+        else:
+            # Last chunk: hash verification catches corruption
+            assert r == DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE
