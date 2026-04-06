@@ -99,12 +99,9 @@ class DownloadDataFile(DataFile, ABC):
         # generation. A different file_hash means a different generation, so we
         # must fall through to the generation-policy logic below.
         with thread_lock:
-            already_written = (
-                dfc.chunk_offset_write in self._chunk_offsets_downloaded
-            )
+            already_written = dfc.chunk_offset_write in self._chunk_offsets_downloaded
         if already_written and (
-            self._expected_file_hash is None
-            or dfc.file_hash == self._expected_file_hash
+            self._expected_file_hash is None or dfc.file_hash == self._expected_file_hash
         ):
             return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         # the filepath of this DownloadDataFile and of the given
@@ -147,22 +144,14 @@ class DownloadDataFile(DataFile, ABC):
             self._on_add_chunk(dfc)
             # add the offset of the added chunk to the set of
             # reconstructed file chunks
-            self._chunk_offsets_downloaded.append(
-                dfc.chunk_offset_write
-            )
-            last_chunk = (
-                len(self._chunk_offsets_downloaded)
-                == dfc.n_total_chunks
-            )
+            self._chunk_offsets_downloaded.append(dfc.chunk_offset_write)
+            last_chunk = len(self._chunk_offsets_downloaded) == dfc.n_total_chunks
         # if this chunk was the last that needed to be added,
         # check the hashes
         if last_chunk:
             if self.check_file_hash != dfc.file_hash:
                 return DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE
-            return (
-                DATA_FILE_HANDLING_CONST
-                .FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
-            )
+            return DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
         return DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
 
     #################### PRIVATE HELPER FUNCTIONS ####################
@@ -187,9 +176,7 @@ class DownloadDataFile(DataFile, ABC):
                 self._expected_file_hash = dfc.file_hash
             return None
         if self.n_total_chunks != dfc.n_total_chunks:
-            return self._handle_chunk_count_mismatch(
-                dfc, thread_lock
-            )
+            return self._handle_chunk_count_mismatch(dfc, thread_lock)
         if (
             self._expected_file_hash is not None
             and dfc.file_hash != self._expected_file_hash
@@ -341,10 +328,7 @@ class DownloadDataFileToDisk(DownloadDataFile):
 
     def _reset_for_new_generation(self):
         """Delete the partially reconstructed file on disk, then reset."""
-        if (
-            self.full_filepath is not None
-            and self.full_filepath.is_file()
-        ):
+        if self.full_filepath is not None and self.full_filepath.is_file():
             self.full_filepath.unlink()
         super()._reset_for_new_generation()
 
