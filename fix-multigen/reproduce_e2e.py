@@ -3,42 +3,30 @@
 End-to-end reproduction of the multi-generation path collision bug.
 
 This script:
-1. Creates a file (1 chunk)
-2. Produces it to a Kafka topic via UploadDataFile
-3. Appends data so the file becomes 2 chunks
-4. Produces it again (same filepath, different n_total_chunks)
-5. Launches a consumer that will hit the ValueError
+1. Creates a file large enough for multiple chunks
+2. Produces it to a Kafka topic via UploadDataFile (Generation 1)
+3. Appends data so the file grows by several chunks
+4. Produces it again (Generation 2 — same filepath, different n_total_chunks)
+5. Launches a consumer that reads from the beginning
+
+The topic MUST have multiple partitions so that Gen1 and Gen2 chunks are
+interleaved when the consumer polls across partitions. With a single
+partition, Gen1 completes before Gen2 starts and the bug is not triggered.
 
 Prerequisites:
   - A Kafka broker accessible via a config file
+  - The topic must be created BEFORE running this script with >= 3 partitions:
+      kafka-topics --create --topic test-multigen-repro \
+        --partitions 3 --replication-factor 1 \
+        --bootstrap-server localhost:9092
   - pip install openmsistream (or editable install from this repo)
 
 Usage:
     cd /Users/elbert/Documents/GitHub/openmsistream
-
-    # Create a config file pointing to your broker, e.g.:
-    #   [broker]
-    #   bootstrap.servers = <your-broker>
-    #   security.protocol = SASL_SSL
-    #   sasl.mechanism = PLAIN
-    #   sasl.username = <key>
-    #   sasl.password = <secret>
-    #   [producer]
-    #   key.serializer = StringSerializer
-    #   value.serializer = DataFileChunkSerializer
-    #   [consumer]
-    #   group.id = create_new
-    #   auto.offset.reset = earliest
-    #   enable.auto.commit = False
-    #   key.deserializer = StringDeserializer
-    #   value.deserializer = DataFileChunkDeserializer
-
-    python fix-multigen/reproduce_e2e.py <config_file> <topic_name>
-
-    # Example:
-    python fix-multigen/reproduce_e2e.py my_broker.config test-multigen-repro
+    python fix-multigen/reproduce_e2e.py fix-multigen/local-broker.config test-multigen-repro
 """
 
+import logging
 import pathlib
 import sys
 import tempfile
@@ -54,16 +42,32 @@ from openmsitoolbox.utilities.exception_tracking_thread import ExceptionTracking
 CHUNK_SIZE = 16384  # use small chunks for fast test
 
 
+class SimpleStreamProcessor(DataFileStreamProcessor):
+    """Minimal concrete subclass for testing — just logs completed files."""
+
+    def _process_downloaded_data_file(self, datafile, lock):
+        self.logger.info(f"  *** File reconstructed: {datafile.filename} ***")
+        return None
+
+    @classmethod
+    def run_from_command_line(cls, args=None):
+        pass
+
+
 def main():
     if len(sys.argv) < 3:
         print(f"Usage: {sys.argv[0]} <config_file> <topic_name>")
-        print(f"  config_file: path to a .config file with [broker], [producer], [consumer] sections")
-        print(f"  topic_name:  Kafka topic to use (will be polluted — use a disposable one)")
+        print()
+        print("IMPORTANT: The topic must exist with >= 3 partitions BEFORE running.")
+        print("Create it with:")
+        print("  kafka-topics --create --topic <topic_name> \\")
+        print("    --partitions 3 --replication-factor 1 \\")
+        print("    --bootstrap-server <broker>")
         sys.exit(1)
 
     config_path = pathlib.Path(sys.argv[1])
     topic_name = sys.argv[2]
-    logger = OpenMSILogger("e2e_repro", streamlevel="INFO")
+    logger = OpenMSILogger("e2e_repro", streamlevel=logging.INFO)
 
     with tempfile.TemporaryDirectory() as tmpdir:
         tmpdir = pathlib.Path(tmpdir)
@@ -72,11 +76,14 @@ def main():
         test_file = rootdir / "growing_file.dat"
 
         # ============================================================
-        # Step 1: Create a small file (1 chunk)
+        # Step 1: Create a file large enough for MANY chunks
         # ============================================================
-        logger.info("Step 1: Creating file with 1 chunk worth of data...")
-        test_file.write_bytes(b"A" * CHUNK_SIZE)
-        logger.info(f"  File size: {test_file.stat().st_size} bytes (1 chunk)")
+        n_gen1_chunks = 10
+        logger.info(f"Step 1: Creating file with {n_gen1_chunks} chunks of data...")
+        test_file.write_bytes(b"A" * (CHUNK_SIZE * n_gen1_chunks))
+        logger.info(
+            f"  File size: {test_file.stat().st_size} bytes ({n_gen1_chunks} chunks)"
+        )
 
         # ============================================================
         # Step 2: Upload it (Generation 1)
@@ -84,15 +91,19 @@ def main():
         logger.info("Step 2: Uploading Generation 1...")
         ul1 = UploadDataFile(test_file, rootdir=rootdir, logger=logger)
         ul1.upload_whole_file(config_path, topic_name, chunk_size=CHUNK_SIZE)
-        logger.info(f"  Gen1 uploaded: n_total_chunks=1")
+        logger.info(f"  Gen1 uploaded: n_total_chunks={n_gen1_chunks}")
 
         # ============================================================
-        # Step 3: Append data so the file becomes 2 chunks
+        # Step 3: Append data so the file grows substantially
         # ============================================================
-        logger.info("Step 3: Appending data to file...")
+        n_extra_chunks = 5
+        logger.info(f"Step 3: Appending {n_extra_chunks} more chunks of data...")
         with open(test_file, "ab") as f:
-            f.write(b"B" * CHUNK_SIZE)
-        logger.info(f"  File size: {test_file.stat().st_size} bytes (2 chunks)")
+            f.write(b"B" * (CHUNK_SIZE * n_extra_chunks))
+        n_gen2_chunks = n_gen1_chunks + n_extra_chunks
+        logger.info(
+            f"  File size: {test_file.stat().st_size} bytes ({n_gen2_chunks} chunks)"
+        )
 
         # ============================================================
         # Step 4: Upload it again (Generation 2)
@@ -100,41 +111,60 @@ def main():
         logger.info("Step 4: Uploading Generation 2...")
         ul2 = UploadDataFile(test_file, rootdir=rootdir, logger=logger)
         ul2.upload_whole_file(config_path, topic_name, chunk_size=CHUNK_SIZE)
-        logger.info(f"  Gen2 uploaded: n_total_chunks=2")
+        logger.info(f"  Gen2 uploaded: n_total_chunks={n_gen2_chunks}")
+
+        logger.info("")
+        logger.info(f"Topic now has {n_gen1_chunks + n_gen2_chunks} total messages:")
+        logger.info(
+            f"  Gen1: {n_gen1_chunks} messages with n_total_chunks={n_gen1_chunks}"
+        )
+        logger.info(
+            f"  Gen2: {n_gen2_chunks} messages with n_total_chunks={n_gen2_chunks}"
+        )
+        logger.info("")
+        logger.info("If the topic has multiple partitions, Gen1 and Gen2 chunks will be")
+        logger.info("interleaved when the consumer polls across partitions, triggering")
+        logger.info("the ValueError. With a single partition, Gen1 may complete before")
+        logger.info("Gen2 starts (no crash).")
 
         # ============================================================
         # Step 5: Consume — should crash with ValueError
         # ============================================================
-        logger.info("Step 5: Starting consumer (should crash on generation mismatch)...")
-        logger.info("  Watch for the ValueError in the output below.")
-        logger.info("  Press Ctrl+C to stop if the crash loop starts.")
+        logger.info("")
+        logger.info("Step 5: Starting consumer...")
+        logger.info(
+            "  Watch for 'expecting N chunks but found a chunk from a split with M' error."
+        )
+        logger.info(
+            "  Press Ctrl+C after seeing it (the thread restarts in a crash loop)."
+        )
         print()
 
         output_dir = tmpdir / "consumer_output"
         output_dir.mkdir()
 
         try:
-            processor = DataFileStreamProcessor(
+            processor = SimpleStreamProcessor(
                 config_path,
                 topic_name,
                 output_dir=output_dir,
-                n_threads=1,
+                n_threads=2,
                 consumer_group_id="create_new",
                 logger=logger,
             )
 
-            # Run the consumer in a thread so we can stop it
-            thread = ExceptionTrackingThread(
-                target=processor.process_files_as_read
-            )
+            thread = ExceptionTrackingThread(target=processor.process_files_as_read)
             thread.start()
 
-            # Wait for the crash (or success, which shouldn't happen)
-            timeout = 30
+            timeout = 60
             logger.info(f"  Waiting up to {timeout}s for the consumer to process...")
-            time.sleep(timeout)
 
-            # If we get here without a crash, something unexpected happened
+            start = time.time()
+            while time.time() - start < timeout:
+                time.sleep(2)
+                if hasattr(processor, "n_msgs_read"):
+                    logger.info(f"  ... {processor.n_msgs_read} messages read so far")
+
             processor.control_command_queue.put("q")
             thread.join(timeout=10)
 
@@ -144,7 +174,24 @@ def main():
                 print(f"{'='*70}")
                 print(thread.caught_exception)
             else:
-                logger.info("Consumer did not crash — check the log output above for WARNING/ERROR lines.")
+                logger.info("")
+                logger.info("Consumer did not crash within the timeout.")
+                logger.info("This likely means the topic has only 1 partition,")
+                logger.info("so Gen1 completed before Gen2 started.")
+                logger.info("")
+                logger.info(
+                    "To reproduce via Kafka, recreate the topic with >= 3 partitions:"
+                )
+                logger.info(
+                    f"  kafka-topics --delete --topic {topic_name} --bootstrap-server <broker>"
+                )
+                logger.info(
+                    f"  kafka-topics --create --topic {topic_name} --partitions 3 "
+                    f"--replication-factor 1 --bootstrap-server <broker>"
+                )
+                logger.info("")
+                logger.info("Or use fix-multigen/reproduce_consumer_crash.py for a")
+                logger.info("direct (no-Kafka) reproduction that always works.")
 
         except KeyboardInterrupt:
             logger.info("Interrupted by user.")

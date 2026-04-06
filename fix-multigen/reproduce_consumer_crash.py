@@ -14,6 +14,7 @@ Usage:
     python fix-multigen/reproduce_consumer_crash.py
 """
 
+import logging
 import pathlib
 import tempfile
 from hashlib import sha512
@@ -56,7 +57,7 @@ def make_chunks(data: bytes, filename: str, subdir: str, chunk_size: int):
 
 
 def main():
-    logger = OpenMSILogger("reproduce_bug", streamlevel="WARNING")
+    logger = OpenMSILogger("reproduce_bug", streamlevel=logging.WARNING)
 
     # --- Simulate what the Keyence indenter does ---
     # Generation 1: instrument writes first test (small file)

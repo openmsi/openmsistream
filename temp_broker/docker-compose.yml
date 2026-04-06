@@ -1,0 +1,26 @@
+services:
+  redpanda-0:
+    image: docker.redpanda.com/redpandadata/redpanda:v25.1.4
+    container_name: redpanda-0
+    command:
+      - redpanda
+      - start
+      - --overprovisioned
+      - --smp
+      - "1"
+      - --memory
+      - 1G
+      - --reserve-memory
+      - 0M
+      - --check=false
+      - --node-id
+      - "0"
+      - --kafka-addr
+      - internal://0.0.0.0:9092,external://0.0.0.0:19092
+      - --advertise-kafka-addr
+      - internal://redpanda-0:9092,external://localhost:19092
+      - --set
+      - redpanda.auto_create_topics_enabled=false
+    ports:
+      - "19092:19092"
+      - "9644:9644"
