@@ -101,8 +101,7 @@ class DownloadDataFile(DataFile, ABC):
         with thread_lock:
             already_written = dfc.chunk_offset_write in self._chunk_offsets_downloaded
         if already_written and (
-            self._expected_file_hash is None
-            or dfc.file_hash == self._expected_file_hash
+            self._expected_file_hash is None or dfc.file_hash == self._expected_file_hash
         ):
             return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         # the filepath of this DownloadDataFile and of the given DataFileChunk must match
