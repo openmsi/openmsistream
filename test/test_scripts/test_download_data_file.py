@@ -181,3 +181,244 @@ def test_download_chunks_to_memory(ul_datafile, dl_datafile_holder, output_dir, 
         output_dir,
         logger,
     )
+
+
+def _make_test_chunks(data, filename, subdir, chunk_size, file_hash):
+    """Helper to create DataFileChunk objects from raw data."""
+    from hashlib import sha512
+
+    chunks = []
+    offset = 0
+    chunk_i = 1
+    n_total = -(-len(data) // chunk_size)  # ceiling division
+    while offset < len(data):
+        end = min(offset + chunk_size, len(data))
+        chunk_data = data[offset:end]
+        chunk_hash = sha512(chunk_data).digest()
+        chunks.append(
+            DataFileChunk(
+                subdir / filename,
+                filename,
+                file_hash,
+                chunk_hash,
+                None,
+                offset,
+                len(chunk_data),
+                chunk_i,
+                n_total,
+                data=chunk_data,
+            )
+        )
+        offset = end
+        chunk_i += 1
+    return chunks
+
+
+def test_generation_reset_to_memory(output_dir, logger):
+    """
+    Verify that DownloadDataFileToMemory resets when a newer (larger)
+    generation arrives, and reconstructs the newer version correctly.
+    """
+    from hashlib import sha512
+
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "growing_file.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    # --- Generation 1: a small file (2 chunks) ---
+    gen1_data = b"A" * int(chunk_size * 1.5)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+
+    # --- Generation 2: a larger file (3 chunks) ---
+    gen2_data = b"B" * int(chunk_size * 2.5)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    # Feed Gen1 chunk 1 — establishes n_total_chunks=2, hash=gen1
+    result = dl.add_chunk(gen1_chunks[0])
+    assert result == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    # Feed Gen2 chunk 1 — different hash, strictly higher n_total_chunks → RESET
+    result = dl.add_chunk(gen2_chunks[0])
+    assert result == DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+
+    # Feed all Gen2 chunks from the start
+    for i, chunk in enumerate(gen2_chunks):
+        result = dl.add_chunk(chunk)
+        if i == 0:
+            # Chunk 0 may be ALREADY_WRITTEN (was the trigger for reset)
+            assert result in (
+                DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS,
+                DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE,
+            )
+        elif i < len(gen2_chunks) - 1:
+            assert result == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+        else:
+            assert result == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    assert dl.bytestring == gen2_data
+
+
+def test_interleaved_generations_to_memory(output_dir, logger):
+    """
+    Verify that interleaved chunks from two generations are handled correctly:
+    newer generation wins, older generation chunks are skipped.
+    """
+    from hashlib import sha512
+
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "interleaved.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    # Gen1: 3 chunks
+    gen1_data = b"X" * (chunk_size * 3)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+
+    # Gen2: 5 chunks (file grew)
+    gen2_data = b"Y" * (chunk_size * 5)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    # Gen1 chunk 1 → accept, lock in Gen1
+    r = dl.add_chunk(gen1_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    # Gen2 chunk 1 → different hash, 5 > 3 → RESET to Gen2
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+
+    # Gen1 chunk 2 → stale (n=3 < 5) → SKIP
+    r = dl.add_chunk(gen1_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+
+    # Gen2 chunk 1 again → the reset didn't write it, so it gets accepted now
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    # Gen1 chunk 3 → stale (n=3 < 5) → SKIP
+    r = dl.add_chunk(gen1_chunks[2])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+
+    # Feed remaining Gen2 chunks 2-5 → all accepted
+    for i in range(1, len(gen2_chunks)):
+        r = dl.add_chunk(gen2_chunks[i])
+        if i < len(gen2_chunks) - 1:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+        else:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    # Verify the reconstructed file is Gen2
+    assert dl.bytestring == gen2_data
+
+
+def test_equal_chunk_count_no_thrashing(output_dir, logger):
+    """
+    Verify that two generations with the SAME n_total_chunks but different
+    hashes do NOT cause thrashing. The first generation committed to wins;
+    chunks from the other generation are skipped.
+    """
+    from hashlib import sha512
+
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "same_size.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    # Gen1 and Gen2: same size (3 chunks each) but different content
+    gen1_data = b"P" * (chunk_size * 3)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+
+    gen2_data = b"Q" * (chunk_size * 3)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+
+    # Sanity: hashes must differ, chunk counts must be equal
+    assert gen1_hash != gen2_hash
+    assert gen1_chunks[0].n_total_chunks == gen2_chunks[0].n_total_chunks
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    # Interleave: Gen1[0], Gen2[0], Gen1[1], Gen2[1], Gen1[2], Gen2[2]
+    # Gen1 should win (committed first); all Gen2 chunks should be skipped.
+
+    r = dl.add_chunk(gen1_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE  # skipped, not reset
+
+    r = dl.add_chunk(gen1_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    r = dl.add_chunk(gen2_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE  # skipped
+
+    r = dl.add_chunk(gen1_chunks[2])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    # Gen1 completed; Gen2 was entirely skipped
+    assert dl.bytestring == gen1_data
+
+
+def test_stale_chunks_skipped_after_reset_to_disk(output_dir, logger):
+    """
+    Verify that DownloadDataFileToDisk skips stale (older generation) chunks
+    after resetting to a newer generation, and reconstructs correctly.
+    """
+    from hashlib import sha512
+
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "growing_on_disk.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    # Gen1: 2 chunks
+    gen1_data = b"M" * int(chunk_size * 1.5)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+
+    # Gen2: 4 chunks
+    gen2_data = b"N" * int(chunk_size * 3.5)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToDisk(gen1_chunks[0].filepath, logger=logger)
+
+    # Gen1 chunk 1 → accept
+    dl.add_chunk(gen1_chunks[0])
+
+    # Gen2 chunk 2 → reset (newer, 4 > 2)
+    r = dl.add_chunk(gen2_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+
+    # Gen1 chunk 2 → skip (stale, n_total_chunks=2 < 4)
+    r = dl.add_chunk(gen1_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+
+    # Feed all Gen2 chunks
+    for i, chunk in enumerate(gen2_chunks):
+        r = dl.add_chunk(chunk)
+        if i < len(gen2_chunks) - 1:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+        else:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    # Verify reconstructed file matches Gen2
+    assert dl.bytestring == gen2_data

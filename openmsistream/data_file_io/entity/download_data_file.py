@@ -70,6 +70,7 @@ class DownloadDataFile(DataFile, ABC):
         self.full_filepath = None
         self.subdir_str = None
         self.n_total_chunks = None
+        self._expected_file_hash = None
 
     def add_chunk(self, dfc, thread_lock=nullcontext()):
         """
@@ -93,10 +94,16 @@ class DownloadDataFile(DataFile, ABC):
             originally read from disk.
         :rtype: int
         """
-        # if this chunk's offset has already been written to disk, return the "already written" code
+        # if this chunk's offset has already been written to disk, return the
+        # "already written" code — but only when the chunk belongs to the same
+        # generation. A different file_hash means a different generation, so we
+        # must fall through to the generation-policy logic below.
         with thread_lock:
             already_written = dfc.chunk_offset_write in self._chunk_offsets_downloaded
-        if already_written:
+        if already_written and (
+            self._expected_file_hash is None
+            or dfc.file_hash == self._expected_file_hash
+        ):
             return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         # the filepath of this DownloadDataFile and of the given DataFileChunk must match
         if dfc.filepath != self.filepath:
@@ -126,17 +133,64 @@ class DownloadDataFile(DataFile, ABC):
                 f"from chunk = {dfc.subdir_str}"
             )
             self.logger.error(errmsg, exc_type=ValueError)
-        # set or check the total number of chunks expected
+        # set or check the total number of chunks expected, applying the
+        # directional generation policy when file_hash differs.
+        #
+        # Policy:
+        #   hash matches          → accept (same generation)
+        #   hash differs, n >     → reset and adopt (newer generation)
+        #   hash differs, n <=    → skip (stale or indeterminate generation)
+        #   hash same, n differs  → genuine corruption (ValueError)
         if self.n_total_chunks is None:
             with thread_lock:
                 self.n_total_chunks = dfc.n_total_chunks
+                self._expected_file_hash = dfc.file_hash
         elif self.n_total_chunks != dfc.n_total_chunks:
-            errmsg = (
-                f"ERROR: {self.__class__.__name__} with filepath {self.full_filepath} "
-                f"is expecting {self.n_total_chunks} chunks but found a chunk from a split "
-                f"with {dfc.n_total_chunks} total chunks."
-            )
-            self.logger.error(errmsg, exc_type=ValueError)
+            # Chunk count mismatch — check if this is a different generation
+            if (
+                self._expected_file_hash is not None
+                and dfc.file_hash != self._expected_file_hash
+            ):
+                if dfc.n_total_chunks > self.n_total_chunks:
+                    # Strictly more chunks = newer generation (file grew).
+                    # Reset and adopt.
+                    warnmsg = (
+                        f"WARNING: {self.__class__.__name__} with filepath "
+                        f"{self.full_filepath} received a chunk from a newer "
+                        f"file generation (had {self.n_total_chunks} chunks "
+                        f"with hash {self._expected_file_hash[:4].hex()}, "
+                        f"now {dfc.n_total_chunks} chunks with hash "
+                        f"{dfc.file_hash[:4].hex()}). Discarding "
+                        f"{len(self._chunk_offsets_downloaded)} chunks from "
+                        f"the previous generation and starting fresh."
+                    )
+                    self.logger.warning(warnmsg)
+                    with thread_lock:
+                        self._reset_for_new_generation()
+                        self.n_total_chunks = dfc.n_total_chunks
+                        self._expected_file_hash = dfc.file_hash
+                    return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+                else:
+                    # Fewer chunks = older generation. Skip.
+                    return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+            else:
+                # Same hash but different chunk count — genuine corruption
+                errmsg = (
+                    f"ERROR: {self.__class__.__name__} with filepath "
+                    f"{self.full_filepath} is expecting {self.n_total_chunks} "
+                    f"chunks but found a chunk from a split with "
+                    f"{dfc.n_total_chunks} total chunks."
+                )
+                self.logger.error(errmsg, exc_type=ValueError)
+        elif (
+            self._expected_file_hash is not None
+            and dfc.file_hash != self._expected_file_hash
+        ):
+            # Same chunk count but different hash — file was modified in place
+            # without changing size. We can't determine which is newer, so
+            # stick with the generation we already committed to (skip this
+            # chunk) to avoid thrashing when interleaved.
+            return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         with thread_lock:
             # call the function to actually add the chunk
             self._on_add_chunk(dfc)
@@ -166,6 +220,22 @@ class DownloadDataFile(DataFile, ABC):
         :type dfc: :class:`~.data_file_io.entity.data_file_chunk.DataFileChunk`
         """
         raise NotImplementedError
+
+    def _reset_for_new_generation(self):
+        """
+        Reset internal state to accept chunks from a new upload generation.
+
+        Called when a chunk arrives with a different file_hash and a strictly
+        higher n_total_chunks, indicating a newer (larger) version of the
+        same file. The directional policy ensures we only reset forward
+        to a generation with more chunks, never backward or sideways.
+
+        Subclasses should override to clean up their own state (e.g., delete
+        partial files on disk, clear in-memory data dictionaries).
+        """
+        self._chunk_offsets_downloaded = []
+        self.n_total_chunks = None
+        self._expected_file_hash = None
 
 
 class DownloadDataFileToDisk(DownloadDataFile):
@@ -233,6 +303,12 @@ class DownloadDataFileToDisk(DownloadDataFile):
             os.fsync(fp.fileno())
             fp.close()
 
+    def _reset_for_new_generation(self):
+        """Delete the partially reconstructed file on disk, then reset."""
+        if self.full_filepath is not None and self.full_filepath.is_file():
+            self.full_filepath.unlink()
+        super()._reset_for_new_generation()
+
 
 class DownloadDataFileToMemory(DownloadDataFile):
     """
@@ -297,6 +373,12 @@ class DownloadDataFileToMemory(DownloadDataFile):
         except NotImplementedError:
             pass
         self.__chunk_data_by_offset[dfc.chunk_offset_write] = dfc.data
+
+    def _reset_for_new_generation(self):
+        """Clear the in-memory chunk data, then reset."""
+        self.__chunk_data_by_offset = {}
+        self.__bytestring = None
+        super()._reset_for_new_generation()
 
     def __create_bytestring(self):
         """

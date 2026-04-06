@@ -116,10 +116,11 @@ class DataFileChunkHandler(LogOwner, ABC):
             dfc,
             self.locks_by_fp[dfc.relative_filepath],
         )
-        # If the file is just in progress, return True
+        # If the file is just in progress (or was reset for a new generation), return True
         if retval in (
             DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS,
             DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE,
+            DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE,
         ):
             return True
         # otherwise just return the code from add_chunk
