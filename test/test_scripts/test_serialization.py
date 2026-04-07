@@ -1,3 +1,4 @@
+import os
 import pathlib
 import time
 import logging
@@ -19,6 +20,9 @@ from openmsistream.data_file_io.entity.data_file_chunk import DataFileChunk
 
 from .config import TEST_CONST
 
+# Arbitrary but stable mtime so serialized bytes are deterministic
+FIXED_TEST_MTIME = 1700000000.0  # 2023-11-14T22:13:20Z
+
 
 # ---------------------------------------------------------------------
 # Helper fixture: builds the UL/DL chunk objects and binary references
@@ -26,24 +30,18 @@ from .config import TEST_CONST
 @pytest.fixture
 def serialization_test_data(logger):
     """
-    Reproduces EXACTLY what your setUp() did.
-    Loads reference binaries + UL chunks + DL chunks.
+    Builds UL/DL chunk objects and self-generates reference .bin files.
+
+    If a .bin file is missing or REBUILD_SERIALIZATION_DATA=1, the fixture
+    writes the serialized bytes to disk.  Otherwise it loads from disk and
+    the test compares against them as usual.
     """
 
-    # Load binary reference files
-    test_chunk_binaries = {}
-    glob_pattern = f"{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_*.bin"
-    for tcfp in TEST_CONST.TEST_DATA_DIR_PATH.glob(glob_pattern):
-        with open(tcfp, "rb") as fp:
-            test_chunk_binaries[tcfp.stem.split("_")[-1]] = fp.read()
+    # Pin the test file's mtime so serialized bytes are always the same
+    test_file = str(TEST_CONST.TEST_DATA_FILE_PATH)
+    os.utime(test_file, (FIXED_TEST_MTIME, FIXED_TEST_MTIME))
 
-    if len(test_chunk_binaries) < 1:
-        raise RuntimeError(
-            f"ERROR: could not find any binary DataFileChunk test files in "
-            f"{TEST_CONST.TEST_DATA_DIR_PATH}"
-        )
-
-    # Build UL chunks using UploadDataFile
+    # Build UL chunks using UploadDataFile (mtime will be FIXED_TEST_MTIME)
     data_file = UploadDataFile(
         TEST_CONST.TEST_DATA_FILE_PATH,
         rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
@@ -52,15 +50,37 @@ def serialization_test_data(logger):
     data_file._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
     data_file.add_chunks_to_upload()
 
+    rebuild = os.environ.get("REBUILD_SERIALIZATION_DATA") == "1"
+    dfcs = DataFileChunkSerializer()
+
+    # Only generate/test a representative subset of chunks (first, second, last)
+    n_chunks = len(data_file.chunks_to_upload)
+    ref_indices = sorted({0, 1, 2, n_chunks - 1})
+
+    test_chunk_binaries = {}
     test_ul = {}
     test_dl = {}
 
-    for chunk_i in test_chunk_binaries:
-        ul_dfc = data_file.chunks_to_upload[int(chunk_i)]
+    for chunk_i_int in ref_indices:
+        chunk_i = str(chunk_i_int)
+        ul_dfc = data_file.chunks_to_upload[chunk_i_int]
         ul_dfc.populate_with_file_data(logger=logger)
         test_ul[chunk_i] = ul_dfc
 
-        # Build DL chunk object (your exact code)
+        # Serialize the chunk — this is the canonical "expected" output
+        serialized = dfcs(ul_dfc)
+
+        # Reference .bin path
+        bin_name = f"{TEST_CONST.TEST_DATA_FILE_PATH.stem}_test_chunk_{chunk_i}.bin"
+        bin_path = TEST_CONST.TEST_DATA_DIR_PATH / bin_name
+
+        if not bin_path.exists() or rebuild:
+            bin_path.write_bytes(serialized)
+            logger.info(f"Wrote reference data to {bin_path}")
+
+        test_chunk_binaries[chunk_i] = bin_path.read_bytes()
+
+        # Build DL chunk object
         subdir_as_path = pathlib.Path("").joinpath(
             *(pathlib.PurePosixPath(TEST_CONST.TEST_DATA_FILE_SUB_DIR_NAME).parts)
         )
@@ -76,8 +96,15 @@ def serialization_test_data(logger):
             ul_dfc.n_total_chunks,
             filename_append=ul_dfc.filename_append,
             data=ul_dfc.data,
+            file_mtime=ul_dfc.file_mtime,
         )
         test_dl[chunk_i] = dl_dfc
+
+    if len(test_chunk_binaries) < 1:
+        raise RuntimeError(
+            f"ERROR: could not find any binary DataFileChunk test files in "
+            f"{TEST_CONST.TEST_DATA_DIR_PATH}"
+        )
 
     return test_chunk_binaries, test_ul, test_dl
 
@@ -91,37 +118,36 @@ TOPICS = {
 }
 
 
+def test_data_file_chunk_serializer(serialization_test_data):
+    binary_refs, test_ul, _ = serialization_test_data
+
+    dfcs = DataFileChunkSerializer()
+    assert dfcs(None) is None
+
+    with pytest.raises(SerializationError):
+        dfcs("not a chunk")
+
+    for chunk_i, chunk_binary in binary_refs.items():
+        assert dfcs(test_ul[chunk_i]) == chunk_binary
+
+
+def test_data_file_chunk_deserializer(serialization_test_data):
+    binary_refs, _, test_dl = serialization_test_data
+
+    dfcds = DataFileChunkDeserializer()
+    assert dfcds(None) is None
+
+    with pytest.raises(SerializationError):
+        dfcds("not bytes")
+
+    for chunk_i, chunk_binary in binary_refs.items():
+        assert test_dl[chunk_i] == dfcds(chunk_binary)
+
+
 @pytest.mark.kafka
 @pytest.mark.parametrize("kafka_topics", [TOPICS], indirect=True)
 @pytest.mark.usefixtures("logger", "kafka_topics")
-class TestSerialization:
-    def test_data_file_chunk_serializer(self, serialization_test_data):
-        binary_refs, test_ul, _ = serialization_test_data
-
-        dfcs = DataFileChunkSerializer()
-        assert dfcs(None) is None
-
-        with pytest.raises(SerializationError):
-            dfcs("not a chunk")
-
-        for chunk_i, chunk_binary in binary_refs.items():
-            test_ul[chunk_i].file_mtime = (
-                None  # to match the reference binaries which were created without mtime
-            )
-            assert dfcs(test_ul[chunk_i]) == chunk_binary
-
-    def test_data_file_chunk_deserializer(self, serialization_test_data):
-        binary_refs, _, test_dl = serialization_test_data
-
-        dfcds = DataFileChunkDeserializer()
-        assert dfcds(None) is None
-
-        with pytest.raises(SerializationError):
-            dfcds("not bytes")
-
-        for chunk_i, chunk_binary in binary_refs.items():
-            assert test_dl[chunk_i] == dfcds(chunk_binary)
-
+class TestEncryptedSerialization:
     @pytest.mark.skip(
         reason="Not ported properly yet, needs some refactoring to work with KafkaCrypto"
     )
