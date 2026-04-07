@@ -242,14 +242,6 @@ class TestSerialization:
 
 def test_chunk_serialization_with_mtime(logger):
     """Verify DataFileChunk with file_mtime round-trips."""
-    from openmsistream.kafka_wrapper.serialization import (
-        DataFileChunkSerializer,
-        DataFileChunkDeserializer,
-    )
-    from openmsistream.data_file_io.entity.upload_data_file import (
-        UploadDataFile,
-    )
-
     udf = UploadDataFile(
         TEST_CONST.TEST_DATA_FILE_PATH,
         rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
@@ -279,9 +271,6 @@ def test_chunk_deserialization_backward_compat(logger):
     """Verify 9-field messages (no mtime) still deserialize."""
     import msgpack
     from hashlib import sha512
-    from openmsistream.kafka_wrapper.serialization import (
-        DataFileChunkDeserializer,
-    )
 
     data = b"test data for backward compat"
     chunk_hash = sha512(data).digest()

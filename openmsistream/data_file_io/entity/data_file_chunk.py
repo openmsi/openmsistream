@@ -144,6 +144,7 @@ class DataFileChunk(Producible):
         rootdir=None,
         filename_append="",
         data=None,
+        *,
         file_mtime=None,
     ):
         self.__filepath = filepath
