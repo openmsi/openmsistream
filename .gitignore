@@ -31,6 +31,7 @@
 !/openmsistream/kafka_wrapper/config_files/testing_node_2/testing_node_2.crypto
 
 CLAUDE.md
+/fix-multigen 
 
 # Poetry build output
 dist/
