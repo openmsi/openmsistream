@@ -84,7 +84,9 @@ class UploadDataFile(DataFile, Runnable):
         self.logger.info(startup_msg)
         # add all the chunks to the upload queue
         upload_queue = Queue()
-        self.enqueue_chunks_for_upload(upload_queue, chunk_size=chunk_size)
+        self.enqueue_chunks_for_upload(
+            upload_queue, chunk_size=chunk_size, capture_mtime=True
+        )
         # add "None" to the queue for each thread as the final values
         for _ in range(n_threads):
             upload_queue.put(None)
@@ -115,7 +117,10 @@ class UploadDataFile(DataFile, Runnable):
         self.logger.info(f"Done uploading {self.filepath}")
 
     def add_chunks_to_upload(
-        self, chunks_to_add=None, chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE
+        self,
+        chunks_to_add=None,
+        chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
+        capture_mtime=False,
     ):
         """
         Add chunks from this file to the internal list of chunks to upload,
@@ -129,7 +134,7 @@ class UploadDataFile(DataFile, Runnable):
         """
         if self.__chunk_infos is None:
             try:
-                self._build_list_of_file_chunks(chunk_size)
+                self._build_list_of_file_chunks(chunk_size, capture_mtime=capture_mtime)
             except Exception as exc:
                 fp = (
                     self.filepath.relative_to(self.rootdir)
@@ -171,6 +176,7 @@ class UploadDataFile(DataFile, Runnable):
         n_threads=None,
         chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
         queue_full_timeout=0.001,
+        capture_mtime=False,
     ):
         """
         Add some chunks of this file from the internal list to a given upload queue
@@ -205,7 +211,7 @@ class UploadDataFile(DataFile, Runnable):
             time.sleep(queue_full_timeout)
             return
         if len(self.chunks_to_upload) == 0:
-            self.add_chunks_to_upload(chunk_size=chunk_size)
+            self.add_chunks_to_upload(chunk_size=chunk_size, capture_mtime=capture_mtime)
         if n_threads is not None:
             n_chunks_to_add = 5 * n_threads
         else:
@@ -221,7 +227,7 @@ class UploadDataFile(DataFile, Runnable):
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
-    def _build_list_of_file_chunks(self, chunk_size):
+    def _build_list_of_file_chunks(self, chunk_size, capture_mtime=False):
         """
         Build the list of DataFileChunks for this file
 
@@ -247,8 +253,8 @@ class UploadDataFile(DataFile, Runnable):
                     )
                     self.logger.error(errmsg, exc_type=ValueError)
             sorted_select_bytes = sorted(self.select_bytes, key=lambda x: x[0])
-        # capture the file's modification time
-        file_mtime = self.filepath.stat().st_mtime
+        # capture the file's modification time only when explicitly requested
+        file_mtime = self.filepath.stat().st_mtime if capture_mtime else None
         # start a hash for the file and the lists of chunks
         file_hash = sha512()
         chunks = []

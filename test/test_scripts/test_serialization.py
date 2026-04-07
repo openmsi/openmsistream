@@ -247,7 +247,7 @@ def test_chunk_serialization_with_mtime(logger):
         rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
         logger=logger,
     )
-    udf._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
+    udf._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE, capture_mtime=True)
     udf.add_chunks_to_upload()
 
     chunk = udf.chunks_to_upload[0]

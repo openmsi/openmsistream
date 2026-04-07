@@ -583,6 +583,7 @@ class DataFileUploadDirectory(
         self.__active_files_by_path[filepath].add_chunks_to_upload(
             chunks,
             chunk_size=self.__chunk_size,
+            capture_mtime=True,
         )
 
     def __restart_crashed_threads(self):
