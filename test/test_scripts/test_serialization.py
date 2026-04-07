@@ -105,6 +105,9 @@ class TestSerialization:
             dfcs("not a chunk")
 
         for chunk_i, chunk_binary in binary_refs.items():
+            test_ul[chunk_i].file_mtime = (
+                None  # to match the reference binaries which were created without mtime
+            )
             assert dfcs(test_ul[chunk_i]) == chunk_binary
 
     def test_data_file_chunk_deserializer(self, serialization_test_data):

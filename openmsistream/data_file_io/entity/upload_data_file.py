@@ -120,7 +120,7 @@ class UploadDataFile(DataFile, Runnable):
         self,
         chunks_to_add=None,
         chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
-        capture_mtime=False,
+        capture_mtime=True,
     ):
         """
         Add chunks from this file to the internal list of chunks to upload,
@@ -176,7 +176,7 @@ class UploadDataFile(DataFile, Runnable):
         n_threads=None,
         chunk_size=RUN_CONST.DEFAULT_CHUNK_SIZE,
         queue_full_timeout=0.001,
-        capture_mtime=False,
+        capture_mtime=True,
     ):
         """
         Add some chunks of this file from the internal list to a given upload queue
@@ -227,7 +227,7 @@ class UploadDataFile(DataFile, Runnable):
 
     #################### PRIVATE HELPER FUNCTIONS ####################
 
-    def _build_list_of_file_chunks(self, chunk_size, capture_mtime=False):
+    def _build_list_of_file_chunks(self, chunk_size, capture_mtime=True):
         """
         Build the list of DataFileChunks for this file
 
