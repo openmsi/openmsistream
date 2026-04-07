@@ -468,8 +468,6 @@ def test_generation_change_with_hash_mismatch(output_dir, logger):
 def test_equal_count_mtime_tiebreaker(output_dir, logger):
     """When two generations have the same chunk count but different
     hashes and mtimes, the newer mtime wins."""
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "log_file.csv"
     subdir = pathlib.PurePosixPath("test_subdir")
@@ -515,8 +513,6 @@ def test_equal_count_mtime_tiebreaker(output_dir, logger):
 def test_equal_count_no_mtime_skips(output_dir, logger):
     """When mtime is unavailable (old producer), equal-count
     different-hash chunks are skipped (backward compat)."""
-    from hashlib import sha512
-
     chunk_size = TEST_CONST.TEST_CHUNK_SIZE
     filename = "old_format.dat"
     subdir = pathlib.PurePosixPath("test_subdir")

@@ -206,8 +206,7 @@ class DownloadDataFile(DataFile, ABC):
                     self._expected_file_hash = dfc.file_hash
                     self._expected_file_mtime = dfc.file_mtime
                 return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
-            else:
-                return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+            return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         return None
 
     def _handle_chunk_count_mismatch(self, dfc, thread_lock):
