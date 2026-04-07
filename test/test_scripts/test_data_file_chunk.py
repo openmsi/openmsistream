@@ -132,6 +132,7 @@ class TestDataFileChunk:
             rootdir=self.test_chunk_1.rootdir,
             filename_append=self.test_chunk_1.filename_append,
             data=self.test_chunk_1.data,
+            file_mtime=self.test_chunk_1.file_mtime,
         )
 
         test_chunk_2_copy = DataFileChunk(
@@ -147,6 +148,7 @@ class TestDataFileChunk:
             rootdir=self.test_chunk_1.rootdir,
             filename_append=self.test_chunk_2.filename_append,
             data=self.test_chunk_2.data,
+            file_mtime=self.test_chunk_2.file_mtime,
         )
 
         assert self.test_chunk_1 == test_chunk_1_copy
