@@ -238,3 +238,72 @@ class TestSerialization:
 
         kc1.close()
         kc2.close()
+
+
+def test_chunk_serialization_with_mtime(logger):
+    """Verify DataFileChunk with file_mtime round-trips."""
+    from openmsistream.kafka_wrapper.serialization import (
+        DataFileChunkSerializer,
+        DataFileChunkDeserializer,
+    )
+    from openmsistream.data_file_io.entity.upload_data_file import (
+        UploadDataFile,
+    )
+
+    udf = UploadDataFile(
+        TEST_CONST.TEST_DATA_FILE_PATH,
+        rootdir=TEST_CONST.TEST_DATA_FILE_ROOT_DIR_PATH,
+        logger=logger,
+    )
+    udf._build_list_of_file_chunks(TEST_CONST.TEST_CHUNK_SIZE)
+    udf.add_chunks_to_upload()
+
+    chunk = udf.chunks_to_upload[0]
+    chunk.populate_with_file_data(logger=logger)
+
+    assert chunk.file_mtime is not None
+    assert chunk.file_mtime > 0.0
+
+    serializer = DataFileChunkSerializer()
+    deserializer = DataFileChunkDeserializer()
+
+    packed = serializer(chunk)
+    unpacked = deserializer(packed)
+
+    assert unpacked.file_mtime == chunk.file_mtime
+    assert unpacked.n_total_chunks == chunk.n_total_chunks
+    assert unpacked.file_hash == chunk.file_hash
+
+
+def test_chunk_deserialization_backward_compat(logger):
+    """Verify 9-field messages (no mtime) still deserialize."""
+    import msgpack
+    from hashlib import sha512
+    from openmsistream.kafka_wrapper.serialization import (
+        DataFileChunkDeserializer,
+    )
+
+    data = b"test data for backward compat"
+    chunk_hash = sha512(data).digest()
+    file_hash = sha512(data).digest()
+
+    old_format = [
+        b"testfile.dat",
+        file_hash,
+        chunk_hash,
+        0,
+        1,
+        1,
+        b"subdir",
+        b"",
+        data,
+    ]
+    packed = msgpack.packb(old_format, use_bin_type=True)
+
+    deserializer = DataFileChunkDeserializer()
+    chunk = deserializer(packed)
+
+    assert chunk.file_mtime is None
+    assert chunk.filename == "testfile.dat"
+    assert chunk.n_total_chunks == 1
+    assert chunk.data == data

@@ -54,6 +54,7 @@ class UploadDataFile(DataFile, Runnable):
         self.__n_total_chunks = 0
         self.__chunk_infos = None
         self.__file_hash = None
+        self.__file_mtime = None
         self.__chunked_at_timestamp = None
 
     def upload_whole_file(
@@ -158,6 +159,7 @@ class UploadDataFile(DataFile, Runnable):
                         self.__n_total_chunks,
                         rootdir=self.rootdir,
                         filename_append=self.__filename_append,
+                        file_mtime=self.__file_mtime,
                     )
                 )
         if len(self.chunks_to_upload) > 0 and self.__fully_enqueued:
@@ -245,6 +247,8 @@ class UploadDataFile(DataFile, Runnable):
                     )
                     self.logger.error(errmsg, exc_type=ValueError)
             sorted_select_bytes = sorted(self.select_bytes, key=lambda x: x[0])
+        # capture the file's modification time
+        file_mtime = self.filepath.stat().st_mtime
         # start a hash for the file and the lists of chunks
         file_hash = sha512()
         chunks = []
@@ -285,6 +289,7 @@ class UploadDataFile(DataFile, Runnable):
         self.logger.debug(f"File {self.filepath} has a total of {len(chunks)} chunks")
         # set the hash for the file
         self.__file_hash = file_hash
+        self.__file_mtime = file_mtime
         # set the total number of chunks for this file
         self.__n_total_chunks = len(chunks)
         # build the list of all of the chunk infos for the file

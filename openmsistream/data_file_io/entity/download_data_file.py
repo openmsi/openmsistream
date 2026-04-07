@@ -71,6 +71,7 @@ class DownloadDataFile(DataFile, ABC):
         self.subdir_str = None
         self.n_total_chunks = None
         self._expected_file_hash = None
+        self._expected_file_mtime = None
 
     def add_chunk(self, dfc, thread_lock=nullcontext()):
         """
@@ -174,6 +175,7 @@ class DownloadDataFile(DataFile, ABC):
             with thread_lock:
                 self.n_total_chunks = dfc.n_total_chunks
                 self._expected_file_hash = dfc.file_hash
+                self._expected_file_mtime = dfc.file_mtime
             return None
         if self.n_total_chunks != dfc.n_total_chunks:
             return self._handle_chunk_count_mismatch(dfc, thread_lock)
@@ -181,9 +183,31 @@ class DownloadDataFile(DataFile, ABC):
             self._expected_file_hash is not None
             and dfc.file_hash != self._expected_file_hash
         ):
-            # Same chunk count but different hash — file was modified
-            # in place without changing size. Skip to avoid thrashing.
-            return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+            # Same chunk count but different hash — file modified in
+            # place. Use mtime as tiebreaker if available.
+            if (
+                dfc.file_mtime is not None
+                and self._expected_file_mtime is not None
+                and dfc.file_mtime > self._expected_file_mtime
+            ):
+                warnmsg = (
+                    f"WARNING: {self.__class__.__name__} with "
+                    f"filepath {self.full_filepath} received a "
+                    f"chunk with same n_total_chunks="
+                    f"{dfc.n_total_chunks} but newer mtime "
+                    f"({dfc.file_mtime} > "
+                    f"{self._expected_file_mtime}) and different "
+                    f"hash. Resetting to newer generation."
+                )
+                self.logger.warning(warnmsg)
+                with thread_lock:
+                    self._reset_for_new_generation()
+                    self.n_total_chunks = dfc.n_total_chunks
+                    self._expected_file_hash = dfc.file_hash
+                    self._expected_file_mtime = dfc.file_mtime
+                return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+            else:
+                return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         return None
 
     def _handle_chunk_count_mismatch(self, dfc, thread_lock):
@@ -223,6 +247,7 @@ class DownloadDataFile(DataFile, ABC):
                 self._reset_for_new_generation()
                 self.n_total_chunks = dfc.n_total_chunks
                 self._expected_file_hash = dfc.file_hash
+                self._expected_file_mtime = dfc.file_mtime
             return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
         # Fewer chunks = older generation. Skip.
         return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
@@ -259,6 +284,7 @@ class DownloadDataFile(DataFile, ABC):
         self._chunk_offsets_downloaded = []
         self.n_total_chunks = None
         self._expected_file_hash = None
+        self._expected_file_mtime = None
 
 
 class DownloadDataFileToDisk(DownloadDataFile):
