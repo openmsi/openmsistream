@@ -347,6 +347,12 @@ def test_girder_upload_mimetype(
 
 @pytest.mark.kafka
 @responses.activate
+@pytest.mark.parametrize(
+    "girder_instance",
+    [[], ["girder_hashsum_download"]],
+    indirect=True,
+    ids=["plain", "with_hashsum_download"],
+)
 def test_girder_replace_existing(
     mock_datafile, girder_instance, tmp_path, apply_kafka_env, caplog
 ):
@@ -354,6 +360,9 @@ def test_girder_replace_existing(
     api_url = girder_instance["api_url"]
     api_key = girder_instance["api_key"]
     responses.add_passthru(api_url)  # Allow real requests to Girder
+    gc = girder_client.GirderClient(apiUrl=api_url)
+    gc.authenticate(apiKey=api_key)
+    folder_path = f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}"
 
     # First upload without replace_existing
     processor1 = GirderUploadStreamProcessor(
@@ -374,8 +383,19 @@ def test_girder_replace_existing(
 
     result = processor1._process_downloaded_data_file(datafile1, Lock())
     assert result is None
+    root_folder = gc.get("resource/lookup", parameters={"path": folder_path})
+    assert len(list(gc.listItem(root_folder["_id"]))) == 1
 
     # Try to upload again without replace - should skip
+    datafile1 = mock_datafile(
+        content=content_v1,
+        filename="versioned.txt",
+        subdir_str="",
+    )
+    with caplog.at_level("INFO"):
+        processor1._process_downloaded_data_file(datafile1, Lock())
+    assert "Skipping upload" in caplog.text
+
     content_v2 = b"Version 2 content (different)"
     datafile2 = mock_datafile(
         content=content_v2,
@@ -385,11 +405,10 @@ def test_girder_replace_existing(
 
     result = processor1._process_downloaded_data_file(datafile2, Lock())
     assert result is None  # Should succeed but skip upload
+    root_folder = gc.get("resource/lookup", parameters={"path": folder_path})
+    assert len(list(gc.listItem(root_folder["_id"]))) == 1
 
     # Verify content is still v1
-    gc = girder_client.GirderClient(apiUrl=api_url)
-    gc.authenticate(apiKey=api_key)
-
     gpath = f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}/versioned.txt"
     item = gc.get("resource/lookup", parameters={"path": gpath})
     file_id = next(f["_id"] for f in gc.listFile(item["_id"]))
@@ -431,6 +450,9 @@ def test_girder_replace_existing(
     responses.add_passthru(api_url)  # Allow real requests again
     result = processor2._process_downloaded_data_file(datafile3, Lock())
     assert result is None
+
+    root_folder = gc.get("resource/lookup", parameters={"path": folder_path})
+    assert len(list(gc.listItem(root_folder["_id"]))) == 1
 
     # Verify content is now v2
     item = gc.get("resource/lookup", parameters={"path": gpath})
@@ -587,3 +609,231 @@ def test_girder_odd_failures(
         assert isinstance(result, Exception)
     responses.reset()
     responses.add_passthru(api_url)
+
+    @pytest.mark.kafka
+    @pytest.mark.parametrize(
+        "kafka_topics",
+        [{TOPIC_NAME: {}}],
+        indirect=True,
+    )
+    def test_run_from_command_line(
+        kafka_topics,
+        girder_instance,
+        upload_file_helper,
+        tmp_path,
+        monkeypatch,
+        caplog,
+    ):
+        """Test run_from_command_line method."""
+        api_url = girder_instance["api_url"]
+        api_key = girder_instance["api_key"]
+
+        # Upload a file to Kafka first
+        upload_file_helper(
+            TEST_CONST.TEST_DATA_FILE_2_PATH,
+            topic_name=TOPIC_NAME,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+        )
+
+        # Mock process_files_as_read to return after processing one file
+        original_process = GirderUploadStreamProcessor.process_files_as_read
+
+        def mock_process(self):
+            result = original_process(self)
+            # Stop after processing
+            return result
+
+        monkeypatch.setattr(
+            GirderUploadStreamProcessor, "process_files_as_read", mock_process
+        )
+
+        # Prepare command line arguments
+        args = [
+            api_url,
+            api_key,
+            str(TEST_CONST.TEST_CFG_FILE_PATH),
+            TOPIC_NAME,
+            "--consumer_group_id",
+            f"pytest_{TOPIC_NAME}",
+            "--collection_name",
+            COLLECTION_NAME,
+            "--n_most_recent_files_to_check",
+            "1",
+        ]
+
+        with caplog.at_level("INFO"):
+            GirderUploadStreamProcessor.run_from_command_line(args=args)
+
+            # Verify logging messages
+            assert f"Listening to the {TOPIC_NAME} topic" in caplog.text
+            assert "Girder upload stream processor" in caplog.text
+            assert "shut down" in caplog.text
+            assert "total messages were consumed" in caplog.text
+            assert "files were uploaded to Girder" in caplog.text
+
+        # Verify the file was uploaded
+        gc = girder_client.GirderClient(apiUrl=api_url)
+        gc.authenticate(apiKey=api_key)
+
+        rel = TEST_CONST.TEST_DATA_FILE_2_PATH.relative_to(TEST_CONST.TEST_DATA_DIR_PATH)
+        gpath = f"/collection/{COLLECTION_NAME}/{COLLECTION_NAME}/{TOPIC_NAME}/{rel.name}"
+        item = gc.get("resource/lookup", parameters={"path": gpath})
+        assert item["_modelType"] == "item"
+
+        # Cleanup
+        gc.delete(f"/item/{item['_id']}")
+
+    @pytest.mark.kafka
+    @pytest.mark.parametrize(
+        "kafka_topics",
+        [{TOPIC_NAME: {}}],
+        indirect=True,
+    )
+    def test_run_from_command_line_with_output_dir(
+        kafka_topics,
+        girder_instance,
+        upload_file_helper,
+        tmp_path,
+        monkeypatch,
+        caplog,
+    ):
+        """Test run_from_command_line with output_dir specified."""
+        api_url = girder_instance["api_url"]
+        api_key = girder_instance["api_key"]
+        output_dir = tmp_path / "output"
+        output_dir.mkdir()
+
+        # Upload a file to Kafka
+        upload_file_helper(
+            TEST_CONST.TEST_DATA_FILE_2_PATH,
+            topic_name=TOPIC_NAME,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+        )
+
+        # Mock to stop after one file
+        original_process = GirderUploadStreamProcessor.process_files_as_read
+
+        def mock_process(self):
+            return original_process(self)
+
+        monkeypatch.setattr(
+            GirderUploadStreamProcessor, "process_files_as_read", mock_process
+        )
+
+        args = [
+            api_url,
+            api_key,
+            str(TEST_CONST.TEST_CFG_FILE_PATH),
+            TOPIC_NAME,
+            "--consumer_group_id",
+            f"pytest_{TOPIC_NAME}_output",
+            "--collection_name",
+            COLLECTION_NAME,
+            "--output_dir",
+            str(output_dir),
+            "--n_most_recent_files_to_check",
+            "1",
+        ]
+
+        with caplog.at_level("INFO"):
+            GirderUploadStreamProcessor.run_from_command_line(args=args)
+
+            # Verify the output_dir is mentioned in shutdown message
+            assert f"writing to {output_dir}" in caplog.text
+            assert "shut down" in caplog.text
+
+    @pytest.mark.kafka
+    @pytest.mark.parametrize(
+        "kafka_topics",
+        [{TOPIC_NAME: {}}],
+        indirect=True,
+    )
+    def test_run_from_command_line_debug_logging(
+        kafka_topics,
+        girder_instance,
+        upload_file_helper,
+        tmp_path,
+        monkeypatch,
+        caplog,
+    ):
+        """Test that debug logging shows uploaded filepaths."""
+        api_url = girder_instance["api_url"]
+        api_key = girder_instance["api_key"]
+
+        upload_file_helper(
+            TEST_CONST.TEST_DATA_FILE_2_PATH,
+            topic_name=TOPIC_NAME,
+            rootdir=TEST_CONST.TEST_DATA_DIR_PATH,
+        )
+
+        original_process = GirderUploadStreamProcessor.process_files_as_read
+
+        def mock_process(self):
+            return original_process(self)
+
+        monkeypatch.setattr(
+            GirderUploadStreamProcessor, "process_files_as_read", mock_process
+        )
+
+        args = [
+            api_url,
+            api_key,
+            str(TEST_CONST.TEST_CFG_FILE_PATH),
+            TOPIC_NAME,
+            "--consumer_group_id",
+            f"pytest_{TOPIC_NAME}_debug",
+            "--collection_name",
+            COLLECTION_NAME,
+            "--n_most_recent_files_to_check",
+            "1",
+        ]
+
+        with caplog.at_level("DEBUG"):
+            GirderUploadStreamProcessor.run_from_command_line(args=args)
+
+            # Should see debug message with filepath
+            assert "successfully uploaded to Girder" in caplog.text
+            assert "Uploaded filepaths" in caplog.text
+
+    @pytest.mark.kafka
+    def test_run_from_command_line_no_files(
+        girder_instance,
+        tmp_path,
+        monkeypatch,
+        caplog,
+        apply_kafka_env,
+    ):
+        """Test run_from_command_line when no files are processed."""
+        api_url = girder_instance["api_url"]
+        api_key = girder_instance["api_key"]
+
+        # Mock to return immediately with no files
+        def mock_process(self):
+            return 0, 0, 0, []
+
+        monkeypatch.setattr(
+            GirderUploadStreamProcessor, "process_files_as_read", mock_process
+        )
+
+        args = [
+            api_url,
+            api_key,
+            str(TEST_CONST.TEST_CFG_FILE_PATH),
+            f"{TOPIC_NAME}_empty",
+            "--consumer_group_id",
+            f"pytest_{TOPIC_NAME}_empty",
+            "--collection_name",
+            COLLECTION_NAME,
+        ]
+
+        with caplog.at_level("INFO"):
+            GirderUploadStreamProcessor.run_from_command_line(args=args)
+
+            # Should still show completion messages
+            assert "0 total messages were consumed" in caplog.text
+            assert "0 files were uploaded to Girder" in caplog.text
+            assert "shut down" in caplog.text
+
+        # Should NOT have debug filepath message since no files processed
+        with caplog.at_level("DEBUG"):
+            assert "Uploaded filepaths" not in caplog.text
