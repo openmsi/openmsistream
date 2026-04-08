@@ -303,14 +303,22 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
                 existing_item.get("meta", {}).get("checksum", {}).get("sha256")
                 == checksum_hash
             )
-            if not (same_file or self.replace_existing):
+            if same_file:
+                msg = (
+                    f"Found an existing Item named {datafile.filename} with the same "
+                    f"checksum in the folder at {datafile.relative_filepath}. Skipping upload."
+                )
+                self.logger.info(msg)
+                return None
+
+            if not self.replace_existing:
                 msg = (
                     f"Found an existing Item named {datafile.filename} in the folder at "
                     f"{datafile.relative_filepath}, but it has a different checksum than "
                     "the file being uploaded. "
                     "(Use --replace_existing to overwrite.)"
                 )
-                self.logger.info(msg)
+                self.logger.warning(msg)
                 return None
 
             try:

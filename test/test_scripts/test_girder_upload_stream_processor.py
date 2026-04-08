@@ -387,6 +387,15 @@ def test_girder_replace_existing(
     assert len(list(gc.listItem(root_folder["_id"]))) == 1
 
     # Try to upload again without replace - should skip
+    datafile1 = mock_datafile(
+        content=content_v1,
+        filename="versioned.txt",
+        subdir_str="",
+    )
+    with caplog.at_level("INFO"):
+        processor1._process_downloaded_data_file(datafile1, Lock())
+    assert "Skipping upload" in caplog.text
+
     content_v2 = b"Version 2 content (different)"
     datafile2 = mock_datafile(
         content=content_v2,
