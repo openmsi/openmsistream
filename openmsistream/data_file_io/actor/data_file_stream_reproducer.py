@@ -138,7 +138,9 @@ class DataFileStreamReproducer(DataFileStreamHandler, DataFileChunkReproducer, A
             self.recent_results_produced,
         )
 
-    def producer_callback(self, err, msg, prodid, filename, rel_filepath, n_total_chunks):
+    def producer_callback(
+        self, err, msg, prodid, filename, rel_filepath, n_total_chunks, **kwargs
+    ):
         """
         A reference to this method is given as the callback for each call to
         :func:`confluent_kafka.Producer.produce`. It is called for every message

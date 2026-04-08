@@ -125,6 +125,7 @@ class DataFileChunk(Producible):
             "filename": self.filename,
             "n_total_chunks": self.n_total_chunks,
             "chunk_i": self.chunk_i,
+            "file_mtime": self.file_mtime,
         }
 
     #################### PUBLIC FUNCTIONS ####################
@@ -143,6 +144,8 @@ class DataFileChunk(Producible):
         rootdir=None,
         filename_append="",
         data=None,
+        *,
+        file_mtime=None,
     ):
         self.__filepath = filepath
         self.filename = filename
@@ -160,6 +163,7 @@ class DataFileChunk(Producible):
             self.__relative_filepath = self.__filepath
         self.filename_append = filename_append
         self.data = data
+        self.file_mtime = file_mtime
 
     def __eq__(self, other):
         if not isinstance(other, DataFileChunk):
@@ -174,6 +178,7 @@ class DataFileChunk(Producible):
         retval = retval and self.n_total_chunks == other.n_total_chunks
         retval = retval and self.subdir_str == other.subdir_str
         retval = retval and self.filename_append == other.filename_append
+        retval = retval and self.file_mtime == other.file_mtime
         retval = retval and self.data == other.data
         return retval
 
@@ -189,7 +194,8 @@ class DataFileChunk(Producible):
             f"chunk_i: {self.chunk_i}, "
             f"n_total_chunks: {self.n_total_chunks}, "
             f"subdir_str: {self.subdir_str}, "
-            f"filename_append: {self.filename_append})"  # , '
+            f"filename_append: {self.filename_append}, "
+            f"file_mtime: {self.file_mtime})"  # , '
             # f'data: {self.data})'
         )
         return string_rep

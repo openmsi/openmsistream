@@ -208,7 +208,7 @@ class DataFileUploadDirectory(
         return to_return
 
     def producer_callback(
-        self, err, msg, prodid, filename, filepath, n_total_chunks, chunk_i
+        self, err, msg, prodid, filename, filepath, n_total_chunks, chunk_i, **kwargs
     ):
         """
         A reference to this method is given as the callback for each call to
@@ -583,6 +583,7 @@ class DataFileUploadDirectory(
         self.__active_files_by_path[filepath].add_chunks_to_upload(
             chunks,
             chunk_size=self.__chunk_size,
+            capture_mtime=True,
         )
 
     def __restart_crashed_threads(self):

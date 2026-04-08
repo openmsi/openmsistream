@@ -4,7 +4,16 @@ try:
 except NameError:
     unicode = str
 
-import bs4, functools, git, itertools, marko.ext.toc, pathlib, re, slugify
+import functools
+import itertools
+import pathlib
+import re
+
+import bs4
+import git
+import marko.ext.toc
+import pytest
+import slugify
 
 
 class GithubTocRendererMixin(marko.ext.toc.TocRendererMixin):
@@ -123,8 +132,9 @@ def lastmodified(filename, linenumbers):
 def test_markdown_links():
     github_regex = r"https://(?:www\.)?github\.com/openmsi/openmsistream?/(?:blob|tree)"
 
-    markdown_files = list(mainfolder.rglob("*.md"))
-
+    markdown_files = [
+        pathlib.Path(_) for _ in repo().git.ls_files().splitlines() if _.endswith(".md")
+    ]
     for markdownfile in markdown_files:
         errors = []
         links, _ = linksandanchors(markdownfile)

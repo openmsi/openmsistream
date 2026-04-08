@@ -191,6 +191,11 @@ class DataFileChunkSerializer(Serializer):
             ordered_properties.append(file_chunk_obj.subdir_str)
             ordered_properties.append(file_chunk_obj.filename_append)
             ordered_properties.append(file_chunk_obj.data)
+            ordered_properties.append(
+                file_chunk_obj.file_mtime
+                if file_chunk_obj.file_mtime is not None
+                else 0.0
+            )
             return msgpack.packb(ordered_properties, use_bin_type=True)
         except Exception as exc:
             raise SerializationError(
@@ -209,10 +214,10 @@ class DataFileChunkDeserializer(Deserializer):
         try:
             # unpack the byte array
             ordered_properties = msgpack.unpackb(byte_array, raw=True)
-            if len(ordered_properties) != 9:
+            if len(ordered_properties) not in (9, 10):
                 errmsg = (
                     f"ERROR: unrecognized token passed to DataFileChunkDeserializer. "
-                    f"Expected 9 properties but found {len(ordered_properties)}"
+                    f"Expected 9 or 10 properties but found {len(ordered_properties)}"
                 )
                 raise ValueError(errmsg)
             try:
@@ -226,6 +231,10 @@ class DataFileChunkDeserializer(Deserializer):
                 subdir_str = str(ordered_properties[6].decode())
                 filename_append = str(ordered_properties[7].decode())
                 data = ordered_properties[8]
+                file_mtime = None
+                if len(ordered_properties) > 9:
+                    raw_mtime = float(ordered_properties[9])
+                    file_mtime = raw_mtime if raw_mtime > 0.0 else None
             except Exception as exc:
                 errmsg = (
                     f"ERROR: unrecognized value(s) when deserializing a DataFileChunk "
@@ -259,6 +268,7 @@ class DataFileChunkDeserializer(Deserializer):
                 n_total_chunks,
                 data=data,
                 filename_append=filename_append,
+                file_mtime=file_mtime,
             )
         except Exception as exc:
             raise SerializationError(

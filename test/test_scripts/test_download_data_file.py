@@ -463,3 +463,80 @@ def test_generation_change_with_hash_mismatch(output_dir, logger):
         else:
             # Last chunk: hash verification catches corruption
             assert r == DATA_FILE_HANDLING_CONST.FILE_HASH_MISMATCH_CODE
+
+
+def test_equal_count_mtime_tiebreaker(output_dir, logger):
+    """When two generations have the same chunk count but different
+    hashes and mtimes, the newer mtime wins."""
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "log_file.csv"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    gen1_data = b"R" * (chunk_size * 3)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+    for c in gen1_chunks:
+        c.file_mtime = 1000.0
+
+    gen2_data = b"S" * (chunk_size * 3)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+    for c in gen2_chunks:
+        c.file_mtime = 2000.0
+
+    assert gen1_hash != gen2_hash
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    r = dl.add_chunk(gen1_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+
+    r = dl.add_chunk(gen1_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+
+    for i, chunk in enumerate(gen2_chunks):
+        r = dl.add_chunk(chunk)
+        if i < len(gen2_chunks) - 1:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+        else:
+            assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    assert dl.bytestring == gen2_data
+
+
+def test_equal_count_no_mtime_skips(output_dir, logger):
+    """When mtime is unavailable (old producer), equal-count
+    different-hash chunks are skipped (backward compat)."""
+    chunk_size = TEST_CONST.TEST_CHUNK_SIZE
+    filename = "old_format.dat"
+    subdir = pathlib.PurePosixPath("test_subdir")
+
+    gen1_data = b"T" * (chunk_size * 2)
+    gen1_hash = sha512(gen1_data).digest()
+    gen1_chunks = _make_test_chunks(gen1_data, filename, subdir, chunk_size, gen1_hash)
+
+    gen2_data = b"U" * (chunk_size * 2)
+    gen2_hash = sha512(gen2_data).digest()
+    gen2_chunks = _make_test_chunks(gen2_data, filename, subdir, chunk_size, gen2_hash)
+
+    for c in gen1_chunks + gen2_chunks:
+        c.rootdir = output_dir
+
+    dl = DownloadDataFileToMemory(gen1_chunks[0].filepath, logger=logger)
+
+    r = dl.add_chunk(gen1_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_IN_PROGRESS
+
+    r = dl.add_chunk(gen2_chunks[0])
+    assert r == DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
+
+    r = dl.add_chunk(gen1_chunks[1])
+    assert r == DATA_FILE_HANDLING_CONST.FILE_SUCCESSFULLY_RECONSTRUCTED_CODE
+
+    assert dl.bytestring == gen1_data
