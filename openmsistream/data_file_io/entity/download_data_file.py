@@ -206,6 +206,16 @@ class DownloadDataFile(DataFile, ABC):
                     self._expected_file_hash = dfc.file_hash
                     self._expected_file_mtime = dfc.file_mtime
                 return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
+            warnmsg = (
+                f"WARNING: {self.__class__.__name__} with "
+                f"filepath {self.full_filepath} received a "
+                f"chunk with same n_total_chunks="
+                f"{dfc.n_total_chunks} and different hash but "
+                f"no newer mtime (chunk mtime={dfc.file_mtime}, "
+                f"expected mtime={self._expected_file_mtime}). "
+                f"Discarding chunk from indeterminate generation."
+            )
+            self.logger.warning(warnmsg)
             return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
         return None
 
@@ -248,7 +258,17 @@ class DownloadDataFile(DataFile, ABC):
                 self._expected_file_hash = dfc.file_hash
                 self._expected_file_mtime = dfc.file_mtime
             return DATA_FILE_HANDLING_CONST.GENERATION_RESET_CODE
-        # Fewer chunks = older generation. Skip.
+        # Fewer or equal chunks = older generation. Skip.
+        warnmsg = (
+            f"WARNING: {self.__class__.__name__} with filepath "
+            f"{self.full_filepath} received a chunk from a "
+            f"stale file generation ({dfc.n_total_chunks} chunks "
+            f"with hash {dfc.file_hash[:4].hex()}, but already "
+            f"tracking {self.n_total_chunks} chunks with hash "
+            f"{self._expected_file_hash[:4].hex()}). Discarding "
+            f"chunk from older generation."
+        )
+        self.logger.warning(warnmsg)
         return DATA_FILE_HANDLING_CONST.CHUNK_ALREADY_WRITTEN_CODE
 
     @abstractmethod
