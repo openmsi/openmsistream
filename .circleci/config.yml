@@ -2,7 +2,7 @@ version: 2.1
 
 orbs:
   python: circleci/python@2.1.1
-  codecov: codecov/codecov@5
+  codecov: codecov/codecov@6.0.0
 
 workflows:
   build_and_test:
