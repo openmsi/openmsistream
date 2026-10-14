@@ -259,3 +259,10 @@ class DataFileStreamProcessor(DataFileStreamHandler, DataFileChunkProcessor, ABC
         superargs, superkwargs = super().get_command_line_arguments()
         kwargs = {**superkwargs, "n_threads": RUN_CONST.N_DEFAULT_DOWNLOAD_THREADS}
         return superargs, kwargs
+
+    @classmethod
+    def get_init_args_kwargs(cls, parsed_args):
+        superargs, superkwargs = super().get_init_args_kwargs(parsed_args)
+        # the topic is a positional argument of the constructor, after the config file
+        args = [*superargs, superkwargs.pop("consumer_topic_name")]
+        return args, superkwargs
