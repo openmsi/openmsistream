@@ -243,7 +243,16 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
         # Currently, concurrency is handled by Girder server side. If too many requests are
         # sent at once, the retry strategy defined in the session will handle retrying them
         # with backoff.
-        return self.__process_downloaded_data_file(datafile, metadata=None)
+        ret = self.__process_downloaded_data_file(datafile, metadata=None)
+        try:
+            datafile.full_filepath.unlink(missing_ok=True)
+        except Exception as exc:
+            errmsg = (
+                f"ERROR: failed to delete the file at {datafile.full_filepath} after "
+                "uploading it to Girder. Exception will be logged but not re-raised."
+            )
+            self.logger.error(errmsg, exc_info=exc)
+        return ret
 
     @staticmethod
     def __get_checksum(datafile, alg="sha256"):
@@ -366,14 +375,6 @@ class GirderUploadStreamProcessor(DataFileStreamProcessor):
             )
             self.logger.error(errmsg, exc_info=exc)
             return exc
-        try:
-            datafile.full_filepath.unlink(missing_ok=True)
-        except Exception as exc:
-            errmsg = (
-                f"ERROR: failed to delete the file at {datafile.full_filepath} after "
-                "uploading it to Girder. Exception will be logged but not re-raised."
-            )
-            self.logger.error(errmsg, exc_info=exc)
         return None
 
     def __init_collection(self, collection_name):

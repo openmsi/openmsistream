@@ -213,7 +213,45 @@ def test_girder_authentication_failure(girder_instance, apply_kafka_env):
     assert "authenticate" in str(exc_info.value).lower() or "401" in str(exc_info.value)
 
 
-# ------------------------------------------------------------
+@pytest.mark.kafka
+def test_girder_process_downloaded_data_file_logs_unlink_exception(
+    girder_instance, monkeypatch, caplog, apply_kafka_env
+):
+    """Test that unlink failures are logged and do not prevent the method from returning."""
+    api_url = girder_instance["api_url"]
+    api_key = girder_instance["api_key"]
+    # Create a processor instance
+    processor = GirderUploadStreamProcessor(
+        api_url,
+        api_key,
+        config_file=TEST_CONST.TEST_CFG_FILE_PATH,
+        topic_name=TOPIC_NAME,
+        collection_name=COLLECTION_NAME,
+    )
+    expected_error = RuntimeError("unlink failed")
+
+    def fake_process_downloaded_data_file(datafile, metadata=None):
+        return expected_error
+
+    monkeypatch.setattr(
+        processor,
+        "_GirderUploadStreamProcessor__process_downloaded_data_file",
+        fake_process_downloaded_data_file,
+    )
+
+    class BadPath:
+        def unlink(self, missing_ok=False):
+            raise expected_error
+
+    datafile = type("DummyDataFile", (), {})()
+    datafile.full_filepath = BadPath()
+
+    with caplog.at_level("ERROR"):
+        result = processor._process_downloaded_data_file(datafile, Lock())
+
+    assert result is expected_error
+    assert "failed to delete the file at" in caplog.text
+    assert "unlink failed" in caplog.text
 
 
 @pytest.mark.kafka
@@ -445,11 +483,20 @@ def test_girder_replace_existing(
         assert "ERROR: failed to replace the file at" in caplog.text
         assert result is not None
         assert isinstance(result, Exception)
+        if hasattr(datafile3, "full_filepath"):
+            assert not datafile3.full_filepath.exists()  # Should be cleaned up
 
     responses.reset()  # Clear previous mock
     responses.add_passthru(api_url)  # Allow real requests again
+    datafile3 = mock_datafile(
+        content=content_v2,
+        filename="versioned.txt",
+        subdir_str="",
+    )
     result = processor2._process_downloaded_data_file(datafile3, Lock())
     assert result is None
+    if hasattr(datafile3, "full_filepath"):
+        assert not datafile3.full_filepath.exists()
 
     root_folder = gc.get("resource/lookup", parameters={"path": folder_path})
     assert len(list(gc.listItem(root_folder["_id"]))) == 1
