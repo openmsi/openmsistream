@@ -1,5 +1,5 @@
 # base image is official "slim" Python 3.9 on Debian 11 ("bullseye")
-FROM python:3.9-slim-bullseye
+FROM python:3.11-slim-bookworm
 LABEL maintainer="OpenMSI development team <openmsistream@gmail.com>"
 
 # Install sudo
