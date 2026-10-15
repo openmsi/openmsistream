@@ -1,8 +1,13 @@
 # test_scripts/test_data_file_stream_processor.py
+import inspect
 import time
 import pytest
 
-from openmsistream import DataFileStreamProcessor
+from openmsistream import (
+    DataFileStreamProcessor,
+    GirderUploadStreamProcessor,
+    S3TransferStreamProcessor,
+)
 
 from .config import TEST_CONST
 
@@ -60,6 +65,31 @@ TOPICS = {
     TOPIC_NAME: {},
     TOPIC_2_NAME: {},
 }
+
+
+@pytest.mark.parametrize(
+    "processor_class, positional_args",
+    [
+        (GirderUploadStreamProcessor, ["https://girder.example.org/api/v1", "key"]),
+        (S3TransferStreamProcessor, ["bucket"]),
+    ],
+)
+def test_command_line_topic_name_reaches_constructor(processor_class, positional_args):
+    """--topic_name must end up as the constructor's positional topic argument"""
+    parsed_args = processor_class.get_argument_parser().parse_args(
+        [
+            *positional_args,
+            "--config",
+            str(TEST_CONST.TEST_CFG_FILE_PATH),
+            "--topic_name",
+            TOPIC_NAME,
+        ]
+    )
+    args, kwargs = processor_class.get_init_args_kwargs(parsed_args)
+    # raises TypeError if the arguments don't fit the constructor's signature
+    inspect.signature(processor_class.__init__).bind(None, *args, **kwargs)
+    assert args[len(positional_args) + 1] == TOPIC_NAME
+    assert "consumer_topic_name" not in kwargs
 
 
 @pytest.mark.kafka
